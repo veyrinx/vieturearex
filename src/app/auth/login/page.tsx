@@ -9,7 +9,6 @@ import {
   type AdminLoginAnimationState,
 } from "@/components/auth/admin-login-animation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/base/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ShieldAlert } from "lucide-react";
