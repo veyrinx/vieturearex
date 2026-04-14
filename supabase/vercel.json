@@ -1,0 +1,17 @@
+{
+  "headers": [
+    {
+      "source": "/dmca-validation.html",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}

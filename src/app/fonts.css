@@ -1,0 +1,72 @@
+/* 
+  ⚠️ GFF FONTS - GARENA FREE FIRE PROPRIETARY
+  These fonts are proprietary to Garena Free Fire.
+  For internal use only. Do not distribute or share.
+  Unauthorized use may violate Garena's intellectual property rights.
+*/
+
+/* GFF VN - Vietnamese Support */
+@font-face {
+    font-family: "GFF VN";
+    src: url("/fonts/GFF-VN-ExtraBold.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "GFF VN";
+    src: url("/fonts/GFF-VN-Black.ttf") format("truetype");
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* GFF Latin - Primary Usage */
+@font-face {
+    font-family: "GFF Latin";
+    src: url("/fonts/GFF-Latin-Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "GFF Latin";
+    src: url("/fonts/GFF-Latin-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "GFF Latin";
+    src: url("/fonts/GFF-Latin-CdMedium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "GFF Latin";
+    src: url("/fonts/GFF-Latin-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "GFF Latin";
+    src: url("/fonts/GFF-Latin-ExtraBold.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "GFF Latin";
+    src: url("/fonts/GFF-LATIN-EXTRABOLD-1-1-SVN.ttf") format("truetype");
+    font-weight: 850;
+    font-style: normal;
+    font-display: swap;
+}

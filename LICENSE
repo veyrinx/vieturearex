@@ -1,0 +1,125 @@
+# SGM Network Proprietary Software License / Giấy Phép Phần Mềm Độc Quyền SGM Network
+
+Copyright (c) 2026 SGM Network. All rights reserved.  
+Bản quyền (c) 2026 SGM Network. Bảo lưu mọi quyền.
+
+Effective date / Ngày có hiệu lực: March 28, 2026
+
+**English:** This SGM Network codebase, together with its documentation, assets, configuration, database schema, prompts, and related materials, is proprietary and confidential information of SGM Network.
+
+**Tiếng Việt:** Toàn bộ codebase SGM Network, cùng với tài liệu, tài sản, cấu hình, database schema, prompt và các tài liệu liên quan, là thông tin độc quyền và bảo mật của SGM Network.
+
+**English:** By accessing, installing, copying, modifying, deploying, or otherwise using the Software, you agree to the terms of this license unless a separate written agreement signed by the Company states otherwise.
+
+**Tiếng Việt:** Khi truy cập, cài đặt, sao chép, chỉnh sửa, triển khai hoặc sử dụng Phần mềm dưới bất kỳ hình thức nào, bạn đồng ý với các điều khoản trong giấy phép này, trừ khi có một thỏa thuận bằng văn bản khác đã được Công ty ký.
+
+**English:** The English wording is the primary governing reference if any translation ambiguity arises.
+
+**Tiếng Việt:** Bản tiếng Anh là bản tham chiếu ưu tiên nếu phát sinh khác biệt trong diễn giải giữa các ngôn ngữ.
+
+## 1. Ownership / Quyền Sở Hữu
+
+**English:** The Software is licensed, not sold. The Company retains all right, title, and interest in and to the Software, including all copyrights, trade secrets, trademarks, design rights, database rights, and other intellectual property rights. No ownership interest is transferred to you by this license.
+
+**Tiếng Việt:** Phần mềm được cấp phép sử dụng, không phải được bán đứt. Công ty bảo lưu toàn bộ quyền, danh nghĩa pháp lý và lợi ích đối với Phần mềm, bao gồm bản quyền, bí mật kinh doanh, nhãn hiệu, quyền thiết kế, quyền cơ sở dữ liệu và mọi quyền sở hữu trí tuệ khác. Giấy phép này không chuyển giao bất kỳ quyền sở hữu nào cho bạn.
+
+## 2. Authorized Users / Đối Tượng Được Phép Sử Dụng
+
+**English:** Use of the Software is limited to employees of SGM Network acting within the scope of their duties, contractors expressly authorized by written agreement, and partners or customers operating under a signed license or services agreement. Any other person or entity is not an authorized user unless the Company provides prior written permission.
+
+**Tiếng Việt:** Việc sử dụng Phần mềm chỉ giới hạn cho nhân viên của SGM Network trong phạm vi công việc, contractor được ủy quyền rõ ràng bằng văn bản, và đối tác hoặc khách hàng đang hoạt động theo một thỏa thuận dịch vụ hoặc cấp phép đã ký. Mọi cá nhân hoặc tổ chức khác đều không được xem là đối tượng được phép sử dụng nếu chưa có văn bản chấp thuận trước của Công ty.
+
+## 3. Limited License Grant / Phạm Vi Cấp Phép Hạn Chế
+
+**English:** Subject to continuous compliance with this license and any applicable written agreement, the Company grants authorized users a limited, revocable, non-exclusive, non-transferable, non-sublicensable license to access and use the Software for the Company's internal business purposes, or for the specific scope expressly permitted in a separate signed agreement.
+
+**Tiếng Việt:** Phụ thuộc vào việc tuân thủ liên tục giấy phép này và mọi thỏa thuận bằng văn bản liên quan, Công ty cấp cho đối tượng được phép một quyền sử dụng hạn chế, có thể thu hồi, không độc quyền, không chuyển giao và không được cấp lại cho bên thứ ba, để truy cập và sử dụng Phần mềm cho mục đích nội bộ của Công ty, hoặc cho phạm vi cụ thể đã được cho phép rõ ràng trong một thỏa thuận riêng đã ký.
+
+**English:** This license permits only the minimum copying and internal backup activity reasonably necessary for authorized use.
+
+**Tiếng Việt:** Giấy phép này chỉ cho phép việc sao chép tối thiểu và sao lưu nội bộ ở mức hợp lý cần thiết cho mục đích sử dụng được phép.
+
+## 4. Restrictions / Các Hạn Chế
+
+**English:** Unless the Company gives prior written permission, you may not copy, reproduce, publish, distribute, or make the Software available to any third party; sell, sublicense, lease, rent, assign, transfer, or otherwise commercialize the Software; modify, adapt, translate, or create derivative works except as required for authorized internal development; reverse engineer, decompile, disassemble, or attempt to derive source code or underlying structure except where prohibited by law; remove proprietary notices; use the Software to build a competing product; expose credentials or confidential implementation details; or place the Software in a public repository, file-sharing service, model-training corpus, or public distribution channel.
+
+**Tiếng Việt:** Trừ khi Công ty có văn bản cho phép trước, bạn không được sao chép, tái tạo, công bố, phân phối hoặc cung cấp Phần mềm cho bất kỳ bên thứ ba nào; bán, cấp lại giấy phép, cho thuê, cho mượn, chuyển nhượng hoặc thương mại hóa Phần mềm; chỉnh sửa, thích nghi, dịch hoặc tạo sản phẩm phái sinh ngoài trừ trong phạm vi phát triển nội bộ đã được phép; reverse engineer, decompile, disassemble hoặc tìm cách truy xuất mã nguồn hoặc cấu trúc bên dưới trừ khi pháp luật cấm hạn chế đó; xóa thông báo sở hữu; sử dụng Phần mềm để xây dựng sản phẩm cạnh tranh; làm lộ credential hoặc chi tiết implementation bảo mật; hoặc đưa Phần mềm lên repository công khai, dịch vụ chia sẻ tệp, tập dữ liệu huấn luyện mô hình hoặc kênh phân phối công khai.
+
+## 5. Confidentiality And Security / Bảo Mật Và An Toàn
+
+**English:** You must protect the Software as confidential information using at least reasonable care, restrict access to authorized users with a legitimate need to know, secure credentials and exported data, promptly report suspected unauthorized access or disclosure, and comply with repository, operational, and security rules issued by the Company. These confidentiality obligations survive termination.
+
+**Tiếng Việt:** Bạn phải bảo vệ Phần mềm như thông tin bảo mật với mức độ cẩn trọng hợp lý trở lên, giới hạn truy cập cho những đối tượng được phép và có nhu cầu công việc chính đáng, bảo vệ credential và dữ liệu đã xuất, báo cáo ngay khi nghi ngờ có truy cập hoặc tiết lộ trái phép, và tuân thủ các quy tắc repository, vận hành và bảo mật do Công ty ban hành. Các nghĩa vụ bảo mật này tiếp tục có hiệu lực ngay cả sau khi giấy phép chấm dứt.
+
+## 6. Internal Modifications / Sửa Đổi Nội Bộ
+
+**English:** Authorized users may modify the Software only to the extent necessary for approved internal work or as expressly permitted in a separate written agreement. All modifications, enhancements, fixes, documentation updates, and derivative materials made in connection with the Software remain the property of the Company unless another signed agreement explicitly states otherwise.
+
+**Tiếng Việt:** Đối tượng được phép chỉ có thể chỉnh sửa Phần mềm trong phạm vi cần thiết cho công việc nội bộ đã được phê duyệt hoặc theo đúng nội dung cho phép rõ ràng trong một thỏa thuận bằng văn bản riêng. Mọi sửa đổi, nâng cấp, bản vá, cập nhật tài liệu và tài liệu phái sinh liên quan đến Phần mềm đều thuộc quyền sở hữu của Công ty, trừ khi một thỏa thuận đã ký khác quy định rõ khác đi.
+
+## 7. Third-Party Components / Thành Phần Của Bên Thứ Ba
+
+**English:** The Software may include or depend on third-party libraries, frameworks, fonts, or services licensed separately by their respective owners. This license governs only the Company's proprietary rights in the Software and does not replace or override any valid third-party license obligations.
+
+**Tiếng Việt:** Phần mềm có thể bao gồm hoặc phụ thuộc vào các thư viện, framework, font hoặc dịch vụ của bên thứ ba, được cấp phép riêng bởi chủ sở hữu tương ứng. Giấy phép này chỉ điều chỉnh các quyền độc quyền của Công ty đối với Phần mềm và không thay thế hoặc vô hiệu hóa các nghĩa vụ hợp lệ theo giấy phép của bên thứ ba.
+
+## 8. No Public Or Open-Source Grant / Không Cấp Quyền Công Khai Hoặc Mã Nguồn Mở
+
+**English:** Nothing in this license shall be interpreted as granting open-source rights, permitting public redistribution, granting trademark rights in the Company's names or logos, or authorizing use outside the scope of an approved business relationship.
+
+**Tiếng Việt:** Không có nội dung nào trong giấy phép này được hiểu là cấp quyền mã nguồn mở, cho phép phân phối công khai, cấp quyền sử dụng tên gọi hoặc logo của Công ty hoặc cho phép sử dụng ngoài phạm vi quan hệ hợp tác đã được phê duyệt.
+
+## 9. Warranty Disclaimer / Từ Chối Bảo Hành
+
+**English:** THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, OR THAT THE SOFTWARE WILL BE ERROR-FREE OR UNINTERRUPTED.
+
+**Tiếng Việt:** PHẦN MỀM ĐƯỢC CUNG CẤP TRÊN CƠ SỞ "NGUYÊN TRẠNG" VÀ "THEO TÌNH TRẠNG SẴN CÓ", KHÔNG KÈM BẤT KỲ BẢO HÀNH NÀO, DÙ LÀ RÕ RÀNG, NGẦM ĐỊNH, THEO LUẬT ĐỊNH HAY HÌNH THỨC KHÁC, BAO GỒM NHƯNG KHÔNG GIỚI HẠN Ở BẢO HÀNH VỀ KHẢ NĂNG THƯƠNG MẠI, PHÙ HỢP MỤC ĐÍCH CỤ THỂ, QUYỀN SỞ HỮU, KHÔNG XÂM PHẠM HOẶC ĐẢM BẢO PHẦN MỀM KHÔNG LỖI, KHÔNG GIÁN ĐOẠN.
+
+## 10. Limitation Of Liability / Giới Hạn Trách Nhiệm
+
+**English:** TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COMPANY SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF DATA, PROFITS, REVENUE, GOODWILL, OR BUSINESS INTERRUPTION, ARISING OUT OF OR RELATED TO THE SOFTWARE OR THIS LICENSE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+**Tiếng Việt:** TRONG PHẠM VI TỐI ĐA PHÁP LUẬT CHO PHÉP, CÔNG TY KHÔNG CHỊU TRÁCH NHIỆM ĐỐI VỚI BẤT KỲ THIỆT HẠI GIÁN TIẾP, NGẪU NHIÊN, ĐẶC BIỆT, MANG TÍNH NÊU GƯƠNG, HỆ QUẢ HOẶC TRỪNG PHẠT, CŨNG NHƯ BẤT KỲ TỔN THẤT VỀ DỮ LIỆU, LỢI NHUẬN, DOANH THU, UY TÍN THƯƠNG MẠI HOẶC GIÁN ĐOẠN KINH DOANH, PHÁT SINH TỪ HOẶC LIÊN QUAN ĐẾN PHẦN MỀM HOẶC GIẤY PHÉP NÀY, KỂ CẢ KHI ĐÃ ĐƯỢC THÔNG BÁO VỀ KHẢ NĂNG XẢY RA NHỮNG THIỆT HẠI ĐÓ.
+
+**English:** TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COMPANY'S TOTAL LIABILITY ARISING OUT OF OR RELATED TO THE SOFTWARE OR THIS LICENSE SHALL NOT EXCEED THE AMOUNT ACTUALLY PAID TO THE COMPANY FOR THE APPLICABLE RIGHT TO USE THE SOFTWARE, OR, IF NO FEE WAS PAID, ONE HUNDRED UNITED STATES DOLLARS (USD 100).
+
+**Tiếng Việt:** TRONG PHẠM VI TỐI ĐA PHÁP LUẬT CHO PHÉP, TỔNG MỨC TRÁCH NHIỆM CỦA CÔNG TY PHÁT SINH TỪ HOẶC LIÊN QUAN ĐẾN PHẦN MỀM HOẶC GIẤY PHÉP NÀY SẼ KHÔNG VƯỢT QUÁ SỐ TIỀN THỰC TẾ ĐÃ TRẢ CHO CÔNG TY ĐỂ CÓ QUYỀN SỬ DỤNG TƯƠNG ỨNG ĐỐI VỚI PHẦN MỀM, HOẶC NẾU KHÔNG CÓ KHOẢN PHÍ NÀO ĐƯỢC TRẢ, THÌ KHÔNG VƯỢT QUÁ MỘT TRĂM ĐÔ LA MỸ (USD 100).
+
+## 11. Term And Termination / Thời Hạn Và Chấm Dứt
+
+**English:** This license remains effective until terminated. The Company may suspend or terminate it immediately if you violate this license, if your access is no longer authorized, if the relevant business relationship ends, or if continued access creates legal, security, or operational risk.
+
+**Tiếng Việt:** Giấy phép này có hiệu lực cho đến khi bị chấm dứt. Công ty có thể tạm ngừng hoặc chấm dứt ngay lập tức nếu bạn vi phạm giấy phép này, nếu quyền truy cập của bạn không còn hợp lệ, nếu quan hệ hợp tác liên quan đã kết thúc hoặc nếu việc tiếp tục truy cập tạo ra rủi ro pháp lý, bảo mật hoặc vận hành.
+
+**English:** Upon termination, you must immediately stop using the Software, stop accessing hosted or shared environments containing it, and destroy or return all unauthorized copies unless legal retention is required.
+
+**Tiếng Việt:** Khi giấy phép chấm dứt, bạn phải ngay lập tức ngừng sử dụng Phần mềm, ngừng truy cập vào các môi trường host hoặc dùng chung có chứa Phần mềm và tiêu hủy hoặc hoàn trả mọi bản sao không được phép, trừ khi pháp luật yêu cầu phải lưu giữ.
+
+**English:** Provisions that should survive by nature, including ownership, confidentiality, warranty disclaimer, limitation of liability, and governing law, will continue in force.
+
+**Tiếng Việt:** Các điều khoản mà bản chất của chúng cần tiếp tục tồn tại sau khi chấm dứt, bao gồm quyền sở hữu, bảo mật, từ chối bảo hành, giới hạn trách nhiệm và luật áp dụng, vẫn tiếp tục có hiệu lực.
+
+## 12. Governing Law / Luật Điều Chỉnh
+
+**English:** This license is governed by and construed in accordance with the laws of Vietnam, without regard to conflict-of-law rules. Any dispute arising from or relating to this license shall be subject to the exclusive jurisdiction of the competent courts located in Vietnam, unless a separate signed agreement states otherwise.
+
+**Tiếng Việt:** Giấy phép này được điều chỉnh và giải thích theo pháp luật Việt Nam, không áp dụng các nguyên tắc xung đột pháp luật. Mọi tranh chấp phát sinh từ hoặc liên quan đến giấy phép này sẽ thuộc thẩm quyền giải quyết độc quyền của tòa án có thẩm quyền tại Việt Nam, trừ khi một thỏa thuận đã ký khác quy định khác.
+
+## 13. Contact / Thông Tin Liên Hệ
+
+**English:** Licensing, access, and permission requests:
+
+**Tiếng Việt:** Liên hệ về cấp phép, quyền truy cập và xin phép:
+
+SGM Network  
+arex@vieture.tech
+
+**English:** Security matters:
+
+**Tiếng Việt:** Vấn đề bảo mật:
+
+security@vieture.tech
+
+**English:** Unauthorized use, disclosure, or redistribution of the Software may result in suspension of access, contractual remedies, and legal action.
+
+**Tiếng Việt:** Việc sử dụng, tiết lộ hoặc phân phối Phần mềm trái phép có thể dẫn đến việc tạm dừng quyền truy cập, áp dụng biện pháp xử lý theo hợp đồng và khởi kiện hoặc các hành động pháp lý khác.

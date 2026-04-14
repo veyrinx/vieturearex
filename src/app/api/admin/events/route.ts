@@ -1,0 +1,176 @@
+import { NextRequest, NextResponse } from "next/server";
+import { eventSchema } from "@/lib/validators/event";
+import {
+  createEvent,
+  deleteEvent,
+  getEvents,
+  updateEvent,
+} from "@/lib/data/content-service";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
+import { sanitizePlainText } from "@/lib/server/sanitize";
+import { logAdminActivity } from "@/lib/server/admin-activity";
+import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
+import { sendPushNotification } from "@/lib/server/push-notify";
+
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-events", limit: 80, windowMs: 60_000 });
+  if (limited) {
+    return limited;
+  }
+  const denied = await enforceAdminApiAuth();
+  if (denied) {
+    return denied;
+  }
+  const events = await getEvents({ status: "all" });
+  return NextResponse.json({ events });
+}
+
+export async function POST(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-events", limit: 30, windowMs: 60_000 });
+  if (limited) {
+    return limited;
+  }
+  const denied = await enforceAdminApiAuth();
+  if (denied) {
+    return denied;
+  }
+
+  try {
+    const rawPayload = await request.json();
+    const payload = {
+      id: rawPayload?.id,
+      title: String(rawPayload?.title ?? "").trim(),
+      description: String(rawPayload?.description ?? "").trim(),
+      start_date: String(rawPayload?.start_date ?? "").trim(),
+      end_date: String(rawPayload?.end_date ?? "").trim(),
+      image_url: String(rawPayload?.image_url ?? "").trim(),
+      thumbnail_url: String(rawPayload?.thumbnail_url ?? "").trim() || "",
+      link: String(rawPayload?.link ?? "").trim() || "",
+      status: rawPayload?.status,
+    };
+    const parsed = eventSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid event payload.",
+          details: parsed.error.issues.map((err) => ({ path: err.path, message: err.message })),
+        },
+        { status: 400 },
+      );
+    }
+
+    const event = await createEvent({
+      ...parsed.data,
+      description: sanitizePlainText(parsed.data.description ?? ""),
+      title: sanitizePlainText(parsed.data.title),
+      thumbnail_url: parsed.data.thumbnail_url || parsed.data.image_url,
+      link: parsed.data.link || null,
+      status: getEventStatusInVietnam(parsed.data.start_date, parsed.data.end_date),
+    });
+
+    await logAdminActivity({
+      action: "EVENT_CREATED",
+      targetType: "EVENT",
+      targetId: event.id,
+      summary: `Tạo sự kiện ${event.title}`,
+    });
+
+    // Gửi thông báo Zalo + Push khi tạo sự kiện mới
+    import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
+      notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
+    });
+    import("@/lib/server/push-notify").then(({ sendPushNotification }) => {
+      sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
+    });
+
+    void sendPushNotification("📅 Sự kiện mới", event.title, "/events").catch(() => null);
+
+    return NextResponse.json({ event }, { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to create event.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-events", limit: 30, windowMs: 60_000 });
+  if (limited) {
+    return limited;
+  }
+  const denied = await enforceAdminApiAuth();
+  if (denied) {
+    return denied;
+  }
+
+  try {
+    const rawPayload = await request.json();
+    const payload = {
+      id: rawPayload?.id,
+      title: String(rawPayload?.title ?? "").trim(),
+      description: String(rawPayload?.description ?? "").trim(),
+      start_date: String(rawPayload?.start_date ?? "").trim(),
+      end_date: String(rawPayload?.end_date ?? "").trim(),
+      image_url: String(rawPayload?.image_url ?? "").trim(),
+      thumbnail_url: String(rawPayload?.thumbnail_url ?? "").trim() || "",
+      link: String(rawPayload?.link ?? "").trim() || "",
+      status: rawPayload?.status,
+    };
+
+    const parsed = eventSchema.safeParse(payload);
+    if (!parsed.success || !parsed.data.id) {
+      return NextResponse.json(
+        {
+          error: "Invalid event payload.",
+          details: parsed.success ? [] : parsed.error.issues.map((err) => ({ path: err.path, message: err.message })),
+        },
+        { status: 400 },
+      );
+    }
+
+    const event = await updateEvent(parsed.data.id, {
+      ...parsed.data,
+      title: sanitizePlainText(parsed.data.title),
+      description: sanitizePlainText(parsed.data.description ?? ""),
+      thumbnail_url: parsed.data.thumbnail_url || parsed.data.image_url,
+      link: parsed.data.link || null,
+      status: getEventStatusInVietnam(parsed.data.start_date, parsed.data.end_date),
+    });
+
+    await logAdminActivity({
+      action: "EVENT_UPDATED",
+      targetType: "EVENT",
+      targetId: event.id,
+      summary: `Cập nhật sự kiện ${event.title}`,
+    });
+
+    return NextResponse.json({ event });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to update event.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-events", limit: 40, windowMs: 60_000 });
+  if (limited) {
+    return limited;
+  }
+  const denied = await enforceAdminApiAuth();
+  if (denied) {
+    return denied;
+  }
+
+  const payload = (await request.json()) as { id?: string };
+  if (!payload.id) {
+    return NextResponse.json({ error: "Missing event id." }, { status: 400 });
+  }
+
+  await deleteEvent(payload.id);
+  await logAdminActivity({
+    action: "EVENT_DELETED",
+    targetType: "EVENT",
+    targetId: payload.id,
+    summary: "Xóa sự kiện",
+  });
+  return NextResponse.json({ ok: true });
+}
