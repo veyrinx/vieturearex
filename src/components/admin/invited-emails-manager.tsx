@@ -145,7 +145,7 @@ export function InvitedEmailsManager() {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          <Select value={role} onValueChange={setRole}>
+          <Select value={role} onValueChange={(value) => setRole(value || "user")}>
             <SelectTrigger className="border-border bg-background text-foreground uppercase tracking-[0.08em]">
               <SelectValue placeholder="CHỌN VAI TRÒ" />
             </SelectTrigger>

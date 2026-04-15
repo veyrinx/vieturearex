@@ -80,9 +80,9 @@ export async function middleware(request: NextRequest) {
       .from("users")
       .select("id, role")
       .eq("id", user.id)
-      .maybeSingle();
+      .maybeSingle() as { data: { id: string; role: string | null } | null; error: unknown };
 
-    if (!profile) {
+    if (!profile || !profile.role) {
       await supabase.auth.signOut();
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("error", "google_not_allowed");
@@ -90,7 +90,7 @@ export async function middleware(request: NextRequest) {
     }
 
     const adminRoles = ["super_admin", "admin", "manager", "support"];
-    if (!adminRoles.includes(profile.role)) {
+    if (!profile.role || !adminRoles.includes(profile.role)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
