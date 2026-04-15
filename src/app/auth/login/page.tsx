@@ -57,6 +57,7 @@ export default function LoginPage() {
   const [resultMessage, setResultMessage] = useState("");
   const [banState, setBanState] = useState<ServerCheckResult>({ status: "ok" });
   const authError = searchParams.get("error");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Check server-side ban on mount
   useEffect(() => {
@@ -175,33 +176,7 @@ export default function LoginPage() {
     finishAttempt("success", "ĐĂNG NHẬP THÀNH CÔNG. ĐANG CHUYỂN VÀO TRANG QUẢN TRỊ.");
   };
 
-  const onGoogleLogin = async () => {
-    const check = await serverCheck();
-    setBanState(check);
-    if (check.status === "banned") return;
 
-    setGoogleLoading(true);
-    beginLoading();
-
-    const supabase = createClient();
-    if (!supabase) {
-      setGoogleLoading(false);
-      finishAttempt("success", "ĐANG CHUYỂN HƯỚNG...");
-      return;
-    }
-
-    const originUrl = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, "");
-    const callbackUrl = `${originUrl}/auth/callback?next=${encodeURIComponent(next)}`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: callbackUrl },
-    });
-    setGoogleLoading(false);
-
-    if (error) {
-      finishAttempt("error", "KHÔNG THỂ BẮT ĐẦU ĐĂNG NHẬP GOOGLE. VUI LÒNG THỬ LẠI.");
-    }
-  };
 
   const banDaysLeft = banState.status === "banned"
     ? Math.ceil((banState.bannedUntil - Date.now()) / (1000 * 60 * 60 * 24))
