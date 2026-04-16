@@ -331,26 +331,76 @@ begin
     admin_uid := gen_random_uuid();
 
     insert into auth.users (
-      id, instance_id, email, encrypted_password, email_confirmed_at,
-      created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
-      is_super_admin, role, aud
+      id,
+      instance_id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      invited_at,
+      confirmation_token,
+      confirmation_sent_at,
+      recovery_token,
+      recovery_sent_at,
+      email_change_token_new,
+      email_change,
+      email_change_sent_at,
+      last_sign_in_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      is_super_admin,
+      created_at,
+      updated_at,
+      phone,
+      phone_confirmed_at,
+      phone_change,
+      phone_change_token,
+      phone_change_sent_at,
+      email_change_token_current,
+      email_change_confirm_status,
+      banned_until,
+      reauthentication_token,
+      reauthentication_sent_at
     ) values (
       admin_uid,
       '00000000-0000-0000-0000-000000000000',
+      'authenticated',
+      'authenticated',
       'admin@arex.tech',
       crypt('Admin@Arex2026!', gen_salt('bf')),
-      now(), now(), now(),
+      now(),
+      null, '', null, '', null, '', '', null,
+      now(),
       '{"provider":"email","providers":["email"],"role":"super_admin"}',
       '{"display_name":"Arex Admin"}',
-      false, 'authenticated', 'authenticated'
+      false,
+      now(), now(),
+      null, null, '', '', null, '', 0, null, '', null
     );
 
-    insert into auth.identities (
-      id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
-    ) values (
-      admin_uid, admin_uid,
-      jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech'),
-      'email', now(), now(), now()
-    );
+    -- Tương thích cả Supabase cũ và mới (có/không có cột provider_id)
+    begin
+      insert into auth.identities (
+        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+      ) values (
+        gen_random_uuid()::text,
+        admin_uid,
+        jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech'),
+        'email',
+        'admin@arex.tech',
+        now(), now(), now()
+      );
+    exception when undefined_column then
+      insert into auth.identities (
+        id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+      ) values (
+        admin_uid,
+        admin_uid,
+        jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech'),
+        'email',
+        now(), now(), now()
+      );
+    end;
   end if;
 end $$;
