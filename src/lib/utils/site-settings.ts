@@ -3,20 +3,21 @@ import { siteConfig } from "@/lib/constants/site";
 
 export type HeroSliderEffect = "fade" | "zoom" | "slide" | "drift" | "cinematic";
 export const settingsFormFieldOrder = [
+  "branding.site_name",
+  "branding.logo_light_url",
+  "branding.logo_dark_url",
+  "seo.default_title",
+  "seo.default_description",
   "home.hero.title",
   "home.background.desktop_urls",
   "home.background.mobile_urls",
   "home.background.transition_effect",
   "home.background.interval_seconds",
   "home.background.transition_seconds",
-  "seo.default_title",
   "social.facebook_url",
   "social.tiktok_url",
   "social.youtube_url",
   "social.email",
-  "branding.logo_light_url",
-  "branding.logo_dark_url",
-  "branding.site_name",
   "zalo.webhook_url",
   "zalo.group_id",
   "ads.google_adsense_id",
@@ -34,6 +35,11 @@ const settingsFormFieldKeySet = new Set<string>(settingsFormFieldOrder);
 const adminSettingsApiKeySet = new Set<string>(adminSettingsApiKeys);
 
 export const defaultSiteSettingValues: Record<string, string> = {
+  "branding.site_name": siteConfig.shortName,
+  "branding.logo_light_url": siteConfig.sidebarIcon,
+  "branding.logo_dark_url": siteConfig.favicon,
+  "seo.default_title": siteConfig.name,
+  "seo.default_description": siteConfig.description,
   "home.hero.title": "Arex",
   "home.background.desktop_urls":
     "https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/697b5d2e34ac088f5b5a4427d57f6281.jpg",
@@ -46,13 +52,15 @@ export const defaultSiteSettingValues: Record<string, string> = {
     "https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/697b5d2e34ac088f5b5a4427d57f6281.jpg",
   "home.background.mobile_url":
     "https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/0680c1792156b8a80095c669520f019a.jpg",
-  "seo.default_title": siteConfig.name,
   "site.experimental_mode": "false",
   "social.facebook_url": siteConfig.links.facebook,
   "social.tiktok_url": siteConfig.links.tiktok,
   "social.youtube_url": siteConfig.links.youtube,
   "social.email": siteConfig.contactEmail,
-  "site.description": "Arex – Cổng thông tin cộng đồng hàng đầu về cung cấp thông tin, theo dõi sự kiện và các nội dung từ Garena Free Fire Việt Nam.",
+  "site.description": siteConfig.description,
+  "zalo.webhook_url": "",
+  "zalo.group_id": "",
+  "ads.google_adsense_id": "",
 };
 
 export function isSettingsFormFieldKey(key: string): key is SettingsFormFieldKey {

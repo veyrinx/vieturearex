@@ -18,6 +18,26 @@ type SettingsFormProps = {
 };
 
 const settingsMeta: Record<string, { label: string; description: string }> = {
+  "branding.site_name": {
+    label: "TÊN WEBSITE",
+    description: "TÊN THƯƠNG HIỆU HIỂN THỊ TRÊN TOÀN BỘ WEBSITE VÀ TIÊU ĐỀ TRÌNH DUYỆT.",
+  },
+  "branding.logo_light_url": {
+    label: "LOGO CHẾ ĐỘ SÁNG (URL)",
+    description: "URL ẢNH LOGO DÙNG CHO CHẾ ĐỘ SÁNG (LIGHT MODE). KHUYẾN NGHỊ: PNG NỀN TRONG.",
+  },
+  "branding.logo_dark_url": {
+    label: "LOGO CHẾ ĐỘ TỐI (URL)",
+    description: "URL ẢNH LOGO DÙNG CHO CHẾ ĐỘ TỐI (DARK MODE). KHUYẾN NGHỊ: PNG NỀN TRONG, MÀU SÁNG.",
+  },
+  "seo.default_title": {
+    label: "TIÊU ĐỀ SEO MẶC ĐỊNH",
+    description: "TIÊU ĐỀ HIỂN THỊ TRÊN GOOGLE VÀ CÁC CÔNG CỤ TÌM KIẾM. NÊN DƯỚI 60 KÝ TỰ.",
+  },
+  "seo.default_description": {
+    label: "MÔ TẢ SEO MẶC ĐỊNH",
+    description: "MÔ TẢ NGẮN HIỂN THỊ TRÊN KẾT QUẢ TÌM KIẾM GOOGLE. NÊN DƯỚI 160 KÝ TỰ.",
+  },
   "home.hero.title": {
     label: "TIÊU ĐỀ TRANG CHỦ",
     description: "TIÊU ĐỀ CHÍNH HIỂN THỊ Ở KHU VỰC HERO CỦA TRANG CHỦ.",
@@ -42,10 +62,6 @@ const settingsMeta: Record<string, { label: string; description: string }> = {
     label: "THỜI GIAN CHUYỂN CẢNH",
     description: "NHẬP SỐ GIÂY DÀNH CHO HIỆU ỨNG CHUYỂN ẢNH. MẶC ĐỊNH 1 GIÂY.",
   },
-  "seo.default_title": {
-    label: "TIÊU ĐỀ SEO MẶC ĐỊNH",
-    description: "TIÊU ĐỀ MẶC ĐỊNH DÙNG CHO SEO KHI CHƯA CẤU HÌNH RIÊNG CHO TỪNG TRANG.",
-  },
   "social.facebook_url": {
     label: "LINK FACEBOOK",
     description: "LIÊN KẾT FACEBOOK SẼ ĐỒNG BỘ Ở FOOTER, LIÊN HỆ VÀ SEO.",
@@ -61,6 +77,18 @@ const settingsMeta: Record<string, { label: string; description: string }> = {
   "social.email": {
     label: "EMAIL LIÊN HỆ",
     description: "EMAIL HỖ TRỢ SẼ ĐỒNG BỘ Ở FOOTER VÀ TRANG LIÊN HỆ.",
+  },
+  "zalo.webhook_url": {
+    label: "ZALO WEBHOOK URL",
+    description: "URL WEBHOOK ĐỂ GỬI THÔNG BÁO QUA ZALO OA KHI CÓ BÀI VIẾT MỚI.",
+  },
+  "zalo.group_id": {
+    label: "ZALO GROUP ID",
+    description: "ID NHÓM ZALO ĐỂ GỬI TIN NHẮN THÔNG BÁO TỰ ĐỘNG.",
+  },
+  "ads.google_adsense_id": {
+    label: "GOOGLE ADSENSE ID",
+    description: "ID ADSENSE (VD: ca-pub-XXXXXXXXXX) ĐỂ HIỂN THỊ QUẢNG CÁO GOOGLE TRÊN WEBSITE.",
   },
 };
 

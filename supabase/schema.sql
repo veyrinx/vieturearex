@@ -298,8 +298,8 @@ using (public.is_admin());
 
 insert into public.settings (key, value)
 values
-  ('seo.default_title', 'Arex'),
-  ('seo.default_description', 'Arex – Gaming community hub for Free Fire events, news and gallery'),
+  ('seo.default_title', 'Arex - Trang Tin Tức Cộng Đồng Free Fire'),
+  ('seo.default_description', 'Arex – Cổng thông tin cộng đồng Free Fire hàng đầu. Cập nhật nhanh nhất các sự kiện in-game, tin tức Esports chuyên sâu và các hoạt động cộng đồng nổi bật.'),
   ('home.hero.title', 'Arex'),
   ('home.background.desktop_urls', 'https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/697b5d2e34ac088f5b5a4427d57f6281.jpg'),
   ('home.background.mobile_urls', 'https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/0680c1792156b8a80095c669520f019a.jpg'),
@@ -307,7 +307,50 @@ values
   ('home.background.transition_seconds', '1'),
   ('home.background.transition_effect', 'fade'),
   ('social.email', 'admin@arex.tech'),
+  ('social.facebook_url', 'https://facebook.com'),
+  ('social.tiktok_url', 'https://tiktok.com'),
+  ('social.youtube_url', 'https://youtube.com'),
+  ('branding.site_name', 'Arex'),
+  ('branding.logo_light_url', 'https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035'),
+  ('branding.logo_dark_url', 'https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441'),
   ('news.categories', 'ESPORTS\nPATCH NOTE\nCỘNG ĐỒNG'),
   ('analytics.views', '0'),
   ('site.description', 'Arex – Cổng thông tin cộng đồng hàng đầu về sự kiện, tin tức và nội dung Garena Free Fire Việt Nam.')
 on conflict (key) do nothing;
+
+-- ============================================================
+-- SEED SUPER ADMIN ACCOUNT
+-- Email: admin@arex.tech | Password: Admin@Arex2026!
+-- Đổi mật khẩu ngay sau lần đăng nhập đầu tiên!
+-- ============================================================
+do $$
+declare
+  admin_uid uuid;
+begin
+  if not exists (select 1 from auth.users where email = 'admin@arex.tech') then
+    admin_uid := gen_random_uuid();
+
+    insert into auth.users (
+      id, instance_id, email, encrypted_password, email_confirmed_at,
+      created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+      is_super_admin, role, aud
+    ) values (
+      admin_uid,
+      '00000000-0000-0000-0000-000000000000',
+      'admin@arex.tech',
+      crypt('Admin@Arex2026!', gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"],"role":"super_admin"}',
+      '{"display_name":"Arex Admin"}',
+      false, 'authenticated', 'authenticated'
+    );
+
+    insert into auth.identities (
+      id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    ) values (
+      admin_uid, admin_uid,
+      jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech'),
+      'email', now(), now(), now()
+    );
+  end if;
+end $$;

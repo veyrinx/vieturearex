@@ -21,7 +21,10 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
   return (
     <div className="relative min-h-screen">
       <AutoReload />
-      <SiteNavbar />
+      <SiteNavbar
+        logoLight={settingsMap["branding.logo_light_url"]}
+        logoDark={settingsMap["branding.logo_dark_url"]}
+      />
       <PageTransition>
         <main className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-6">{children}</main>
       </PageTransition>

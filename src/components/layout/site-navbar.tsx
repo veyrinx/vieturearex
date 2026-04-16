@@ -20,10 +20,17 @@ import {
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants/site";
 
-const ICON_LIGHT = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
-const ICON_DARK = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441";
+const ICON_LIGHT_DEFAULT = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
+const ICON_DARK_DEFAULT = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441";
 
-export function SiteNavbar() {
+type SiteNavbarProps = {
+  logoLight?: string;
+  logoDark?: string;
+};
+
+export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
+  const iconLight = logoLight || ICON_LIGHT_DEFAULT;
+  const iconDark = logoDark || ICON_DARK_DEFAULT;
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
   const isHomePage = pathname === "/";
@@ -48,7 +55,7 @@ export function SiteNavbar() {
           {/* Light mode logo */}
           <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
             <Image
-              src={ICON_LIGHT}
+              src={iconLight}
               alt={siteConfig.shortName}
               width={40}
               height={40}
@@ -56,7 +63,7 @@ export function SiteNavbar() {
               className="block aspect-square object-cover drop-shadow-[0_8px_22px_rgba(15,23,42,0.18)] dark:hidden"
             />
             <Image
-              src={ICON_DARK}
+              src={iconDark}
               alt={siteConfig.shortName}
               width={40}
               height={40}

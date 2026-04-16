@@ -18,7 +18,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-function AdminSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function AdminSidebarContent({ onNavigate, logoUrl }: { onNavigate?: () => void; logoUrl?: string }) {
   const pathname = usePathname();
 
   return (
@@ -27,7 +27,7 @@ function AdminSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Image
-              src={siteConfig.sidebarIcon}
+              src={logoUrl || siteConfig.sidebarIcon}
               alt={siteConfig.shortName}
               width={28}
               height={28}
@@ -65,13 +65,17 @@ function AdminSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminSidebar() {
+type AdminSidebarProps = {
+  logoUrl?: string;
+};
+
+export function AdminSidebar({ logoUrl }: AdminSidebarProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <div className="hidden w-72 shrink-0 self-start md:sticky md:top-6 md:block">
-        <AdminSidebarContent />
+        <AdminSidebarContent logoUrl={logoUrl} />
       </div>
 
       <div className="md:hidden">
@@ -91,7 +95,7 @@ export function AdminSidebar() {
                 ĐIỀU HƯỚNG NHANH TỚI CÁC KHU VỰC QUẢN TRỊ.
               </SheetDescription>
             </SheetHeader>
-            <AdminSidebarContent onNavigate={() => setOpen(false)} />
+            <AdminSidebarContent logoUrl={logoUrl} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>
