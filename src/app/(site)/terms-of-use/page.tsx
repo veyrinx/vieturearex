@@ -302,7 +302,7 @@ export default function TermsOfUsePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 ['"Arex"', 'Tổ chức cộng đồng vận hành website. "Chúng tôi" trong tài liệu = Arex.'],
-                ['"Website"', "Toàn bộ trang tại miền sgmnetwork.vercel.app và các miền con liên quan."],
+                ['"Website"', "Toàn bộ trang tại miền arexnetwork.site và các miền con liên quan."],
                 ['"Người dùng"', "Bất kỳ cá nhân nào truy cập, sử dụng hoặc tương tác với Website."],
                 ['"Nội dung"', "Văn bản, hình ảnh, video, âm thanh và mọi tài liệu đăng trên Website."],
                 ['"Nội dung ND"', "Mọi nội dung do người dùng tự tạo và đăng tải (bình luận, hình ảnh...)."],
