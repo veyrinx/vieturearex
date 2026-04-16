@@ -17,5 +17,13 @@ export function SettingsAdminPanel() {
     return <LoadingSpinner className="py-10" label="ĐANG TẢI CÀI ĐẶT..." />;
   }
 
-  return <SettingsForm settings={settings} onSaved={refresh} />;
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-heading text-xl font-bold uppercase tracking-[0.08em] text-foreground">Cài Đặt</h1>
+        <p className="text-sm text-muted-foreground">Quản lý thương hiệu, SEO, trang chủ và tích hợp.</p>
+      </div>
+      <SettingsForm settings={settings} onSaved={refresh} />
+    </div>
+  );
 }
