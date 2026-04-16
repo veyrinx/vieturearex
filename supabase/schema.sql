@@ -311,6 +311,7 @@ values
   ('social.tiktok_url', 'https://tiktok.com'),
   ('social.youtube_url', 'https://youtube.com'),
   ('branding.site_name', 'Arex'),
+  ('branding.favicon_url', 'https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035'),
   ('branding.logo_light_url', 'https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035'),
   ('branding.logo_dark_url', 'https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441'),
   ('news.categories', 'ESPORTS\nPATCH NOTE\nCỘNG ĐỒNG'),

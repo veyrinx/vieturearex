@@ -23,6 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteTitle = settingsMap["seo.default_title"] || siteConfig.name;
   const siteDescription = settingsMap["seo.default_description"] || siteConfig.description;
   const logoLight = settingsMap["branding.logo_light_url"] || siteConfig.favicon;
+  const favicon = settingsMap["branding.favicon_url"] || logoLight;
 
   return {
     metadataBase: new URL(siteConfig.url),
@@ -89,9 +90,9 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [siteConfig.ogImage],
     },
     icons: {
-      icon: logoLight,
-      shortcut: logoLight,
-      apple: logoLight,
+      icon: favicon,
+      shortcut: favicon,
+      apple: favicon,
     },
     verification: {
       google: "vKpEfaaix3tyf3KNuLOD4z3LE4K1_5RnaU_lwqDOD9U",

@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import {
+  Eye, EyeOff, ShieldCheck, Palette, Search, Home, Share2,
+  Plug, User, Facebook, Youtube, Mail, Save, ImageIcon, Clock,
+  Sparkles, Globe,
+} from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,49 +22,122 @@ import {
   getSettingsFormInitialState,
 } from "@/lib/utils/site-settings";
 
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin",
-  admin: "Admin",
-  manager: "Manager",
-  support: "Support",
-  user: "User",
+const ROLE_LABELS: Record<string, { label: string; color: string }> = {
+  super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20" },
+  admin: { label: "Admin", color: "bg-orange-500/10 text-orange-500 border-orange-500/20" },
+  manager: { label: "Manager", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+  support: { label: "Support", color: "bg-green-500/10 text-green-500 border-green-500/20" },
+  user: { label: "User", color: "bg-muted text-muted-foreground border-border" },
 };
+
+const sliderEffects = [
+  { value: "fade", label: "Fade", desc: "Mờ dần mượt mà" },
+  { value: "zoom", label: "Zoom Cinematic", desc: "Phóng to nhẹ" },
+  { value: "slide", label: "Slide Smooth", desc: "Trượt ngang" },
+  { value: "drift", label: "Drift Parallax", desc: "Parallax 3D" },
+  { value: "cinematic", label: "Cinematic Blur", desc: "Mờ điện ảnh" },
+] as const;
 
 type SettingsFormProps = {
   settings: SiteSetting[];
   onSaved: () => Promise<void>;
 };
 
-const sliderEffectOptions = [
-  { value: "fade", label: "Fade" },
-  { value: "zoom", label: "Zoom Cinematic" },
-  { value: "slide", label: "Slide Smooth" },
-  { value: "drift", label: "Drift Parallax" },
-  { value: "cinematic", label: "Cinematic Blur" },
-] as const;
-
-function getImageSlots(value: string) {
-  const slots = value.split(/\r?\n/);
-  return Array.from({ length: 3 }, (_, i) => slots[i] ?? "");
+function getSlots(value: string) {
+  const s = value.split(/\r?\n/);
+  return Array.from({ length: 3 }, (_, i) => s[i] ?? "");
 }
 
-function FieldRow({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function SectionHeader({ icon: Icon, title, desc }: { icon: React.ElementType; title: string; desc?: string }) {
   return (
-    <div className="grid grid-cols-[1fr_2fr] items-start gap-4 py-3">
-      <div className="pt-2">
-        <Label className="text-sm font-semibold text-foreground">{label}</Label>
-        {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+    <div className="flex items-center gap-3 pb-4">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </div>
+      <div>
+        <p className="font-heading text-sm font-bold uppercase tracking-[0.1em] text-foreground">{title}</p>
+        {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, hint, children, icon: Icon }: {
+  label: string; hint?: string; children: React.ReactNode; icon?: React.ElementType;
+}) {
+  return (
+    <div className="grid grid-cols-[140px_1fr] items-start gap-4 py-3 sm:grid-cols-[180px_1fr]">
+      <div className="pt-2.5 flex items-center gap-1.5">
+        {Icon && <Icon className="size-3.5 shrink-0 text-muted-foreground" />}
+        <div>
+          <p className="text-xs font-semibold text-foreground">{label}</p>
+          {hint && <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{hint}</p>}
+        </div>
       </div>
       <div>{children}</div>
     </div>
   );
 }
 
-function SectionCard({ children }: { children: React.ReactNode }) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="glass-card divide-y divide-border rounded-2xl px-5">
+    <div className={`glass-card divide-y divide-border rounded-2xl px-5 ${className}`}>
       {children}
     </div>
+  );
+}
+
+function PasswordInput({ value, onChange, placeholder, show, onToggle }: {
+  value: string; onChange: (v: string) => void; placeholder: string;
+  show: boolean; onToggle: () => void;
+}) {
+  const strength = value.length === 0 ? 0 : value.length < 8 ? 1 : value.length < 12 ? 2 : 3;
+  const colors = ["", "bg-red-500", "bg-yellow-500", "bg-green-500"];
+  return (
+    <div className="space-y-1.5">
+      <div className="relative">
+        <Input
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="pr-10"
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {show ? <EyeOff size={15} /> : <Eye size={15} />}
+        </button>
+      </div>
+      {value.length > 0 && (
+        <div className="flex gap-1">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= strength ? colors[strength] : "bg-border"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SaveRow({ onSave, saving }: { onSave: () => void; saving: boolean }) {
+  return (
+    <div className="flex items-center justify-end gap-3 pt-2">
+      <Button type="button" size="sm" disabled={saving} onClick={onSave} className="gap-1.5 rounded-xl px-5">
+        <Save className="size-3.5" />
+        {saving ? "Đang lưu..." : "Lưu thay đổi"}
+      </Button>
+    </div>
+  );
+}
+
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z" />
+    </svg>
   );
 }
 
@@ -69,378 +145,402 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
   const [state, setState] = useState<Record<string, string>>(() => getSettingsFormInitialState(settings));
   const [saving, setSaving] = useState<string | null>(null);
 
-  // Profile state
   const [profile, setProfile] = useState<{ email: string; display_name: string; role: string } | null>(null);
   const [displayName, setDisplayName] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
+  const [savingPw, setSavingPw] = useState(false);
 
-  useEffect(() => {
-    setState(getSettingsFormInitialState(settings));
-  }, [settings]);
+  useEffect(() => { setState(getSettingsFormInitialState(settings)); }, [settings]);
 
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      const { data: row } = await supabase
-        .from("users")
-        .select("display_name, role")
-        .eq("id", data.user.id)
-        .maybeSingle() as { data: { display_name: string | null; role: string } | null };
-      const prof = {
-        email: data.user.email ?? "",
-        display_name: row?.display_name ?? "",
-        role: row?.role ?? "user",
-      };
-      setProfile(prof);
-      setDisplayName(prof.display_name);
+      type ProfileRow = { display_name: string | null; role: string };
+      const { data: row } = (await supabase.from("users").select("display_name, role").eq("id", data.user.id).maybeSingle()) as { data: ProfileRow | null; error: unknown };
+      const p = { email: data.user.email ?? "", display_name: row?.display_name ?? "", role: row?.role ?? "user" };
+      setProfile(p);
+      setDisplayName(p.display_name);
     });
   }, []);
 
-  const saveDisplayName = async () => {
+  const v = (key: string) => state[key] ?? defaultSiteSettingValues[key] ?? "";
+  const set = (key: string, value: string) => setState((p) => ({ ...p, [key]: value }));
+  const setSlot = (key: string, i: number, value: string) => setState((p) => {
+    const slots = getSlots(p[key] ?? "");
+    slots[i] = value;
+    return { ...p, [key]: slots.join("\n") };
+  });
+
+  const save = async (keys: string[], section: string) => {
+    setSaving(section);
+    const ok = await Promise.all(keys.map(async (k) => {
+      const r = await fetch("/api/admin/settings", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: k, value: v(k) }),
+      });
+      return r.ok;
+    }));
+    setSaving(null);
+    if (ok.every(Boolean)) { toast.success("Đã lưu."); await onSaved(); }
+    else toast.error("Lưu thất bại.");
+  };
+
+  const saveProfile = async () => {
     setSavingProfile(true);
-    const res = await fetch("/api/admin/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+    const r = await fetch("/api/admin/profile", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ display_name: displayName }),
     });
     setSavingProfile(false);
-    if (!res.ok) { toast.error("Lưu thất bại."); return; }
+    if (!r.ok) { toast.error("Lưu thất bại."); return; }
     setProfile((p) => p ? { ...p, display_name: displayName } : p);
-    toast.success("Đã cập nhật tên hiển thị.");
+    toast.success("Đã cập nhật.");
   };
 
-  const savePassword = async () => {
-    if (newPassword.length < 8) { toast.error("Mật khẩu tối thiểu 8 ký tự."); return; }
-    if (newPassword !== confirmPassword) { toast.error("Mật khẩu không khớp."); return; }
+  const savePw = async () => {
+    if (newPw.length < 8) { toast.error("Tối thiểu 8 ký tự."); return; }
+    if (newPw !== confirmPw) { toast.error("Mật khẩu không khớp."); return; }
     const supabase = createClient();
     if (!supabase) return;
-    setSavingPassword(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setSavingPassword(false);
-    if (error) { toast.error("Đổi mật khẩu thất bại: " + error.message); return; }
+    setSavingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setSavingPw(false);
+    if (error) { toast.error(error.message); return; }
     toast.success("Đổi mật khẩu thành công.");
-    setNewPassword("");
-    setConfirmPassword("");
+    setNewPw(""); setConfirmPw("");
   };
 
-  const set = (key: string, value: string) =>
-    setState((prev) => ({ ...prev, [key]: value }));
-
-  const setSlot = (key: string, index: number, value: string) => {
-    setState((prev) => {
-      const slots = getImageSlots(prev[key] ?? "");
-      slots[index] = value;
-      return { ...prev, [key]: slots.join("\n") };
-    });
-  };
-
-  const val = (key: string) => state[key] ?? defaultSiteSettingValues[key] ?? "";
-
-  const saveKeys = async (keys: string[], section: string) => {
-    setSaving(section);
-    const results = await Promise.all(
-      keys.map(async (key) => {
-        const res = await fetch("/api/admin/settings", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key, value: val(key) }),
-        });
-        return res.ok;
-      })
-    );
-    setSaving(null);
-    if (results.every(Boolean)) {
-      toast.success("Đã lưu cài đặt.");
-      await onSaved();
-    } else {
-      toast.error("Lưu thất bại, thử lại.");
-    }
-  };
-
-  const SaveButton = ({ keys, section }: { keys: string[]; section: string }) => (
-    <div className="flex justify-end pt-4">
-      <Button
-        type="button"
-        size="sm"
-        disabled={saving === section}
-        onClick={() => saveKeys(keys, section)}
-        className="rounded-xl px-6"
-      >
-        {saving === section ? "Đang lưu..." : "Lưu"}
-      </Button>
-    </div>
-  );
+  const roleInfo = profile?.role ? ROLE_LABELS[profile.role] : null;
+  const seoTitleLen = v("seo.default_title").length;
+  const seoDescLen = v("seo.default_description").length;
 
   return (
     <Tabs defaultValue="branding" className="space-y-5">
-      <TabsList className="flex h-auto flex-wrap gap-1 rounded-xl bg-muted p-1">
-        <TabsTrigger value="branding" className="rounded-lg text-xs font-semibold uppercase tracking-wide">Thương Hiệu</TabsTrigger>
-        <TabsTrigger value="seo" className="rounded-lg text-xs font-semibold uppercase tracking-wide">SEO</TabsTrigger>
-        <TabsTrigger value="home" className="rounded-lg text-xs font-semibold uppercase tracking-wide">Trang Chủ</TabsTrigger>
-        <TabsTrigger value="social" className="rounded-lg text-xs font-semibold uppercase tracking-wide">Mạng Xã Hội</TabsTrigger>
-        <TabsTrigger value="integrations" className="rounded-lg text-xs font-semibold uppercase tracking-wide">Tích Hợp</TabsTrigger>
-        <TabsTrigger value="account" className="rounded-lg text-xs font-semibold uppercase tracking-wide">Tài Khoản</TabsTrigger>
+      {/* ── Tab Bar ── */}
+      <TabsList className="flex h-auto w-full flex-wrap gap-1 rounded-2xl bg-muted/60 p-1.5">
+        {[
+          { value: "branding", icon: Palette, label: "Thương Hiệu" },
+          { value: "seo", icon: Search, label: "SEO" },
+          { value: "home", icon: Home, label: "Trang Chủ" },
+          { value: "social", icon: Share2, label: "Mạng Xã Hội" },
+          { value: "integrations", icon: Plug, label: "Tích Hợp" },
+          { value: "account", icon: User, label: "Tài Khoản" },
+        ].map(({ value, icon: Icon, label }) => (
+          <TabsTrigger
+            key={value}
+            value={value}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all data-[state=active]:shadow-sm sm:flex-none"
+          >
+            <Icon className="size-3.5" />
+            <span className="hidden sm:inline">{label}</span>
+            <span className="sm:hidden">{label.split(" ")[0]}</span>
+          </TabsTrigger>
+        ))}
       </TabsList>
 
-      {/* ─── THƯƠNG HIỆU ─── */}
+      {/* ── THƯƠNG HIỆU ── */}
       <TabsContent value="branding" className="space-y-4">
-        <SectionCard>
-          <FieldRow label="Tên Website" hint="Hiển thị trên navbar và tab trình duyệt">
-            <Input value={val("branding.site_name")} onChange={(e) => set("branding.site_name", e.target.value)} placeholder="Arex" />
-          </FieldRow>
-
-          <FieldRow label="Logo — Sáng" hint="PNG nền trong, dùng cho Light Mode">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Palette} title="Thương Hiệu" desc="Tên và logo hiển thị trên toàn bộ website" />
+          </div>
+          <Field label="Tên website" hint="Navbar & tab trình duyệt" icon={Globe}>
+            <Input value={v("branding.site_name")} onChange={(e) => set("branding.site_name", e.target.value)} placeholder="Arex" />
+          </Field>
+          <Field label="Favicon" hint="Icon tab trình duyệt · 32×32px ICO/PNG">
             <div className="space-y-2">
-              <Input value={val("branding.logo_light_url")} onChange={(e) => set("branding.logo_light_url", e.target.value)} placeholder="https://..." />
-              {val("branding.logo_light_url") && (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-white p-2">
-                  <Image src={val("branding.logo_light_url")} alt="logo light preview" width={40} height={40} className="rounded object-contain" unoptimized />
-                  <span className="text-xs text-muted-foreground">Preview Light</span>
+              <Input value={v("branding.favicon_url")} onChange={(e) => set("branding.favicon_url", e.target.value)} placeholder="https://..." />
+              {v("branding.favicon_url") && (
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2">
+                  <Image src={v("branding.favicon_url")} alt="" width={20} height={20} className="rounded object-contain" unoptimized />
+                  <span className="text-xs text-muted-foreground">Tab preview</span>
                 </div>
               )}
             </div>
-          </FieldRow>
-
-          <FieldRow label="Logo — Tối" hint="PNG nền trong, màu sáng, dùng cho Dark Mode">
+          </Field>
+          <Field label="Logo sáng" hint="Light mode · PNG nền trong">
             <div className="space-y-2">
-              <Input value={val("branding.logo_dark_url")} onChange={(e) => set("branding.logo_dark_url", e.target.value)} placeholder="https://..." />
-              {val("branding.logo_dark_url") && (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-zinc-900 p-2">
-                  <Image src={val("branding.logo_dark_url")} alt="logo dark preview" width={40} height={40} className="rounded object-contain" unoptimized />
-                  <span className="text-xs text-zinc-400">Preview Dark</span>
+              <Input value={v("branding.logo_light_url")} onChange={(e) => set("branding.logo_light_url", e.target.value)} placeholder="https://..." />
+              {v("branding.logo_light_url") && (
+                <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 border border-gray-100">
+                  <Image src={v("branding.logo_light_url")} alt="" width={36} height={36} className="rounded object-contain" unoptimized />
+                  <span className="text-xs text-gray-400">Light preview</span>
                 </div>
               )}
             </div>
-          </FieldRow>
-        </SectionCard>
-        <SaveButton keys={["branding.site_name", "branding.logo_light_url", "branding.logo_dark_url"]} section="branding" />
+          </Field>
+          <Field label="Logo tối" hint="Dark mode · màu sáng">
+            <div className="space-y-2">
+              <Input value={v("branding.logo_dark_url")} onChange={(e) => set("branding.logo_dark_url", e.target.value)} placeholder="https://..." />
+              {v("branding.logo_dark_url") && (
+                <div className="flex items-center gap-3 rounded-xl bg-zinc-900 px-3 py-2 border border-zinc-700">
+                  <Image src={v("branding.logo_dark_url")} alt="" width={36} height={36} className="rounded object-contain" unoptimized />
+                  <span className="text-xs text-zinc-400">Dark preview</span>
+                </div>
+              )}
+            </div>
+          </Field>
+        </Card>
+        <SaveRow onSave={() => save(["branding.site_name", "branding.favicon_url", "branding.logo_light_url", "branding.logo_dark_url"], "branding")} saving={saving === "branding"} />
       </TabsContent>
 
-      {/* ─── SEO ─── */}
+      {/* ── SEO ── */}
       <TabsContent value="seo" className="space-y-4">
-        <SectionCard>
-          <FieldRow label="Tiêu đề" hint="Dưới 60 ký tự · Hiển thị trên Google">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Search} title="SEO" desc="Tối ưu xuất hiện trên Google và mạng xã hội" />
+          </div>
+          <Field label="Tiêu đề" hint={`${seoTitleLen}/60 ký tự`} icon={Sparkles}>
             <div className="space-y-1">
-              <Input value={val("seo.default_title")} onChange={(e) => set("seo.default_title", e.target.value)} placeholder="Arex - Trang Tin Tức..." />
-              <p className="text-right text-xs text-muted-foreground">{val("seo.default_title").length}/60</p>
+              <Input value={v("seo.default_title")} onChange={(e) => set("seo.default_title", e.target.value)} placeholder="Arex - Trang Tin Tức..." />
+              <div className="h-1 rounded-full bg-border overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${seoTitleLen > 60 ? "bg-red-500" : seoTitleLen > 45 ? "bg-yellow-500" : "bg-primary"}`}
+                  style={{ width: `${Math.min(100, (seoTitleLen / 60) * 100)}%` }} />
+              </div>
             </div>
-          </FieldRow>
-
-          <FieldRow label="Mô tả" hint="Dưới 160 ký tự · Snippet trên Google">
+          </Field>
+          <Field label="Mô tả" hint={`${seoDescLen}/160 ký tự`}>
             <div className="space-y-1">
-              <Textarea
-                value={val("seo.default_description")}
-                onChange={(e) => set("seo.default_description", e.target.value)}
-                placeholder="Mô tả ngắn về website..."
-                rows={3}
-                className="resize-none"
-              />
-              <p className="text-right text-xs text-muted-foreground">{val("seo.default_description").length}/160</p>
+              <Textarea value={v("seo.default_description")} onChange={(e) => set("seo.default_description", e.target.value)}
+                placeholder="Mô tả ngắn về website..." rows={3} className="resize-none" />
+              <div className="h-1 rounded-full bg-border overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${seoDescLen > 160 ? "bg-red-500" : seoDescLen > 130 ? "bg-yellow-500" : "bg-primary"}`}
+                  style={{ width: `${Math.min(100, (seoDescLen / 160) * 100)}%` }} />
+              </div>
             </div>
-          </FieldRow>
-        </SectionCard>
+          </Field>
+        </Card>
 
-        {/* Google Search Preview */}
-        <div className="rounded-2xl border border-border bg-card p-4 space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Xem trước Google</p>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">{val("seo.default_title") || "Tiêu đề website"}</p>
-          <p className="text-xs text-green-700 dark:text-green-500">arex.tech</p>
-          <p className="text-xs text-muted-foreground line-clamp-2">{val("seo.default_description") || "Mô tả website sẽ hiển thị ở đây..."}</p>
+        {/* Google preview */}
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <Globe className="size-3.5" /> Xem trước kết quả Google
+          </p>
+          <div className="rounded-xl border border-border bg-background p-4 space-y-1 font-sans">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">
+              {v("seo.default_title") || "Tiêu đề website"}
+            </p>
+            <p className="text-xs text-green-700 dark:text-green-500">
+              {v("branding.site_name") ? `https://${v("branding.site_name").toLowerCase().replace(/\s/g, "")}.tech` : "https://arex.tech"}
+            </p>
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {v("seo.default_description") || "Mô tả website sẽ xuất hiện ở đây khi tìm kiếm trên Google..."}
+            </p>
+          </div>
         </div>
 
-        <SaveButton keys={["seo.default_title", "seo.default_description"]} section="seo" />
+        <SaveRow onSave={() => save(["seo.default_title", "seo.default_description"], "seo")} saving={saving === "seo"} />
       </TabsContent>
 
-      {/* ─── TRANG CHỦ ─── */}
+      {/* ── TRANG CHỦ ── */}
       <TabsContent value="home" className="space-y-4">
-        <SectionCard>
-          <FieldRow label="Tiêu đề Hero">
-            <Input value={val("home.hero.title")} onChange={(e) => set("home.hero.title", e.target.value)} placeholder="Arex" />
-          </FieldRow>
-
-          <FieldRow label="Hiệu ứng Slider">
-            <Select value={val("home.background.transition_effect")} onValueChange={(v) => set("home.background.transition_effect", v ?? "")}>
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Home} title="Trang Chủ" desc="Hero section và slider ảnh nền" />
+          </div>
+          <Field label="Tiêu đề Hero" icon={Sparkles}>
+            <Input value={v("home.hero.title")} onChange={(e) => set("home.hero.title", e.target.value)} placeholder="Arex" />
+          </Field>
+          <Field label="Hiệu ứng">
+            <Select value={v("home.background.transition_effect")} onValueChange={(val) => set("home.background.transition_effect", val ?? "fade")}>
               <SelectTrigger>
                 <SelectValue placeholder="Chọn hiệu ứng" />
               </SelectTrigger>
               <SelectContent>
-                {sliderEffectOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                {sliderEffects.map((e) => (
+                  <SelectItem key={e.value} value={e.value}>
+                    <span className="font-medium">{e.label}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{e.desc}</span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </FieldRow>
-
-          <FieldRow label="Thời gian chờ (giây)" hint="Mặc định 5s">
-            <Input type="number" min="2" max="30" step="0.5" value={val("home.background.interval_seconds")} onChange={(e) => set("home.background.interval_seconds", e.target.value)} />
-          </FieldRow>
-
-          <FieldRow label="Thời gian chuyển (giây)" hint="Mặc định 1s">
-            <Input type="number" min="0.4" max="5" step="0.1" value={val("home.background.transition_seconds")} onChange={(e) => set("home.background.transition_seconds", e.target.value)} />
-          </FieldRow>
-        </SectionCard>
-
-        <div className="glass-card rounded-2xl p-5 space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Ảnh Slider Desktop</p>
-          {getImageSlots(val("home.background.desktop_urls")).map((slot, i) => (
-            <div key={`desktop-${i}`} className="flex items-center gap-3">
-              <span className="w-5 shrink-0 text-center text-xs font-bold text-primary">{i + 1}</span>
-              <Input value={slot} onChange={(e) => setSlot("home.background.desktop_urls", i, e.target.value)} placeholder={`URL ảnh desktop ${i + 1}`} />
+          </Field>
+          <Field label="Thời gian chờ" hint="giây" icon={Clock}>
+            <div className="flex items-center gap-2">
+              <Input type="number" min="2" max="30" step="0.5" value={v("home.background.interval_seconds")} onChange={(e) => set("home.background.interval_seconds", e.target.value)} className="max-w-28" />
+              <span className="text-xs text-muted-foreground">giây · mặc định 5s</span>
             </div>
-          ))}
-          <Separator />
-          <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Ảnh Slider Mobile</p>
-          {getImageSlots(val("home.background.mobile_urls")).map((slot, i) => (
-            <div key={`mobile-${i}`} className="flex items-center gap-3">
-              <span className="w-5 shrink-0 text-center text-xs font-bold text-primary">{i + 1}</span>
-              <Input value={slot} onChange={(e) => setSlot("home.background.mobile_urls", i, e.target.value)} placeholder={`URL ảnh mobile ${i + 1}`} />
+          </Field>
+          <Field label="Thời gian chuyển" hint="giây" icon={Clock}>
+            <div className="flex items-center gap-2">
+              <Input type="number" min="0.4" max="5" step="0.1" value={v("home.background.transition_seconds")} onChange={(e) => set("home.background.transition_seconds", e.target.value)} className="max-w-28" />
+              <span className="text-xs text-muted-foreground">giây · mặc định 1s</span>
             </div>
-          ))}
+          </Field>
+        </Card>
+
+        {/* Slider images */}
+        <div className="glass-card rounded-2xl p-5 space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Desktop */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="size-4 text-primary" />
+                <p className="text-xs font-bold uppercase tracking-widest text-foreground">Desktop</p>
+                <span className="text-[10px] text-muted-foreground">(16:9 · 1920×1080)</span>
+              </div>
+              {getSlots(v("home.background.desktop_urls")).map((slot, i) => (
+                <div key={`d${i}`} className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
+                    <Input value={slot} onChange={(e) => setSlot("home.background.desktop_urls", i, e.target.value)} placeholder={`Ảnh ${i + 1}…`} className="text-xs" />
+                  </div>
+                  {slot && (
+                    <div className="relative ml-7 aspect-video w-full overflow-hidden rounded-lg border border-border">
+                      <Image src={slot} alt="" fill className="object-cover" unoptimized />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Mobile */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="size-4 text-primary" />
+                <p className="text-xs font-bold uppercase tracking-widest text-foreground">Mobile</p>
+                <span className="text-[10px] text-muted-foreground">(9:16 · 720×1280)</span>
+              </div>
+              {getSlots(v("home.background.mobile_urls")).map((slot, i) => (
+                <div key={`m${i}`} className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
+                    <Input value={slot} onChange={(e) => setSlot("home.background.mobile_urls", i, e.target.value)} placeholder={`Ảnh ${i + 1}…`} className="text-xs" />
+                  </div>
+                  {slot && (
+                    <div className="relative ml-7 aspect-[9/16] w-16 overflow-hidden rounded-lg border border-border">
+                      <Image src={slot} alt="" fill className="object-cover" unoptimized />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <SaveButton
-          keys={["home.hero.title", "home.background.transition_effect", "home.background.interval_seconds", "home.background.transition_seconds", "home.background.desktop_urls", "home.background.mobile_urls"]}
-          section="home"
+        <SaveRow
+          onSave={() => save(["home.hero.title", "home.background.transition_effect", "home.background.interval_seconds", "home.background.transition_seconds", "home.background.desktop_urls", "home.background.mobile_urls"], "home")}
+          saving={saving === "home"}
         />
       </TabsContent>
 
-      {/* ─── MẠNG XÃ HỘI ─── */}
+      {/* ── MẠNG XÃ HỘI ── */}
       <TabsContent value="social" className="space-y-4">
-        <SectionCard>
-          <FieldRow label="Facebook">
-            <Input value={val("social.facebook_url")} onChange={(e) => set("social.facebook_url", e.target.value)} placeholder="https://facebook.com/..." />
-          </FieldRow>
-          <FieldRow label="TikTok">
-            <Input value={val("social.tiktok_url")} onChange={(e) => set("social.tiktok_url", e.target.value)} placeholder="https://tiktok.com/@..." />
-          </FieldRow>
-          <FieldRow label="YouTube">
-            <Input value={val("social.youtube_url")} onChange={(e) => set("social.youtube_url", e.target.value)} placeholder="https://youtube.com/@..." />
-          </FieldRow>
-          <FieldRow label="Email liên hệ">
-            <Input type="email" value={val("social.email")} onChange={(e) => set("social.email", e.target.value)} placeholder="admin@arex.tech" />
-          </FieldRow>
-        </SectionCard>
-        <SaveButton keys={["social.facebook_url", "social.tiktok_url", "social.youtube_url", "social.email"]} section="social" />
-      </TabsContent>
-
-      {/* ─── TÍCH HỢP ─── */}
-      <TabsContent value="integrations" className="space-y-4">
-        <SectionCard>
-          <FieldRow label="Zalo Webhook URL" hint="Thông báo bài viết mới qua Zalo OA">
-            <Input value={val("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://..." />
-          </FieldRow>
-          <FieldRow label="Zalo Group ID" hint="ID nhóm nhận thông báo tự động">
-            <Input value={val("zalo.group_id")} onChange={(e) => set("zalo.group_id", e.target.value)} placeholder="0123456789" />
-          </FieldRow>
-          <FieldRow label="Google AdSense ID" hint="Hiển thị quảng cáo Google trên website">
-            <Input value={val("ads.google_adsense_id")} onChange={(e) => set("ads.google_adsense_id", e.target.value)} placeholder="ca-pub-XXXXXXXXXX" />
-          </FieldRow>
-        </SectionCard>
-        <SaveButton keys={["zalo.webhook_url", "zalo.group_id", "ads.google_adsense_id"]} section="integrations" />
-      </TabsContent>
-
-      {/* ─── TÀI KHOẢN ─── */}
-      <TabsContent value="account" className="space-y-4">
-        {/* Thông tin */}
-        <div className="glass-card rounded-2xl p-5 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <ShieldCheck className="size-6" />
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Share2} title="Mạng Xã Hội" desc="Liên kết đồng bộ footer và trang liên hệ" />
+          </div>
+          <Field label="Facebook" icon={Facebook}>
+            <Input value={v("social.facebook_url")} onChange={(e) => set("social.facebook_url", e.target.value)} placeholder="https://facebook.com/..." />
+          </Field>
+          <Field label="TikTok">
+            <div className="flex items-center gap-2">
+              <TikTokIcon className="size-3.5 shrink-0 text-muted-foreground" />
+              <Input value={v("social.tiktok_url")} onChange={(e) => set("social.tiktok_url", e.target.value)} placeholder="https://tiktok.com/@..." />
             </div>
-            <div>
-              <p className="font-semibold text-foreground">{profile?.display_name || profile?.email || "..."}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-xs text-muted-foreground">{profile?.email}</p>
-                {profile?.role && (
-                  <Badge variant="secondary" className="text-[10px] uppercase tracking-wider px-1.5 py-0">
-                    {ROLE_LABELS[profile.role] ?? profile.role}
-                  </Badge>
-                )}
-              </div>
+          </Field>
+          <Field label="YouTube" icon={Youtube}>
+            <Input value={v("social.youtube_url")} onChange={(e) => set("social.youtube_url", e.target.value)} placeholder="https://youtube.com/@..." />
+          </Field>
+          <Field label="Email" icon={Mail}>
+            <Input type="email" value={v("social.email")} onChange={(e) => set("social.email", e.target.value)} placeholder="admin@arex.tech" />
+          </Field>
+        </Card>
+        <SaveRow onSave={() => save(["social.facebook_url", "social.tiktok_url", "social.youtube_url", "social.email"], "social")} saving={saving === "social"} />
+      </TabsContent>
+
+      {/* ── TÍCH HỢP ── */}
+      <TabsContent value="integrations" className="space-y-4">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Plug} title="Tích Hợp" desc="Kết nối dịch vụ bên ngoài" />
+          </div>
+          <Field label="Zalo Webhook" hint="Thông báo bài mới qua OA">
+            <Input value={v("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://..." />
+          </Field>
+          <Field label="Zalo Group ID" hint="ID nhóm nhận thông báo">
+            <Input value={v("zalo.group_id")} onChange={(e) => set("zalo.group_id", e.target.value)} placeholder="0123456789" />
+          </Field>
+          <Field label="AdSense ID" hint="ca-pub-XXXXXXXXXX">
+            <Input value={v("ads.google_adsense_id")} onChange={(e) => set("ads.google_adsense_id", e.target.value)} placeholder="ca-pub-XXXXXXXXXX" />
+          </Field>
+        </Card>
+        <SaveRow onSave={() => save(["zalo.webhook_url", "zalo.group_id", "ads.google_adsense_id"], "integrations")} saving={saving === "integrations"} />
+      </TabsContent>
+
+      {/* ── TÀI KHOẢN ── */}
+      <TabsContent value="account" className="space-y-4">
+        {/* Profile card */}
+        <div className="glass-card rounded-2xl p-5 space-y-4">
+          <SectionHeader icon={User} title="Hồ Sơ" desc="Thông tin tài khoản quản trị" />
+          <Separator />
+
+          {/* Avatar row */}
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 text-primary">
+              <ShieldCheck className="size-7" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-heading text-base font-bold text-foreground">
+                {profile?.display_name || profile?.email || "Đang tải..."}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">{profile?.email}</p>
+              {roleInfo && (
+                <span className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${roleInfo.color}`}>
+                  {roleInfo.label}
+                </span>
+              )}
             </div>
           </div>
 
           <Separator />
 
-          <FieldRow label="Tên hiển thị" hint="Tên xuất hiện trong giao diện quản trị">
+          <Field label="Tên hiển thị" hint="Tên trong giao diện admin">
             <div className="flex gap-2">
-              <Input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Nhập tên hiển thị..."
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={savingProfile}
-                onClick={saveDisplayName}
-                className="shrink-0 rounded-xl"
-              >
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Nhập tên..." />
+              <Button type="button" size="sm" disabled={savingProfile} onClick={saveProfile} className="shrink-0 rounded-xl gap-1.5">
+                <Save className="size-3.5" />
                 {savingProfile ? "..." : "Lưu"}
               </Button>
             </div>
-          </FieldRow>
+          </Field>
 
-          <FieldRow label="Email" hint="Email đăng nhập, không thể thay đổi">
-            <Input value={profile?.email ?? ""} disabled className="opacity-60 cursor-not-allowed" />
-          </FieldRow>
+          <Field label="Email" hint="Không thể thay đổi">
+            <Input value={profile?.email ?? ""} disabled className="cursor-not-allowed opacity-50" />
+          </Field>
         </div>
 
-        {/* Đổi mật khẩu */}
+        {/* Password card */}
         <div className="glass-card rounded-2xl p-5 space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Đổi Mật Khẩu</p>
-          <FieldRow label="Mật khẩu mới" hint="Tối thiểu 8 ký tự">
-            <div className="relative">
-              <Input
-                type={showNew ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Nhập mật khẩu mới..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNew((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+          <SectionHeader icon={ShieldCheck} title="Đổi Mật Khẩu" desc="Tối thiểu 8 ký tự, nên dùng ký tự đặc biệt" />
+          <Separator />
+
+          <Field label="Mật khẩu mới">
+            <PasswordInput value={newPw} onChange={setNewPw} placeholder="Nhập mật khẩu mới..." show={showNew} onToggle={() => setShowNew((v) => !v)} />
+          </Field>
+
+          <Field label="Xác nhận">
+            <div className="space-y-1.5">
+              <PasswordInput value={confirmPw} onChange={setConfirmPw} placeholder="Nhập lại mật khẩu..." show={showConfirm} onToggle={() => setShowConfirm((v) => !v)} />
+              {confirmPw.length > 0 && (
+                <p className={`text-[11px] font-medium ${newPw === confirmPw ? "text-green-500" : "text-red-500"}`}>
+                  {newPw === confirmPw ? "✓ Mật khẩu khớp" : "✗ Mật khẩu không khớp"}
+                </p>
+              )}
             </div>
-          </FieldRow>
-          <FieldRow label="Xác nhận mật khẩu">
-            <div className="relative">
-              <Input
-                type={showConfirm ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới..."
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </FieldRow>
+          </Field>
+
           <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              disabled={savingPassword || !newPassword || !confirmPassword}
-              onClick={savePassword}
-              className="rounded-xl px-6"
-            >
-              {savingPassword ? "Đang đổi..." : "Đổi mật khẩu"}
+            <Button type="button" size="sm" disabled={savingPw || !newPw || !confirmPw || newPw !== confirmPw}
+              onClick={savePw} className="gap-1.5 rounded-xl px-5">
+              <ShieldCheck className="size-3.5" />
+              {savingPw ? "Đang đổi..." : "Đổi mật khẩu"}
             </Button>
           </div>
         </div>

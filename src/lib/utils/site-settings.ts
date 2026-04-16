@@ -4,6 +4,7 @@ import { siteConfig } from "@/lib/constants/site";
 export type HeroSliderEffect = "fade" | "zoom" | "slide" | "drift" | "cinematic";
 export const settingsFormFieldOrder = [
   "branding.site_name",
+  "branding.favicon_url",
   "branding.logo_light_url",
   "branding.logo_dark_url",
   "seo.default_title",
@@ -36,6 +37,7 @@ const adminSettingsApiKeySet = new Set<string>(adminSettingsApiKeys);
 
 export const defaultSiteSettingValues: Record<string, string> = {
   "branding.site_name": siteConfig.shortName,
+  "branding.favicon_url": siteConfig.favicon,
   "branding.logo_light_url": siteConfig.sidebarIcon,
   "branding.logo_dark_url": siteConfig.favicon,
   "seo.default_title": siteConfig.name,
