@@ -3,18 +3,18 @@ export const siteConfig = {
   shortName: "Arex",
   description:
     "Arex – Cổng thông tin cộng đồng Free Fire hàng đầu. Cập nhật nhanh nhất các sự kiện in-game, tin tức Esports chuyên sâu và các hoạt động cộng đồng nổi bật. Trang độc lập, khách quan, được vận hành và phát triển bởi đội ngũ Arex.",
-  url: "https://sgmnetwork.vercel.app",
-  productionUrl: "https://sgmnetwork.vercel.app",
+  url: "https://arexnetwork.site",
+  productionUrl: "https://arexnetwork.site",
   ogImage: "/og-image.png",
   favicon: "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035",
   sidebarIcon: "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035",
   links: {
-    community: "https://zalo.me/g/pqlkhq011",
-    facebook: "https://facebook.com",
-    tiktok: "https://tiktok.com",
+    community: "https://zalo.me/g/ngjnze275",
+    facebook: "https://facebook.com/share/1CT8XYU2oF/?mibexitid=wwXlfr",
+    tiktok: "https://tiktok.com/vieturetechnologycenter",
     youtube: "https://youtube.com",
   },
-  contactEmail: "admin@arex.tech",
+  contactEmail: "admin@vieture.tech",
 } as const;
 
 export const navItems = [
