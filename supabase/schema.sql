@@ -379,28 +379,40 @@ begin
       null, null, '', '', null, '', 0, null, '', null
     );
 
-    -- Tương thích cả Supabase cũ và mới (có/không có cột provider_id)
+    -- Tự động detect kiểu cột id (uuid hoặc text) và provider_id
+    declare
+      id_col_type text;
+      has_provider_id boolean;
+      identity_data_val jsonb;
     begin
-      insert into auth.identities (
-        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
-      ) values (
-        gen_random_uuid()::text,
-        admin_uid,
-        jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech'),
-        'email',
-        'admin@arex.tech',
-        now(), now(), now()
-      );
-    exception when undefined_column then
-      insert into auth.identities (
-        id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
-      ) values (
-        admin_uid,
-        admin_uid,
-        jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech'),
-        'email',
-        now(), now(), now()
-      );
+      identity_data_val := jsonb_build_object('sub', admin_uid::text, 'email', 'admin@arex.tech');
+
+      select data_type into id_col_type
+      from information_schema.columns
+      where table_schema = 'auth' and table_name = 'identities' and column_name = 'id';
+
+      select exists (
+        select 1 from information_schema.columns
+        where table_schema = 'auth' and table_name = 'identities' and column_name = 'provider_id'
+      ) into has_provider_id;
+
+      if id_col_type in ('text', 'character varying') then
+        if has_provider_id then
+          execute 'insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) values ($1, $2, $3, $4, $5, now(), now(), now())'
+            using gen_random_uuid()::text, admin_uid, identity_data_val, 'email', 'admin@arex.tech';
+        else
+          execute 'insert into auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at) values ($1, $2, $3, $4, now(), now(), now())'
+            using gen_random_uuid()::text, admin_uid, identity_data_val, 'email';
+        end if;
+      else
+        if has_provider_id then
+          execute 'insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) values ($1, $2, $3, $4, $5, now(), now(), now())'
+            using gen_random_uuid(), admin_uid, identity_data_val, 'email', 'admin@arex.tech';
+        else
+          execute 'insert into auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at) values ($1, $2, $3, $4, now(), now(), now())'
+            using gen_random_uuid(), admin_uid, identity_data_val, 'email';
+        end if;
+      end if;
     end;
   end if;
 end $$;
