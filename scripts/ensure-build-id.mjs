@@ -1,17 +1,17 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
-const nextDir = join(process.cwd(), ".next");
-const buildIdPath = join(nextDir, "BUILD_ID");
-
-if (!existsSync(nextDir)) {
-  mkdirSync(nextDir, { recursive: true });
-}
-
-if (!existsSync(buildIdPath)) {
-  const buildId = `veltrix-${Date.now().toString(36)}`;
-  writeFileSync(buildIdPath, `${buildId}\n`, "utf8");
-  console.log(`[ensure-build-id] Created missing BUILD_ID: ${buildId}`);
-} else {
-  console.log("[ensure-build-id] BUILD_ID already present.");
+try {
+  const buildIdPath = join(process.cwd(), '.next', 'BUILD_ID');
+  const buildId = readFileSync(buildIdPath, 'utf-8').trim();
+  
+  if (!buildId) {
+    console.error('❌ BUILD_ID is empty');
+    process.exit(1);
+  }
+  
+  console.log('✅ BUILD_ID verified:', buildId);
+} catch (error) {
+  console.error('❌ Error verifying BUILD_ID:', error.message);
+  process.exit(1);
 }

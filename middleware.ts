@@ -76,13 +76,17 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAdminPath) {
-    const { data: profile } = await supabase
+    type UserProfile = { 
+      id: string;
+      role: string | null;
+    };
+    const { data: profile, error } = await supabase
       .from("users")
       .select("id, role")
       .eq("id", user.id)
-      .maybeSingle() as { data: { id: string; role: string | null } | null; error: unknown };
+      .maybeSingle<UserProfile>();
 
-    if (!profile || !profile.role) {
+    if (error || !profile || !profile.role) {
       await supabase.auth.signOut();
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("error", "google_not_allowed");
@@ -90,7 +94,7 @@ export async function middleware(request: NextRequest) {
     }
 
     const adminRoles = ["super_admin", "admin", "manager", "support"];
-    if (!profile.role || !adminRoles.includes(profile.role)) {
+    if (!adminRoles.includes(profile.role)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
