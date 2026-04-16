@@ -22,5 +22,5 @@ export function buildEmbedUrl(youtubeUrl: string): string {
   const id = extractYouTubeId(youtubeUrl);
   // youtube-nocookie.com = privacy-enhanced, ít tracking, load nhanh hơn
   // vq=hd1080 = force 1080p, enablejsapi = cho phép postMessage control
-  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080&origin=${encodeURIComponent("https://sgmnetwork.vercel.app")}`;
+  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080&origin=${encodeURIComponent("https://arexnetwork.site")}`;
 }
