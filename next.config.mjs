@@ -52,7 +52,8 @@ const nextConfig = {
       "'unsafe-inline'",
       "https://www.googletagmanager.com",
       "https://www.google-analytics.com",
-      ...(isDevelopment ? ["'unsafe-eval'", "https://va.vercel-scripts.com"] : []),
+      "https://va.vercel-scripts.com",
+      ...(isDevelopment ? ["'unsafe-eval'"] : []),
     ].join(" ");
 
     const connectSrc = [
@@ -64,7 +65,7 @@ const nextConfig = {
       "https://www.google-analytics.com",
       "https://region1.google-analytics.com",
       "https://vitals.vercel-insights.com",
-      ...(isDevelopment ? ["https://va.vercel-scripts.com"] : []),
+      "https://va.vercel-scripts.com",
     ].join(" ");
 
     const contentSecurityPolicy = [
