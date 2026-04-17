@@ -18,13 +18,14 @@ import { getStreams } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
 import {
   buildSettingsMap,
+  resolveCommunityStats,
   resolveHeroSliderSettings,
   resolveSocialLinks,
 } from "@/lib/utils/site-settings";
 
 export const metadata: Metadata = {
   title: "Trang Chủ",
-  description: "Arex – Trang chủ cộng đồng Free Fire. Xem sự kiện mới nhất, tin tức Esports và nội dung cộng đồng được cập nhật hàng ngày.",
+  description: "Arex NetWork – Trang chủ cộng đồng Free Fire. Xem sự kiện mới nhất, tin tức Esports và nội dung cộng đồng được cập nhật hàng ngày.",
 };
 
 export const revalidate = 60;
@@ -41,6 +42,7 @@ export default async function HomePage() {
   const settingsMap = buildSettingsMap(settings);
   const socialLinks = resolveSocialLinks(settingsMap);
   const heroSlider = resolveHeroSliderSettings(settingsMap);
+  const communityStats = resolveCommunityStats(settingsMap);
 
   const firstHeroImage = heroSlider.desktopImages[0];
   const latestEvents = [...events].sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
@@ -116,6 +118,11 @@ export default async function HomePage() {
         youtube={socialLinks.youtube}
         tiktok={socialLinks.tiktok}
         community={siteConfig.links.community}
+        daysActive={communityStats.daysActive}
+        facebookMembers={communityStats.facebookMembers}
+        youtubeSubscribers={communityStats.youtubeSubscribers}
+        tiktokFollowers={communityStats.tiktokFollowers}
+        zaloMembers={communityStats.zaloMembers}
       />
     </div>
   );

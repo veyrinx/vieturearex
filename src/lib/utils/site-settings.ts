@@ -19,6 +19,11 @@ export const settingsFormFieldOrder = [
   "social.tiktok_url",
   "social.youtube_url",
   "social.email",
+  "community.launch_date",
+  "community.facebook_members",
+  "community.youtube_subscribers",
+  "community.tiktok_followers",
+  "community.zalo_members",
   "zalo.webhook_url",
   "zalo.group_id",
   "ads.google_adsense_id",
@@ -77,6 +82,11 @@ export const defaultSiteSettingValues: Record<string, string> = {
   "site.maintenance_message": "Website đang được bảo trì. Vui lòng quay lại sau.",
   "site.maintenance_end_time": "",
   "site.discord_webhook": "",
+  "community.launch_date": "",
+  "community.facebook_members": "",
+  "community.youtube_subscribers": "",
+  "community.tiktok_followers": "",
+  "community.zalo_members": "",
 };
 
 export function isSettingsFormFieldKey(key: string): key is SettingsFormFieldKey {
@@ -127,6 +137,20 @@ function parseSeconds(rawValue: string | undefined, fallback: number, min: numbe
   }
 
   return Math.min(max, Math.max(min, parsed));
+}
+
+export function resolveCommunityStats(settingsMap: Record<string, string>) {
+  const launchDate = settingsMap["community.launch_date"];
+  const daysActive = launchDate
+    ? Math.max(0, Math.floor((Date.now() - new Date(launchDate).getTime()) / 86_400_000))
+    : null;
+  return {
+    daysActive,
+    facebookMembers: settingsMap["community.facebook_members"] || null,
+    youtubeSubscribers: settingsMap["community.youtube_subscribers"] || null,
+    tiktokFollowers: settingsMap["community.tiktok_followers"] || null,
+    zaloMembers: settingsMap["community.zalo_members"] || null,
+  };
 }
 
 export function resolveHeroSliderSettings(settingsMap: Record<string, string>) {

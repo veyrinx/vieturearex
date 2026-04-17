@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, ShieldCheck, Palette, Search, Home, Share2, Plug,
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
-  AlertTriangle, CheckCircle2, MessageSquare, BellRing,
+  AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const NAV_ITEMS = [
   { id: "seo",          icon: Search,       label: "SEO",         desc: "Tiêu đề & mô tả" },
   { id: "home",         icon: Home,         label: "Trang Chủ",   desc: "Hero & slider" },
   { id: "social",       icon: Share2,       label: "Mạng Xã Hội", desc: "Facebook, YouTube…" },
+  { id: "community",    icon: Users,        label: "Cộng Đồng",   desc: "Thống kê & ngày ra mắt" },
   { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
   { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord" },
   { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
@@ -530,6 +531,110 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
         <SaveRow onSave={() => save(["social.facebook_url", "social.tiktok_url", "social.youtube_url", "social.email"], "social")} saving={saving === "social"} />
       </div>
     ),
+
+    // ── CỘNG ĐỒNG ────────────────────────────────────────────────────────────
+    community: (() => {
+      const launchDate = v("community.launch_date");
+      const daysActive = launchDate
+        ? Math.max(0, Math.floor((Date.now() - new Date(launchDate).getTime()) / 86_400_000))
+        : null;
+
+      const platforms = [
+        { key: "community.facebook_members",    label: "Facebook",    icon: Facebook,  hint: "VD: 12.500 hoặc 12.5K",  statLabel: "Thành viên" },
+        { key: "community.youtube_subscribers", label: "YouTube",     icon: Youtube,   hint: "VD: 8.000 hoặc 8K",      statLabel: "Subscribers" },
+        { key: "community.tiktok_followers",    label: "TikTok",      icon: BarChart3, hint: "VD: 5.000 hoặc 5K",      statLabel: "Followers" },
+        { key: "community.zalo_members",        label: "Zalo Group",  icon: Users,     hint: "VD: 3.200 hoặc 3.2K",    statLabel: "Thành viên" },
+      ];
+
+      return (
+        <div className="space-y-5">
+          {/* Days active preview */}
+          {daysActive !== null && (
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Calendar className="size-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">
+                  Website đã hoạt động được <span className="text-primary">{daysActive.toLocaleString("vi-VN")} ngày</span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Kể từ {new Date(launchDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <Card>
+            <div className="py-4">
+              <SectionHeader icon={Calendar} title="Ngày Ra Mắt" desc="Dùng để tính số ngày website đã hoạt động" />
+            </div>
+            <Field label="Ngày ra mắt" hint="Hiển thị đếm ngày hoạt động ở trang chủ" icon={Calendar}>
+              <div className="space-y-2">
+                <Input
+                  type="date"
+                  value={v("community.launch_date")}
+                  onChange={(e) => set("community.launch_date", e.target.value)}
+                />
+                {v("community.launch_date") && (
+                  <p className="text-xs text-muted-foreground">
+                    Sẽ hiển thị <span className="font-semibold text-foreground">&quot;{daysActive?.toLocaleString("vi-VN")} ngày hoạt động&quot;</span> ở khu vực Tham gia cộng đồng.
+                  </p>
+                )}
+              </div>
+            </Field>
+          </Card>
+
+          <Card>
+            <div className="py-4">
+              <SectionHeader icon={Users} title="Thống Kê Cộng Đồng" desc="Số liệu hiển thị trong khu vực Tham gia cộng đồng trang chủ" />
+            </div>
+            {platforms.map(({ key, label, icon: Icon, hint, statLabel }) => (
+              <Field key={key} label={label} hint={hint} icon={Icon}>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={v(key)}
+                    onChange={(e) => set(key, e.target.value)}
+                    placeholder={`Nhập số ${statLabel.toLowerCase()}...`}
+                    className="max-w-48"
+                  />
+                  {v(key) && (
+                    <span className="rounded-full border bg-muted px-3 py-1 text-xs font-bold tabular-nums text-foreground">
+                      {v(key)} {statLabel}
+                    </span>
+                  )}
+                </div>
+              </Field>
+            ))}
+          </Card>
+
+          {/* Preview card */}
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <Globe className="size-3.5" /> Xem trước trang chủ
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { label: "Facebook", stat: v("community.facebook_members"), color: "bg-[#1877F2]/10 text-[#1877F2]" },
+                { label: "YouTube",  stat: v("community.youtube_subscribers"), color: "bg-red-500/10 text-red-500" },
+                { label: "TikTok",   stat: v("community.tiktok_followers"), color: "bg-foreground/10 text-foreground" },
+                { label: "Zalo",     stat: v("community.zalo_members"), color: "bg-[#0068FF]/10 text-[#0068FF]" },
+              ].map(({ label, stat, color }) => (
+                <div key={label} className={cn("flex flex-col items-center gap-1 rounded-xl border p-3 text-center", stat ? "border-border" : "border-dashed opacity-40")}>
+                  <p className={cn("text-lg font-extrabold tabular-nums", color)}>{stat || "—"}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <SaveRow
+            onSave={() => save(["community.launch_date", "community.facebook_members", "community.youtube_subscribers", "community.tiktok_followers", "community.zalo_members"], "community")}
+            saving={saving === "community"}
+          />
+        </div>
+      );
+    })(),
 
     // ── QUẢNG CÁO ────────────────────────────────────────────────────────────
     ads: (

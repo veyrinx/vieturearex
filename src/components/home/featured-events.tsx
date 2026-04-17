@@ -28,9 +28,9 @@ const TABS: { value: FilterTab; label: string }[] = [
 ];
 
 const statusBorderMap: Record<string, string> = {
-  upcoming: "border-[#4CAF50]",
-  active: "border-[#ff9800]",
-  expired: "border-[#f44336]",
+  upcoming: "border-[#4CAF50] shadow-[0_0_0_1px_rgba(76,175,80,0.3),0_8px_32px_rgba(76,175,80,0.18)]",
+  active: "border-[#ff9800] shadow-[0_0_0_1px_rgba(255,152,0,0.35),0_8px_32px_rgba(255,152,0,0.22)]",
+  expired: "border-border/60",
 };
 
 function getEventProgress(start: string, end: string): number {
@@ -132,6 +132,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       aspectClassName="aspect-[16/9]"
                       imageClassName="object-cover transition duration-500 group-hover:scale-105"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <StatusBadge
                       status={event.status}
                       className="absolute right-0 top-0 z-30 rounded-[6px] px-[7px] py-3 text-[0.8rem] font-bold uppercase shadow-sm"
@@ -139,7 +140,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                   </div>
 
                   <div className="flex flex-1 flex-col gap-2 px-4 py-3">
-                    <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-2 text-center">
+                    <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-2 text-center leading-snug">
                       {event.title}
                     </h3>
 
@@ -157,11 +158,11 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                           <span>Tiến trình</span>
-                          <span className="text-primary dark:text-amber-400">{progress}%</span>
+                          <span className="font-bold text-[#ff9800]">{progress}%</span>
                         </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#ff9800] to-[#ff5722] transition-all"
+                            className="relative h-full rounded-full bg-gradient-to-r from-[#ff9800] to-[#ff5722] transition-all after:absolute after:inset-0 after:animate-pulse after:rounded-full after:bg-white/20"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -172,9 +173,12 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       const daysLeft = Math.ceil((new Date(event.start_date).getTime() - Date.now()) / 86_400_000);
                       if (daysLeft <= 0) return null;
                       return (
-                        <p className="text-center text-[10px] font-bold uppercase tracking-[0.08em] text-[#4CAF50]">
-                          Còn {daysLeft} ngày nữa
-                        </p>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="inline-block size-1.5 animate-pulse rounded-full bg-[#4CAF50]" />
+                          <p className="text-center text-[10px] font-bold uppercase tracking-[0.08em] text-[#4CAF50]">
+                            Còn {daysLeft} ngày nữa
+                          </p>
+                        </div>
                       );
                     })()}
                   </div>

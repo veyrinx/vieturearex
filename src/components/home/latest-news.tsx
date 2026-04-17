@@ -27,29 +27,31 @@ function FeaturedCard({ item }: { item: NewsItem }) {
   const ago = timeAgo(item.published_at ?? item.created_at);
   return (
     <Reveal>
-      <article className="group relative flex flex-col overflow-hidden rounded-[18px] border bg-white transition-all dark:border-border dark:bg-card">
+      <article className="group relative flex flex-col overflow-hidden rounded-[18px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 dark:border-border dark:bg-card">
         <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
         <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
-        <div className="relative overflow-hidden rounded-t-[18px]">
+        <div className="relative overflow-hidden rounded-[18px]">
           <MediaFrame
             src={item.cover}
             alt={item.title}
             sizes="(max-width: 768px) 100vw, 60vw"
             aspectClassName="aspect-[21/9]"
-            imageClassName="object-cover transition duration-500 group-hover:scale-105"
+            imageClassName="object-cover transition duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/20 to-transparent" />
           {item.category && (
-            <span className="absolute left-3 top-3 z-30 rounded-md bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground shadow">
+            <span className="absolute left-3 top-3 z-30 rounded-md bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground shadow-lg">
               {item.category}
             </span>
           )}
           <div className="absolute bottom-0 left-0 right-0 p-5 z-30">
-            <h3 className="font-heading text-xl font-bold uppercase tracking-[0.04em] text-white line-clamp-2 md:text-2xl drop-shadow">
+            <h3 className="font-heading text-xl font-bold uppercase tracking-[0.04em] text-white line-clamp-2 drop-shadow-lg md:text-2xl">
               {item.title}
             </h3>
             {ago && (
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-white/70">
+              <div className="mt-2.5 flex items-center gap-1.5 text-xs text-white/70">
+                <div className="size-1.5 rounded-full bg-white/50" />
                 <Clock className="size-3 shrink-0" />
                 <span className="font-medium">{ago}</span>
               </div>
@@ -65,7 +67,7 @@ function MiniCard({ item, index }: { item: NewsItem; index: number }) {
   const ago = timeAgo(item.published_at ?? item.created_at);
   return (
     <Reveal delay={index * 0.07}>
-      <article className="group relative flex gap-3 overflow-hidden rounded-[12px] border bg-white p-3 transition-all hover:shadow-md dark:border-border dark:bg-card">
+      <article className="group relative flex gap-3 overflow-hidden rounded-[12px] border bg-white p-3 transition-all duration-200 hover:shadow-md hover:border-primary/30 dark:border-border dark:bg-card dark:hover:border-amber-400/30">
         <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
         <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
         <div className="relative w-24 shrink-0 overflow-hidden rounded-[8px] md:w-28">
@@ -83,7 +85,7 @@ function MiniCard({ item, index }: { item: NewsItem; index: number }) {
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-          <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-[#0052ff] dark:text-amber-400 line-clamp-2 group-hover:opacity-75 transition-opacity">
+          <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-[#0052ff] dark:text-amber-400 line-clamp-2 transition-opacity group-hover:opacity-80">
             {item.title}
           </h3>
           {ago && (
@@ -93,6 +95,7 @@ function MiniCard({ item, index }: { item: NewsItem; index: number }) {
             </div>
           )}
         </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-0.5 rounded-r-full bg-primary/0 transition-all duration-200 group-hover:bg-primary/60 dark:group-hover:bg-amber-400/60" />
       </article>
     </Reveal>
   );

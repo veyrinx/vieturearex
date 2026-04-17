@@ -72,21 +72,23 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
           Chưa có ảnh nào.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map((item, index) => {
             const isFailed = failedImages.has(item.image_url);
             const isBig = index === 0;
+            const isMedium = index === 3;
 
             return (
               <Reveal key={item.id} delay={index * 0.05}>
                 <figure
                   className={[
-                    "group relative cursor-pointer overflow-hidden rounded-[14px] border bg-white transition-all hover:shadow-lg dark:border-border dark:bg-card",
-                    isBig ? "col-span-2 sm:col-span-1 sm:row-span-2" : "",
+                    "group relative cursor-pointer overflow-hidden rounded-[14px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 dark:border-border dark:bg-card",
+                    isBig ? "col-span-2 row-span-2 sm:col-span-1 sm:row-span-2" : "",
+                    isMedium ? "sm:col-span-2" : "",
                   ].join(" ")}
                   onClick={() => !isFailed && setLightbox(item)}
                 >
-                  <div className="relative overflow-hidden rounded-[12px] bg-muted">
+                  <div className="relative h-full overflow-hidden rounded-[12px] bg-muted">
                     {isFailed ? (
                       <div className="flex aspect-square items-center justify-center bg-muted text-xs text-muted-foreground">
                         Lỗi tải ảnh
@@ -97,8 +99,8 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
                         src={item.image_url}
                         alt={item.tag}
                         className={[
-                          "w-full object-cover transition duration-500 group-hover:scale-110",
-                          isBig ? "aspect-[3/4] sm:aspect-auto sm:h-full" : "aspect-[4/3]",
+                          "h-full w-full object-cover transition duration-500 group-hover:scale-110",
+                          isBig ? "aspect-[3/4] sm:aspect-auto" : isMedium ? "aspect-[16/7]" : "aspect-[4/3]",
                         ].join(" ")}
                         loading="lazy"
                         decoding="async"
@@ -106,16 +108,17 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
                       />
                     )}
 
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
-                      <ZoomIn className="size-7 text-white opacity-0 transition-all group-hover:opacity-100 drop-shadow-lg" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/35">
+                      <div className="flex flex-col items-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                        <ZoomIn className="size-8 text-white drop-shadow-lg" />
+                        {item.tag && (
+                          <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white backdrop-blur-sm">
+                            {item.tag}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  {item.tag && (
-                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-[12px] bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3 pb-2.5 pt-8 text-center text-[10px] font-bold uppercase tracking-[0.08em] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                      {item.tag}
-                    </figcaption>
-                  )}
                 </figure>
               </Reveal>
             );
