@@ -24,13 +24,29 @@ const PUBLIC_PATHS = [
   "/maintenance",
 ];
 
+// Chỉ cho phép Googlebot truy cập sitemap và robots.txt
+const CRAWLER_ONLY_PATHS = ["/sitemap.xml", "/robots.txt"];
+
+const GOOGLE_BOT_PATTERN =
+  /Googlebot|Google-InspectionTool|GoogleOther|AdsBot-Google|Mediapartners-Google|APIs-Google/i;
+
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
   const pathname = request.nextUrl.pathname;
+
+  // ── Sitemap & robots: chỉ Googlebot được phép ──────────────────────────
+  if (CRAWLER_ONLY_PATHS.includes(pathname)) {
+    const ua = request.headers.get("user-agent") ?? "";
+    if (!GOOGLE_BOT_PATTERN.test(ua)) {
+      return new NextResponse(null, { status: 404 });
+    }
+    return NextResponse.next();
+  }
+
+  const response = await updateSession(request);
   const isAdminPath = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   const isApiPath = pathname.startsWith("/api/");
 
