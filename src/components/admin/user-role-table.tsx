@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Download, Search, Trash2, Users, Shield, ChevronUp, ChevronDown,
-  Lock, Unlock, KeyRound, Copy, Check, ChevronRight, Info,
+  Lock, Unlock, KeyRound, Copy, Check, ChevronRight, Info, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { UserItem, UserRole } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
+import { UserEditDialog } from "@/components/admin/user-edit-dialog";
 
 const ROLE_META: Record<string, { label: string; color: string; level: number }> = {
   super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20",    level: 100 },
@@ -191,6 +192,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "created_at", dir: "desc" });
   const [tempPw, setTempPw] = useState<{ password: string; email: string } | null>(null);
+  const [editUser, setEditUser] = useState<UserItem | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -509,6 +511,19 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                       <div className="flex items-center gap-1">
                         {isUpdating && <Badge variant="secondary" className="text-[10px]">Đang lưu...</Badge>}
 
+                        {/* Edit */}
+                        {canManage && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setEditUser(user)}
+                            title="Chỉnh sửa tài khoản"
+                            className="size-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                        )}
+
                         {/* Ban/Unban */}
                         {canManage && (
                           <Button
@@ -581,6 +596,14 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
           onClose={() => setTempPw(null)}
         />
       )}
+
+      <UserEditDialog
+        user={editUser}
+        open={Boolean(editUser)}
+        onOpenChange={(open) => { if (!open) setEditUser(null); }}
+        onSaved={onSaved}
+        currentUserEmail={currentUserEmail}
+      />
     </div>
   );
 }
