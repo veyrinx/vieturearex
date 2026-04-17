@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CalendarClock } from "lucide-react";
+import { ArrowRight, CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HeroSliderEffect } from "@/lib/utils/site-settings";
 
@@ -13,9 +13,11 @@ type HeroBannerProps = {
   heroTitle?: string;
   activeEventCount?: number;
   publishedNewsCount?: number;
+  galleryCount?: number;
   sliderIntervalMs?: number;
   transitionMs?: number;
   transitionEffect?: HeroSliderEffect;
+  nextEventDate?: string | null;
 };
 
 type SliderLayerProps = {
@@ -34,7 +36,6 @@ function getSliderVariants(effect: HeroSliderEffect) {
       exit: { opacity: 0, scale: 1.03, filter: "blur(10px)" },
     };
   }
-
   if (effect === "drift") {
     return {
       initial: { opacity: 0, x: 24, scale: 1.04 },
@@ -42,7 +43,6 @@ function getSliderVariants(effect: HeroSliderEffect) {
       exit: { opacity: 0, x: -24, scale: 1.02 },
     };
   }
-
   if (effect === "zoom") {
     return {
       initial: { opacity: 0, scale: 1.08 },
@@ -50,7 +50,6 @@ function getSliderVariants(effect: HeroSliderEffect) {
       exit: { opacity: 0, scale: 1.03 },
     };
   }
-
   if (effect === "slide") {
     return {
       initial: { opacity: 0, x: 36 },
@@ -58,7 +57,6 @@ function getSliderVariants(effect: HeroSliderEffect) {
       exit: { opacity: 0, x: -36 },
     };
   }
-
   return {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -66,15 +64,8 @@ function getSliderVariants(effect: HeroSliderEffect) {
   };
 }
 
-function SliderLayer({
-  imageUrl,
-  effect,
-  durationSeconds,
-  desktopOnly,
-  mobileOnly,
-}: SliderLayerProps) {
+function SliderLayer({ imageUrl, effect, durationSeconds, desktopOnly, mobileOnly }: SliderLayerProps) {
   const variants = getSliderVariants(effect);
-
   return (
     <motion.div
       initial="initial"
@@ -87,13 +78,40 @@ function SliderLayer({
         desktopOnly ? "hidden md:block" : "",
         mobileOnly ? "md:hidden" : "",
       ].join(" ")}
-      style={{
-        backgroundImage: `url(${imageUrl})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center center",
-      }}
+      style={{ backgroundImage: `url(${imageUrl})`, backgroundSize: "cover", backgroundPosition: "center center" }}
     />
   );
+}
+
+type CountdownUnit = { value: number; label: string };
+
+function useCountdown(targetDate: string | null | undefined) {
+  const [units, setUnits] = useState<CountdownUnit[]>([]);
+
+  useEffect(() => {
+    if (!targetDate) return;
+
+    const calc = () => {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) { setUnits([]); return; }
+      const d = Math.floor(diff / 86_400_000);
+      const h = Math.floor((diff % 86_400_000) / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1000);
+      setUnits([
+        { value: d, label: "ngày" },
+        { value: h, label: "giờ" },
+        { value: m, label: "phút" },
+        { value: s, label: "giây" },
+      ]);
+    };
+
+    calc();
+    const timer = window.setInterval(calc, 1000);
+    return () => window.clearInterval(timer);
+  }, [targetDate]);
+
+  return units;
 }
 
 export function HeroBanner({
@@ -102,51 +120,50 @@ export function HeroBanner({
   heroTitle,
   activeEventCount = 0,
   publishedNewsCount = 0,
+  galleryCount = 0,
   sliderIntervalMs = 5000,
   transitionMs = 1000,
   transitionEffect = "fade",
+  nextEventDate,
 }: HeroBannerProps) {
   const desktopImages = useMemo(() => desktopBackgroundUrls.filter(Boolean).slice(0, 3), [desktopBackgroundUrls]);
   const mobileImages = useMemo(
     () => (mobileBackgroundUrls.length > 0 ? mobileBackgroundUrls : desktopBackgroundUrls).filter(Boolean).slice(0, 3),
     [desktopBackgroundUrls, mobileBackgroundUrls],
   );
-  const [desktopIndex, setDesktopIndex] = useState(0);
-  const [mobileIndex, setMobileIndex] = useState(0);
+
+  const [index, setIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const countdown = useCountdown(nextEventDate);
+
+  const goTo = useCallback((i: number) => {
+    setIndex(((i % desktopImages.length) + desktopImages.length) % desktopImages.length);
+  }, [desktopImages.length]);
+
+  const prev = useCallback(() => goTo(index - 1), [goTo, index]);
+  const next = useCallback(() => goTo(index + 1), [goTo, index]);
 
   useEffect(() => {
-    if (desktopImages.length <= 1) {
-      return;
-    }
-
+    if (desktopImages.length <= 1 || isPaused) return;
     const safeInterval = Math.max(sliderIntervalMs, transitionMs + 1200);
     const timer = window.setInterval(() => {
-      setDesktopIndex((current) => (current + 1) % desktopImages.length);
+      setIndex((cur) => (cur + 1) % desktopImages.length);
     }, safeInterval);
-
     return () => window.clearInterval(timer);
-  }, [desktopImages.length, sliderIntervalMs, transitionMs]);
+  }, [desktopImages.length, sliderIntervalMs, transitionMs, isPaused]);
 
-  useEffect(() => {
-    if (mobileImages.length <= 1) {
-      return;
-    }
-
-    const safeInterval = Math.max(sliderIntervalMs, transitionMs + 1200);
-    const timer = window.setInterval(() => {
-      setMobileIndex((current) => (current + 1) % mobileImages.length);
-    }, safeInterval);
-
-    return () => window.clearInterval(timer);
-  }, [mobileImages.length, sliderIntervalMs, transitionMs]);
-
-  const currentDesktopImage = desktopImages.length > 0 ? desktopImages[desktopIndex] : undefined;
-  const currentMobileImage = mobileImages.length > 0 ? mobileImages[mobileIndex] : currentDesktopImage;
+  const currentDesktopImage = desktopImages.length > 0 ? desktopImages[index] : undefined;
+  const currentMobileImage = mobileImages.length > 0 ? mobileImages[index % mobileImages.length] : currentDesktopImage;
   const transitionSeconds = transitionMs / 1000;
+  const hasMultiple = desktopImages.length > 1;
 
   return (
     <div className="space-y-8">
-      <section className="relative left-1/2 right-1/2 h-[100dvh] min-h-[620px] w-screen -translate-x-1/2 overflow-hidden bg-slate-950">
+      <section
+        className="relative left-1/2 right-1/2 h-[100dvh] min-h-[620px] w-screen -translate-x-1/2 overflow-hidden bg-slate-950"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
         <AnimatePresence initial={false} mode="sync">
           {currentDesktopImage ? (
             <SliderLayer
@@ -173,6 +190,48 @@ export function HeroBanner({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/56 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 backdrop-blur-[6px] [mask-image:linear-gradient(to_top,black,transparent)]" />
+
+        {/* Arrow navigation */}
+        {hasMultiple && (
+          <>
+            <button
+              type="button"
+              onClick={prev}
+              className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur-sm transition hover:bg-black/50 focus:outline-none"
+              aria-label="Ảnh trước"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur-sm transition hover:bg-black/50 focus:outline-none"
+              aria-label="Ảnh tiếp theo"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+          </>
+        )}
+
+        {/* Dot navigation */}
+        {hasMultiple && (
+          <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+            {desktopImages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Ảnh ${i + 1}`}
+                className={[
+                  "rounded-full transition-all duration-300",
+                  i === index
+                    ? "h-2.5 w-6 bg-white shadow"
+                    : "size-2.5 bg-white/50 hover:bg-white/80",
+                ].join(" ")}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 md:px-6">
@@ -192,6 +251,26 @@ export function HeroBanner({
                 NỘI DUNG TẬP TRUNG VỚI TRẢI NGHIỆM HIỆN ĐẠI, MƯỢT MÀ.
               </p>
 
+              {countdown.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Sự kiện tiếp theo
+                  </p>
+                  <div className="flex gap-3">
+                    {countdown.map((unit) => (
+                      <div key={unit.label} className="flex flex-col items-center rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 min-w-[52px]">
+                        <span className="font-heading text-2xl font-bold tabular-nums text-primary dark:text-amber-400">
+                          {String(unit.value).padStart(2, "0")}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          {unit.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Button asChild size="lg" className="h-12 rounded-xl">
                   <Link href="/calendar">
@@ -199,7 +278,6 @@ export function HeroBanner({
                     <CalendarClock className="ml-2 size-4" />
                   </Link>
                 </Button>
-
                 <Button asChild size="lg" variant="outline" className="h-12 rounded-xl">
                   <Link href="/events">
                     KHÁM PHÁ SỰ KIỆN
@@ -229,6 +307,15 @@ export function HeroBanner({
                 </span>
                 <strong className="font-heading text-2xl text-primary dark:text-amber-300">{publishedNewsCount}</strong>
               </div>
+
+              {galleryCount > 0 && (
+                <div className="theme-control-surface flex items-center justify-between rounded-xl px-4 py-3">
+                  <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    ẢNH CỘNG ĐỒNG
+                  </span>
+                  <strong className="font-heading text-2xl text-primary dark:text-amber-300">{galleryCount}</strong>
+                </div>
+              )}
 
               <div className="theme-control-surface flex items-center justify-between rounded-xl px-4 py-3">
                 <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">

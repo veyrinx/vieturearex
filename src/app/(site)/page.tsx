@@ -6,12 +6,15 @@ import { LatestNews } from "@/components/home/latest-news";
 import { GalleryPreview } from "@/components/home/gallery-preview";
 import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
+import { NewsTicker } from "@/components/home/news-ticker";
+import { LivestreamPreview } from "@/components/home/livestream-preview";
 import {
   getEvents,
   getGalleryItems,
   getNews,
   getSettings,
 } from "@/lib/data/content-service";
+import { getStreams } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
 import {
   buildSettingsMap,
@@ -27,28 +30,34 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [events, news, gallery, settings] = await Promise.all([
+  const [events, news, gallery, settings, streams] = await Promise.all([
     getEvents(),
     getNews("published"),
     getGalleryItems(),
     getSettings(),
+    getStreams(),
   ]);
 
   const settingsMap = buildSettingsMap(settings);
   const socialLinks = resolveSocialLinks(settingsMap);
   const heroSlider = resolveHeroSliderSettings(settingsMap);
 
-  // Preload ảnh hero đầu tiên để cải thiện LCP
   const firstHeroImage = heroSlider.desktopImages[0];
-  const latestEvents = [...events].sort((left, right) => new Date(right.start_date).getTime() - new Date(left.start_date).getTime());
-  const latestNews = [...news].sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
-  const latestGallery = [...gallery].sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  const latestEvents = [...events].sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+  const latestNews = [...news].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const latestGallery = [...gallery].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const popupEnabled = settingsMap["popup.enabled"] === "true";
   const popupTitle = settingsMap["popup.title"] ?? "";
   const popupContent = settingsMap["popup.content"] ?? "";
   const heroTitle = settingsMap["home.hero.title"];
-  const activeEvent = latestEvents.find((item) => item.status === "active");
+  const activeEvent = latestEvents.find((e) => e.status === "active");
+
+  const nextUpcomingEvent = latestEvents
+    .filter((e) => e.status === "upcoming")
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0];
+
+  const liveAndUpcomingStreams = streams.filter((s) => s.status === "live" || s.status === "upcoming");
 
   return (
     <div className="space-y-14">
@@ -85,15 +94,29 @@ export default async function HomePage() {
         sliderIntervalMs={heroSlider.intervalMs}
         transitionMs={heroSlider.transitionMs}
         transitionEffect={heroSlider.transitionEffect}
-        activeEventCount={events.filter((item) => item.status === "active").length}
+        activeEventCount={events.filter((e) => e.status === "active").length}
         publishedNewsCount={news.length}
+        galleryCount={gallery.length}
+        nextEventDate={nextUpcomingEvent?.start_date ?? null}
       />
+
+      <NewsTicker news={latestNews.slice(0, 8)} />
+
       <div className="overflow-x-clip">
         <FeaturedEvents events={latestEvents} />
+        {liveAndUpcomingStreams.length > 0 && (
+          <LivestreamPreview streams={liveAndUpcomingStreams} />
+        )}
         <LatestNews news={latestNews} />
         <GalleryPreview gallery={latestGallery} />
       </div>
-      <JoinCommunityCta />
+
+      <JoinCommunityCta
+        facebook={socialLinks.facebook}
+        youtube={socialLinks.youtube}
+        tiktok={socialLinks.tiktok}
+        community={siteConfig.links.community}
+      />
     </div>
   );
 }
