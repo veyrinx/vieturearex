@@ -532,6 +532,40 @@ export async function getUserByEmail(email: string): Promise<UserItem | null> {
   return data ?? null;
 }
 
+export async function updateUserInfo(
+  id: string,
+  data: { display_name?: string; email?: string },
+): Promise<UserItem> {
+  if (!hasSupabaseEnv) {
+    const demo = getDemoStore();
+    const idx = demo.users.findIndex((u) => u.id === id);
+    if (idx < 0) throw new Error("User not found.");
+    if (data.display_name !== undefined) demo.users[idx].display_name = data.display_name;
+    if (data.email !== undefined) demo.users[idx].email = data.email;
+    return demo.users[idx];
+  }
+
+  const supabase = getSupabaseAdminOrThrow();
+
+  if (data.email) {
+    const { error: authErr } = await supabase.auth.admin.updateUserById(id, { email: data.email });
+    if (authErr) throw new Error(authErr.message);
+  }
+
+  const updates: Record<string, string> = {};
+  if (data.display_name !== undefined) updates.display_name = data.display_name;
+  if (data.email !== undefined) updates.email = data.email;
+
+  const { data: updated, error } = await supabase
+    .from("users")
+    .update(updates as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return updated as UserItem;
+}
+
 export async function updateUserRole(id: string, role: UserRole) {
   if (!hasSupabaseEnv) {
     const demo = getDemoStore();

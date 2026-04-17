@@ -20,6 +20,7 @@
     "supabase:ensure-admin": "node scripts/ensure-supabase-admin.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
     "@base-ui/react": "^1.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@imagekit/react": "^5.0.2",

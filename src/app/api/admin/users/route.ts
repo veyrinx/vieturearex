@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getUsers, updateUserRole, deleteUser, banUser, getUserByEmail } from "@/lib/data/content-service";
+import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserByEmail } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -32,6 +32,13 @@ const deleteUserSchema = z.object({
   id: z.string().min(1),
 });
 
+const updateInfoSchema = z.object({
+  id: z.string().min(1),
+  action: z.literal("update_info"),
+  display_name: z.string().min(1).max(60).optional(),
+  email: z.string().email().optional(),
+});
+
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-users", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
@@ -46,6 +53,29 @@ export async function PATCH(request: NextRequest) {
   if (limited) return limited;
 
   const payload = await request.json();
+
+  // Handle update user info (super_admin only)
+  const infoParsed = updateInfoSchema.safeParse(payload);
+  if (infoParsed.success) {
+    const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+    if (denied) return denied;
+
+    if (!infoParsed.data.display_name && !infoParsed.data.email) {
+      return NextResponse.json({ error: "Không có thông tin nào để cập nhật." }, { status: 400 });
+    }
+
+    const user = await updateUserInfo(infoParsed.data.id, {
+      display_name: infoParsed.data.display_name,
+      email: infoParsed.data.email,
+    });
+    await logAdminActivity({
+      action: "USER_INFO_UPDATED",
+      targetType: "USER",
+      targetId: user.id,
+      summary: `Cập nhật thông tin tài khoản ${user.email}`,
+    });
+    return NextResponse.json({ user });
+  }
 
   // Handle ban/unban
   const banParsed = updateBanSchema.safeParse(payload);
