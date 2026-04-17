@@ -37,8 +37,27 @@ export type NewsItem = {
   content: string;
   cover: string;
   category: string;
-  created_at: string;
+  tags: string[];
   status: PublishStatus;
+  published_at: string | null;
+  created_at: string;
+};
+
+export type NewsCommentItem = {
+  id: string;
+  news_id: string;
+  user_id: string | null;
+  display_name: string;
+  content: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+};
+
+export type AnalyticsDailyItem = {
+  date: string;
+  views: number;
+  unique_visitors: number;
+  updated_at: string;
 };
 
 export type GalleryItem = {
@@ -54,6 +73,7 @@ export type UserItem = {
   display_name: string | null;
   role: UserRole;
   views: number;
+  is_banned: boolean;
   created_at: string;
 };
 

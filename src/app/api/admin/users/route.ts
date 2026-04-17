@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getUsers, updateUserRole, deleteUser } from "@/lib/data/content-service";
+import { getUsers, updateUserRole, deleteUser, banUser, getUserByEmail } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const updateUserSchema = z.object({
+const ROLE_HIERARCHY: Record<string, number> = {
+  super_admin: 100, admin: 80, manager: 60, support: 40, user: 20,
+};
+
+async function getCallerRole(): Promise<string | null> {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("users").select("role").eq("id", user.id).maybeSingle() as { data: { role: string } | null };
+  return data?.role ?? (user.app_metadata?.role as string | undefined) ?? null;
+}
+
+const updateRoleSchema = z.object({
   id: z.string().min(1),
   role: z.enum(["super_admin", "admin", "manager", "support", "user"]),
+});
+
+const updateBanSchema = z.object({
+  id: z.string().min(1),
+  is_banned: z.boolean(),
 });
 
 const deleteUserSchema = z.object({
@@ -15,13 +34,9 @@ const deleteUserSchema = z.object({
 
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-users", limit: 60, windowMs: 60_000 });
-  if (limited) {
-    return limited;
-  }
+  if (limited) return limited;
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
-  if (denied) {
-    return denied;
-  }
+  if (denied) return denied;
   const users = await getUsers();
   return NextResponse.json({ users });
 }
@@ -31,21 +46,62 @@ export async function PATCH(request: NextRequest) {
   if (limited) return limited;
 
   const payload = await request.json();
-  const parsed = updateUserSchema.safeParse(payload);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid user payload." }, { status: 400 });
+
+  // Handle ban/unban
+  const banParsed = updateBanSchema.safeParse(payload);
+  if (banParsed.success) {
+    const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
+    if (denied) return denied;
+
+    const callerRole = await getCallerRole();
+    const callerLevel = ROLE_HIERARCHY[callerRole ?? ""] ?? 0;
+
+    // Look up target user to check their role
+    const allUsers = await getUsers();
+    const target = allUsers.find((u) => u.id === banParsed.data.id);
+    if (!target) return NextResponse.json({ error: "User not found." }, { status: 404 });
+
+    const targetLevel = ROLE_HIERARCHY[target.role] ?? 0;
+    if (targetLevel >= callerLevel) {
+      return NextResponse.json({ error: "Không thể khóa tài khoản có quyền bằng hoặc cao hơn bạn." }, { status: 403 });
+    }
+
+    const user = await banUser(banParsed.data.id, banParsed.data.is_banned);
+    await logAdminActivity({
+      action: banParsed.data.is_banned ? "USER_BANNED" : "USER_UNBANNED",
+      targetType: "USER",
+      targetId: user.id,
+      summary: `${banParsed.data.is_banned ? "Khóa" : "Mở khóa"} tài khoản ${user.email}`,
+    });
+    return NextResponse.json({ user });
   }
 
-  const targetRole = parsed.data.role;
+  // Handle role update
+  const roleParsed = updateRoleSchema.safeParse(payload);
+  if (!roleParsed.success) {
+    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+  }
+
+  const targetRole = roleParsed.data.role;
   if (targetRole === "super_admin" || targetRole === "admin") {
     const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
     if (denied) return denied;
   } else {
     const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
     if (denied) return denied;
+
+    // Admin cannot change role of another admin/super_admin
+    const callerRole = await getCallerRole();
+    if (callerRole !== "super_admin") {
+      const allUsers = await getUsers();
+      const target = allUsers.find((u) => u.id === roleParsed.data.id);
+      if (target && (ROLE_HIERARCHY[target.role] ?? 0) >= (ROLE_HIERARCHY["admin"] ?? 0)) {
+        return NextResponse.json({ error: "Không thể thay đổi quyền của admin khác." }, { status: 403 });
+      }
+    }
   }
 
-  const user = await updateUserRole(parsed.data.id, targetRole);
+  const user = await updateUserRole(roleParsed.data.id, targetRole);
   await logAdminActivity({
     action: "USER_ROLE_UPDATED",
     targetType: "USER",
@@ -57,13 +113,9 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-users-delete", limit: 30, windowMs: 60_000 });
-  if (limited) {
-    return limited;
-  }
+  if (limited) return limited;
   const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
-  if (denied) {
-    return denied;
-  }
+  if (denied) return denied;
 
   const payload = await request.json();
   const parsed = deleteUserSchema.safeParse(payload);

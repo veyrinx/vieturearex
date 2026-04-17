@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   Eye, EyeOff, ShieldCheck, Palette, Search, Home, Share2,
   Plug, User, Facebook, Youtube, Mail, Save, ImageIcon, Clock,
-  Sparkles, Globe,
+  Sparkles, Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ function Field({ label, hint, children, icon: Icon }: {
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`glass-card divide-y divide-border rounded-2xl px-5 ${className}`}>
+    <div className={`glass-card divide-y divide-border rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm px-5 shadow-sm ${className}`}>
       {children}
     </div>
   );
@@ -457,9 +457,10 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
 
       {/* ── TÍCH HỢP ── */}
       <TabsContent value="integrations" className="space-y-4">
+        {/* Zalo */}
         <Card>
           <div className="py-4">
-            <SectionHeader icon={Plug} title="Tích Hợp" desc="Kết nối dịch vụ bên ngoài" />
+            <SectionHeader icon={Plug} title="Zalo" desc="Tích hợp thông báo qua Zalo OA" />
           </div>
           <Field label="Zalo Webhook" hint="Thông báo bài mới qua OA">
             <Input value={v("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://..." />
@@ -467,83 +468,224 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           <Field label="Zalo Group ID" hint="ID nhóm nhận thông báo">
             <Input value={v("zalo.group_id")} onChange={(e) => set("zalo.group_id", e.target.value)} placeholder="0123456789" />
           </Field>
-          <Field label="AdSense ID" hint="ca-pub-XXXXXXXXXX">
-            <Input value={v("ads.google_adsense_id")} onChange={(e) => set("ads.google_adsense_id", e.target.value)} placeholder="ca-pub-XXXXXXXXXX" />
-          </Field>
         </Card>
-        <SaveRow onSave={() => save(["zalo.webhook_url", "zalo.group_id", "ads.google_adsense_id"], "integrations")} saving={saving === "integrations"} />
-      </TabsContent>
 
-      {/* ── TÀI KHOẢN ── */}
-      <TabsContent value="account" className="space-y-4">
-        {/* Profile card */}
-        <div className="glass-card rounded-2xl p-5 space-y-4">
-          <SectionHeader icon={User} title="Hồ Sơ" desc="Thông tin tài khoản quản trị" />
-          <Separator />
-
-          {/* Avatar row */}
-          <div className="flex items-center gap-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 text-primary">
-              <ShieldCheck className="size-7" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-heading text-base font-bold text-foreground">
-                {profile?.display_name || profile?.email || "Đang tải..."}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">{profile?.email}</p>
-              {roleInfo && (
-                <span className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${roleInfo.color}`}>
-                  {roleInfo.label}
-                </span>
-              )}
-            </div>
+        {/* Google Ads */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BarChart3} title="Google AdSense" desc="Cấu hình quảng cáo Google trên website" />
           </div>
 
-          <Separator />
-
-          <Field label="Tên hiển thị" hint="Tên trong giao diện admin">
-            <div className="flex gap-2">
-              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Nhập tên..." />
-              <Button type="button" size="sm" disabled={savingProfile} onClick={saveProfile} className="shrink-0 rounded-xl gap-1.5">
-                <Save className="size-3.5" />
-                {savingProfile ? "..." : "Lưu"}
-              </Button>
-            </div>
-          </Field>
-
-          <Field label="Email" hint="Không thể thay đổi">
-            <Input value={profile?.email ?? ""} disabled className="cursor-not-allowed opacity-50" />
-          </Field>
-        </div>
-
-        {/* Password card */}
-        <div className="glass-card rounded-2xl p-5 space-y-4">
-          <SectionHeader icon={ShieldCheck} title="Đổi Mật Khẩu" desc="Tối thiểu 8 ký tự, nên dùng ký tự đặc biệt" />
-          <Separator />
-
-          <Field label="Mật khẩu mới">
-            <PasswordInput value={newPw} onChange={setNewPw} placeholder="Nhập mật khẩu mới..." show={showNew} onToggle={() => setShowNew((v) => !v)} />
-          </Field>
-
-          <Field label="Xác nhận">
-            <div className="space-y-1.5">
-              <PasswordInput value={confirmPw} onChange={setConfirmPw} placeholder="Nhập lại mật khẩu..." show={showConfirm} onToggle={() => setShowConfirm((v) => !v)} />
-              {confirmPw.length > 0 && (
-                <p className={`text-[11px] font-medium ${newPw === confirmPw ? "text-green-500" : "text-red-500"}`}>
-                  {newPw === confirmPw ? "✓ Mật khẩu khớp" : "✗ Mật khẩu không khớp"}
+          <Field label="Publisher ID" hint="ca-pub-XXXXXXXXXX" icon={BarChart3}>
+            <div className="space-y-2">
+              <Input
+                value={v("ads.google_adsense_id")}
+                onChange={(e) => set("ads.google_adsense_id", e.target.value)}
+                placeholder="ca-pub-0000000000000000"
+                className="font-mono"
+              />
+              {v("ads.google_adsense_id") && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                  ✓ Script AdSense sẽ được inject tự động vào toàn bộ trang.
                 </p>
               )}
             </div>
           </Field>
 
-          <div className="flex justify-end">
-            <Button type="button" size="sm" disabled={savingPw || !newPw || !confirmPw || newPw !== confirmPw}
-              onClick={savePw} className="gap-1.5 rounded-xl px-5">
+          <Field label="Slot Header" hint="Banner đầu trang (970×90)" icon={MonitorPlay}>
+            <Input
+              value={v("ads.slot_header")}
+              onChange={(e) => set("ads.slot_header", e.target.value)}
+              placeholder="1234567890"
+              className="font-mono"
+            />
+          </Field>
+
+          <Field label="Slot Sidebar" hint="Banner cột bên (300×250)" icon={LayoutGrid}>
+            <Input
+              value={v("ads.slot_sidebar")}
+              onChange={(e) => set("ads.slot_sidebar", e.target.value)}
+              placeholder="1234567890"
+              className="font-mono"
+            />
+          </Field>
+
+          <Field label="Slot In-Article" hint="Quảng cáo trong bài viết" icon={Newspaper}>
+            <Input
+              value={v("ads.slot_article")}
+              onChange={(e) => set("ads.slot_article", e.target.value)}
+              placeholder="1234567890"
+              className="font-mono"
+            />
+          </Field>
+
+          {/* Preview */}
+          {v("ads.google_adsense_id") && (
+            <div className="py-3">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Xem trước vị trí quảng cáo
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { label: "Header Banner", icon: MonitorPlay, size: "970×90", slot: v("ads.slot_header") },
+                  { label: "Sidebar Box",   icon: LayoutGrid,  size: "300×250", slot: v("ads.slot_sidebar") },
+                  { label: "In-Article",    icon: Newspaper,   size: "Responsive", slot: v("ads.slot_article") },
+                ].map(({ label, icon: Icon, size, slot }) => (
+                  <div key={label} className={[
+                    "flex flex-col items-center justify-center gap-2 rounded-xl border p-4 text-center transition-all",
+                    slot ? "border-primary/30 bg-primary/5" : "border-dashed border-border bg-muted/20 opacity-50",
+                  ].join(" ")}>
+                    <Icon className="size-5 text-muted-foreground" />
+                    <p className="text-xs font-semibold text-foreground">{label}</p>
+                    <p className="text-[10px] text-muted-foreground">{size}</p>
+                    {slot
+                      ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-mono font-bold text-primary">Slot {slot}</span>
+                      : <span className="text-[10px] text-muted-foreground">Chưa cấu hình</span>
+                    }
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+
+        <SaveRow
+          onSave={() => save(["zalo.webhook_url", "zalo.group_id", "ads.google_adsense_id", "ads.slot_header", "ads.slot_sidebar", "ads.slot_article"], "integrations")}
+          saving={saving === "integrations"}
+        />
+      </TabsContent>
+
+      {/* ── TÀI KHOẢN ── */}
+      <TabsContent value="account" className="space-y-5">
+        {/* Profile card */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={User} title="Thông Tin Cá Nhân" desc="Quản lý hồ sơ và tài khoản của bạn" />
+          </div>
+
+          {/* Avatar & Info Section */}
+          <div className="py-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+              <div className="relative">
+                <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-lg ring-2 ring-primary/20 transition-all hover:scale-105 hover:shadow-xl">
+                  <ShieldCheck className="size-9 text-primary" />
+                </div>
+                {roleInfo && (
+                  <div className="absolute -bottom-1 -right-1">
+                    <span className={`inline-flex items-center rounded-full border-2 border-background px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-sm ${roleInfo.color}`}>
+                      {roleInfo.label}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="truncate font-heading text-lg font-bold text-foreground">
+                  {profile?.display_name || "Chưa đặt tên"}
+                </p>
+                <p className="truncate text-sm text-muted-foreground">{profile?.email || "Đang tải..."}</p>
+                <div className="flex items-center gap-2 pt-1">
+                  <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Đang hoạt động</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Field label="Tên hiển thị" hint="Hiển thị trong admin" icon={User}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input 
+                value={displayName} 
+                onChange={(e) => setDisplayName(e.target.value)} 
+                placeholder="Nhập tên hiển thị..." 
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                size="sm" 
+                disabled={savingProfile || displayName === profile?.display_name} 
+                onClick={saveProfile} 
+                className="shrink-0 rounded-xl gap-1.5 px-4 transition-all hover:scale-105"
+              >
+                <Save className="size-3.5" />
+                {savingProfile ? "Đang lưu..." : "Cập nhật"}
+              </Button>
+            </div>
+            {displayName !== profile?.display_name && displayName.length > 0 && (
+              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span className="inline-block size-1 rounded-full bg-amber-500" />
+                Có thay đổi chưa lưu
+              </p>
+            )}
+          </Field>
+
+          <Field label="Email đăng nhập" hint="Không thể thay đổi" icon={Mail}>
+            <div className="relative">
+              <Input 
+                value={profile?.email ?? ""} 
+                disabled 
+                className="cursor-not-allowed bg-muted/50 opacity-60 pr-20" 
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Cố định
+              </span>
+            </div>
+          </Field>
+        </Card>
+
+        {/* Password card */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={ShieldCheck} title="Bảo Mật" desc="Đổi mật khẩu để bảo vệ tài khoản" />
+          </div>
+
+          <Field label="Mật khẩu mới" hint="Tối thiểu 8 ký tự">
+            <PasswordInput 
+              value={newPw} 
+              onChange={setNewPw} 
+              placeholder="Nhập mật khẩu mới..." 
+              show={showNew} 
+              onToggle={() => setShowNew((v) => !v)} 
+            />
+          </Field>
+
+          <Field label="Xác nhận mật khẩu" hint="Nhập lại để xác nhận">
+            <div className="space-y-2">
+              <PasswordInput 
+                value={confirmPw} 
+                onChange={setConfirmPw} 
+                placeholder="Nhập lại mật khẩu..." 
+                show={showConfirm} 
+                onToggle={() => setShowConfirm((v) => !v)} 
+              />
+              {confirmPw.length > 0 && (
+                <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                  newPw === confirmPw 
+                    ? "bg-green-500/10 text-green-600 dark:text-green-400" 
+                    : "bg-red-500/10 text-red-600 dark:text-red-400"
+                }`}>
+                  <span className="text-sm">{newPw === confirmPw ? "✓" : "✗"}</span>
+                  {newPw === confirmPw ? "Mật khẩu khớp" : "Mật khẩu không khớp"}
+                </div>
+              )}
+            </div>
+          </Field>
+
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Mật khẩu mạnh nên có chữ hoa, chữ thường, số và ký tự đặc biệt
+            </p>
+            <Button 
+              type="button" 
+              size="sm" 
+              disabled={savingPw || !newPw || !confirmPw || newPw !== confirmPw || newPw.length < 8}
+              onClick={savePw} 
+              className="shrink-0 gap-1.5 rounded-xl px-5 transition-all hover:scale-105"
+            >
               <ShieldCheck className="size-3.5" />
               {savingPw ? "Đang đổi..." : "Đổi mật khẩu"}
             </Button>
           </div>
-        </div>
+        </Card>
       </TabsContent>
     </Tabs>
   );

@@ -570,6 +570,42 @@ export async function deleteUser(id: string): Promise<void> {
   }
 }
 
+export async function banUser(id: string, banned: boolean): Promise<UserItem> {
+  if (!hasSupabaseEnv) {
+    const demo = getDemoStore();
+    const idx = demo.users.findIndex((u) => u.id === id);
+    if (idx < 0) throw new Error("User not found.");
+    demo.users[idx].is_banned = banned;
+    return demo.users[idx];
+  }
+
+  const supabase = getSupabaseAdminOrThrow();
+  await supabase.auth.admin.updateUserById(id, {
+    ban_duration: banned ? "87600h" : "none",
+  });
+  const { data, error } = await supabase
+    .from("users")
+    .update({ is_banned: banned } as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return data as UserItem;
+}
+
+export async function resetUserPassword(id: string): Promise<{ tempPassword: string }> {
+  if (!hasSupabaseEnv) throw new Error("Supabase required.");
+  const supabase = getSupabaseAdminOrThrow();
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$!";
+  const tempPassword = Array.from(
+    { length: 12 },
+    () => chars[Math.floor(Math.random() * chars.length)],
+  ).join("");
+  const { error } = await supabase.auth.admin.updateUserById(id, { password: tempPassword });
+  if (error) throw new Error(error.message);
+  return { tempPassword };
+}
+
 export async function getSettings(): Promise<SiteSetting[]> {
   return withSupabaseReadFallback(
     "getSettings",
@@ -653,6 +689,7 @@ export async function createDemoUser(email: string): Promise<UserItem> {
     display_name: null,
     role: "user",
     views: 0,
+    is_banned: false,
     created_at: new Date().toISOString(),
   };
 
@@ -683,6 +720,7 @@ export async function ensureUserAccount(input: {
       display_name: null,
       role,
       views: 0,
+      is_banned: false,
       created_at: new Date().toISOString(),
     };
     demo.users.unshift(nextUser);

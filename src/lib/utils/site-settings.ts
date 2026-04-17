@@ -22,6 +22,9 @@ export const settingsFormFieldOrder = [
   "zalo.webhook_url",
   "zalo.group_id",
   "ads.google_adsense_id",
+  "ads.slot_header",
+  "ads.slot_sidebar",
+  "ads.slot_article",
 ] as const;
 
 export const adminSettingsApiKeys = [
@@ -63,6 +66,9 @@ export const defaultSiteSettingValues: Record<string, string> = {
   "zalo.webhook_url": "",
   "zalo.group_id": "",
   "ads.google_adsense_id": "",
+  "ads.slot_header": "",
+  "ads.slot_sidebar": "",
+  "ads.slot_article": "",
 };
 
 export function isSettingsFormFieldKey(key: string): key is SettingsFormFieldKey {

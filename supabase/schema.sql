@@ -15,8 +15,12 @@ create table if not exists public.users (
   display_name text,
   role text not null check (role in ('super_admin', 'admin', 'manager', 'support', 'user')) default 'user',
   views integer not null default 0,
+  is_banned boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- Idempotent migration: add is_banned if table already exists
+alter table if exists public.users add column if not exists is_banned boolean not null default false;
 
 create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
@@ -39,10 +43,16 @@ create table if not exists public.news (
   content text not null,
   cover text not null,
   category text not null default 'ESPORTS',
+  tags text[] not null default '{}',
   status text not null check (status in ('draft', 'published')) default 'draft',
+  published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Alter existing news table to add new columns if not present (idempotent)
+alter table if exists public.news add column if not exists tags text[] not null default '{}';
+alter table if exists public.news add column if not exists published_at timestamptz;
 
 create table if not exists public.gallery (
   id uuid primary key default gen_random_uuid(),
@@ -68,6 +78,23 @@ create table if not exists public.admin_activity_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.analytics_daily (
+  date date primary key,
+  views integer not null default 0,
+  unique_visitors integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.news_comments (
+  id uuid primary key default gen_random_uuid(),
+  news_id uuid not null references public.news(id) on delete cascade,
+  user_id uuid references public.users(id) on delete set null,
+  display_name text not null check (char_length(display_name) <= 80),
+  content text not null check (char_length(content) >= 2 and char_length(content) <= 1000),
+  status text not null check (status in ('pending', 'approved', 'rejected')) default 'pending',
+  created_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -81,6 +108,11 @@ create index if not exists news_created_at_idx on public.news(created_at desc);
 create index if not exists gallery_created_at_idx on public.gallery(created_at desc);
 create index if not exists settings_updated_at_idx on public.settings(updated_at desc);
 create index if not exists admin_activity_logs_created_at_idx on public.admin_activity_logs(created_at desc);
+create index if not exists analytics_daily_date_idx on public.analytics_daily(date desc);
+create index if not exists news_comments_news_id_idx on public.news_comments(news_id);
+create index if not exists news_comments_status_idx on public.news_comments(status);
+create index if not exists news_comments_created_at_idx on public.news_comments(created_at desc);
+create index if not exists news_tags_idx on public.news using gin(tags);
 
 -- ============================================================
 -- TRIGGERS & FUNCTIONS
@@ -147,6 +179,8 @@ alter table public.news enable row level security;
 alter table public.gallery enable row level security;
 alter table public.settings enable row level security;
 alter table public.admin_activity_logs enable row level security;
+alter table public.analytics_daily enable row level security;
+alter table public.news_comments enable row level security;
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -293,6 +327,34 @@ create policy "Admin manage log cleanup" on public.admin_activity_logs for delet
 using (public.is_admin());
 
 -- ============================================================
+-- POLICIES – ANALYTICS_DAILY
+-- ============================================================
+
+drop policy if exists "Admin can view analytics" on public.analytics_daily;
+create policy "Admin can view analytics" on public.analytics_daily for select
+using (public.is_admin_or_editor());
+
+drop policy if exists "Admin manage analytics" on public.analytics_daily;
+create policy "Admin manage analytics" on public.analytics_daily for all
+using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- POLICIES – NEWS COMMENTS
+-- ============================================================
+
+drop policy if exists "Public can view approved comments" on public.news_comments;
+create policy "Public can view approved comments" on public.news_comments for select
+using (status = 'approved' or public.is_admin_or_editor());
+
+drop policy if exists "Anyone can insert pending comment" on public.news_comments;
+create policy "Anyone can insert pending comment" on public.news_comments for insert
+with check (status = 'pending');
+
+drop policy if exists "Admin manage comments" on public.news_comments;
+create policy "Admin manage comments" on public.news_comments for all
+using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
+
+-- ============================================================
 -- SEED DATA
 -- ============================================================
 
@@ -316,7 +378,10 @@ values
   ('branding.logo_dark_url', 'https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441'),
   ('news.categories', 'ESPORTS\nPATCH NOTE\nCỘNG ĐỒNG'),
   ('analytics.views', '0'),
-  ('site.description', 'Arex – Cổng thông tin cộng đồng hàng đầu về sự kiện, tin tức và nội dung Garena Free Fire Việt Nam.')
+  ('site.description', 'Arex – Cổng thông tin cộng đồng hàng đầu về sự kiện, tin tức và nội dung Garena Free Fire Việt Nam.'),
+  ('branding.primary_color', ''),
+  ('site.comments_enabled', 'true'),
+  ('site.language', 'vi')
 on conflict (key) do nothing;
 
 -- ============================================================
