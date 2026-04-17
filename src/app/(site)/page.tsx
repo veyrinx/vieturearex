@@ -8,13 +8,11 @@ import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
 import { NewsTicker } from "@/components/home/news-ticker";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
-import { StatsBar } from "@/components/home/stats-bar";
 import {
   getEvents,
   getGalleryItems,
   getNews,
   getSettings,
-  getUsers,
 } from "@/lib/data/content-service";
 import { getStreams } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
@@ -32,13 +30,12 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [events, news, gallery, settings, streams, users] = await Promise.all([
+  const [events, news, gallery, settings, streams] = await Promise.all([
     getEvents(),
     getNews("published"),
     getGalleryItems(),
     getSettings(),
     getStreams(),
-    getUsers().catch(() => []),
   ]);
 
   const settingsMap = buildSettingsMap(settings);
@@ -103,16 +100,9 @@ export default async function HomePage() {
         nextEventDate={nextUpcomingEvent?.start_date ?? null}
       />
 
-      <NewsTicker news={latestNews.slice(0, 10)} />
+      <NewsTicker news={latestNews.slice(0, 8)} />
 
-      <StatsBar
-        eventCount={events.length}
-        newsCount={news.length}
-        galleryCount={gallery.length}
-        memberCount={users.length > 0 ? users.length : undefined}
-      />
-
-      <div className="space-y-14 overflow-x-clip">
+      <div className="overflow-x-clip">
         <FeaturedEvents events={latestEvents} />
         {liveAndUpcomingStreams.length > 0 && (
           <LivestreamPreview streams={liveAndUpcomingStreams} />
