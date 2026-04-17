@@ -21,6 +21,7 @@ const PUBLIC_PATHS = [
   "/privacy-policy",
   "/dieu-khoan-su-dung",
   "/chinh-sach-bao-mat",
+  "/maintenance",
 ];
 
 function isPublicPath(pathname: string) {

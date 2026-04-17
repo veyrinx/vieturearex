@@ -25,6 +25,10 @@ export const settingsFormFieldOrder = [
   "ads.slot_header",
   "ads.slot_sidebar",
   "ads.slot_article",
+  "site.maintenance_mode",
+  "site.maintenance_message",
+  "site.maintenance_end_time",
+  "site.discord_webhook",
 ] as const;
 
 export const adminSettingsApiKeys = [
@@ -69,6 +73,10 @@ export const defaultSiteSettingValues: Record<string, string> = {
   "ads.slot_header": "",
   "ads.slot_sidebar": "",
   "ads.slot_article": "",
+  "site.maintenance_mode": "false",
+  "site.maintenance_message": "Website đang được bảo trì. Vui lòng quay lại sau.",
+  "site.maintenance_end_time": "",
+  "site.discord_webhook": "",
 };
 
 export function isSettingsFormFieldKey(key: string): key is SettingsFormFieldKey {

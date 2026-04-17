@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { PageTransition } from "@/components/common/page-transition";
@@ -6,6 +7,7 @@ import { AutoReload } from "@/components/common/auto-reload";
 import { MiniCommunityChat } from "@/components/community/mini-chat";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,6 +19,26 @@ type SiteLayoutProps = {
 export default async function SiteLayout({ children }: SiteLayoutProps) {
   const settings = await getSettings();
   const settingsMap = buildSettingsMap(settings);
+
+  if (settingsMap["site.maintenance_mode"] === "true") {
+    const supabase = createServerSupabaseClient();
+    const adminRoles = ["super_admin", "admin", "manager", "support"];
+    let isAdmin = false;
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle<{ role: string }>();
+        if (profile?.role && adminRoles.includes(profile.role)) {
+          isAdmin = true;
+        }
+      }
+    }
+    if (!isAdmin) redirect("/maintenance");
+  }
 
   return (
     <div className="relative min-h-screen">
