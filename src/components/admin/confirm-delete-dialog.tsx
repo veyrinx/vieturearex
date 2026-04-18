@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Trash2, AlertTriangle } from "lucide-react";
 import {
   Dialog,
@@ -16,7 +16,7 @@ type ConfirmDeleteDialogProps = {
   itemType: string;
   description?: string;
   onConfirm: () => Promise<void> | void;
-  trigger: React.ReactNode;
+  trigger: React.ReactElement;
 };
 
 export function ConfirmDeleteDialog({
@@ -39,9 +39,18 @@ export function ConfirmDeleteDialog({
     }
   };
 
+  const clonedTrigger = React.cloneElement(trigger, {
+    type: "button",
+    onClick: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setOpen(true);
+    },
+  } as React.HTMLAttributes<HTMLElement> & { type: string });
+
   return (
     <>
-      <span onClick={() => setOpen(true)}>{trigger}</span>
+      {clonedTrigger}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md border-border bg-card text-foreground">
           <DialogHeader>
@@ -68,6 +77,7 @@ export function ConfirmDeleteDialog({
 
           <div className="mt-2 flex items-center justify-end gap-3">
             <Button
+              type="button"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
@@ -76,6 +86,7 @@ export function ConfirmDeleteDialog({
               Hủy bỏ
             </Button>
             <Button
+              type="button"
               variant="destructive"
               onClick={handleConfirm}
               disabled={loading}

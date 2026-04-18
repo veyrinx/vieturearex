@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
-import { useEventsQuery } from "@/hooks/use-events-query";
+import { useAdminEventsQuery, useInvalidateAdminEvents } from "@/hooks/use-admin-events-query";
 import { EventFormDialog } from "@/components/admin/event-form-dialog";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { StatusBadge } from "@/components/common/status-badge";
@@ -15,13 +14,13 @@ import type { EventItem } from "@/lib/types/content";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 
 export function EventsAdminPanel() {
-  const queryClient = useQueryClient();
-  const { data: events = [], isLoading } = useEventsQuery({ status: "all" });
+  const { data: events = [], isLoading } = useAdminEventsQuery();
+  const invalidate = useInvalidateAdminEvents();
   const [creatingOpen, setCreatingOpen] = useState(false);
   const [editing, setEditing] = useState<EventItem | null>(null);
 
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["events"] });
+    await invalidate();
   };
 
   const onDelete = async (id: string) => {
@@ -82,7 +81,7 @@ export function EventsAdminPanel() {
                       <p className="line-clamp-1 font-medium">{event.title}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatVietnamDate(event.start_date)} - {formatVietnamDate(event.end_date)}
+                      {formatVietnamDate(event.start_date)} → {formatVietnamDate(event.end_date)}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={event.status} />
@@ -90,9 +89,10 @@ export function EventsAdminPanel() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Button
+                          type="button"
                           size="icon"
                           variant="outline"
-                          title="Chỉnh sửa thông tin sự kiện: tiêu đề, thời gian, ảnh, liên kết"
+                          title="Chỉnh sửa thông tin sự kiện"
                           aria-label="Chỉnh sửa sự kiện"
                           className="border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
                           onClick={() => setEditing(event)}
@@ -102,13 +102,13 @@ export function EventsAdminPanel() {
                         <ConfirmDeleteDialog
                           itemName={event.title}
                           itemType="sự kiện"
-                          description="Toàn bộ thông tin sự kiện bao gồm ảnh, liên kết và thời gian sẽ bị xóa vĩnh viễn khỏi hệ thống."
+                          description="Toàn bộ thông tin sự kiện bao gồm ảnh, liên kết và thời gian sẽ bị xóa vĩnh viễn."
                           onConfirm={() => onDelete(event.id)}
                           trigger={
                             <Button
                               size="icon"
                               variant="outline"
-                              title="Xóa sự kiện khỏi hệ thống"
+                              title="Xóa sự kiện"
                               aria-label="Xóa sự kiện"
                               className="border-rose-400/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
                             >

@@ -69,13 +69,22 @@ function createFallbackContent(title: string) {
   return `<p>${title}</p>`;
 }
 
+function stripHtml(html: string) {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
 const newsFormSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(6, "Tiêu đề cần ít nhất 6 ký tự.").max(160),
   cover: z.string().url("Ảnh bìa phải là URL hợp lệ."),
   category: z.string().min(2, "Danh mục cần ít nhất 2 ký tự.").max(60),
   created_at: z.string().min(1, "Vui lòng chọn ngày đăng."),
-  content: z.string().min(20, "Nội dung cần ít nhất 20 ký tự.").max(100000),
+  content: z
+    .string()
+    .max(100000)
+    .refine((val) => stripHtml(val).length >= 10, {
+      message: "Nội dung cần ít nhất 10 ký tự.",
+    }),
 });
 
 type NewsFormValues = z.infer<typeof newsFormSchema>;

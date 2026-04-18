@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
-import { useNewsQuery } from "@/hooks/use-news-query";
+import { useAdminNewsQuery, useInvalidateAdminNews } from "@/hooks/use-admin-news-query";
 import { NewsEditorDialog } from "@/components/admin/news-editor-dialog";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
@@ -24,13 +23,13 @@ const publishStatusClassMap: Record<NewsItem["status"], string> = {
 };
 
 export function NewsAdminPanel() {
-  const queryClient = useQueryClient();
-  const { data: news = [], isLoading } = useNewsQuery("all");
+  const { data: news = [], isLoading } = useAdminNewsQuery();
+  const invalidate = useInvalidateAdminNews();
   const [creatingOpen, setCreatingOpen] = useState(false);
   const [editing, setEditing] = useState<NewsItem | null>(null);
 
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["news"] });
+    await invalidate();
   };
 
   const onDelete = async (id: string) => {
@@ -89,7 +88,7 @@ export function NewsAdminPanel() {
                 {news.map((item) => (
                   <tr key={item.id} className="border-t border-border text-foreground">
                     <td className="px-4 py-3">
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         <p className="line-clamp-1 font-medium text-foreground">{item.title}</p>
                         <p className="line-clamp-1 text-xs uppercase tracking-[0.08em] text-muted-foreground">
                           /{item.slug}
@@ -108,9 +107,10 @@ export function NewsAdminPanel() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Button
+                          type="button"
                           size="icon"
                           variant="outline"
-                          title="Chỉnh sửa bài viết: nội dung, tiêu đề, ảnh bìa, danh mục và trạng thái đăng tải"
+                          title="Chỉnh sửa bài viết: nội dung, tiêu đề, ảnh bìa, danh mục"
                           aria-label="Chỉnh sửa bài viết"
                           className="border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
                           onClick={() => setEditing(item)}
@@ -120,13 +120,13 @@ export function NewsAdminPanel() {
                         <ConfirmDeleteDialog
                           itemName={item.title}
                           itemType="bài viết"
-                          description="Toàn bộ nội dung bài viết, ảnh bìa và bình luận liên quan sẽ bị xóa vĩnh viễn. URL slug cũng sẽ không còn truy cập được."
+                          description="Toàn bộ nội dung, ảnh bìa và URL slug sẽ bị xóa vĩnh viễn. Các link trỏ tới bài này sẽ bị 404."
                           onConfirm={() => onDelete(item.id)}
                           trigger={
                             <Button
                               size="icon"
                               variant="outline"
-                              title="Xóa bài viết khỏi hệ thống"
+                              title="Xóa bài viết"
                               aria-label="Xóa bài viết"
                               className="border-rose-400/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
                             >
