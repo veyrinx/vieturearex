@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -50,8 +50,7 @@ export function PopupManager() {
   const [linkUrl, setLinkUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
 
-  // Lưu selection trước khi mở color picker
-  const savedSelectionRef = { current: null as { from: number; to: number } | null };
+  const savedSelectionRef = useRef<{ from: number; to: number } | null>(null);
 
   const openColorPicker = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -98,8 +97,9 @@ export function PopupManager() {
 
   useEffect(() => {
     fetch("/api/admin/popup")
-      .then((r) => r.json())
-      .then((data: PopupData) => {
+      .then(async (r) => {
+        if (!r.ok) throw new Error("Lỗi tải popup");
+        const data = (await r.json()) as PopupData;
         setEnabled(data.enabled);
         setTitle(data.title);
         editor?.commands.setContent(data.content || "");
@@ -120,13 +120,23 @@ export function PopupManager() {
 
   const onSave = async () => {
     setSaving(true);
-    const res = await fetch("/api/admin/popup", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled, title, content: editor?.getHTML() ?? "" }),
-    });
-    setSaving(false);
-    res.ok ? toast.success("ĐÃ LƯU CÀI ĐẶT POP-UP.") : toast.error("LƯU THẤT BẠI.");
+    try {
+      const res = await fetch("/api/admin/popup", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled, title, content: editor?.getHTML() ?? "" }),
+      });
+      if (res.ok) {
+        toast.success("ĐÃ LƯU CÀI ĐẶT POP-UP.");
+      } else {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        toast.error(body?.error ?? "LƯU THẤT BẠI.");
+      }
+    } catch {
+      toast.error("Lỗi mạng, không thể lưu pop-up.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <LoadingSpinner className="py-12" label="ĐANG TẢI..." />;

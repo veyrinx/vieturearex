@@ -33,19 +33,18 @@ export function NewsAdminPanel() {
   };
 
   const onDelete = async (id: string) => {
-    const response = await fetch("/api/admin/news", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-
-    if (!response.ok) {
-      toast.error("XÓA BÀI VIẾT THẤT BẠI.");
-      return;
+    try {
+      const response = await fetch("/api/admin/news", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!response.ok) { toast.error("XÓA BÀI VIẾT THẤT BẠI."); return; }
+      toast.success("ĐÃ XÓA BÀI VIẾT.");
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng, không thể xóa bài viết.");
     }
-
-    toast.success("ĐÃ XÓA BÀI VIẾT.");
-    await refresh();
   };
 
   return (

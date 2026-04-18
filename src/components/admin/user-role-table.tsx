@@ -16,6 +16,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { UserItem, UserRole } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 import { UserEditDialog } from "@/components/admin/user-edit-dialog";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 
 const ROLE_META: Record<string, { label: string; color: string; level: number }> = {
   super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20",    level: 100 },
@@ -266,7 +267,6 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
   const toggleBan = async (user: UserItem) => {
     if (user.email === currentUserEmail) { toast.error("Không thể tự khóa mình."); return; }
     const willBan = !user.is_banned;
-    if (!confirm(`${willBan ? "Khóa" : "Mở khóa"} tài khoản ${user.email}?`)) return;
     setBanningId(user.id);
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
@@ -284,7 +284,6 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
   };
 
   const resetPassword = async (user: UserItem) => {
-    if (!confirm(`Reset mật khẩu cho ${user.email}? Mật khẩu cũ sẽ không còn dùng được.`)) return;
     setResetingId(user.id);
     const res = await fetch("/api/admin/users/reset-password", {
       method: "POST",
@@ -301,19 +300,22 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
     setTempPw({ password: tempPassword, email: user.email });
   };
 
-  const deleteUser = async (id: string, email: string) => {
-    if (email === currentUserEmail) { toast.error("Không thể xóa chính mình."); return; }
-    if (!confirm(`Xóa vĩnh viễn tài khoản ${email}?`)) return;
+  const deleteUser = async (id: string) => {
     setDeletingId(id);
-    const res = await fetch("/api/admin/users", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    setDeletingId(null);
-    if (!res.ok) { toast.error("Không thể xóa tài khoản."); return; }
-    toast.success("Đã xóa tài khoản.");
-    await onSaved();
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) { toast.error("Không thể xóa tài khoản."); return; }
+      toast.success("Đã xóa tài khoản.");
+      await onSaved();
+    } catch {
+      toast.error("Lỗi mạng, không thể xóa tài khoản.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Which roles can the current user assign?
@@ -567,16 +569,23 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
 
                         {/* Delete */}
                         {isSuperAdmin && user.email !== currentUserEmail && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            disabled={isDeleting}
-                            onClick={() => deleteUser(user.id, user.email)}
-                            title="Xóa tài khoản"
-                            className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            {isDeleting ? <Shield className="size-3.5 animate-pulse" /> : <Trash2 className="size-3.5" />}
-                          </Button>
+                          <ConfirmDeleteDialog
+                            itemName={user.email}
+                            itemType="tài khoản"
+                            description="Tài khoản sẽ bị xóa vĩnh viễn khỏi hệ thống và không thể khôi phục."
+                            onConfirm={() => deleteUser(user.id)}
+                            trigger={
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                disabled={isDeleting}
+                                title="Xóa tài khoản"
+                                className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                {isDeleting ? <Shield className="size-3.5 animate-pulse" /> : <Trash2 className="size-3.5" />}
+                              </Button>
+                            }
+                          />
                         )}
                       </div>
                     </td>

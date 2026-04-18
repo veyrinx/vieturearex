@@ -24,19 +24,18 @@ export function EventsAdminPanel() {
   };
 
   const onDelete = async (id: string) => {
-    const response = await fetch("/api/admin/events", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-
-    if (!response.ok) {
-      toast.error("XÓA SỰ KIỆN THẤT BẠI.");
-      return;
+    try {
+      const response = await fetch("/api/admin/events", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!response.ok) { toast.error("XÓA SỰ KIỆN THẤT BẠI."); return; }
+      toast.success("ĐÃ XÓA SỰ KIỆN.");
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng, không thể xóa sự kiện.");
     }
-
-    toast.success("ĐÃ XÓA SỰ KIỆN.");
-    await refresh();
   };
 
   return (

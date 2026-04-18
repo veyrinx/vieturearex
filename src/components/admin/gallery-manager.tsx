@@ -45,41 +45,38 @@ export function GalleryManager() {
       toast.error("VUI LÒNG NHẬP ĐỦ THẺ TAG VÀ ĐƯỜNG DẪN ẢNH.");
       return;
     }
-
     setIsSaving(true);
-    const response = await fetch("/api/admin/gallery", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_url: imageUrl,
-        tag,
-      }),
-    });
-    setIsSaving(false);
-
-    if (!response.ok) {
-      toast.error("KHÔNG THỂ THÊM ẢNH VÀO THƯ VIỆN.");
-      return;
+    try {
+      const response = await fetch("/api/admin/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: imageUrl, tag }),
+      });
+      if (!response.ok) { toast.error("KHÔNG THỂ THÊM ẢNH VÀO THƯ VIỆN."); return; }
+      toast.success("ĐÃ THÊM ẢNH VÀO THƯ VIỆN.");
+      setTag("");
+      setImageUrl("");
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng, không thể thêm ảnh.");
+    } finally {
+      setIsSaving(false);
     }
-
-    toast.success("ĐÃ THÊM ẢNH VÀO THƯ VIỆN.");
-    setTag("");
-    setImageUrl("");
-    await refresh();
   };
 
   const onDelete = async (id: string) => {
-    const response = await fetch("/api/admin/gallery", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    if (!response.ok) {
-      toast.error("XÓA ẢNH THẤT BẠI.");
-      return;
+    try {
+      const response = await fetch("/api/admin/gallery", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!response.ok) { toast.error("XÓA ẢNH THẤT BẠI."); return; }
+      toast.success("ĐÃ XÓA ẢNH.");
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng, không thể xóa ảnh.");
     }
-    toast.success("ĐÃ XÓA ẢNH.");
-    await refresh();
   };
 
   return (

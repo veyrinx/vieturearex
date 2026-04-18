@@ -95,31 +95,35 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const onSubmit = handleSubmit(async (values) => {
     if (!isDirty) { toast.info("Chưa có thay đổi nào."); return; }
     setIsSaving(true);
-    const res = await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: user.id,
-        action: "update_info",
-        display_name: values.display_name !== (user.display_name ?? "") ? values.display_name : undefined,
-        email: values.email !== user.email ? values.email : undefined,
-      }),
-    });
-    setIsSaving(false);
-    if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { error?: string };
-      toast.error(err.error ?? "Không thể cập nhật thông tin.");
-      return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: user.id,
+          action: "update_info",
+          display_name: values.display_name !== (user.display_name ?? "") ? values.display_name : undefined,
+          email: values.email !== user.email ? values.email : undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(err.error ?? "Không thể cập nhật thông tin.");
+        return;
+      }
+      toast.success("Đã cập nhật thông tin tài khoản.");
+      onOpenChange(false);
+      await onSaved();
+    } catch {
+      toast.error("Lỗi mạng, không thể lưu thay đổi.");
+    } finally {
+      setIsSaving(false);
     }
-    toast.success("Đã cập nhật thông tin tài khoản.");
-    onOpenChange(false);
-    await onSaved();
   });
 
   const toggleBan = async () => {
     if (!canAct) return;
     const willBan = !user.is_banned;
-    if (!confirm(`${willBan ? "Khóa" : "Mở khóa"} tài khoản ${user.email}?`)) return;
     setIsBanning(true);
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
@@ -139,7 +143,6 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
 
   const resetPassword = async () => {
     if (!canAct) return;
-    if (!confirm(`Reset mật khẩu cho ${user.email}?`)) return;
     setIsReseting(true);
     const res = await fetch("/api/admin/users/reset-password", {
       method: "POST",

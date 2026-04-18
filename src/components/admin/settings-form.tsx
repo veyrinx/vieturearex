@@ -231,14 +231,22 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
 
   const saveProfile = async () => {
     setSavingProfile(true);
-    const r = await fetch("/api/admin/profile", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ display_name: displayName }),
-    });
-    setSavingProfile(false);
-    if (!r.ok) { toast.error("Lưu thất bại."); return; }
-    setProfile((p) => p ? { ...p, display_name: displayName } : p);
-    toast.success("Đã cập nhật hồ sơ.");
+    try {
+      const r = await fetch("/api/admin/profile", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ display_name: displayName }),
+      });
+      if (!r.ok) {
+        const body = (await r.json().catch(() => null)) as { error?: string } | null;
+        toast.error(body?.error ?? "Lưu thất bại."); return;
+      }
+      setProfile((p) => p ? { ...p, display_name: displayName } : p);
+      toast.success("Đã cập nhật hồ sơ.");
+    } catch {
+      toast.error("Lỗi mạng, không thể lưu hồ sơ.");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const savePw = async () => {
