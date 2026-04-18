@@ -15,7 +15,6 @@ export const newsSchema = z.object({
   category: z.string().min(2).max(60).default("ESPORTS"),
   tags: z.array(z.string().min(1).max(40)).max(10).default([]),
   created_at: z.string().datetime().optional(),
-  published_at: z.string().datetime().nullable().optional(),
   status: z.enum(["draft", "published"]).default("published"),
 });
 

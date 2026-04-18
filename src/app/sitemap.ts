@@ -138,7 +138,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── Bài viết EN ──────────────────────────────────────────────────────────
   const newsRoutes: MetadataRoute.Sitemap = news.map((item) => {
-    const pubDate = item.published_at ?? item.created_at;
+    const pubDate = item.created_at;
     const days = ageInDays(pubDate);
     return {
       url: `${BASE}/news/${item.slug}`,
@@ -151,7 +151,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── Bài viết VI ──────────────────────────────────────────────────────────
   const viNewsRoutes: MetadataRoute.Sitemap = news.map((item) => {
-    const pubDate = item.published_at ?? item.created_at;
+    const pubDate = item.created_at;
     const days = ageInDays(pubDate);
     return {
       url: `${BASE}/tin-tuc/${item.slug}`,

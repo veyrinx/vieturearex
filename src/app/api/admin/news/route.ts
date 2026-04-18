@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
       content: buildContent(title, parsed.data.content),
       category: sanitizePlainText(parsed.data.category ?? "ESPORTS"),
       created_at: parsed.data.created_at ?? new Date().toISOString(),
-      published_at: parsed.data.published_at ?? null,
       status: parsed.data.status ?? "published",
     });
     await logAdminActivity({

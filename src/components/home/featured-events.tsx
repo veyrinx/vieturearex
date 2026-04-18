@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarDays, ArrowRight } from "lucide-react";
+import { CalendarDays, ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Reveal } from "@/components/common/reveal";
@@ -181,6 +181,26 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                         </div>
                       );
                     })()}
+
+                    {event.link && (
+                      <a
+                        href={event.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "mt-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
+                          event.status === "active"
+                            ? "border border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20"
+                            : event.status === "upcoming"
+                              ? "border border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20"
+                              : "border border-border bg-muted/50 text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        <ExternalLink className="size-3 shrink-0" />
+                        Tham gia sự kiện
+                      </a>
+                    )}
                   </div>
                 </article>
               </Reveal>

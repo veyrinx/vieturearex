@@ -24,7 +24,7 @@ function timeAgo(dateStr: string | null) {
 }
 
 function FeaturedCard({ item }: { item: NewsItem }) {
-  const ago = timeAgo(item.published_at ?? item.created_at);
+  const ago = timeAgo(item.created_at);
   return (
     <Reveal>
       <article className="group relative flex flex-col overflow-hidden rounded-[18px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 dark:border-border dark:bg-card">
@@ -64,7 +64,7 @@ function FeaturedCard({ item }: { item: NewsItem }) {
 }
 
 function MiniCard({ item, index }: { item: NewsItem; index: number }) {
-  const ago = timeAgo(item.published_at ?? item.created_at);
+  const ago = timeAgo(item.created_at);
   return (
     <Reveal delay={index * 0.07}>
       <article className="group relative flex gap-3 overflow-hidden rounded-[12px] border bg-white p-3 transition-all duration-200 hover:shadow-md hover:border-primary/30 dark:border-border dark:bg-card dark:hover:border-amber-400/30">
