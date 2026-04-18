@@ -56,7 +56,16 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const setting = await updateSetting(sanitizedKey, sanitizePlainText(parsed.data.value));
+  let setting;
+  try {
+    setting = await updateSetting(sanitizedKey, sanitizePlainText(parsed.data.value));
+  } catch (error) {
+    console.error("[settings PATCH] updateSetting failed:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to update setting." },
+      { status: 500 },
+    );
+  }
 
   await logAdminActivity({
     action: "SETTING_UPDATED",

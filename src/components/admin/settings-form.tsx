@@ -205,16 +205,28 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
 
   const save = async (keys: string[], section: string) => {
     setSaving(section);
-    const ok = await Promise.all(keys.map(async (k) => {
-      const r = await fetch("/api/admin/settings", {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: k, value: v(k) }),
-      });
-      return r.ok;
-    }));
-    setSaving(null);
-    if (ok.every(Boolean)) { toast.success("Đã lưu thay đổi."); await onSaved(); }
-    else toast.error("Lưu thất bại.");
+    try {
+      const results = await Promise.all(keys.map(async (k) => {
+        try {
+          const r = await fetch("/api/admin/settings", {
+            method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: k, value: v(k) }),
+          });
+          if (!r.ok) {
+            const body = (await r.json().catch(() => null)) as { error?: string } | null;
+            return body?.error ?? "Lỗi không xác định.";
+          }
+          return true;
+        } catch {
+          return "Lỗi mạng.";
+        }
+      }));
+      const errors = results.filter((r): r is string => typeof r === "string");
+      if (errors.length === 0) { toast.success("Đã lưu thay đổi."); await onSaved(); }
+      else toast.error(errors[0]);
+    } finally {
+      setSaving(null);
+    }
   };
 
   const saveProfile = async () => {
