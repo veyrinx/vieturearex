@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 
 type Rating = { id: string; slug: string; title: string; anonymous_id: string; stars: number; review: string | null; created_at: string };
 
 async function fetchRatings(): Promise<Rating[]> {
-  const res = await fetch("/api/admin/ratings");
+  const res = await fetch("/api/admin/ratings", { cache: "no-store" });
   if (!res.ok) throw new Error("Failed");
   const data = await res.json() as { ratings: Rating[] };
   return data.ratings;
@@ -19,18 +19,19 @@ async function fetchRatings(): Promise<Rating[]> {
 
 export function RatingsAdminPanel() {
   const queryClient = useQueryClient();
-  const { data: ratings = [], isLoading } = useQuery({ queryKey: ["admin-ratings"], queryFn: fetchRatings });
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { data: ratings = [], isLoading } = useQuery({
+    queryKey: ["admin-ratings"],
+    queryFn: fetchRatings,
+    staleTime: 0,
+    refetchOnMount: true,
+  });
 
   const onDelete = async (id: string) => {
-    if (!confirm("Xóa đánh giá này?")) return;
-    setDeletingId(id);
     const res = await fetch("/api/admin/ratings", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    setDeletingId(null);
     if (!res.ok) { toast.error("Không thể xóa."); return; }
     toast.success("Đã xóa đánh giá.");
     void queryClient.invalidateQueries({ queryKey: ["admin-ratings"] });
@@ -72,10 +73,17 @@ export function RatingsAdminPanel() {
                 {new Date(r.created_at).toLocaleDateString("vi-VN")}
               </td>
               <td className="px-4 py-3">
-                <Button size="icon" variant="outline" className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white"
-                  disabled={deletingId === r.id} onClick={() => onDelete(r.id)}>
-                  <Trash2 className="size-3.5" />
-                </Button>
+                <ConfirmDeleteDialog
+                  itemName={r.title}
+                  itemType="đánh giá"
+                  description="Đánh giá sẽ bị xóa vĩnh viễn và không thể khôi phục."
+                  onConfirm={() => onDelete(r.id)}
+                  trigger={
+                    <Button size="icon" variant="outline" className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white">
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  }
+                />
               </td>
             </tr>
           ))}

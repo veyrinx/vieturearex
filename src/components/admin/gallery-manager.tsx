@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2, UploadCloud } from "lucide-react";
-import { useGalleryQuery } from "@/hooks/use-gallery-query";
+import { useGalleryQuery, useInvalidateGallery } from "@/hooks/use-gallery-query";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +11,14 @@ import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 
 export function GalleryManager() {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateGallery();
   const { data: gallery = [], isLoading } = useGalleryQuery();
   const [tag, setTag] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    await invalidate();
   };
 
   const onUploadFile = async (file: File) => {
