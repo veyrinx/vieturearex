@@ -377,13 +377,11 @@ export async function createNews(
   }
 
   const supabase = getSupabaseOrThrow();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { published_at, ...rest } = payload as typeof payload & { published_at?: unknown };
   const { data, error } = await supabase
     .from("news")
     .insert({
-      ...rest,
-      id: rest.id ?? crypto.randomUUID(),
+      ...payload,
+      id: payload.id ?? crypto.randomUUID(),
     } as never)
     .select("*")
     .single();
@@ -408,11 +406,9 @@ export async function updateNews(
   }
 
   const supabase = getSupabaseOrThrow();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { published_at, ...rest } = payload as typeof payload & { published_at?: unknown };
   const { data, error } = await supabase
     .from("news")
-    .update(rest as never)
+    .update(payload as never)
     .eq("id", id)
     .select("*")
     .single();
