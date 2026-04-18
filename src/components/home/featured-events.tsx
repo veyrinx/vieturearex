@@ -43,7 +43,7 @@ function getEventProgress(start: string, end: string): number {
 }
 
 function formatEventDate(dateStr: string) {
-  return format(new Date(dateStr), "dd/MM/yyyy", { locale: vi });
+  return format(new Date(dateStr), "dd/MM/yyyy HH:mm", { locale: vi });
 }
 
 export function FeaturedEvents({ events }: FeaturedEventsProps) {

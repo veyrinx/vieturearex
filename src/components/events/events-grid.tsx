@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { isAfter, isBefore } from "date-fns";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -167,10 +167,29 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
                 />
               </div>
 
-              <div className="flex flex-1 items-center justify-center p-3 text-center">
+              <div className="flex flex-1 flex-col gap-2 p-3 text-center">
                 <h3 className="font-heading text-[0.95rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-1">
                   {event.title}
                 </h3>
+                {event.link && (
+                  <a
+                    href={event.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
+                      event.status === "active"
+                        ? "border border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20"
+                        : event.status === "upcoming"
+                          ? "border border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20"
+                          : "border border-border bg-muted/50 text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    <ExternalLink className="size-3 shrink-0" />
+                    Tham gia sự kiện
+                  </a>
+                )}
               </div>
             </article>
           ))}

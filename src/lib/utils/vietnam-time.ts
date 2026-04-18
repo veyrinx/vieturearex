@@ -37,6 +37,40 @@ export function formatVietnamDate(value: Date | string) {
   }).format(new Date(value));
 }
 
+export function formatVietnamDateTime(value: Date | string) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    timeZone: VIETNAM_TIMEZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+export function formatVietnamTimeInput(value: Date | string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: VIETNAM_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(value));
+  const hour = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
+  return `${hour === "24" ? "00" : hour}:${minute}`;
+}
+
+export function toVietnamIsoFromDateTimeInput(date: string, time: string) {
+  const trimmedDate = (date || "").trim();
+  const trimmedTime = (time || "00:00").trim();
+  if (!trimmedDate) throw new Error("Invalid date input: empty date string");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) throw new Error("Invalid date input: must be YYYY-MM-DD");
+  const parsed = new Date(`${trimmedDate}T${trimmedTime}:00+07:00`);
+  if (Number.isNaN(parsed.getTime())) throw new Error("Invalid date/time input");
+  return parsed.toISOString();
+}
+
 export function formatVietnamDateInput(value: Date | string) {
   return getVietnamDateKey(value);
 }

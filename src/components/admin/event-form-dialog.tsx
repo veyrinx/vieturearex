@@ -19,7 +19,8 @@ import {
 import type { EventItem } from "@/lib/types/content";
 import {
   formatVietnamDateInput,
-  toVietnamIsoFromDateInput,
+  formatVietnamTimeInput,
+  toVietnamIsoFromDateTimeInput,
 } from "@/lib/utils/vietnam-time";
 
 type EventFormDialogProps = {
@@ -31,25 +32,19 @@ type EventFormDialogProps = {
   onSaved: () => Promise<void>;
 };
 
-type EventFormValues = {
-  id?: string;
-  title: string;
-  start_date: string;
-  end_date: string;
-  image_url: string;
-  thumbnail_url?: string;
-  link?: string;
-};
-
 const eventFormSchema = z.object({
   id: z.string().optional(),
   title: z.string().trim().min(4, "Tiêu đề cần ít nhất 4 ký tự.").max(120),
   start_date: z.string().trim().min(1, "Vui lòng chọn ngày bắt đầu."),
+  start_time: z.string().trim().optional(),
   end_date: z.string().trim().min(1, "Vui lòng chọn ngày kết thúc."),
+  end_time: z.string().trim().optional(),
   image_url: z.string().trim().min(1, "Vui lòng nhập URL ảnh.").url("Ảnh sự kiện phải là URL hợp lệ."),
   thumbnail_url: z.string().trim().optional().catch("").default(""),
   link: z.string().trim().optional().catch("").default(""),
 });
+
+type EventFormValues = z.input<typeof eventFormSchema>;
 
 export function EventFormDialog({
   open,
@@ -70,7 +65,9 @@ export function EventFormDialog({
     defaultValues: {
       title: "",
       start_date: formatVietnamDateInput(new Date()),
+      start_time: "00:00",
       end_date: formatVietnamDateInput(new Date()),
+      end_time: "23:59",
       image_url: "",
       thumbnail_url: "",
       link: "",
@@ -89,7 +86,9 @@ export function EventFormDialog({
         id: initialData.id,
         title: initialData.title,
         start_date: formatVietnamDateInput(initialData.start_date),
+        start_time: formatVietnamTimeInput(initialData.start_date),
         end_date: formatVietnamDateInput(initialData.end_date),
+        end_time: formatVietnamTimeInput(initialData.end_date),
         image_url: initialData.image_url,
         thumbnail_url: initialData.thumbnail_url ?? initialData.image_url,
         link: initialData.link ?? "",
@@ -100,7 +99,9 @@ export function EventFormDialog({
     reset({
       title: "",
       start_date: formatVietnamDateInput(new Date()),
+      start_time: "00:00",
       end_date: formatVietnamDateInput(new Date()),
+      end_time: "23:59",
       image_url: "",
       thumbnail_url: "",
       link: "",
@@ -126,8 +127,8 @@ export function EventFormDialog({
       body: JSON.stringify({
         ...values,
         description: "",
-        start_date: toVietnamIsoFromDateInput(cleanedStartDate),
-        end_date: toVietnamIsoFromDateInput(cleanedEndDate),
+        start_date: toVietnamIsoFromDateTimeInput(cleanedStartDate, values.start_time || "00:00"),
+        end_date: toVietnamIsoFromDateTimeInput(cleanedEndDate, values.end_time || "23:59"),
         thumbnail_url: values.thumbnail_url || values.image_url,
         link: values.link || "",
       }),
@@ -176,13 +177,22 @@ export function EventFormDialog({
               <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Ngày bắt đầu
               </label>
-              <Controller
-                control={control}
-                name="start_date"
-                render={({ field }) => (
-                  <DatePickerInput value={field.value} onChange={field.onChange} />
-                )}
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Controller
+                    control={control}
+                    name="start_date"
+                    render={({ field }) => (
+                      <DatePickerInput value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                </div>
+                <Input
+                  {...register("start_time")}
+                  type="time"
+                  className="w-[110px] border-border bg-background text-foreground"
+                />
+              </div>
               {errors.start_date ? <p className="text-xs text-rose-500">{errors.start_date.message}</p> : null}
             </div>
 
@@ -190,13 +200,22 @@ export function EventFormDialog({
               <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Ngày kết thúc
               </label>
-              <Controller
-                control={control}
-                name="end_date"
-                render={({ field }) => (
-                  <DatePickerInput value={field.value} onChange={field.onChange} />
-                )}
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Controller
+                    control={control}
+                    name="end_date"
+                    render={({ field }) => (
+                      <DatePickerInput value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                </div>
+                <Input
+                  {...register("end_time")}
+                  type="time"
+                  className="w-[110px] border-border bg-background text-foreground"
+                />
+              </div>
               {errors.end_date ? <p className="text-xs text-rose-500">{errors.end_date.message}</p> : null}
             </div>
 

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MediaFrame } from "@/components/common/media-frame";
 import type { EventItem } from "@/lib/types/content";
-import { formatVietnamDate } from "@/lib/utils/vietnam-time";
+import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 
 type EventModalProps = {
   event: EventItem | null;
@@ -53,14 +53,14 @@ export function EventModal({ event, open, onOpenChange }: EventModalProps) {
                 <p className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
                   BẮT ĐẦU:{" "}
                   <span className="font-bold text-emerald-500">
-                    {formatVietnamDate(event.start_date)}
+                    {formatVietnamDateTime(event.start_date)}
                   </span>
                 </p>
                 <span className="text-muted-foreground/40">→</span>
                 <p className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
                   KẾT THÚC:{" "}
                   <span className="font-bold text-rose-500">
-                    {formatVietnamDate(event.end_date)}
+                    {formatVietnamDateTime(event.end_date)}
                   </span>
                 </p>
               </div>
