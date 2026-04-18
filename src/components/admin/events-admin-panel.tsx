@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import { EventFormDialog } from "@/components/admin/event-form-dialog";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
@@ -26,9 +27,7 @@ export function EventsAdminPanel() {
   const onDelete = async (id: string) => {
     const response = await fetch("/api/admin/events", {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
 
@@ -93,21 +92,30 @@ export function EventsAdminPanel() {
                         <Button
                           size="icon"
                           variant="outline"
+                          title="Chỉnh sửa thông tin sự kiện: tiêu đề, thời gian, ảnh, liên kết"
                           aria-label="Chỉnh sửa sự kiện"
-                          className="border-border bg-card text-foreground"
+                          className="border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
                           onClick={() => setEditing(event)}
                         >
                           <Pencil className="size-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          aria-label="Xóa sự kiện"
-                          className="border-rose-400/40 bg-rose-500/10 text-rose-500"
-                          onClick={() => onDelete(event.id)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <ConfirmDeleteDialog
+                          itemName={event.title}
+                          itemType="sự kiện"
+                          description="Toàn bộ thông tin sự kiện bao gồm ảnh, liên kết và thời gian sẽ bị xóa vĩnh viễn khỏi hệ thống."
+                          onConfirm={() => onDelete(event.id)}
+                          trigger={
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              title="Xóa sự kiện khỏi hệ thống"
+                              aria-label="Xóa sự kiện"
+                              className="border-rose-400/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          }
+                        />
                       </div>
                     </td>
                   </tr>
@@ -121,9 +129,7 @@ export function EventsAdminPanel() {
       <EventFormDialog
         open={Boolean(editing)}
         onOpenChange={(open) => {
-          if (!open) {
-            setEditing(null);
-          }
+          if (!open) setEditing(null);
         }}
         initialData={editing}
         triggerLabel="CHỈNH SỬA"

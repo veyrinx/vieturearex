@@ -202,6 +202,29 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       </a>
                     )}
                   </div>
+
+                  {/* Image link bo góc dưới card */}
+                  {(event.thumbnail_url || event.image_url) && (
+                    <div className="px-4 pb-4 pt-1">
+                      <a
+                        href={event.link ?? "#"}
+                        target={event.link ? "_blank" : undefined}
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="group/img block overflow-hidden rounded-xl border border-border/60 transition-all hover:border-primary/40 hover:shadow-md dark:hover:border-amber-400/40"
+                        title={event.link ? "Mở liên kết sự kiện" : event.title}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={event.thumbnail_url || event.image_url}
+                          alt={event.title}
+                          className="aspect-[16/7] w-full object-cover transition duration-500 group-hover/img:scale-105"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </a>
+                    </div>
+                  )}
                 </article>
               </Reveal>
             );

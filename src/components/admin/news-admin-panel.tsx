@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { useNewsQuery } from "@/hooks/use-news-query";
 import { NewsEditorDialog } from "@/components/admin/news-editor-dialog";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
@@ -35,9 +36,7 @@ export function NewsAdminPanel() {
   const onDelete = async (id: string) => {
     const response = await fetch("/api/admin/news", {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
 
@@ -111,21 +110,30 @@ export function NewsAdminPanel() {
                         <Button
                           size="icon"
                           variant="outline"
+                          title="Chỉnh sửa bài viết: nội dung, tiêu đề, ảnh bìa, danh mục và trạng thái đăng tải"
                           aria-label="Chỉnh sửa bài viết"
-                          className="border-border bg-card text-foreground"
+                          className="border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
                           onClick={() => setEditing(item)}
                         >
                           <Pencil className="size-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          aria-label="Xóa bài viết"
-                          className="border-rose-400/40 bg-rose-500/10 text-rose-500"
-                          onClick={() => onDelete(item.id)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <ConfirmDeleteDialog
+                          itemName={item.title}
+                          itemType="bài viết"
+                          description="Toàn bộ nội dung bài viết, ảnh bìa và bình luận liên quan sẽ bị xóa vĩnh viễn. URL slug cũng sẽ không còn truy cập được."
+                          onConfirm={() => onDelete(item.id)}
+                          trigger={
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              title="Xóa bài viết khỏi hệ thống"
+                              aria-label="Xóa bài viết"
+                              className="border-rose-400/40 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          }
+                        />
                       </div>
                     </td>
                   </tr>
@@ -139,9 +147,7 @@ export function NewsAdminPanel() {
       <NewsEditorDialog
         open={Boolean(editing)}
         onOpenChange={(open) => {
-          if (!open) {
-            setEditing(null);
-          }
+          if (!open) setEditing(null);
         }}
         initialData={editing}
         triggerLabel="CHỈNH SỬA"

@@ -34,10 +34,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
   const isHomePage = pathname === "/";
-  const navLinkClass = isHomePage
-    ? "relative py-2 text-sm font-semibold uppercase tracking-[0.02em] text-slate-700 transition hover:text-slate-950 dark:text-white dark:hover:text-white/80"
-    : "relative py-2 text-sm font-semibold uppercase tracking-[0.02em] text-muted-foreground transition hover:text-foreground dark:text-white dark:hover:text-white/80";
-  const activeNavClass = isHomePage ? "text-primary dark:text-amber-300" : "text-primary dark:text-amber-300";
+
   const homeControlClass =
     "theme-control-surface border-slate-200/90 bg-white/84 text-slate-900 hover:bg-white dark:border-white/15 dark:bg-[#0F1115]/72 dark:text-white dark:hover:bg-[#151820]";
 
@@ -50,60 +47,49 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
           : "sticky top-0 border-b border-border bg-background/85",
       )}
     >
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6">
-        <Link href="/" aria-label={siteConfig.shortName} className="inline-flex items-center">
-          {/* Light mode logo */}
-          <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+      {/* ── Tầng 1: Brand + Controls ── */}
+      <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 md:px-6">
+
+        {/* Logo + Tên site */}
+        <Link href="/" aria-label={siteConfig.shortName} className="inline-flex items-center gap-2.5">
+          <motion.div
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          >
             <Image
               src={iconLight}
               alt={siteConfig.shortName}
-              width={40}
-              height={40}
+              width={36}
+              height={36}
               priority
               className="block aspect-square object-cover drop-shadow-[0_8px_22px_rgba(15,23,42,0.18)] dark:hidden"
             />
             <Image
               src={iconDark}
               alt={siteConfig.shortName}
-              width={40}
-              height={40}
+              width={36}
+              height={36}
               priority
               className="hidden aspect-square object-cover drop-shadow-[0_8px_22px_rgba(0,0,0,0.38)] dark:block"
             />
           </motion.div>
+          <div className="hidden flex-col sm:flex" style={{ lineHeight: 1.1 }}>
+            <span className="font-heading text-[0.7rem] font-black uppercase tracking-[0.14em] text-foreground">
+              {siteConfig.shortName}
+            </span>
+            <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+              Community Hub
+            </span>
+          </div>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
-          {navItems.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <motion.div
-                key={item.href}
-                whileHover={{ y: -1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              >
-                <Link
-                  href={item.href}
-                  className={cn(navLinkClass, active && activeNavClass)}
-                >
-                  {item.title}
-                  {active ? (
-                    <motion.span
-                      layoutId="nav-active"
-                      className="absolute -bottom-[1px] left-0 h-[2px] w-full rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-500"
-                    />
-                  ) : null}
-                </Link>
-              </motion.div>
-            );
-          })}
-        </nav>
-
-        <div className="flex items-center gap-2">
+        {/* Controls */}
+        <div className="flex items-center gap-1.5">
           <Link
             href="/search"
             className={cn(
-              "inline-flex size-10 items-center justify-center rounded-xl transition-colors",
+              "inline-flex size-9 items-center justify-center rounded-xl transition-colors",
               isHomePage ? homeControlClass : "theme-control-surface",
             )}
             aria-label="Tìm kiếm"
@@ -113,13 +99,13 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
           <UserNavButton className={isHomePage ? homeControlClass : undefined} />
           <PushNotificationButton className={isHomePage ? homeControlClass : undefined} />
           <ThemeToggle className={isHomePage ? homeControlClass : undefined} />
+
+          {/* Mobile hamburger */}
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger
               className={cn(
-                "inline-flex size-10 items-center justify-center rounded-xl md:hidden",
-                isHomePage
-                  ? homeControlClass
-                  : "theme-control-surface",
+                "inline-flex size-9 items-center justify-center rounded-xl md:hidden",
+                isHomePage ? homeControlClass : "theme-control-surface",
               )}
             >
               <Menu className="size-5" />
@@ -147,7 +133,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
                       className={cn(
                         "block rounded-xl border border-transparent px-4 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground transition hover:border-primary/20 hover:bg-primary/10 hover:text-primary dark:text-white dark:hover:text-amber-300",
                         pathname === item.href &&
-                        "border-primary/25 bg-primary/10 text-primary dark:border-primary/20 dark:bg-primary/12 dark:text-amber-300",
+                          "border-primary/25 bg-primary/10 text-primary dark:border-primary/20 dark:bg-primary/12 dark:text-amber-300",
                       )}
                     >
                       {item.title}
@@ -158,6 +144,49 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
             </SheetContent>
           </Sheet>
         </div>
+      </div>
+
+      {/* ── Tầng 2: Navigation links (desktop only) ── */}
+      <div
+        className={cn(
+          "hidden md:block border-t",
+          isHomePage
+            ? "border-slate-200/35 dark:border-white/8"
+            : "border-border/70",
+        )}
+      >
+        <nav className="mx-auto flex h-10 w-full max-w-7xl items-center justify-center gap-0.5 px-4 md:px-6">
+          {navItems.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <motion.div
+                key={item.href}
+                whileHover={{ y: -1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              >
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "relative px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] transition-all rounded-lg",
+                    isHomePage
+                      ? "text-slate-600 hover:text-slate-950 hover:bg-black/5 dark:text-white/75 dark:hover:text-white dark:hover:bg-white/8"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60 dark:text-white/70 dark:hover:text-white",
+                    active &&
+                      "text-primary dark:text-amber-300 bg-primary/8 dark:bg-amber-400/8 hover:bg-primary/12 dark:hover:bg-amber-400/12",
+                  )}
+                >
+                  {item.title}
+                  {active && (
+                    <motion.span
+                      layoutId="nav-active-2"
+                      className="absolute -bottom-[1px] left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-500"
+                    />
+                  )}
+                </Link>
+              </motion.div>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );

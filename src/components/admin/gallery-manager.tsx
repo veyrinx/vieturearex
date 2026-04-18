@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2, UploadCloud } from "lucide-react";
 import { useGalleryQuery } from "@/hooks/use-gallery-query";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/empty-state";
@@ -138,15 +139,23 @@ export function GalleryManager() {
               </div>
               <div className="flex items-center justify-between gap-2 p-3">
                 <span className="text-sm font-medium uppercase tracking-[0.08em] text-foreground">{item.tag}</span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Xóa ảnh"
-                  className="text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
-                  onClick={() => onDelete(item.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <ConfirmDeleteDialog
+                  itemName={item.tag || "ảnh này"}
+                  itemType="ảnh"
+                  description="Ảnh sẽ bị xóa khỏi thư viện và không thể khôi phục."
+                  onConfirm={() => onDelete(item.id)}
+                  trigger={
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Xóa ảnh khỏi thư viện"
+                      aria-label="Xóa ảnh"
+                      className="text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  }
+                />
               </div>
             </article>
           ))}
