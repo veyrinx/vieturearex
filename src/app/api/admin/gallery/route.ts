@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createGalleryItem,
   deleteGalleryItem,
-  getGalleryItems,
+  getGalleryAdmin,
 } from "@/lib/data/content-service";
 import { gallerySchema } from "@/lib/validators/gallery";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     return denied;
   }
 
-  const gallery = await getGalleryItems();
+  const gallery = await getGalleryAdmin();
   return NextResponse.json({ gallery });
 }
 

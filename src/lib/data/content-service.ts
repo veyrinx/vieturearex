@@ -829,6 +829,36 @@ export async function markAdminActive(email: string): Promise<ActiveAdminItem[]>
   return getActiveAdmins();
 }
 
+export async function getNewsAdmin(): Promise<NewsItem[]> {
+  if (!hasSupabaseEnv) {
+    return [...getDemoStore().news].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)));
+  }
+  const supabase = getSupabaseAdminOrThrow();
+  const { data, error } = await supabase.from("news").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getEventsAdmin(): Promise<EventItem[]> {
+  if (!hasSupabaseEnv) {
+    return getDemoStore().events.map((e) => ({ ...e, status: normalizeEventStatus(e) }));
+  }
+  const supabase = getSupabaseAdminOrThrow();
+  const { data, error } = await supabase.from("events").select("*").order("start_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(mapEventRow);
+}
+
+export async function getGalleryAdmin(): Promise<GalleryItem[]> {
+  if (!hasSupabaseEnv) {
+    return [...getDemoStore().gallery].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)));
+  }
+  const supabase = getSupabaseAdminOrThrow();
+  const { data, error } = await supabase.from("gallery").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function updateSetting(key: string, value: string) {
   if (!hasSupabaseEnv) {
     const demo = getDemoStore();

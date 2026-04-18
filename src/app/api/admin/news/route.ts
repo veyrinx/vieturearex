@@ -3,7 +3,7 @@ import { newsSchema } from "@/lib/validators/news";
 import {
   createNews,
   deleteNews,
-  getNews,
+  getNewsAdmin,
   updateNews,
 } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   if (denied) {
     return denied;
   }
-  const news = await getNews("all");
+  const news = await getNewsAdmin();
   return NextResponse.json({ news });
 }
 

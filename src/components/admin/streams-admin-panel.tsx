@@ -7,6 +7,7 @@ import { Plus, Trash2, Edit2, Radio, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import type { StreamItem, StreamStatus } from "@/lib/types/content";
@@ -61,7 +62,6 @@ export function StreamsAdminPanel() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState("");
   const [catSaving, setCatSaving] = useState(false);
 
@@ -112,14 +112,11 @@ export function StreamsAdminPanel() {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Xóa stream này?")) return;
-    setDeletingId(id);
     const res = await fetch("/api/admin/streams", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    setDeletingId(null);
     if (!res.ok) { toast.error("Không thể xóa stream."); return; }
     toast.success("Đã xóa stream.");
     refresh();
@@ -273,7 +270,17 @@ export function StreamsAdminPanel() {
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onEdit(stream)}><Edit2 className="size-3.5" /></Button>
-                      <Button size="icon" variant="outline" className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white" disabled={deletingId === stream.id} onClick={() => onDelete(stream.id)}><Trash2 className="size-3.5" /></Button>
+                      <ConfirmDeleteDialog
+                        itemName={stream.title}
+                        itemType="stream"
+                        description="Stream sẽ bị xóa vĩnh viễn và không thể khôi phục."
+                        onConfirm={() => onDelete(stream.id)}
+                        trigger={
+                          <Button size="icon" variant="outline" className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white">
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        }
+                      />
                     </div>
                   </td>
                 </tr>

@@ -3,7 +3,7 @@ import { eventSchema } from "@/lib/validators/event";
 import {
   createEvent,
   deleteEvent,
-  getEvents,
+  getEventsAdmin,
   updateEvent,
 } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   if (denied) {
     return denied;
   }
-  const events = await getEvents({ status: "all" });
+  const events = await getEventsAdmin();
   return NextResponse.json({ events });
 }
 
