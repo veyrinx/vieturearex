@@ -13,7 +13,6 @@ export const newsSchema = z.object({
   content: z.string().min(20).max(100000),
   cover: z.string().url(),
   category: z.string().min(2).max(60).default("ESPORTS"),
-  tags: z.array(z.string().min(1).max(40)).max(10).default([]),
   created_at: z.string().datetime().optional(),
   status: z.enum(["draft", "published"]).default("published"),
 });

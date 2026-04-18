@@ -263,7 +263,6 @@ export function NewsEditorDialog({
       excerpt: initialData?.excerpt?.trim() || excerptFromContent,
       content: finalContent,
       created_at: toVietnamIsoFromDateInput(cleanedCreatedAt),
-      tags: initialData?.tags ?? [],
       status: "published",
     };
 

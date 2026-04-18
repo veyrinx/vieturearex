@@ -55,18 +55,6 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
         <p className="text-sm text-muted-foreground">
           {formatVietnamDate(article.created_at)}
         </p>
-        {article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {article.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-block rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-primary dark:border-amber-400/20 dark:bg-amber-400/5 dark:text-amber-400"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       {/* Ảnh bìa */}
       <div className="relative w-full overflow-hidden rounded-2xl border border-border" style={{ aspectRatio: "16/7" }}>

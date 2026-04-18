@@ -37,7 +37,6 @@ export type NewsItem = {
   content: string;
   cover: string;
   category: string;
-  tags: string[];
   status: PublishStatus;
   created_at: string;
 };
