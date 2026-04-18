@@ -7,27 +7,22 @@ type SectionHeadingProps = {
   className?: string;
 };
 
-export function SectionHeading({
-  eyebrow,
-  title,
-  description,
-  className,
-}: SectionHeadingProps) {
+export function SectionHeading({ eyebrow, title, description, className }: SectionHeadingProps) {
   return (
-    <div className={cn("space-y-2.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {eyebrow ? (
-        <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-primary shadow-[0_8px_22px_rgba(0,82,255,0.08)] dark:border-primary/35 dark:bg-primary/10 dark:shadow-[0_0_24px_-10px_rgba(247,147,26,0.3)]">
-          {eyebrow}
-        </span>
+        <div className="flex items-center gap-2.5">
+          <span className="h-px w-6 bg-primary dark:bg-amber-400" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary dark:text-amber-400">
+            {eyebrow}
+          </span>
+        </div>
       ) : null}
-      <div className="flex items-center gap-3">
-        <div className="h-8 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary via-primary/50 to-transparent dark:from-amber-400 dark:via-amber-400/50" />
-        <h2 className="font-heading text-3xl font-bold uppercase tracking-[0.06em] text-foreground md:text-4xl">
-          {title}
-        </h2>
-      </div>
+      <h2 className="font-heading text-3xl font-black uppercase md:text-4xl text-foreground">
+        {title}
+      </h2>
       {description ? (
-        <p className="max-w-2xl pl-4 text-sm leading-relaxed text-muted-foreground md:text-base">{description}</p>
+        <p className="text-sm text-muted-foreground md:text-base">{description}</p>
       ) : null}
     </div>
   );
