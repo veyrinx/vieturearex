@@ -55,7 +55,7 @@ export function ConfirmDeleteDialog({
             </div>
             <DialogDescription className="text-sm text-muted-foreground">
               Bạn sắp xóa{" "}
-              <span className="font-semibold text-foreground">"{itemName}"</span>.{" "}
+              <span className="font-semibold text-foreground">&ldquo;{itemName}&rdquo;</span>.{" "}
               {description ?? "Hành động này không thể hoàn tác sau khi thực hiện."}
             </DialogDescription>
           </DialogHeader>
