@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { enforceRateLimit } from "@/lib/server/api-guard";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 
 const schema = z.object({
@@ -11,6 +11,9 @@ const schema = z.object({
 export async function PATCH(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-profile", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
+
+  const denied = await enforceAdminApiAuth({ minimumRole: "support" });
+  if (denied) return denied;
 
   const auth = await getAuthContext();
   if (!auth.userId) {

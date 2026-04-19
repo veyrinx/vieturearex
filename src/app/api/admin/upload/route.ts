@@ -28,7 +28,9 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const file = formData.get("file");
-  const bucket = String(formData.get("bucket") ?? "gallery");
+  const rawBucket = String(formData.get("bucket") ?? "gallery");
+  const ALLOWED_BUCKETS = ["gallery", "logos", "events"] as const;
+  const bucket = (ALLOWED_BUCKETS as readonly string[]).includes(rawBucket) ? rawBucket : "gallery";
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file." }, { status: 400 });

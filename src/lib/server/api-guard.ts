@@ -81,16 +81,16 @@ export async function enforceAdminApiAuth(options?: { minimumRole?: MinimumRole 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const appRole = user.app_metadata?.role;
-  if (matchesMinimumRole(appRole, minimumRole)) {
-    return null;
-  }
-
+  // Always verify against DB — never shortcut on app_metadata so role revocation takes effect immediately
   const { data: profile } = (await supabase
     .from("users")
-    .select("role")
+    .select("role, is_banned")
     .eq("id", user.id)
-    .maybeSingle()) as { data: { role: string } | null };
+    .maybeSingle()) as { data: { role: string; is_banned: boolean | null } | null };
+
+  if (profile?.is_banned) {
+    return NextResponse.json({ error: "Account suspended." }, { status: 403 });
+  }
 
   if (!matchesMinimumRole(profile?.role, minimumRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

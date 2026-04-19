@@ -43,7 +43,7 @@ export function sanitizeRichText(value: string) {
       p: ["class"],
       "*": ["class"],
     },
-    allowedSchemes: ["http", "https", "mailto", "data"],
+    allowedSchemes: ["http", "https", "mailto"],
   }).trim();
 }
 

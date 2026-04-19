@@ -82,7 +82,7 @@ export async function middleware(request: NextRequest) {
         .box{text-align:center;padding:2rem;max-width:400px;}h1{color:#ef4444;font-size:1.5rem;}p{color:#888;font-size:.9rem;margin-top:.5rem;}</style>
         </head><body><div class="box"><h1>🚫 Truy cập bị từ chối</h1>
         <p>IP của bạn đã bị chặn do quá nhiều lần đăng nhập thất bại.<br>Liên hệ quản trị viên để được hỗ trợ.</p>
-        <p style="margin-top:1.5rem;font-size:.75rem;color:#555">IP: ${ip}</p></div></body></html>`,
+        <p style="margin-top:1.5rem;font-size:.75rem;color:#555">IP: ${ip.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c] ?? c))}</p></div></body></html>`,
         { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } }
       );
     }
@@ -120,7 +120,10 @@ export async function middleware(request: NextRequest) {
     if (isAdminPath) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/auth/login";
-      redirectUrl.searchParams.set("next", pathname);
+      // Only allow relative paths in next param to prevent open redirect
+      if (pathname.startsWith("/") && !pathname.includes("//") && !pathname.includes(":")) {
+        redirectUrl.searchParams.set("next", pathname);
+      }
       return NextResponse.redirect(redirectUrl);
     }
     if (!isApiPath && AUTH_REQUIRED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {

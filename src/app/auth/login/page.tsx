@@ -47,7 +47,9 @@ async function serverRecordSuccess(email: string): Promise<void> {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/admin";
+  const rawNext = searchParams.get("next") ?? "/admin";
+  // Prevent open redirect — only allow relative paths
+  const next = rawNext.startsWith("/") && !rawNext.includes("//") && !rawNext.includes(":") ? rawNext : "/admin";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
