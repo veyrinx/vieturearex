@@ -9,7 +9,7 @@ async function fetchAdminEvents(): Promise<EventItem[]> {
   const res = await fetch("/api/admin/events", { cache: "no-store" });
   if (!res.ok) throw new Error("Unable to load admin events.");
   const data = (await res.json()) as { events: EventItem[] };
-  return data.events;
+  return data.events ?? [];
 }
 
 export function useAdminEventsQuery() {

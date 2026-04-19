@@ -9,7 +9,7 @@ async function fetchUsers() {
     throw new Error("Unable to load users.");
   }
   const data = (await response.json()) as { users: UserItem[] };
-  return data.users;
+  return data.users ?? [];
 }
 
 export function useUsersQuery() {

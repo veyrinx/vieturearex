@@ -12,7 +12,7 @@ async function fetchInvitedEmails() {
   }
 
   const data = (await response.json()) as { invitedEmails: InvitedEmailItem[] };
-  return data.invitedEmails;
+  return data.invitedEmails ?? [];
 }
 
 export function useInvitedEmailsQuery() {

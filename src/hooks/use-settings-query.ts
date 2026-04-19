@@ -9,7 +9,7 @@ async function fetchSettings() {
     throw new Error("Unable to load settings.");
   }
   const data = (await response.json()) as { settings: SiteSetting[] };
-  return data.settings;
+  return data.settings ?? [];
 }
 
 export function useSettingsQuery() {

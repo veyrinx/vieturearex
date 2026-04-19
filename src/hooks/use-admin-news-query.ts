@@ -9,7 +9,7 @@ async function fetchAdminNews(): Promise<NewsItem[]> {
   const res = await fetch("/api/admin/news", { cache: "no-store" });
   if (!res.ok) throw new Error("Unable to load admin news.");
   const data = (await res.json()) as { news: NewsItem[] };
-  return data.news;
+  return data.news ?? [];
 }
 
 export function useAdminNewsQuery() {

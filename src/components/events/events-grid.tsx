@@ -49,6 +49,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const { data = initialEvents } = useEventsQuery({ status });
+  const safeData = data ?? initialEvents ?? [];
 
   const events = useMemo(() => {
     const parsedFrom = fromDate ? parseVietnamDateInputStart(fromDate) : null;
@@ -57,7 +58,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
     const from = shouldSwap ? parseVietnamDateInputStart(toDate) : parsedFrom;
     const to = shouldSwap ? parseVietnamDateInputEnd(fromDate) : parsedTo;
 
-    return data
+    return safeData
       .filter((event) => {
         const eventStart = new Date(event.start_date);
         const eventEnd = new Date(event.end_date);
@@ -70,7 +71,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         const right = new Date(b.start_date).getTime();
         return sort === "newest" ? right - left : left - right;
       });
-  }, [data, fromDate, sort, toDate]);
+  }, [safeData, fromDate, sort, toDate]);
 
   return (
     <>

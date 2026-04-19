@@ -10,7 +10,7 @@ async function fetchAdminLogs() {
   }
 
   const data = (await response.json()) as { logs: AdminActivityLogItem[] };
-  return data.logs;
+  return data.logs ?? [];
 }
 
 export function useAdminLogsQuery() {

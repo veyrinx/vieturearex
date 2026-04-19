@@ -33,8 +33,9 @@ export function NewsList({ news: initialNews }: NewsListProps) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeDate, setActiveDate] = useState<"from" | "to" | null>(null);
   const { data: news = initialNews } = useNewsQuery("published");
+  const safeNews = news ?? initialNews ?? [];
 
-  const categories = useMemo(() => ["all", ...Array.from(new Set(news.map((item) => item.category)))], [news]);
+  const categories = useMemo(() => ["all", ...Array.from(new Set(safeNews.map((item) => item.category)))], [safeNews]);
 
   const filteredNews = useMemo(() => {
     const parsedFrom = fromDate ? parseVietnamDateInputStart(fromDate) : null;
@@ -43,7 +44,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
     const from = shouldSwap ? parseVietnamDateInputStart(toDate) : parsedFrom;
     const to = shouldSwap ? parseVietnamDateInputEnd(fromDate) : parsedTo;
 
-    return news
+    return safeNews
       .filter((item) => {
         const createdAt = new Date(item.created_at);
         const matchCategory = category === "all" ? true : item.category === category;

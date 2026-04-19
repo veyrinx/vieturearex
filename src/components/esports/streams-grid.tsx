@@ -51,7 +51,7 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
     const getNextInterval = (): number | null => {
       const now = Date.now();
       let minMs: number | null = null;
-      for (const s of streams) {
+      for (const s of (streams ?? [])) {
         if (s.status === "ended") continue;
         if (s.status === "live") return 60_000;
         if (s.status === "upcoming") {
@@ -76,10 +76,11 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
     return () => { if (interval) clearInterval(interval); };
   }, [streams]);
 
+  const safeStreams = streams ?? [];
   const allCategories = ["TẤT CẢ", ...categories];
   const visibleStreams = activeCategory === "TẤT CẢ"
-    ? streams
-    : streams.filter((s) => (s.category ?? "") === activeCategory);
+    ? safeStreams
+    : safeStreams.filter((s) => (s.category ?? "") === activeCategory);
 
   return (
     <>

@@ -16,7 +16,7 @@ async function fetchNews(status: "published" | "draft" | "all") {
   }
 
   const data = (await response.json()) as { news: NewsItem[] };
-  return data.news;
+  return data.news ?? [];
 }
 
 export function useNewsQuery(status: "published" | "draft" | "all" = "published") {

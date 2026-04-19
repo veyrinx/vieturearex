@@ -25,7 +25,7 @@ async function fetchEvents(params: Params) {
   }
 
   const data = (await response.json()) as { events: EventItem[] };
-  return data.events;
+  return data.events ?? [];
 }
 
 export function useEventsQuery(params: Params) {

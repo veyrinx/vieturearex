@@ -9,7 +9,7 @@ async function fetchAdminGallery() {
   const response = await fetch("/api/admin/gallery", { cache: "no-store" });
   if (!response.ok) throw new Error("Unable to load gallery.");
   const data = (await response.json()) as { gallery: GalleryItem[] };
-  return data.gallery;
+  return data.gallery ?? [];
 }
 
 export function useGalleryQuery() {
