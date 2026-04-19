@@ -19,8 +19,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     .eq("news_id", params.newsId)
     .eq("status", "approved")
     .order("created_at", { ascending: true })
-    .limit(100) as { data: Array<{ id: string; display_name: string; content: string; status: string; created_at: string }> | null; error: unknown };
+    .limit(100) as { data: Array<{ id: string; display_name: string; content: string; status: string; created_at: string }> | null; error: { code?: string } | null };
 
+  // Table missing or any DB error → return empty silently
   if (error) return NextResponse.json({ comments: [] });
   return NextResponse.json({ comments: data ?? [] });
 }
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (limited) return limited;
 
   const supabase = createServerSupabaseClient();
-  if (!supabase) return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
+  if (!supabase) return NextResponse.json({ error: "Hệ thống bình luận tạm thời không khả dụng." }, { status: 503 });
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Vui lòng đăng nhập để bình luận." }, { status: 401 });
@@ -39,7 +40,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const parsed = postSchema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: "Nội dung không hợp lệ." }, { status: 400 });
 
-  // Fetch display name
   const { data: profile } = await supabase
     .from("users")
     .select("display_name")
@@ -57,10 +57,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   } as never);
 
   if (error) {
-    if (error.code === "42P01") {
-      return NextResponse.json({ error: "Hệ thống bình luận đang được thiết lập." }, { status: 503 });
+    const code = (error as { code?: string }).code;
+    if (code === "42P01" || code === "PGRST204") {
+      return NextResponse.json({ error: "Hệ thống bình luận đang được thiết lập. Vui lòng thử lại sau." }, { status: 503 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Never expose raw DB error messages to client
+    return NextResponse.json({ error: "Không thể gửi bình luận. Vui lòng thử lại." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

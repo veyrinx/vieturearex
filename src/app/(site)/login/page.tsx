@@ -30,12 +30,11 @@ export default function UserLoginPage() {
     const supabase = createClient();
     if (!supabase) {
       setLoading(false);
-      toast.success("ĐĂNG NHẬP THÀNH CÔNG.");
-      router.push("/");
+      toast.error("Hệ thống xác thực chưa sẵn sàng. Vui lòng thử lại sau.");
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     setLoading(false);
 
     if (error) {
