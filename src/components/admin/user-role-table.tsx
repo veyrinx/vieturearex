@@ -52,6 +52,15 @@ type UserRoleTableProps = {
   onSaved: () => Promise<void>;
 };
 
+function formatUserViews(views: number | undefined | null) {
+  return Number(views ?? 0).toLocaleString("vi-VN");
+}
+
+function formatUserDate(value: string | undefined | null) {
+  const date = new Date(value ?? "");
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("vi-VN");
+}
+
 function exportCSV(users: UserItem[]) {
   const headers = ["Tên hiển thị", "Email", "Vai trò", "Trạng thái", "Lượt xem", "Ngày tham gia"];
   const rows = users.map((u) => [
@@ -59,8 +68,8 @@ function exportCSV(users: UserItem[]) {
     u.email,
     ROLE_META[u.role]?.label ?? u.role,
     u.is_banned ? "Bị khóa" : "Hoạt động",
-    u.views,
-    new Date(u.created_at).toLocaleDateString("vi-VN"),
+    formatUserViews(u.views),
+    formatUserDate(u.created_at),
   ]);
   const csv = [headers, ...rows]
     .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
@@ -510,11 +519,11 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                     </td>
 
                     <td className="hidden px-4 py-3 sm:table-cell">
-                      <span className="text-sm font-medium">{user.views.toLocaleString("vi-VN")}</span>
+                      <span className="text-sm font-medium">{formatUserViews(user.views)}</span>
                     </td>
 
                     <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                      {new Date(user.created_at).toLocaleDateString("vi-VN")}
+                      {formatUserDate(user.created_at)}
                     </td>
 
                     <td className="px-4 py-3">

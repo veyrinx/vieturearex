@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSettings, updateSetting } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -61,5 +62,6 @@ export async function PATCH(request: NextRequest) {
     summary: `Cập nhật popup thông báo: ${parsed.data.enabled ? "BẬT" : "TẮT"}`,
   });
 
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true });
 }

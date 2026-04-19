@@ -89,7 +89,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const adminRoles = ["super_admin", "admin", "manager", "support"];
+    const adminRoles = ["super_admin", "admin", "manager", "support", "it"];
     if (!profile.role || !adminRoles.includes(profile.role)) {
       return NextResponse.redirect(new URL("/", request.url));
     }

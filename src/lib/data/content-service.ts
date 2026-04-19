@@ -136,6 +136,22 @@ function getSupabaseReadClientOrThrow() {
   return supabaseReadClient;
 }
 
+const VALID_USER_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support", "user"];
+
+function normalizeUserItem(row: Partial<UserItem>): UserItem {
+  const views = Number(row.views ?? 0);
+  return {
+    id: String(row.id ?? ""),
+    email: String(row.email ?? ""),
+    display_name: row.display_name ?? null,
+    role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
+    views: Number.isFinite(views) ? views : 0,
+    is_banned: Boolean(row.is_banned),
+    is_verified: row.is_verified === true,
+    created_at: String(row.created_at ?? new Date().toISOString()),
+  };
+}
+
 function mapEventRow(row: {
   id: string;
   title: string;
@@ -501,12 +517,15 @@ export async function getUsers(): Promise<UserItem[]> {
     "getUsers",
     () => getDemoStore().users,
     async () => {
-      const supabase = getSupabaseAdminOrThrow();
-      const { data, error } = await supabase.from("users").select("*").order("created_at");
+      const adminClient = createAdminSupabaseClient();
+      if (!adminClient) {
+        return getDemoStore().users;
+      }
+      const { data, error } = await adminClient.from("users").select("*").order("created_at");
       if (error) {
         throw new Error(error.message);
       }
-      return data ?? [];
+      return (data ?? []).map(normalizeUserItem);
     },
   );
 }
@@ -529,7 +548,7 @@ export async function getUserByEmail(email: string): Promise<UserItem | null> {
     throw new Error(error.message);
   }
 
-  return data ?? null;
+  return data ? normalizeUserItem(data) : null;
 }
 
 export async function updateUserInfo(
@@ -563,7 +582,7 @@ export async function updateUserInfo(
     .select("*")
     .single();
   if (error) throw new Error(error.message);
-  return updated as UserItem;
+  return normalizeUserItem(updated as Partial<UserItem>);
 }
 
 export async function updateUserRole(id: string, role: UserRole) {
@@ -587,7 +606,7 @@ export async function updateUserRole(id: string, role: UserRole) {
   if (error) {
     throw new Error(error.message);
   }
-  return data;
+  return normalizeUserItem(data as Partial<UserItem>);
 }
 
 export async function deleteUser(id: string): Promise<void> {
@@ -624,7 +643,7 @@ export async function banUser(id: string, banned: boolean): Promise<UserItem> {
     .select("*")
     .single();
   if (error) throw new Error(error.message);
-  return data as UserItem;
+  return normalizeUserItem(data as Partial<UserItem>);
 }
 
 export async function resetUserPassword(id: string): Promise<{ tempPassword: string }> {
@@ -779,7 +798,7 @@ export async function ensureUserAccount(input: {
       .select("*")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return (data ?? existing) as UserItem;
+    return normalizeUserItem(data ?? existing as Partial<UserItem>);
   }
 
   // Insert new user with default role
@@ -799,7 +818,7 @@ export async function ensureUserAccount(input: {
     throw new Error(error.message);
   }
 
-  return data;
+  return normalizeUserItem(data as Partial<UserItem>);
 }
 
 export async function getActiveAdmins(): Promise<ActiveAdminItem[]> {

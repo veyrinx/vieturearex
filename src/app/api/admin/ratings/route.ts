@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
@@ -32,6 +33,7 @@ export async function DELETE(request: NextRequest) {
   if (!supabase) return NextResponse.json({ error: "Server error." }, { status: 500 });
 
   await untypedFrom(supabase, "news_ratings").delete().eq("id", id);
+  revalidatePath("/news", "layout");
   return NextResponse.json({ ok: true });
 }
 
@@ -48,5 +50,6 @@ export async function PATCH(request: NextRequest) {
   if (!supabase) return NextResponse.json({ error: "Server error." }, { status: 500 });
 
   await untypedFrom(supabase, "news_ratings").update({ admin_liked: Boolean(admin_liked) } as never).eq("id", id);
+  revalidatePath("/news", "layout");
   return NextResponse.json({ ok: true });
 }

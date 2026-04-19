@@ -11,7 +11,6 @@ import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { sanitizePlainText } from "@/lib/server/sanitize";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
-import { sendPushNotification } from "@/lib/server/push-notify";
 
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-events", limit: 80, windowMs: 60_000 });
@@ -83,8 +82,6 @@ export async function POST(request: NextRequest) {
     import("@/lib/server/push-notify").then(({ sendPushNotification }) => {
       sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
     });
-
-    void sendPushNotification("📅 Sự kiện mới", event.title, "/events").catch(() => null);
     revalidatePath("/events", "layout");
     revalidatePath("/calendar", "layout");
     revalidatePath("/", "layout");

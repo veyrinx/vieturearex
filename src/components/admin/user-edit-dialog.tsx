@@ -63,6 +63,15 @@ type UserEditDialogProps = {
   callerRole?: string | null;
 };
 
+function formatUserViews(views: number | undefined | null) {
+  return Number(views ?? 0).toLocaleString("vi-VN");
+}
+
+function formatUserDate(value: string | undefined | null) {
+  const date = new Date(value ?? "");
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("vi-VN");
+}
+
 export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserEmail, callerRole }: UserEditDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isBanning, setIsBanning] = useState(false);
@@ -103,7 +112,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const canDelete = (callerRole === "super_admin" || callerRole === "it") && canAct;
   const avatarColor = getAvatarColor(user.email);
   const displayName = user.display_name || user.email.split("@")[0];
-  const joinDate = new Date(user.created_at).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const joinDate = formatUserDate(user.created_at);
 
   // Assignable roles: only roles with level < callerLevel
   const assignableRoles = ROLE_ORDER.filter((r) => (ROLE_META[r]?.level ?? 0) < callerLevel);
@@ -298,7 +307,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
           {/* Stats */}
           <div className="mt-3 grid grid-cols-3 gap-2">
             {[
-              { icon: Eye,         label: "Lượt xem", value: user.views.toLocaleString("vi-VN") },
+              { icon: Eye,         label: "Lượt xem", value: formatUserViews(user.views) },
               { icon: CalendarDays, label: "Tham gia", value: joinDate },
               { icon: Shield,      label: "Level",     value: String(ROLE_META[user.role]?.level ?? 20) },
             ].map(({ icon: Icon, label, value }) => (
