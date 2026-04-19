@@ -20,8 +20,10 @@ import {
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants/site";
 
-const ICON_LIGHT_DEFAULT = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
-const ICON_DARK_DEFAULT = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441";
+const ICON_LIGHT_DEFAULT =
+  "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
+const ICON_DARK_DEFAULT =
+  "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441";
 
 type SiteNavbarProps = {
   logoLight?: string;
@@ -35,7 +37,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const isHomePage = pathname === "/";
 
-  const homeControlClass =
+  const ctrlClass =
     "theme-control-surface border-slate-200/90 bg-white/84 text-slate-900 hover:bg-white dark:border-white/15 dark:bg-[#0F1115]/72 dark:text-white dark:hover:bg-[#151820]";
 
   return (
@@ -43,19 +45,22 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
       className={cn(
         "z-50 backdrop-blur-xl",
         isHomePage
-          ? "fixed inset-x-0 top-0 border-b-0 bg-white/72 shadow-[0_12px_32px_rgba(15,23,42,0.08)] dark:bg-slate-950/42 dark:shadow-none"
-          : "sticky top-0 border-b border-border bg-background/85",
+          ? "fixed inset-x-0 top-0 bg-white/72 shadow-[0_8px_24px_rgba(15,23,42,0.07)] dark:bg-slate-950/42 dark:shadow-none"
+          : "sticky top-0 border-b border-border bg-background/90",
       )}
     >
-      {/* ── Tầng 1: Brand + Controls ── */}
-      <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 md:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 md:px-6">
 
-        {/* Logo + Tên site */}
-        <Link href="/" aria-label={siteConfig.shortName} className="inline-flex items-center gap-2.5">
+        {/* ── Logo ── */}
+        <Link
+          href="/"
+          aria-label={siteConfig.shortName}
+          className="flex shrink-0 items-center gap-2.5"
+        >
           <motion.div
             whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: "spring", stiffness: 420, damping: 22 }}
           >
             <Image
               src={iconLight}
@@ -63,7 +68,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
               width={36}
               height={36}
               priority
-              className="block aspect-square object-cover drop-shadow-[0_8px_22px_rgba(15,23,42,0.18)] dark:hidden"
+              className="block size-9 object-contain drop-shadow-[0_6px_18px_rgba(15,23,42,0.18)] dark:hidden"
             />
             <Image
               src={iconDark}
@@ -71,11 +76,11 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
               width={36}
               height={36}
               priority
-              className="hidden aspect-square object-cover drop-shadow-[0_8px_22px_rgba(0,0,0,0.38)] dark:block"
+              className="hidden size-9 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.38)] dark:block"
             />
           </motion.div>
-          <div className="hidden flex-col sm:flex" style={{ lineHeight: 1.1 }}>
-            <span className="font-heading text-[0.7rem] font-black uppercase tracking-[0.14em] text-foreground">
+          <div className="hidden flex-col leading-none sm:flex">
+            <span className="font-heading text-[0.72rem] font-black uppercase tracking-[0.14em] text-foreground">
               {siteConfig.shortName}
             </span>
             <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
@@ -84,109 +89,129 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
           </div>
         </Link>
 
-        {/* Controls */}
-        <div className="flex items-center gap-1.5">
+        {/* ── Nav links (desktop center) ── */}
+        <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex">
+          {navItems.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative rounded-lg px-3.5 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] transition-all duration-150",
+                  isHomePage
+                    ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  active &&
+                    (isHomePage
+                      ? "text-primary dark:text-amber-300"
+                      : "bg-primary/8 text-primary dark:bg-amber-400/8 dark:text-amber-300"),
+                )}
+              >
+                {item.title}
+                {active && (
+                  <motion.span
+                    layoutId="nav-underline"
+                    className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-400"
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ── Controls ── */}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 md:ml-0">
           <Link
             href="/search"
+            aria-label="Tìm kiếm"
             className={cn(
               "inline-flex size-9 items-center justify-center rounded-xl transition-colors",
-              isHomePage ? homeControlClass : "theme-control-surface",
+              isHomePage ? ctrlClass : "theme-control-surface",
             )}
-            aria-label="Tìm kiếm"
           >
-            <Search className="size-4" />
+            <Search className="size-[17px]" />
           </Link>
-          <UserNavButton className={isHomePage ? homeControlClass : undefined} />
-          <PushNotificationButton className={isHomePage ? homeControlClass : undefined} />
-          <ThemeToggle className={isHomePage ? homeControlClass : undefined} />
+          <UserNavButton className={isHomePage ? ctrlClass : undefined} />
+          <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
+          <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
 
           {/* Mobile hamburger */}
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger
               className={cn(
                 "inline-flex size-9 items-center justify-center rounded-xl md:hidden",
-                isHomePage ? homeControlClass : "theme-control-surface",
+                isHomePage ? ctrlClass : "theme-control-surface",
               )}
             >
               <Menu className="size-5" />
             </SheetTrigger>
-            <SheetContent side="right" className="border-border bg-card text-foreground">
-              <SheetHeader>
-                <SheetTitle className="font-heading uppercase tracking-[0.08em] text-foreground">
+
+            <SheetContent side="right" className="w-72 border-border bg-card text-foreground">
+              <SheetHeader className="pb-2">
+                <SheetTitle className="font-heading text-sm uppercase tracking-[0.1em] text-foreground">
                   {siteConfig.name}
                 </SheetTitle>
-                <SheetDescription className="text-muted-foreground">
+                <SheetDescription className="text-xs text-muted-foreground">
                   Điều hướng nhanh tới các khu vực cộng đồng.
                 </SheetDescription>
               </SheetHeader>
-              <div className="mt-8 space-y-2">
-                {navItems.map((item, index) => (
-                  <motion.div
-                    key={item.href}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.06, duration: 0.3, ease: "easeOut" }}
-                  >
-                    <Link
-                      href={item.href}
-                      onClick={() => setSheetOpen(false)}
-                      className={cn(
-                        "block rounded-xl border border-transparent px-4 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground transition hover:border-primary/20 hover:bg-primary/10 hover:text-primary dark:text-white dark:hover:text-amber-300",
-                        pathname === item.href &&
-                          "border-primary/25 bg-primary/10 text-primary dark:border-primary/20 dark:bg-primary/12 dark:text-amber-300",
-                      )}
-                    >
-                      {item.title}
-                    </Link>
-                  </motion.div>
-                ))}
+
+              {/* Logo in sheet */}
+              <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
+                <Image
+                  src={iconLight}
+                  alt={siteConfig.shortName}
+                  width={40}
+                  height={40}
+                  className="block size-10 rounded-xl object-contain dark:hidden"
+                />
+                <Image
+                  src={iconDark}
+                  alt={siteConfig.shortName}
+                  width={40}
+                  height={40}
+                  className="hidden size-10 rounded-xl object-contain dark:block"
+                />
+                <div className="leading-none">
+                  <p className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
+                    {siteConfig.shortName}
+                  </p>
+                  <p className="text-[0.62rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    Community Hub
+                  </p>
+                </div>
               </div>
+
+              <nav className="space-y-1">
+                {navItems.map((item, i) => {
+                  const active = pathname === item.href;
+                  return (
+                    <motion.div
+                      key={item.href}
+                      initial={{ opacity: 0, x: 16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.25, ease: "easeOut" }}
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={() => setSheetOpen(false)}
+                        className={cn(
+                          "flex items-center rounded-xl border px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
+                          active
+                            ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
+                            : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
+                        )}
+                      >
+                        {item.title}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </nav>
             </SheetContent>
           </Sheet>
         </div>
-      </div>
-
-      {/* ── Tầng 2: Navigation links (desktop only) ── */}
-      <div
-        className={cn(
-          "hidden md:block border-t",
-          isHomePage
-            ? "border-slate-200/35 dark:border-white/8"
-            : "border-border/70",
-        )}
-      >
-        <nav className="mx-auto flex h-10 w-full max-w-7xl items-center justify-center gap-0.5 px-4 md:px-6">
-          {navItems.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <motion.div
-                key={item.href}
-                whileHover={{ y: -1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              >
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "relative px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] transition-all rounded-lg",
-                    isHomePage
-                      ? "text-slate-600 hover:text-slate-950 hover:bg-black/5 dark:text-white/75 dark:hover:text-white dark:hover:bg-white/8"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60 dark:text-white/70 dark:hover:text-white",
-                    active &&
-                      "text-primary dark:text-amber-300 bg-primary/8 dark:bg-amber-400/8 hover:bg-primary/12 dark:hover:bg-amber-400/12",
-                  )}
-                >
-                  {item.title}
-                  {active && (
-                    <motion.span
-                      layoutId="nav-active-2"
-                      className="absolute -bottom-[1px] left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-500"
-                    />
-                  )}
-                </Link>
-              </motion.div>
-            );
-          })}
-        </nav>
       </div>
     </header>
   );
