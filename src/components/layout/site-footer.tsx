@@ -23,8 +23,21 @@ const footerNav = [
 ];
 
 const footerLegal = [
-  { label: "Chính Sách Bảo Mật", href: "/privacy-policy" },
-  { label: "Điều Khoản Sử Dụng", href: "/terms-of-use" },
+  {
+    label: "Chính Sách Bảo Mật",
+    href: "/privacy-policy",
+    desc: "Cách chúng tôi thu thập và bảo vệ dữ liệu của bạn",
+  },
+  {
+    label: "Điều Khoản Sử Dụng",
+    href: "/terms-of-use",
+    desc: "Quy định khi sử dụng dịch vụ và nền tảng Arex",
+  },
+  {
+    label: "Chính Sách Cookie",
+    href: "/cookie-policy",
+    desc: "Thông tin về cookie và cách bạn kiểm soát chúng",
+  },
 ];
 
 export async function SiteFooter() {
@@ -48,70 +61,50 @@ export async function SiteFooter() {
     },
   ];
 
+  const year = new Date().getFullYear();
+
   return (
     <footer className="relative mt-16 border-t border-border bg-card">
-      <div className="pointer-events-none absolute left-1/2 top-0 h-px w-1/2 -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/60 dark:via-amber-400/60 to-transparent" />
+      {/* Top accent line */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent dark:via-amber-400/50" />
 
-      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+      {/* ── Main grid ── */}
+      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1.6fr_1.2fr]">
 
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] lg:gap-12">
-
-          {/* Cột 1: Brand */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 -ml-2">
-              <Image src={logoLight} alt={siteName} width={52} height={52} className="block rounded-xl dark:hidden shrink-0" />
-              <Image src={logoDark} alt={siteName} width={52} height={52} className="hidden rounded-xl dark:block shrink-0" />
-              <div className="flex flex-col -ml-1" style={{ lineHeight: 1.15 }}>
-                <span className="font-heading text-2xl font-black uppercase text-foreground">{siteName}</span>
+          {/* Col 1 — Brand */}
+          <div className="flex flex-col gap-5">
+            <Link href="/" className="flex items-center gap-3 group w-fit">
+              <Image
+                src={logoLight}
+                alt={siteName}
+                width={48}
+                height={48}
+                className="block size-12 rounded-xl object-contain drop-shadow dark:hidden transition group-hover:scale-105"
+              />
+              <Image
+                src={logoDark}
+                alt={siteName}
+                width={48}
+                height={48}
+                className="hidden size-12 rounded-xl object-contain drop-shadow dark:block transition group-hover:scale-105"
+              />
+              <div className="flex flex-col leading-tight">
+                <span className="font-heading text-xl font-black uppercase tracking-[0.1em] text-foreground">
+                  {siteName}
+                </span>
+                <span className="text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Community Hub
+                </span>
               </div>
-            </div>
-            <p className="text-sm leading-6 text-muted-foreground max-w-[280px] text-justify">
+            </Link>
+
+            <p className="text-sm leading-6 text-muted-foreground max-w-[300px]">
               {settingsMap["site.description"] ?? siteConfig.description}
             </p>
-          </div>
 
-          {/* Cột 2: Điều hướng */}
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-bold uppercase tracking-widest text-foreground">Điều Hướng</p>
-            <ul className="flex flex-col gap-2">
-              {footerNav.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground transition hover:text-foreground">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Cột 3: Pháp lý */}
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-bold uppercase tracking-widest text-foreground">Pháp Lý</p>
-            <ul className="flex flex-col gap-2">
-              {footerLegal.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground transition hover:text-foreground">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Cột 4: Liên hệ */}
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-bold uppercase tracking-widest text-foreground">Liên Hệ</p>
-            <div className="flex flex-col gap-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Email</p>
-                <p className="text-sm text-muted-foreground">{resolvedSocialLinks.email}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Website</p>
-                <p className="text-sm text-muted-foreground">{siteConfig.url.replace("https://", "")}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 pt-1">
+            {/* Social icons */}
+            <div className="flex items-center gap-2">
               {socialLinks.map((link) => {
                 const Icon = link.icon;
                 return (
@@ -121,36 +114,140 @@ export async function SiteFooter() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={link.label}
-                    className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground transition hover:bg-primary hover:text-white dark:hover:bg-amber-400 dark:hover:text-black"
+                    className="flex size-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:hover:border-amber-400/40 dark:hover:bg-amber-400/10 dark:hover:text-amber-400"
                   >
-                    <Icon className="size-[18px]" />
+                    <Icon className="size-[17px]" />
                   </Link>
                 );
               })}
             </div>
           </div>
 
+          {/* Col 2 — Navigation */}
+          <div className="flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/60">
+              Điều Hướng
+            </p>
+            <ul className="flex flex-col gap-2.5">
+              {footerNav.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 3 — Legal */}
+          <div className="flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/60">
+              Pháp Lý &amp; Chính Sách
+            </p>
+            <ul className="flex flex-col gap-3">
+              {footerLegal.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="group flex flex-col gap-0.5 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-border hover:bg-muted/60"
+                  >
+                    <span className="text-sm font-semibold text-foreground transition group-hover:text-primary dark:group-hover:text-amber-400">
+                      {link.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground leading-snug">
+                      {link.desc}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 4 — Contact */}
+          <div className="flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/60">
+              Liên Hệ
+            </p>
+            <div className="flex flex-col gap-3">
+              <div className="rounded-lg border border-border bg-background/50 px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70 mb-1">
+                  Email
+                </p>
+                <p className="text-sm font-medium text-foreground break-all">
+                  {resolvedSocialLinks.email}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70 mb-1">
+                  Website
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  {siteConfig.url.replace("https://", "")}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70 mb-1">
+                  Múi giờ hoạt động
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  UTC+7 — Việt Nam (ICT)
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
+      </div>
 
-        {/* Divider */}
-        <div className="mt-6 border-t border-border" />
+      {/* ── Bottom bar ── */}
+      <div className="border-t border-border bg-muted/40">
+        <div className="mx-auto max-w-7xl px-6 py-4 lg:px-8">
+          <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
 
-        {/* Copyright + Credit */}
-        <div className="mt-4 flex flex-col items-center gap-2 text-center">
-          <p className="text-[15px] font-bold text-foreground">
-            © {new Date().getFullYear()} {siteName}. All Rights Reserved.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            All images and related assets are the property of Garena Free Fire Vietnam.
-          </p>
-          <p className="text-xs text-muted-foreground/50">
-            Thiết kế và phát triển bởi{" "}
-            <a href="https://vieture.tech" target="_blank" rel="noreferrer" className="font-semibold text-muted-foreground/70 transition hover:text-primary dark:hover:text-amber-400">
-              vieture.tech
-            </a>
-          </p>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-semibold text-foreground">
+                © {year} {siteName}. All Rights Reserved.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                All images and related assets are the property of Garena Free Fire Vietnam.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-2 sm:items-end">
+              {/* Inline legal links */}
+              <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 sm:justify-end">
+                {footerLegal.map((link, i) => (
+                  <span key={link.href} className="flex items-center gap-3">
+                    <Link
+                      href={link.href}
+                      className="text-xs text-muted-foreground transition hover:text-primary dark:hover:text-amber-400"
+                    >
+                      {link.label}
+                    </Link>
+                    {i < footerLegal.length - 1 && (
+                      <span className="text-muted-foreground/30 select-none">·</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground/50">
+                Thiết kế &amp; phát triển bởi{" "}
+                <a
+                  href="https://vieture.tech"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-muted-foreground/70 transition hover:text-primary dark:hover:text-amber-400"
+                >
+                  vieture.tech
+                </a>
+              </p>
+            </div>
+
+          </div>
         </div>
-
       </div>
     </footer>
   );
