@@ -43,6 +43,7 @@ type SectionId = (typeof NAV_ITEMS)[number]["id"];
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20" },
   admin:       { label: "Admin",       color: "bg-orange-500/10 text-orange-500 border-orange-500/20" },
+  it:          { label: "IT",          color: "bg-violet-500/10 text-violet-500 border-violet-500/20" },
   manager:     { label: "Manager",     color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
   support:     { label: "Support",     color: "bg-green-500/10 text-green-500 border-green-500/20" },
   user:        { label: "User",        color: "bg-muted text-muted-foreground border-border" },

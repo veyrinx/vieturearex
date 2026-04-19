@@ -34,7 +34,7 @@ type EventTimelineProps = {
   initialEvents: EventItem[];
 };
 
-const dayWidth = 88;
+const dayWidth = 60;
 
 type MonthLabel = {
   label: string;
@@ -219,21 +219,25 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
 
             <div className="timeline-track overflow-hidden rounded-2xl border border-border bg-card/70">
               <div className="flex border-b border-border">
-                {days.map((day) => (
-                  <div
-                    key={day.toISOString()}
-                    className="shrink-0 border-r border-border px-1 py-2 text-center text-xs text-muted-foreground last:border-r-0"
-                    style={{ width: dayWidth }}
-                  >
-                    <div>{formatVietnamDayNumber(day)}</div>
-                    <div className="text-[10px] uppercase text-muted-foreground">
-                      {formatVietnamWeekdayShort(day)}
+                {days.map((day) => {
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={cn(
+                        "shrink-0 border-r border-border px-0.5 py-1 text-center text-xs last:border-r-0",
+                        isToday ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 font-bold" : "text-muted-foreground",
+                      )}
+                      style={{ width: dayWidth }}
+                    >
+                      <div className="text-[11px] font-semibold">{formatVietnamDayNumber(day)}</div>
+                      <div className="text-[9px] uppercase">{formatVietnamWeekdayShort(day)}</div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              <div className="space-y-3 px-0 pb-2 pt-3">
+              <div className="space-y-1.5 px-0 pb-2 pt-2">
                 {visibleEvents.map((event) => {
                   const eventStart = startOfDay(new Date(event.start_date));
                   const eventEnd = endOfDay(new Date(event.end_date));
@@ -245,12 +249,12 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
                   const showThumb = span >= 3;
 
                   return (
-                    <div key={event.id} className="relative h-14">
+                    <div key={event.id} className="relative h-10">
                       <button
                         type="button"
                         onClick={() => setSelectedEvent(event)}
                         className={cn(
-                          "group absolute top-0 inline-flex h-14 items-center gap-2 overflow-hidden rounded-xl border px-2 text-left transition duration-300",
+                          "group absolute top-0 inline-flex h-10 items-center gap-2 overflow-hidden rounded-lg border px-2 text-left transition duration-300",
                           timelineStatusClass[event.status],
                         )}
                         style={{
@@ -267,7 +271,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
 
                           if (activeSrc && !allFailed) {
                             return (
-                              <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-[3px]">
+                              <div className="relative h-7 w-10 shrink-0 overflow-hidden rounded-[3px]">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={activeSrc}

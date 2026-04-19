@@ -5,9 +5,9 @@ import { ensureUserAccount } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  display_name: z.string().min(1).max(50),
+  email: z.string().email("Email không hợp lệ."),
+  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự."),
+  display_name: z.string().min(1).max(60).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
   const email = parsed.data.email.trim().toLowerCase();
   const password = parsed.data.password;
-  const displayName = parsed.data.display_name.trim();
+  const displayName = parsed.data.display_name?.trim() || null;
 
   const adminClient = createAdminSupabaseClient();
   if (!adminClient) {
@@ -37,14 +37,21 @@ export async function POST(request: NextRequest) {
   });
 
   if (authError) {
-    if (authError.message?.includes("already been registered")) {
-      return NextResponse.json({ error: "EMAIL NÀY ĐÃ ĐƯỢC ĐĂNG KÝ." }, { status: 409 });
+    if (authError.message?.toLowerCase().includes("already") || authError.message?.toLowerCase().includes("registered")) {
+      return NextResponse.json({ error: "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác." }, { status: 409 });
     }
     return NextResponse.json({ error: authError.message }, { status: 400 });
   }
 
   const authUser = authData.user;
-  await ensureUserAccount({ id: authUser.id, email, role: "user" });
+  try {
+    await ensureUserAccount({ id: authUser.id, email, role: "user" });
+    if (displayName) {
+      await adminClient.from("users").update({ display_name: displayName } as never).eq("id", authUser.id);
+    }
+  } catch {
+    // Profile creation failed — auth user exists, non-fatal
+  }
 
   return NextResponse.json({ ok: true });
 }

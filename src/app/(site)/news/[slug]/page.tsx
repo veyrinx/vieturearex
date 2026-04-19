@@ -6,6 +6,7 @@ import { BreadcrumbJsonLd } from "next-seo";
 import { getNewsBySlug } from "@/lib/data/content-service";
 import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-renderer";
 import { NewsToc } from "@/components/news/news-toc";
+import { NewsComments } from "@/components/news/news-comments";
 import { siteConfig } from "@/lib/constants/site";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 
@@ -63,6 +64,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
       </div>
 
       {/* Nội dung + mục lục - chỉ dùng 2 cột khi có heading */}
+      {/* Author card reused below */}
       {hasHeadings ? (
         <div className="grid gap-6 xl:grid-cols-[1fr_260px]">
           <div className="space-y-6 min-w-0">
@@ -78,6 +80,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                 <p className="text-xs text-muted-foreground">{formatVietnamDate(article.created_at)}</p>
               </div>
             </div>
+            <NewsComments newsId={article.id} />
           </div>
           <aside className="hidden xl:block">
             <div className="sticky top-24">
@@ -99,6 +102,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
               <p className="text-xs text-muted-foreground">{formatVietnamDate(article.created_at)}</p>
             </div>
           </div>
+          <NewsComments newsId={article.id} />
         </div>
       )}
     </div>

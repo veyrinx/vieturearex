@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { siteConfig } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Zap, Shield, Globe } from "lucide-react";
+import { Eye, EyeOff, CalendarDays, MessageSquare, Bell, Users } from "lucide-react";
 
 export default function UserLoginPage() {
   const router = useRouter();
@@ -85,9 +85,10 @@ export default function UserLoginPage() {
 
             <div className="space-y-3">
               {[
-                { icon: Zap, text: "Cập nhật sự kiện realtime 24/7" },
-                { icon: Globe, text: "Tin tức Esports chuyên sâu" },
-                { icon: Shield, text: "Bảo mật dữ liệu tuyệt đối" },
+                { icon: CalendarDays, text: "Theo dõi lịch sự kiện realtime" },
+                { icon: MessageSquare, text: "Bình luận & tương tác bài viết" },
+                { icon: Bell,         text: "Nhận thông báo sự kiện mới" },
+                { icon: Users,        text: "Kết nối cộng đồng Free Fire" },
               ].map(({ icon: Icon, text }, i) => (
                 <motion.div
                   key={text}
@@ -170,8 +171,11 @@ export default function UserLoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Liên hệ quản trị viên để được cấp tài khoản.
+            <div className="mt-5 text-center text-sm text-muted-foreground">
+              Chưa có tài khoản?{" "}
+              <Link href="/register" className="font-semibold text-primary hover:underline dark:text-amber-400">
+                Đăng ký miễn phí
+              </Link>
             </div>
           </section>
         </motion.div>
