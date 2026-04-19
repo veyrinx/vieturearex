@@ -42,9 +42,9 @@ export function enforceRateLimit(
 type MinimumRole = "super_admin" | "admin" | "it" | "manager" | "support" | "user";
 
 const ROLE_HIERARCHY: Record<string, number> = {
+  it: 150,
   super_admin: 100,
   admin: 80,
-  it: 80,
   manager: 60,
   support: 40,
   user: 20,

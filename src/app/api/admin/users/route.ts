@@ -6,7 +6,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 100, admin: 80, it: 80, manager: 60, support: 40, user: 20,
+  it: 150, super_admin: 100, admin: 80, manager: 60, support: 40, user: 20,
 };
 
 async function getCallerRole(): Promise<string | null> {

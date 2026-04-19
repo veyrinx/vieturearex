@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
   Eye, CalendarDays, Mail, User, Shield, ShieldOff, KeyRound,
-  Copy, Check, Activity,
+  Copy, Check, Activity, BadgeCheck, BadgeX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const [isSaving, setIsSaving] = useState(false);
   const [isBanning, setIsBanning] = useState(false);
   const [isReseting, setIsReseting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copiedPw, setCopiedPw] = useState(false);
 
@@ -90,7 +91,8 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const meta = ROLE_META[user.role] ?? ROLE_META.user;
   const isSelf = user.email === currentUserEmail;
   const canAct = !isSelf;
-  const canEditEmail = callerRole === "super_admin";
+  const canEditEmail = callerRole === "super_admin" || callerRole === "it";
+  const canVerify = callerRole === "it";
   const avatarColor = getAvatarColor(user.email);
   const displayName = user.display_name || user.email.split("@")[0];
   const joinDate = new Date(user.created_at).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -169,6 +171,25 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
     setTimeout(() => setCopiedPw(false), 2000);
   };
 
+  const toggleVerified = async () => {
+    if (!canAct) return;
+    setIsVerifying(true);
+    const res = await fetch("/api/admin/users/verify", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, is_verified: !user.is_verified }),
+    });
+    setIsVerifying(false);
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(err.error ?? "Không thể thay đổi trạng thái xác minh.");
+      return;
+    }
+    toast.success(user.is_verified ? "Đã thu hồi tích xanh." : "Đã cấp tích xanh.");
+    onOpenChange(false);
+    await onSaved();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md border-border bg-card p-0 text-foreground overflow-hidden">
@@ -205,6 +226,11 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
                   <Activity className="size-2.5" />
                   {user.is_banned ? "Bị khóa" : "Hoạt động"}
                 </span>
+                {user.is_verified && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-500">
+                    <BadgeCheck className="size-2.5" /> Đã xác minh
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -300,6 +326,27 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
                   {isReseting ? "Đang reset..." : "Reset MK"}
                 </Button>
               </div>
+
+              {/* Verified badge — IT only */}
+              {canVerify && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isVerifying}
+                  onClick={toggleVerified}
+                  className={cn(
+                    "col-span-2 gap-2 rounded-xl text-sm font-semibold",
+                    user.is_verified
+                      ? "border-rose-500/30 text-rose-500 hover:bg-rose-500/10"
+                      : "border-blue-500/30 text-blue-500 hover:bg-blue-500/10",
+                  )}
+                >
+                  {user.is_verified
+                    ? <><BadgeX className="size-3.5" /> {isVerifying ? "Đang thu hồi..." : "Thu hồi tích xanh"}</>
+                    : <><BadgeCheck className="size-3.5" /> {isVerifying ? "Đang cấp..." : "Cấp tích xanh"}</>
+                  }
+                </Button>
+              )}
 
               {/* Temp password */}
               {tempPassword && (

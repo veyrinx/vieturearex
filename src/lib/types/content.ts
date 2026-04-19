@@ -72,6 +72,7 @@ export type UserItem = {
   role: UserRole;
   views: number;
   is_banned: boolean;
+  is_verified?: boolean;
   created_at: string;
 };
 

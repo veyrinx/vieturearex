@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
+import { ViewsTrendCard } from "@/components/admin/views-trend-card";
 import { getDashboardStats } from "@/lib/data/content-service";
 import { getAuthContext } from "@/lib/server/auth";
 
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
+  it: "IT",
   super_admin: "SUPER ADMIN",
   admin: "ADMIN",
   manager: "QUẢN LÝ",
@@ -24,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
+  it: "bg-violet-500/10 text-violet-500 border-violet-500/20",
   super_admin: "bg-red-500/10 text-red-500 border-red-500/20",
   admin: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   manager: "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -160,6 +163,9 @@ export default async function AdminDashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* ── Analytics trend ── */}
+      <ViewsTrendCard />
 
       {/* ── Active admins ── */}
       <ActiveAdminsPanel />

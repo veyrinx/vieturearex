@@ -6,7 +6,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 100, admin: 80, it: 80, manager: 60, support: 40, user: 20,
+  it: 150, super_admin: 100, admin: 80, manager: 60, support: 40, user: 20,
 };
 
 const schema = z.object({ id: z.string().min(1) });
@@ -36,9 +36,7 @@ export async function POST(request: NextRequest) {
   if (!target) return NextResponse.json({ error: "User not found." }, { status: 404 });
 
   const targetLevel = ROLE_HIERARCHY[target.role] ?? 0;
-  // IT role can reset anyone's password (including super_admin) — that's their technical mandate
-  const callerIsIt = callerProfile?.role === "it";
-  if (!callerIsIt && targetLevel >= callerLevel) {
+  if (targetLevel >= callerLevel) {
     return NextResponse.json({ error: "Không thể reset mật khẩu tài khoản có quyền bằng hoặc cao hơn bạn." }, { status: 403 });
   }
 

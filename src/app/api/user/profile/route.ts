@@ -16,9 +16,9 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, role, created_at, views")
+    .select("display_name, role, created_at, views, is_verified")
     .eq("id", user.id)
-    .maybeSingle() as { data: { display_name: string | null; role: string; created_at: string; views: number } | null };
+    .maybeSingle() as { data: { display_name: string | null; role: string; created_at: string; views: number; is_verified?: boolean } | null };
 
   return NextResponse.json({
     id: user.id,
@@ -27,6 +27,7 @@ export async function GET() {
     role: profile?.role ?? "user",
     views: profile?.views ?? 0,
     created_at: profile?.created_at ?? user.created_at,
+    is_verified: profile?.is_verified ?? false,
   });
 }
 
