@@ -75,7 +75,7 @@ export type Database = {
           id: string;
           email: string;
           display_name: string | null;
-          role: "super_admin" | "admin" | "manager" | "support" | "user";
+          role: "super_admin" | "admin" | "it" | "manager" | "support" | "user";
           views: number;
           created_at: string;
         };
@@ -83,7 +83,7 @@ export type Database = {
           id: string;
           email: string;
           display_name?: string | null;
-          role: "super_admin" | "admin" | "manager" | "support" | "user";
+          role: "super_admin" | "admin" | "it" | "manager" | "support" | "user";
           views?: number;
           created_at?: string;
         };

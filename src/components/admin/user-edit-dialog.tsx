@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 const ROLE_META: Record<string, { label: string; color: string; bg: string }> = {
   super_admin: { label: "Super Admin", color: "text-red-500",    bg: "bg-red-500/10 border-red-500/20" },
   admin:       { label: "Admin",       color: "text-amber-500",  bg: "bg-amber-500/10 border-amber-500/20" },
+  it:          { label: "IT",          color: "text-violet-500", bg: "bg-violet-500/10 border-violet-500/20" },
   manager:     { label: "Quản Lý",     color: "text-blue-500",   bg: "bg-blue-500/10 border-blue-500/20" },
   support:     { label: "CSKH",        color: "text-green-500",  bg: "bg-green-500/10 border-green-500/20" },
   user:        { label: "Người Dùng",  color: "text-muted-foreground", bg: "bg-muted border-border" },
@@ -56,9 +57,10 @@ type UserEditDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSaved: () => Promise<void>;
   currentUserEmail: string | null;
+  callerRole?: string | null;
 };
 
-export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserEmail }: UserEditDialogProps) {
+export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserEmail, callerRole }: UserEditDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isBanning, setIsBanning] = useState(false);
   const [isReseting, setIsReseting] = useState(false);
@@ -88,6 +90,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const meta = ROLE_META[user.role] ?? ROLE_META.user;
   const isSelf = user.email === currentUserEmail;
   const canAct = !isSelf;
+  const canEditEmail = callerRole === "super_admin";
   const avatarColor = getAvatarColor(user.email);
   const displayName = user.display_name || user.email.split("@")[0];
   const joinDate = new Date(user.created_at).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -241,11 +244,18 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
             <div className="space-y-1.5">
               <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 <Mail className="size-3" /> Email
+                {!canEditEmail && (
+                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Chỉ Super Admin
+                  </span>
+                )}
               </label>
               <Input
                 {...register("email")}
                 type="email"
-                placeholder="email@arex.tech"
+                placeholder="email@example.com"
+                disabled={!canEditEmail}
+                className={!canEditEmail ? "opacity-60 cursor-not-allowed" : ""}
               />
               {errors.email && (
                 <p className="text-xs text-rose-500">{errors.email.message}</p>

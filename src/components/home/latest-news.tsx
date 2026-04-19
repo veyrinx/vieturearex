@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, ArrowRight } from "lucide-react";
+import { Clock, ArrowRight, MessageSquare } from "lucide-react";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
 import { MediaFrame } from "@/components/common/media-frame";
@@ -49,13 +49,22 @@ function FeaturedCard({ item }: { item: NewsItem }) {
             <h3 className="font-heading text-xl font-bold uppercase tracking-[0.04em] text-white line-clamp-2 drop-shadow-lg md:text-2xl">
               {item.title}
             </h3>
-            {ago && (
-              <div className="mt-2.5 flex items-center gap-1.5 text-xs text-white/70">
-                <div className="size-1.5 rounded-full bg-white/50" />
-                <Clock className="size-3 shrink-0" />
-                <span className="font-medium">{ago}</span>
-              </div>
-            )}
+            <div className="mt-3 flex items-center justify-between gap-3">
+              {ago && (
+                <div className="flex items-center gap-1.5 text-xs text-white/70">
+                  <Clock className="size-3 shrink-0" />
+                  <span className="font-medium">{ago}</span>
+                </div>
+              )}
+              <Link
+                href={`/news/${item.slug}#comments`}
+                onClick={(e) => e.stopPropagation()}
+                className="relative z-50 inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-white backdrop-blur-sm transition hover:bg-white/20"
+              >
+                <MessageSquare className="size-3 shrink-0" />
+                Bình luận
+              </Link>
+            </div>
           </div>
         </div>
       </article>
@@ -88,12 +97,22 @@ function MiniCard({ item, index }: { item: NewsItem; index: number }) {
           <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-[#0052ff] dark:text-amber-400 line-clamp-2 transition-opacity group-hover:opacity-80">
             {item.title}
           </h3>
-          {ago && (
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Clock className="size-3 shrink-0" />
-              <span className="font-medium">{ago}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between gap-2">
+            {ago && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Clock className="size-3 shrink-0" />
+                <span className="font-medium">{ago}</span>
+              </div>
+            )}
+            <Link
+              href={`/news/${item.slug}#comments`}
+              onClick={(e) => e.stopPropagation()}
+              className="relative z-50 inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary dark:hover:border-amber-400/40 dark:hover:text-amber-400"
+            >
+              <MessageSquare className="size-3" />
+              BL
+            </Link>
+          </div>
         </div>
         <div className="pointer-events-none absolute inset-y-0 left-0 w-0.5 rounded-r-full bg-primary/0 transition-all duration-200 group-hover:bg-primary/60 dark:group-hover:bg-amber-400/60" />
       </article>

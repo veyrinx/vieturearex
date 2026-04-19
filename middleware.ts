@@ -14,15 +14,34 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/auth/register",
   "/api/user/register",
+  "/api/user/profile",
   "/api/auth",
   "/api/contact",
   "/api/push/subscribe",
+  "/api/events",
+  "/api/news",
+  "/api/gallery",
+  "/api/streams",
   "/terms-of-use",
   "/privacy-policy",
+  "/cookie-policy",
   "/dieu-khoan-su-dung",
   "/chinh-sach-bao-mat",
   "/maintenance",
+  "/news",
+  "/events",
+  "/calendar",
+  "/lich",
+  "/su-kien",
+  "/tin-tuc",
+  "/esports",
+  "/search",
+  "/contact",
+  "/lien-he",
 ];
+
+// Paths that require authentication even for regular users
+const AUTH_REQUIRED_PATHS = ["/profile"];
 
 // Chỉ cho phép Googlebot truy cập sitemap và robots.txt
 const CRAWLER_ONLY_PATHS = ["/sitemap.xml", "/robots.txt"];
@@ -85,7 +104,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    if (!isApiPath) {
+    if (!isApiPath && AUTH_REQUIRED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
@@ -110,7 +129,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const adminRoles = ["super_admin", "admin", "manager", "support"];
+    const adminRoles = ["super_admin", "admin", "it", "manager", "support"];
     if (!adminRoles.includes(profile.role)) {
       return NextResponse.redirect(new URL("/", request.url));
     }

@@ -19,27 +19,28 @@ import { UserEditDialog } from "@/components/admin/user-edit-dialog";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 
 const ROLE_META: Record<string, { label: string; color: string; level: number }> = {
-  super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20",    level: 100 },
+  super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20",       level: 100 },
   admin:       { label: "Admin",       color: "bg-amber-500/10 text-amber-500 border-amber-500/20", level: 80 },
-  manager:     { label: "Quản Lý",     color: "bg-blue-500/10 text-blue-500 border-blue-500/20",   level: 60 },
+  it:          { label: "IT",          color: "bg-violet-500/10 text-violet-500 border-violet-500/20", level: 80 },
+  manager:     { label: "Quản Lý",     color: "bg-blue-500/10 text-blue-500 border-blue-500/20",    level: 60 },
   support:     { label: "CSKH",        color: "bg-green-500/10 text-green-500 border-green-500/20", level: 40 },
-  user:        { label: "Người Dùng",  color: "bg-muted text-muted-foreground border-border",       level: 20 },
+  user:        { label: "Người Dùng",  color: "bg-muted text-muted-foreground border-border",        level: 20 },
 };
 
-const ROLE_ORDER: UserRole[] = ["super_admin", "admin", "manager", "support", "user"];
+const ROLE_ORDER: UserRole[] = ["super_admin", "admin", "it", "manager", "support", "user"];
 
 const PERMISSION_MATRIX = [
-  { label: "Quản lý người dùng",      super_admin: "✅", admin: "✅ (giới hạn)", manager: "❌", support: "❌", user: "❌" },
-  { label: "Thay đổi vai trò",        super_admin: "Tất cả", admin: "≤ Manager", manager: "❌", support: "❌", user: "❌" },
-  { label: "Khóa / Mở khóa tài khoản", super_admin: "✅", admin: "✅ (≤ Manager)", manager: "❌", support: "❌", user: "❌" },
-  { label: "Reset mật khẩu",          super_admin: "✅", admin: "✅ (≤ Manager)", manager: "❌", support: "❌", user: "❌" },
-  { label: "Xóa tài khoản",           super_admin: "✅", admin: "❌", manager: "❌", support: "❌", user: "❌" },
-  { label: "Quản lý nội dung",        super_admin: "✅", admin: "✅", manager: "✅", support: "❌", user: "❌" },
-  { label: "Phát trực tiếp",          super_admin: "✅", admin: "✅", manager: "✅", support: "❌", user: "❌" },
-  { label: "Đánh giá / Bình luận",    super_admin: "✅", admin: "✅", manager: "✅", support: "✅", user: "❌" },
-  { label: "Nhật ký hoạt động",       super_admin: "✅", admin: "✅", manager: "❌", support: "❌", user: "❌" },
-  { label: "Cài đặt hệ thống",        super_admin: "✅", admin: "✅", manager: "❌", support: "❌", user: "❌" },
-  { label: "Quảng cáo Google Ads",    super_admin: "✅", admin: "✅", manager: "❌", support: "❌", user: "❌" },
+  { label: "Quản lý người dùng",        super_admin: "✅", admin: "✅ (giới hạn)", it: "✅ (xem)", manager: "❌", support: "❌", user: "❌" },
+  { label: "Thay đổi vai trò",          super_admin: "Tất cả", admin: "≤ Manager", it: "❌", manager: "❌", support: "❌", user: "❌" },
+  { label: "Khóa / Mở khóa tài khoản", super_admin: "✅", admin: "✅ (≤ Manager)", it: "❌", manager: "❌", support: "❌", user: "❌" },
+  { label: "Reset mật khẩu",            super_admin: "✅", admin: "✅ (≤ Manager)", it: "✅ Tất cả", manager: "❌", support: "❌", user: "❌" },
+  { label: "Đổi email người dùng",      super_admin: "✅", admin: "❌", it: "❌", manager: "❌", support: "❌", user: "❌" },
+  { label: "Xóa tài khoản",             super_admin: "✅", admin: "❌", it: "❌", manager: "❌", support: "❌", user: "❌" },
+  { label: "Quản lý nội dung",          super_admin: "✅", admin: "✅", it: "✅", manager: "✅", support: "❌", user: "❌" },
+  { label: "Phát trực tiếp",            super_admin: "✅", admin: "✅", it: "✅", manager: "✅", support: "❌", user: "❌" },
+  { label: "Đánh giá / Bình luận",      super_admin: "✅", admin: "✅", it: "✅", manager: "✅", support: "✅", user: "❌" },
+  { label: "Nhật ký hoạt động",         super_admin: "✅", admin: "✅", it: "✅", manager: "❌", support: "❌", user: "❌" },
+  { label: "Cài đặt hệ thống",          super_admin: "✅", admin: "✅", it: "✅", manager: "❌", support: "❌", user: "❌" },
 ];
 
 type SortKey = "email" | "role" | "views" | "created_at";
@@ -330,7 +331,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
       <PermissionMatrix />
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {ROLE_ORDER.map((role) => {
           const meta = ROLE_META[role];
           return (
@@ -612,6 +613,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
         onOpenChange={(open) => { if (!open) setEditUser(null); }}
         onSaved={onSaved}
         currentUserEmail={currentUserEmail}
+        callerRole={currentUser?.role ?? null}
       />
     </div>
   );

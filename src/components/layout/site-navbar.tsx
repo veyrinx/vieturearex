@@ -98,7 +98,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative rounded-lg px-3.5 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] transition-all duration-150",
+                  "relative rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
                   isHomePage
                     ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",

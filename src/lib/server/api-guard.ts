@@ -39,11 +39,12 @@ export function enforceRateLimit(
   return null;
 }
 
-type MinimumRole = "super_admin" | "admin" | "manager" | "support" | "user";
+type MinimumRole = "super_admin" | "admin" | "it" | "manager" | "support" | "user";
 
 const ROLE_HIERARCHY: Record<string, number> = {
   super_admin: 100,
   admin: 80,
+  it: 80,
   manager: 60,
   support: 40,
   user: 20,

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(git commit *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(npx next *)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx next build)",
+      "Bash(gh run *)",
+      "Bash(xargs cat *)",
+      "Bash(find src *)",
+      "Bash(node -e \"const {z} = require\\('zod'\\); const s = z.string\\(\\).datetime\\(\\); console.log\\(s.safeParse\\('2024-01-15T17:00:00.000Z'\\)\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(cat)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

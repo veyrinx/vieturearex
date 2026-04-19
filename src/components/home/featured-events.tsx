@@ -203,25 +203,25 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                     )}
                   </div>
 
-                  {/* Image link bo góc dưới card */}
-                  {(event.thumbnail_url || event.image_url) && (
+                  {/* Quick-access link below card content */}
+                  {event.link && (
                     <div className="px-4 pb-4 pt-1">
                       <a
-                        href={event.link ?? "#"}
-                        target={event.link ? "_blank" : undefined}
+                        href={event.link}
+                        target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="group/img block overflow-hidden rounded-xl border border-border/60 transition-all hover:border-primary/40 hover:shadow-md dark:hover:border-amber-400/40"
-                        title={event.link ? "Mở liên kết sự kiện" : event.title}
+                        className={cn(
+                          "flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] transition-all",
+                          event.status === "active"
+                            ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
+                            : event.status === "upcoming"
+                              ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
+                              : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
+                        )}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={event.thumbnail_url || event.image_url}
-                          alt={event.title}
-                          className="aspect-[16/7] w-full object-cover transition duration-500 group-hover/img:scale-105"
-                          loading="lazy"
-                          decoding="async"
-                        />
+                        <ExternalLink className="size-3 shrink-0" />
+                        Truy cập sự kiện
                       </a>
                     </div>
                   )}

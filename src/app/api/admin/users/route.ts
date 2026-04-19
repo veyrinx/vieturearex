@@ -6,7 +6,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 100, admin: 80, manager: 60, support: 40, user: 20,
+  super_admin: 100, admin: 80, it: 80, manager: 60, support: 40, user: 20,
 };
 
 async function getCallerRole(): Promise<string | null> {
@@ -20,7 +20,7 @@ async function getCallerRole(): Promise<string | null> {
 
 const updateRoleSchema = z.object({
   id: z.string().min(1),
-  role: z.enum(["super_admin", "admin", "manager", "support", "user"]),
+  role: z.enum(["super_admin", "admin", "it", "manager", "support", "user"]),
 });
 
 const updateBanSchema = z.object({
@@ -113,7 +113,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const targetRole = roleParsed.data.role;
-  if (targetRole === "super_admin" || targetRole === "admin") {
+  if (targetRole === "super_admin" || targetRole === "admin" || targetRole === "it") {
     const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
     if (denied) return denied;
   } else {
