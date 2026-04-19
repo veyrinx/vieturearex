@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { eventSchema } from "@/lib/validators/event";
 import {
   createEvent,
@@ -84,6 +85,9 @@ export async function POST(request: NextRequest) {
     });
 
     void sendPushNotification("📅 Sự kiện mới", event.title, "/events").catch(() => null);
+    revalidatePath("/events", "layout");
+    revalidatePath("/calendar", "layout");
+    revalidatePath("/", "layout");
 
     return NextResponse.json({ event }, { status: 201 });
   } catch (error) {
@@ -142,6 +146,9 @@ export async function PATCH(request: NextRequest) {
       targetId: event.id,
       summary: `Cập nhật sự kiện ${event.title}`,
     });
+    revalidatePath("/events", "layout");
+    revalidatePath("/calendar", "layout");
+    revalidatePath("/", "layout");
 
     return NextResponse.json({ event });
   } catch (error) {
@@ -172,5 +179,8 @@ export async function DELETE(request: NextRequest) {
     targetId: payload.id,
     summary: "Xóa sự kiện",
   });
+  revalidatePath("/events", "layout");
+  revalidatePath("/calendar", "layout");
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true });
 }

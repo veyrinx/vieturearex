@@ -18,5 +18,6 @@ export function useUsersQuery() {
     queryFn: fetchUsers,
     staleTime: 0,
     refetchOnMount: true,
+    refetchInterval: 30_000,
   });
 }

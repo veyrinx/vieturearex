@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   createGalleryItem,
   deleteGalleryItem,
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
     targetId: item.id,
     summary: `Thêm ảnh gallery tag ${item.tag}`,
   });
+  revalidatePath("/gallery", "layout");
 
   return NextResponse.json({ item }, { status: 201 });
 }
@@ -86,7 +88,8 @@ export async function DELETE(request: NextRequest) {
     action: "GALLERY_DELETED",
     targetType: "GALLERY",
     targetId: payload.id,
-        summary: "Xóa ảnh gallery",
+    summary: "Xóa ảnh gallery",
   });
+  revalidatePath("/gallery", "layout");
   return NextResponse.json({ ok: true });
 }

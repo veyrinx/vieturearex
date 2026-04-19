@@ -19,5 +19,8 @@ export function useInvitedEmailsQuery() {
   return useQuery({
     queryKey: ["invited-emails"],
     queryFn: fetchInvitedEmails,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchInterval: 30_000,
   });
 }

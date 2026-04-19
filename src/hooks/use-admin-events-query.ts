@@ -16,7 +16,9 @@ export function useAdminEventsQuery() {
   return useQuery({
     queryKey: ADMIN_EVENTS_KEY,
     queryFn: fetchAdminEvents,
-    refetchInterval: 30_000,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchInterval: 15_000,
     placeholderData: (prev) => prev,
   });
 }

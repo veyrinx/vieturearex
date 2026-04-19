@@ -18,6 +18,7 @@ export function useGalleryQuery() {
     queryFn: fetchAdminGallery,
     staleTime: 0,
     refetchOnMount: true,
+    refetchInterval: 30_000,
   });
 }
 

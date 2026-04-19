@@ -18,5 +18,6 @@ export function useSettingsQuery() {
     queryFn: fetchSettings,
     staleTime: 0,
     refetchOnMount: true,
+    refetchInterval: 60_000,
   });
 }

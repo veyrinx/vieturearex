@@ -16,7 +16,9 @@ export function useAdminNewsQuery() {
   return useQuery({
     queryKey: ADMIN_NEWS_KEY,
     queryFn: fetchAdminNews,
-    refetchInterval: 60_000,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchInterval: 20_000,
     placeholderData: (prev) => prev,
   });
 }

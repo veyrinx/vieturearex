@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSettings, updateSetting } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -73,6 +74,9 @@ export async function PATCH(request: NextRequest) {
     targetId: setting?.id ?? sanitizedKey,
     summary: `Cập nhật cài đặt ${setting?.key ?? parsed.data.key}`,
   });
+
+  // Revalidate all public pages since settings affect branding, SEO, home content
+  revalidatePath("/", "layout");
 
   return NextResponse.json({ setting });
 }

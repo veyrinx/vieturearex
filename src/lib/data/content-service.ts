@@ -216,7 +216,7 @@ export async function getEvents(query?: EventQuery): Promise<EventItem[]> {
       }
 
       const rows = (data ?? []).map(mapEventRow);
-      return applyEventQuery(rows.length > 0 ? rows : getDemoStore().events, query);
+      return applyEventQuery(rows, query);
     },
   );
 }

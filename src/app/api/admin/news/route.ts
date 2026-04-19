@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { newsSchema } from "@/lib/validators/news";
 import {
   createNews,
@@ -83,6 +84,8 @@ export async function POST(request: NextRequest) {
 
     // Gửi push notification cho subscribers
     void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
+    revalidatePath("/news", "layout");
+    revalidatePath("/", "layout");
 
     return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
@@ -127,6 +130,9 @@ export async function PATCH(request: NextRequest) {
       targetId: article.id,
       summary: `Cập nhật bài viết ${article.title}`,
     });
+    revalidatePath("/news", "layout");
+    revalidatePath(`/news/${article.slug}`, "page");
+    revalidatePath("/", "layout");
     return NextResponse.json({ article });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update news.";
@@ -154,7 +160,9 @@ export async function DELETE(request: NextRequest) {
     action: "NEWS_DELETED",
     targetType: "NEWS",
     targetId: payload.id,
-        summary: "Xóa bài viết",
+    summary: "Xóa bài viết",
   });
+  revalidatePath("/news", "layout");
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true });
 }
