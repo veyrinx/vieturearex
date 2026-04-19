@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { formatDistanceToNowStrict } from "date-fns";
 import { vi } from "date-fns/locale";
-import { ShieldCheck, Download, Search, RefreshCw } from "lucide-react";
+import { ShieldCheck, Download, Search, RefreshCw, Users, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminLogsQuery } from "@/hooks/use-admin-logs-query";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import type { AdminActivityLogItem } from "@/lib/types/content";
+
+const USER_ACTIONS = new Set(["USER_REGISTERED", "USER_COMMENTED"]);
+type TypeFilter = "all" | "admin" | "user";
 
 function exportLogsCSV(logs: AdminActivityLogItem[]) {
   const headers = ["Thời gian", "Tài khoản", "Hành động", "Đối tượng", "ID đối tượng", "Chi tiết"];
@@ -43,6 +47,8 @@ const ACTION_COLORS: Record<string, string> = {
   NEWS_DELETED: "bg-red-500/10 text-red-500 border-red-500/20",
   USER_ROLE_UPDATED: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   USER_DELETED: "bg-red-500/10 text-red-500 border-red-500/20",
+  USER_REGISTERED: "bg-teal-500/10 text-teal-500 border-teal-500/20",
+  USER_COMMENTED: "bg-sky-500/10 text-sky-500 border-sky-500/20",
   SETTINGS_UPDATED: "bg-purple-500/10 text-purple-500 border-purple-500/20",
   EVENT_CREATED: "bg-green-500/10 text-green-500 border-green-500/20",
   EVENT_UPDATED: "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -54,14 +60,24 @@ const ACTION_COLORS: Record<string, string> = {
 export function ActivityLogsPanel() {
   const { data: logs = [], isLoading, refetch } = useAdminLogsQuery();
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+
+  const typeFiltered = typeFilter === "admin"
+    ? logs.filter((l) => !USER_ACTIONS.has(l.action))
+    : typeFilter === "user"
+      ? logs.filter((l) => USER_ACTIONS.has(l.action))
+      : logs;
 
   const filtered = search
-    ? logs.filter((l) =>
+    ? typeFiltered.filter((l) =>
         l.actor_email.toLowerCase().includes(search.toLowerCase()) ||
         l.action.toLowerCase().includes(search.toLowerCase()) ||
         l.summary.toLowerCase().includes(search.toLowerCase())
       )
-    : logs;
+    : typeFiltered;
+
+  const adminCount = logs.filter((l) => !USER_ACTIONS.has(l.action)).length;
+  const userCount = logs.filter((l) => USER_ACTIONS.has(l.action)).length;
 
   return (
     <section className="space-y-4">
@@ -98,16 +114,41 @@ export function ActivityLogsPanel() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Type filter + Search */}
       {logs.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo email, hành động..."
-            className="pl-9 h-9 text-sm"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              { id: "all",   label: "Tất cả",      count: logs.length,  icon: ShieldCheck },
+              { id: "admin", label: "Quản trị",    count: adminCount,   icon: Shield },
+              { id: "user",  label: "Người dùng",  count: userCount,    icon: Users },
+            ] as const
+          ).map(({ id, label, count, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTypeFilter(id)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all",
+                typeFilter === id
+                  ? "border-primary/30 bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3" />
+              {label}
+              <span className="ml-0.5 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px] tabular-nums">{count}</span>
+            </button>
+          ))}
+          <div className="relative ml-auto max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo email, hành động..."
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
         </div>
       )}
 

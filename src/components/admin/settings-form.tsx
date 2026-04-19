@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { id: "community",    icon: Users,        label: "Cộng Đồng",   desc: "Thống kê & ngày ra mắt" },
   { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
   { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord" },
+  { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
   { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
 ] as const;
 
@@ -844,6 +845,68 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           onSave={() => save(["site.maintenance_mode", "site.maintenance_message", "site.maintenance_end_time"], "maintenance")}
           saving={saving === "maintenance"}
         />
+      </div>
+    ),
+
+    // ── EMAIL / SMTP ──────────────────────────────────────────────────────────
+    mail: (
+      <div className="space-y-5">
+        <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+            <Mail className="size-5" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Cấu hình gửi Email</p>
+            <p className="text-xs text-muted-foreground">
+              Cài đặt SMTP để gửi email xác thực, thông báo từ hệ thống. Thông tin nhạy cảm — không chia sẻ.
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Mail} title="SMTP Server" desc="Thông tin kết nối máy chủ email" />
+          </div>
+          <Field label="SMTP Host" hint="VD: smtp.gmail.com" icon={Globe}>
+            <Input value={v("mail.smtp_host")} onChange={(e) => set("mail.smtp_host", e.target.value)} placeholder="smtp.gmail.com" className="font-mono text-sm" />
+          </Field>
+          <Field label="SMTP Port" hint="Thường là 587 (TLS) hoặc 465 (SSL)" icon={Plug}>
+            <Input value={v("mail.smtp_port")} onChange={(e) => set("mail.smtp_port", e.target.value)} placeholder="587" className="font-mono text-sm max-w-32" />
+          </Field>
+          <Field label="SMTP Username" hint="Thường là địa chỉ email" icon={User}>
+            <Input value={v("mail.smtp_user")} onChange={(e) => set("mail.smtp_user", e.target.value)} placeholder="no-reply@arex.tech" className="font-mono text-sm" />
+          </Field>
+          <Field label="SMTP Password" hint="Mật khẩu ứng dụng (App Password)" icon={ShieldCheck}>
+            <Input type="password" value={v("mail.smtp_pass")} onChange={(e) => set("mail.smtp_pass", e.target.value)} placeholder="••••••••••••••••" className="font-mono text-sm" />
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Mail} title="Người gửi" desc="Tên và địa chỉ email hiển thị khi người dùng nhận email" />
+          </div>
+          <Field label="Tên người gửi" hint="VD: Arex Community" icon={User}>
+            <Input value={v("mail.from_name")} onChange={(e) => set("mail.from_name", e.target.value)} placeholder="Arex Community" />
+          </Field>
+          <Field label="Email người gửi" hint="Phải khớp với SMTP Username" icon={Mail}>
+            <Input type="email" value={v("mail.from_email")} onChange={(e) => set("mail.from_email", e.target.value)} placeholder="no-reply@arex.tech" className="font-mono text-sm" />
+          </Field>
+        </Card>
+
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-4 text-amber-500" />
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Lưu ý</p>
+          </div>
+          <ul className="space-y-1 text-[11px] text-muted-foreground list-disc list-inside">
+            <li>Thông tin SMTP được lưu trong Supabase settings — chỉ admin mới xem được.</li>
+            <li>Gmail: Bật &quot;App Password&quot; tại myaccount.google.com → Bảo mật → Mật khẩu ứng dụng.</li>
+            <li>Để xác thực email hoạt động, cấu hình SMTP trong Supabase Dashboard → Authentication → Email.</li>
+            <li>Supabase tự xử lý email gửi đi — cài đặt này chỉ để tham chiếu hoặc dùng cho API tự gửi.</li>
+          </ul>
+        </div>
+
+        <SaveRow onSave={() => save(["mail.smtp_host", "mail.smtp_port", "mail.smtp_user", "mail.smtp_pass", "mail.from_name", "mail.from_email"], "mail")} saving={saving === "mail"} />
       </div>
     ),
   };

@@ -34,6 +34,12 @@ export const settingsFormFieldOrder = [
   "site.maintenance_message",
   "site.maintenance_end_time",
   "site.discord_webhook",
+  "mail.smtp_host",
+  "mail.smtp_port",
+  "mail.smtp_user",
+  "mail.smtp_pass",
+  "mail.from_name",
+  "mail.from_email",
 ] as const;
 
 export const adminSettingsApiKeys = [

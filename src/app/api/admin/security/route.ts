@@ -1,0 +1,112 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { enforceAdminApiAuth, enforceRateLimit, getClientKey } from "@/lib/server/api-guard";
+import { getSettings, updateSetting } from "@/lib/data/content-service";
+import { unblockInMemory, getInMemoryBlockedIps, getFailureCount } from "@/lib/server/ip-blocker";
+import { logAdminActivity } from "@/lib/server/admin-activity";
+
+const BLOCKED_IPS_KEY = "security.blocked_ips";
+
+type BlockedEntry = { ip: string; blockedAt: number; reason: string };
+
+async function getBlockedList(): Promise<BlockedEntry[]> {
+  const settings = await getSettings();
+  const raw = settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? "[]";
+  try {
+    const list: BlockedEntry[] = JSON.parse(raw);
+    const now = Date.now();
+    const BLOCK_DURATION_MS = 60 * 60 * 1000;
+    return list.filter((e) => now - e.blockedAt < BLOCK_DURATION_MS * 24); // keep 24h of history
+  } catch {
+    return [];
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-security", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+  const denied = await enforceAdminApiAuth({ minimumRole: "it" });
+  if (denied) return denied;
+
+  const [dbList, memList] = await Promise.all([getBlockedList(), Promise.resolve(getInMemoryBlockedIps())]);
+
+  // Merge DB + in-memory, dedupe by IP
+  const seen = new Set<string>();
+  const merged: BlockedEntry[] = [];
+  for (const e of [...memList, ...dbList]) {
+    if (!seen.has(e.ip)) { seen.add(e.ip); merged.push(e); }
+  }
+
+  const now = Date.now();
+  const BLOCK_DURATION_MS = 60 * 60 * 1000;
+  const active = merged.filter((e) => now - e.blockedAt < BLOCK_DURATION_MS);
+  const history = merged.slice(0, 100);
+
+  return NextResponse.json({ blocked: active, history });
+}
+
+const unblockSchema = z.object({ ip: z.string().min(1) });
+
+export async function DELETE(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-security", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
+  const denied = await enforceAdminApiAuth({ minimumRole: "it" });
+  if (denied) return denied;
+
+  const payload = await request.json().catch(() => null);
+  const parsed = unblockSchema.safeParse(payload);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+
+  const { ip } = parsed.data;
+
+  // Remove from in-memory
+  unblockInMemory(ip);
+
+  // Remove from DB
+  const settings = await getSettings();
+  const raw = settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? "[]";
+  let list: BlockedEntry[] = [];
+  try { list = JSON.parse(raw); } catch { list = []; }
+  list = list.filter((e) => e.ip !== ip);
+  await updateSetting(BLOCKED_IPS_KEY, JSON.stringify(list));
+
+  await logAdminActivity({
+    action: "IP_UNBLOCKED",
+    targetType: "SECURITY",
+    summary: `Mở chặn IP: ${ip}`,
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+const blockSchema = z.object({ ip: z.string().min(1), reason: z.string().optional() });
+
+export async function POST(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-security", limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
+  const denied = await enforceAdminApiAuth({ minimumRole: "it" });
+  if (denied) return denied;
+
+  const payload = await request.json().catch(() => null);
+  const parsed = blockSchema.safeParse(payload);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+
+  const { ip, reason = "Chặn thủ công bởi admin" } = parsed.data;
+  const entry: BlockedEntry = { ip, blockedAt: Date.now(), reason };
+
+  const settings = await getSettings();
+  const raw = settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? "[]";
+  let list: BlockedEntry[] = [];
+  try { list = JSON.parse(raw); } catch { list = []; }
+  list = list.filter((e) => e.ip !== ip);
+  list.push(entry);
+  await updateSetting(BLOCKED_IPS_KEY, JSON.stringify(list));
+
+  await logAdminActivity({
+    action: "IP_BLOCKED",
+    targetType: "SECURITY",
+    summary: `Chặn thủ công IP: ${ip} — ${reason}`,
+  });
+
+  return NextResponse.json({ ok: true });
+}

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { logAdminActivity } from "@/lib/server/admin-activity";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ."),
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
+    email_confirm: false, // Require email verification
   });
 
   if (authError) {
@@ -53,5 +54,12 @@ export async function POST(request: NextRequest) {
     // Profile creation failed — auth user exists, non-fatal
   }
 
-  return NextResponse.json({ ok: true });
+  await logAdminActivity({
+    action: "USER_REGISTERED",
+    targetType: "USER",
+    targetId: authUser.id,
+    summary: `Tài khoản mới đăng ký: ${email}${displayName ? ` (${displayName})` : ""}`,
+  }).catch(() => {});
+
+  return NextResponse.json({ ok: true, emailVerificationRequired: true });
 }

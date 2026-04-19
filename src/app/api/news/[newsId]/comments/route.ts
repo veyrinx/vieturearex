@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
+import { logAdminActivity } from "@/lib/server/admin-activity";
 
 const postSchema = z.object({
   content: z.string().min(1).max(500),
@@ -64,6 +65,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     // Never expose raw DB error messages to client
     return NextResponse.json({ error: "Không thể gửi bình luận. Vui lòng thử lại." }, { status: 500 });
   }
+
+  // Log user activity
+  await logAdminActivity({
+    action: "USER_COMMENTED",
+    targetType: "NEWS",
+    targetId: params.newsId,
+    summary: `${displayName} (${user.email}) bình luận bài viết ${params.newsId}`,
+  }).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

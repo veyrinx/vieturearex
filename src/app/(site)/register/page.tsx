@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { siteConfig } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Users, Bell, MessageSquare, CalendarDays } from "lucide-react";
+import { Eye, EyeOff, Users, Bell, MessageSquare, CalendarDays, MailCheck } from "lucide-react";
 
 export default function UserRegisterPage() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function UserRegisterPage() {
   const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +48,39 @@ export default function UserRegisterPage() {
         toast.error(data.error ?? "Đăng ký thất bại.");
         return;
       }
-      toast.success("Tạo tài khoản thành công! Đang đăng nhập...");
-      router.push("/login?registered=1");
+      toast.success("Tạo tài khoản thành công! Vui lòng kiểm tra email để xác thực.");
+      setRegistered(true);
     } catch {
       toast.error("Lỗi mạng, vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (registered) {
+    return (
+      <div className="flex min-h-[85vh] items-center justify-center px-4 py-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md rounded-3xl border border-border/50 bg-card/90 p-10 text-center shadow-xl backdrop-blur-xl"
+        >
+          <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl bg-green-500/10">
+            <MailCheck className="size-8 text-green-500" />
+          </div>
+          <h2 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground">Xác nhận email</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Chúng tôi đã gửi email xác thực đến <strong className="text-foreground">{email}</strong>.
+            Vui lòng kiểm tra hộp thư và nhấn vào liên kết xác nhận để kích hoạt tài khoản.
+          </p>
+          <p className="mt-3 text-xs text-muted-foreground">Không thấy email? Kiểm tra thư mục Spam/Junk.</p>
+          <Link href="/login" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline dark:text-amber-400">
+            Về trang đăng nhập →
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[85vh] items-center justify-center px-4 py-10">

@@ -39,6 +39,8 @@ export default function UserLoginPage() {
 
     if (error) {
       toast.error("EMAIL HOẶC MẬT KHẨU KHÔNG CHÍNH XÁC.");
+      // Track failure for IP blocking
+      fetch("/api/auth/track-failure", { method: "POST" }).catch(() => {});
       return;
     }
 
