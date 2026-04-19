@@ -1,4 +1,4 @@
-const ICON_URL = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
+const ICON_URL = "https://ik.imagekit.io/uqjrsrvfw/aeec4733da0d58b9ff27750f74c71f8a.jpeg?updatedAt=1776365051398";
 
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
