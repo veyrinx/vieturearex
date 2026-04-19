@@ -6,23 +6,37 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Facebook, Youtube, MessageCircle, Wrench, Zap } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 
+// ── Safe date formatter (avoids toLocaleString crash on iOS Safari) ─────────
+function formatEndTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const days = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
+    return `${days[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return iso;
+  }
+}
+
 // ── Countdown hook ─────────────────────────────────────────────────────────
 function useCountdown(targetIso: string | null) {
   const [diff, setDiff] = useState(0);
   useEffect(() => {
     if (!targetIso) return;
     const target = new Date(targetIso).getTime();
+    if (isNaN(target)) return;
     const tick = () => setDiff(Math.max(0, target - Date.now()));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [targetIso]);
-  const s = Math.floor(diff / 1000);
+  const s = Math.floor(diff / 1000) || 0;
   return {
-    days: Math.floor(s / 86400),
-    hours: Math.floor((s % 86400) / 3600),
-    minutes: Math.floor((s % 3600) / 60),
-    seconds: s % 60,
+    days:    Math.floor(s / 86400)       || 0,
+    hours:   Math.floor((s % 86400) / 3600) || 0,
+    minutes: Math.floor((s % 3600) / 60)    || 0,
+    seconds: s % 60                          || 0,
     active: !!targetIso && diff > 0,
   };
 }
@@ -50,7 +64,8 @@ function FlipDigit({ value }: { value: string }) {
 }
 
 function CountBlock({ value, label }: { value: number; label: string }) {
-  const digits = String(value).padStart(2, "0").split("");
+  const safe = isNaN(value) || value < 0 ? 0 : Math.floor(value);
+  const digits = String(safe).padStart(2, "0").split("");
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative">
@@ -249,10 +264,7 @@ export default function MaintenancePage() {
               </div>
               {endTime && (
                 <p className="text-xs text-white/25">
-                  Dự kiến: {new Date(endTime).toLocaleString("vi-VN", {
-                    weekday: "long", day: "2-digit", month: "2-digit",
-                    year: "numeric", hour: "2-digit", minute: "2-digit",
-                  })}
+                  Dự kiến: {formatEndTime(endTime)}
                 </p>
               )}
             </motion.div>
