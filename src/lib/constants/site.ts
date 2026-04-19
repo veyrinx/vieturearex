@@ -6,8 +6,8 @@ export const siteConfig = {
   url: "https://arexnetwork.site",
   productionUrl: "https://arexnetwork.site",
   ogImage: "/og-image.png",
-  favicon: "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035",
-  sidebarIcon: "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035",
+  favicon: "https://ik.imagekit.io/VieTureImg/d4c92801-d332-448f-8b28-460fa3ded272.jfif",
+  sidebarIcon: "https://ik.imagekit.io/VieTureImg/d4c92801-d332-448f-8b28-460fa3ded272.jfif",
   links: {
     community: "https://zalo.me/g/ngjnze275",
     facebook: "https://facebook.com/share/1CT8XYU2oF/?mibexitid=wwXlfr",
