@@ -203,7 +203,8 @@ export default function ProfilePage() {
   const initial = label.charAt(0).toUpperCase();
   const avatarGradient = getAvatarColor(profile.email);
   const roleMeta = ROLE_META[profile.role] ?? ROLE_META.user;
-  const joinDate = new Date(profile.created_at).toLocaleDateString("vi-VN", {
+  const _joinDateObj = new Date(profile.created_at ?? "");
+  const joinDate = Number.isNaN(_joinDateObj.getTime()) ? "-" : _joinDateObj.toLocaleDateString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
   const isDirty = displayName.trim() !== (profile.display_name ?? "");
@@ -246,7 +247,7 @@ export default function ProfilePage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Eye className="size-3.5" />
-                  {profile.views.toLocaleString("vi-VN")} lượt xem
+                  {Number(profile.views ?? 0).toLocaleString("vi-VN")} lượt xem
                 </span>
                 {has2FA && (
                   <span className="flex items-center gap-1.5 text-green-500">
@@ -420,7 +421,7 @@ export default function ProfilePage() {
               {[
                 { icon: Shield,       label: "Vai trò",        value: roleMeta.label },
                 { icon: CalendarDays, label: "Ngày tham gia",  value: joinDate },
-                { icon: Eye,          label: "Lượt xem",       value: profile.views.toLocaleString("vi-VN") },
+                { icon: Eye,          label: "Lượt xem",       value: Number(profile.views ?? 0).toLocaleString("vi-VN") },
               ].map(({ icon: Icon, label: l, value }) => (
                 <div key={l} className="flex flex-col gap-1.5 rounded-xl border border-border bg-muted/30 px-4 py-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

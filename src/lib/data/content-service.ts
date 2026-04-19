@@ -664,8 +664,12 @@ export async function getSettings(): Promise<SiteSetting[]> {
     "getSettings",
     () => getDemoStore().settings,
     async () => {
-      const supabase = getSupabaseAdminOrThrow();
-      const { data, error } = await supabase.from("settings").select("*").order("key");
+      // Prefer admin client (bypasses RLS); fall back to read client if unavailable
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+        .from("settings")
+        .select("*")
+        .order("key");
       if (error) {
         throw new Error(error.message);
       }

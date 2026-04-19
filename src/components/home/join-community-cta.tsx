@@ -112,7 +112,7 @@ export function JoinCommunityCta(props: JoinCommunityCtaProps) {
         {daysActive !== null && daysActive !== undefined && (
           <div className="shrink-0 rounded-2xl border border-border bg-card px-5 py-3.5 text-center">
             <p className="font-heading text-4xl font-black tabular-nums text-primary dark:text-amber-400">
-              {daysActive.toLocaleString("vi-VN")}
+              {Number(daysActive ?? 0).toLocaleString("vi-VN")}
             </p>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               ngày hoạt động

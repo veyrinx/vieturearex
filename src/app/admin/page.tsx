@@ -8,7 +8,7 @@ import {
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
 import { ViewsTrendCard } from "@/components/admin/views-trend-card";
-import { getDashboardStats } from "@/lib/data/content-service";
+import { getDashboardStats, getUserByEmail } from "@/lib/data/content-service";
 import { getAuthContext } from "@/lib/server/auth";
 
 export const metadata: Metadata = {
@@ -46,14 +46,15 @@ const QUICK_ACTIONS = [
 ];
 
 export default async function AdminDashboardPage() {
-  const [stats, auth] = await Promise.all([
+  const auth = await getAuthContext();
+  const [stats, userProfile] = await Promise.all([
     getDashboardStats(),
-    getAuthContext(),
+    auth.email ? getUserByEmail(auth.email).catch(() => null) : Promise.resolve(null),
   ]);
 
   const roleLabel = ROLE_LABELS[auth.role] ?? auth.role;
   const roleColor = ROLE_COLORS[auth.role] ?? ROLE_COLORS.user;
-  const adminName = auth.email?.split("@")[0]?.toUpperCase() ?? "ADMIN";
+  const adminName = (userProfile?.display_name || auth.email?.split("@")[0] || "ADMIN").toUpperCase();
 
   return (
     <section className="space-y-6">
@@ -131,7 +132,7 @@ export default async function AdminDashboardPage() {
         />
         <StatsCard
           title="Lượt xem"
-          value={stats.views.toLocaleString("vi-VN")}
+          value={Number(stats.views ?? 0).toLocaleString("vi-VN")}
           icon={BarChart3}
           color="green"
           sub="Tổng lượt xem trang"

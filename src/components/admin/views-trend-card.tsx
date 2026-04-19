@@ -91,7 +91,7 @@ export function ViewsTrendCard() {
         {stats.map(({ label, value, trend, prev }) => (
           <div key={label} className="space-y-1">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-            <p className="font-heading text-xl font-black text-foreground">{value.toLocaleString("vi-VN")}</p>
+            <p className="font-heading text-xl font-black text-foreground">{Number(value ?? 0).toLocaleString("vi-VN")}</p>
             <TrendBadge trend={trend} value={value} prev={prev} />
           </div>
         ))}
