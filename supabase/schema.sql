@@ -13,14 +13,18 @@ create table if not exists public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
   display_name text,
-  role text not null check (role in ('super_admin', 'admin', 'manager', 'support', 'user')) default 'user',
+  role text not null check (role in ('super_admin', 'admin', 'it', 'manager', 'support', 'user')) default 'user',
   views integer not null default 0,
   is_banned boolean not null default false,
   created_at timestamptz not null default now()
 );
 
--- Idempotent migration: add is_banned if table already exists
+-- Idempotent migrations
 alter table if exists public.users add column if not exists is_banned boolean not null default false;
+-- Fix role constraint to include 'it'
+alter table if exists public.users drop constraint if exists users_role_check;
+alter table if exists public.users add constraint users_role_check
+  check (role in ('super_admin', 'admin', 'it', 'manager', 'support', 'user'));
 
 create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
@@ -95,6 +99,34 @@ create table if not exists public.news_comments (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.news_ratings (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null,
+  title text not null,
+  anonymous_id text not null,
+  stars integer not null check (stars between 1 and 5),
+  review text,
+  admin_liked boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique(slug, anonymous_id)
+);
+
+create table if not exists public.rating_likes (
+  id uuid primary key default gen_random_uuid(),
+  rating_id uuid not null references public.news_ratings(id) on delete cascade,
+  anonymous_id text not null,
+  type text not null check (type in ('like', 'unlike')),
+  created_at timestamptz not null default now(),
+  unique(rating_id, anonymous_id)
+);
+
+create table if not exists public.rating_replies (
+  id uuid primary key default gen_random_uuid(),
+  rating_id uuid not null references public.news_ratings(id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -113,6 +145,10 @@ create index if not exists news_comments_news_id_idx on public.news_comments(new
 create index if not exists news_comments_status_idx on public.news_comments(status);
 create index if not exists news_comments_created_at_idx on public.news_comments(created_at desc);
 create index if not exists news_tags_idx on public.news using gin(tags);
+create index if not exists news_ratings_slug_idx on public.news_ratings(slug);
+create index if not exists news_ratings_created_at_idx on public.news_ratings(created_at desc);
+create index if not exists rating_likes_rating_id_idx on public.rating_likes(rating_id);
+create index if not exists rating_replies_rating_id_idx on public.rating_replies(rating_id);
 
 -- ============================================================
 -- TRIGGERS & FUNCTIONS
@@ -181,6 +217,9 @@ alter table public.settings enable row level security;
 alter table public.admin_activity_logs enable row level security;
 alter table public.analytics_daily enable row level security;
 alter table public.news_comments enable row level security;
+alter table public.news_ratings enable row level security;
+alter table public.rating_likes enable row level security;
+alter table public.rating_replies enable row level security;
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -353,6 +392,48 @@ with check (status = 'pending');
 drop policy if exists "Admin manage comments" on public.news_comments;
 create policy "Admin manage comments" on public.news_comments for all
 using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
+
+-- ============================================================
+-- POLICIES – NEWS RATINGS
+-- ============================================================
+
+drop policy if exists "Public can view ratings" on public.news_ratings;
+create policy "Public can view ratings" on public.news_ratings for select using (true);
+
+drop policy if exists "Anyone can submit rating" on public.news_ratings;
+create policy "Anyone can submit rating" on public.news_ratings for insert with check (true);
+
+drop policy if exists "Admin manage ratings" on public.news_ratings;
+create policy "Admin manage ratings" on public.news_ratings for all
+using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- POLICIES – RATING LIKES
+-- ============================================================
+
+drop policy if exists "Public can view likes" on public.rating_likes;
+create policy "Public can view likes" on public.rating_likes for select using (true);
+
+drop policy if exists "Anyone can like" on public.rating_likes;
+create policy "Anyone can like" on public.rating_likes for insert with check (true);
+
+drop policy if exists "Anyone can remove own like" on public.rating_likes;
+create policy "Anyone can remove own like" on public.rating_likes for delete using (true);
+
+-- ============================================================
+-- POLICIES – RATING REPLIES
+-- ============================================================
+
+drop policy if exists "Public can view replies" on public.rating_replies;
+create policy "Public can view replies" on public.rating_replies for select using (true);
+
+drop policy if exists "Admin can reply" on public.rating_replies;
+create policy "Admin can reply" on public.rating_replies for insert
+with check (public.is_admin_or_editor());
+
+drop policy if exists "Admin manage replies" on public.rating_replies;
+create policy "Admin manage replies" on public.rating_replies for delete
+using (public.is_admin_or_editor());
 
 -- ============================================================
 -- SEED DATA
