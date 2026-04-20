@@ -32,9 +32,11 @@ function RatingCard({ r, anonId, onRefresh, isAdmin }: { r: RatingItem; anonId: 
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
 
-  const myLike = r.likes.find((l) => l.anonymous_id === anonId);
-  const likeCount = r.likes.filter((l) => l.type === "like").length;
-  const unlikeCount = r.likes.filter((l) => l.type === "unlike").length;
+  const likes = r.likes ?? [];
+  const replies = r.replies ?? [];
+  const myLike = likes.find((l) => l.anonymous_id === anonId);
+  const likeCount = likes.filter((l) => l.type === "like").length;
+  const unlikeCount = likes.filter((l) => l.type === "unlike").length;
 
   const handleLike = async (type: "like" | "unlike") => {
     if (myLike?.type === type) {
@@ -79,9 +81,9 @@ function RatingCard({ r, anonId, onRefresh, isAdmin }: { r: RatingItem; anonId: 
 
       {r.review && <p className="text-sm text-muted-foreground">{r.review}</p>}
 
-      {r.replies.length > 0 && (
+      {replies.length > 0 && (
         <div className="space-y-1.5 pl-3 border-l-2 border-primary/30">
-          {r.replies.map((reply) => (
+          {replies.map((reply) => (
             <div key={reply.id} className="space-y-0.5">
               <span className="text-xs font-bold text-red-500">ADMIN</span>
               <p className="text-xs text-foreground">{reply.content}</p>
@@ -154,8 +156,8 @@ export function NewsRating({ slug, title }: Props) {
     const res = await fetch(`/api/news/ratings?slug=${encodeURIComponent(slug)}`);
     if (!res.ok) return;
     const data = await res.json() as { ratings: RatingItem[]; stats: Stats };
-    setRatings(data.ratings);
-    setStats(data.stats);
+    setRatings(data.ratings ?? []);
+    setStats(data.stats ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
     setLoading(false);
   }, [slug]);
 

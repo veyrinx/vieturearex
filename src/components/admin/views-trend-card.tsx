@@ -36,10 +36,11 @@ function TrendBadge({ trend, value, prev }: { trend: Trend; value: number; prev:
 }
 
 function MiniBar({ chart }: { chart: TrendsData["chart"] }) {
-  const max = Math.max(...chart.map((c) => c.views), 1);
+  const safeChart = chart ?? [];
+  const max = Math.max(...safeChart.map((c) => c.views), 1);
   return (
     <div className="flex h-12 items-end gap-px">
-      {chart.map((c) => (
+      {safeChart.map((c) => (
         <div
           key={c.date}
           title={`${c.date}: ${c.views}`}
@@ -57,8 +58,8 @@ export function ViewsTrendCard() {
 
   useEffect(() => {
     fetch("/api/analytics/trends")
-      .then((r) => r.json())
-      .then((d: TrendsData) => { setData(d); setLoading(false); })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: TrendsData | null) => { if (d?.chart) setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
