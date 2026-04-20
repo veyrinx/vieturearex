@@ -24,8 +24,13 @@ export async function GET(request: NextRequest) {
     return denied;
   }
 
-  const gallery = await getGalleryAdmin();
-  return NextResponse.json({ gallery });
+  try {
+    const gallery = await getGalleryAdmin();
+    return NextResponse.json({ gallery });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load gallery.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

@@ -17,6 +17,11 @@ export async function GET(request: NextRequest) {
     return denied;
   }
 
-  const logs = await getAdminActivityLogs();
-  return NextResponse.json({ logs });
+  try {
+    const logs = await getAdminActivityLogs();
+    return NextResponse.json({ logs });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load logs.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

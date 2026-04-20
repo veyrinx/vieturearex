@@ -853,33 +853,42 @@ export async function markAdminActive(email: string): Promise<ActiveAdminItem[]>
 }
 
 export async function getNewsAdmin(): Promise<NewsItem[]> {
-  if (!hasSupabaseEnv) {
-    return [...getDemoStore().news].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)));
-  }
-  const supabase = getSupabaseAdminOrThrow();
-  const { data, error } = await supabase.from("news").select("*").order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  return withSupabaseReadFallback(
+    "getNewsAdmin",
+    () => [...getDemoStore().news].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at))),
+    async () => {
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await supabase.from("news").select("*").order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  );
 }
 
 export async function getEventsAdmin(): Promise<EventItem[]> {
-  if (!hasSupabaseEnv) {
-    return getDemoStore().events.map((e) => ({ ...e, status: normalizeEventStatus(e) }));
-  }
-  const supabase = getSupabaseAdminOrThrow();
-  const { data, error } = await supabase.from("events").select("*").order("start_date", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(mapEventRow);
+  return withSupabaseReadFallback(
+    "getEventsAdmin",
+    () => getDemoStore().events.map((e) => ({ ...e, status: normalizeEventStatus(e) })),
+    async () => {
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await supabase.from("events").select("*").order("start_date", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map(mapEventRow);
+    },
+  );
 }
 
 export async function getGalleryAdmin(): Promise<GalleryItem[]> {
-  if (!hasSupabaseEnv) {
-    return [...getDemoStore().gallery].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)));
-  }
-  const supabase = getSupabaseAdminOrThrow();
-  const { data, error } = await supabase.from("gallery").select("*").order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  return withSupabaseReadFallback(
+    "getGalleryAdmin",
+    () => [...getDemoStore().gallery].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at))),
+    async () => {
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await supabase.from("gallery").select("*").order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  );
 }
 
 export async function updateSetting(key: string, value: string) {
@@ -923,28 +932,30 @@ export async function updateSetting(key: string, value: string) {
 }
 
 export async function getAdminActivityLogs(): Promise<AdminActivityLogItem[]> {
-  if (!hasSupabaseEnv) {
-    const demo = getDemoStore();
-    demo.adminActivityLogs = pruneAdminActivityLogs(demo.adminActivityLogs);
-    return [...demo.adminActivityLogs].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)));
-  }
-
-  const supabase = getSupabaseAdminOrThrow();
-  await supabase
-    .from("admin_activity_logs")
-    .delete()
-    .lt("created_at", new Date(Date.now() - ADMIN_ACTIVITY_RETENTION_MS).toISOString());
-
-  const { data, error } = await supabase
-    .from("admin_activity_logs")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data ?? [];
+  return withSupabaseReadFallback(
+    "getAdminActivityLogs",
+    () => {
+      const demo = getDemoStore();
+      demo.adminActivityLogs = pruneAdminActivityLogs(demo.adminActivityLogs);
+      return [...demo.adminActivityLogs].sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)));
+    },
+    async () => {
+      const adminSupabase = createAdminSupabaseClient();
+      if (adminSupabase) {
+        await adminSupabase
+          .from("admin_activity_logs")
+          .delete()
+          .lt("created_at", new Date(Date.now() - ADMIN_ACTIVITY_RETENTION_MS).toISOString());
+      }
+      const supabase = adminSupabase ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await supabase
+        .from("admin_activity_logs")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  );
 }
 
 export async function createAdminActivityLog(

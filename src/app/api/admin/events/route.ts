@@ -21,8 +21,13 @@ export async function GET(request: NextRequest) {
   if (denied) {
     return denied;
   }
-  const events = await getEventsAdmin();
-  return NextResponse.json({ events });
+  try {
+    const events = await getEventsAdmin();
+    return NextResponse.json({ events });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load events.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

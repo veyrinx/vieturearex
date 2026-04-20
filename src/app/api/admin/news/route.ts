@@ -41,8 +41,13 @@ export async function GET(request: NextRequest) {
   if (denied) {
     return denied;
   }
-  const news = await getNewsAdmin();
-  return NextResponse.json({ news });
+  try {
+    const news = await getNewsAdmin();
+    return NextResponse.json({ news });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load news.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
