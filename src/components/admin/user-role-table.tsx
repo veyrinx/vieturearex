@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Download, Search, Trash2, Users, Shield, ChevronUp, ChevronDown,
-  Lock, Unlock, KeyRound, Copy, Check, ChevronRight, Info, Pencil,
+  Lock, Unlock, KeyRound, Copy, Check, ChevronRight, Info, Pencil, BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,6 +198,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [banningId, setBanningId] = useState<string | null>(null);
   const [resetingId, setResetingId] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [currentUserLoaded, setCurrentUserLoaded] = useState(false);
   const [search, setSearch] = useState("");
@@ -221,6 +222,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
   const currentUser = users.find((u) => u.email === currentUserEmail);
   const isSuperAdmin = currentUserLoaded && currentUser?.role === "super_admin";
   const isAdmin = currentUserLoaded && (currentUser?.role === "admin" || currentUser?.role === "super_admin");
+  const isIT = currentUserLoaded && currentUser?.role === "it";
   const callerLevel = ROLE_META[currentUser?.role ?? "user"]?.level ?? 20;
 
   const stats = useMemo(() => {
@@ -291,6 +293,24 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
       return;
     }
     toast.success(willBan ? "Đã khóa tài khoản." : "Đã mở khóa tài khoản.");
+    await onSaved();
+  };
+
+  const toggleVerify = async (user: UserItem) => {
+    const willVerify = !user.is_verified;
+    setVerifyingId(user.id);
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, is_verified: willVerify }),
+    });
+    setVerifyingId(null);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Không thể thay đổi tích xanh.");
+      return;
+    }
+    toast.success(willVerify ? "Đã cấp tích xanh." : "Đã thu hồi tích xanh.");
     await onSaved();
   };
 
@@ -448,6 +468,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                 const isBanning = banningId === user.id;
                 const isReseting = resetingId === user.id;
                 const isDeleting = deletingId === user.id;
+                const isVerifying = verifyingId === user.id;
 
                 return (
                   <tr key={user.id} className={cn("transition-colors hover:bg-muted/30", user.is_banned && "opacity-60 bg-red-500/5")}>
@@ -540,6 +561,28 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                             className="size-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                           >
                             <Pencil className="size-3.5" />
+                          </Button>
+                        )}
+
+                        {/* Verify badge — IT only */}
+                        {isIT && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={isVerifying}
+                            onClick={() => toggleVerify(user)}
+                            title={user.is_verified ? "Thu hồi tích xanh" : "Cấp tích xanh"}
+                            className={cn(
+                              "size-8",
+                              user.is_verified
+                                ? "text-blue-500 hover:bg-blue-500/10"
+                                : "text-muted-foreground hover:bg-blue-500/10 hover:text-blue-500",
+                            )}
+                          >
+                            {isVerifying
+                              ? <Shield className="size-3.5 animate-pulse" />
+                              : <BadgeCheck className="size-3.5" />
+                            }
                           </Button>
                         )}
 

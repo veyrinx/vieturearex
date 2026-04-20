@@ -84,6 +84,8 @@ export type Database = {
           role: "super_admin" | "admin" | "it" | "manager" | "support" | "user";
           views: number;
           is_banned: boolean;
+          is_verified: boolean;
+          avatar_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -93,6 +95,8 @@ export type Database = {
           role: "super_admin" | "admin" | "it" | "manager" | "support" | "user";
           views?: number;
           is_banned?: boolean;
+          is_verified?: boolean;
+          avatar_url?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["users"]["Insert"]>;

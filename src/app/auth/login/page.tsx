@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AdminLoginAnimation,
@@ -46,10 +46,6 @@ async function serverRecordSuccess(email: string): Promise<void> {
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const rawNext = searchParams.get("next") ?? "/admin";
-  // Prevent open redirect — only allow relative paths
-  const next = rawNext.startsWith("/") && !rawNext.includes("//") && !rawNext.includes(":") ? rawNext : "/admin";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,8 +54,13 @@ export default function LoginPage() {
   const [attemptKey, setAttemptKey] = useState(0);
   const [resultMessage, setResultMessage] = useState("");
   const [banState, setBanState] = useState<ServerCheckResult>({ status: "ok" });
-  const authError = searchParams.get("error");
+  const [authError, setAuthError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setAuthError(params.get("error"));
+  }, []);
 
   // Check server-side ban on mount
   useEffect(() => {
@@ -97,8 +98,11 @@ export default function LoginPage() {
 
     if (state === "success") {
       toast.success(message);
-      window.setTimeout(() => {
-        router.push(next);
+      window.setTimeout(async () => {
+        const { path } = await fetch("/api/auth/pop-next")
+          .then((r) => r.json())
+          .catch(() => ({ path: "/admin" })) as { path: string };
+        router.push(path);
         router.refresh();
       }, 300);
       return;
@@ -160,10 +164,8 @@ export default function LoginPage() {
     }
 
     // Bước 2: Verify user có trong bảng users (đã được cấp quyền)
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    const userEmail = currentUser?.email?.trim().toLowerCase() ?? "";
-
-    const profileRes = await fetch(`/api/auth/login-check?verify=1&email=${encodeURIComponent(userEmail)}`);
+    // Session cookie đã được set, server tự lấy email từ session
+    const profileRes = await fetch("/api/auth/login-check?verify=1");
     const profileData = await profileRes.json().catch(() => ({ allowed: true })) as { allowed?: boolean };
 
     if (profileData.allowed === false) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,9 @@ import { createClient } from "@/lib/supabase/client";
 import { siteConfig } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, CalendarDays, MessageSquare, Bell, Users } from "lucide-react";
+import { Eye, EyeOff, CalendarDays, MessageSquare, Bell, Users, ShieldAlert } from "lucide-react";
+
+const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"];
 
 export default function UserLoginPage() {
   const router = useRouter();
@@ -18,11 +20,17 @@ export default function UserLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [banned, setBanned] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "banned") setBanned(true);
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      toast.error("VUI LÒNG NHẬP EMAIL VÀ MẬT KHẨU.");
+      toast.error("Vui lòng nhập email và mật khẩu.");
       return;
     }
 
@@ -34,26 +42,64 @@ export default function UserLoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    setLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
     if (error) {
-      toast.error("EMAIL HOẶC MẬT KHẨU KHÔNG CHÍNH XÁC.");
-      // Track failure for IP blocking
+      setLoading(false);
+      toast.error("Email hoặc mật khẩu không chính xác.");
       fetch("/api/auth/track-failure", { method: "POST" }).catch(() => {});
       return;
     }
 
-    toast.success("CHÀO MỪNG BẠN TRỞ LẠI!");
+    // Check role to redirect correctly
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle() as { data: { role: string } | null };
+
+      const role = profile?.role ?? "user";
+
+      if (ADMIN_ROLES.includes(role)) {
+        // Admin-role users belong in the admin panel, not the public site
+        toast.success("Chào mừng trở lại!");
+        router.push("/admin");
+        router.refresh();
+        return;
+      }
+    }
+
+    toast.success("Chào mừng bạn trở lại!");
     router.push("/");
     router.refresh();
   };
+
+  if (banned) {
+    return (
+      <div className="flex min-h-[85vh] items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-3xl border border-destructive/30 bg-card p-10 text-center shadow-xl">
+          <ShieldAlert className="mx-auto mb-4 size-12 text-destructive" />
+          <h1 className="font-heading text-xl font-bold uppercase tracking-wide text-destructive">
+            Tài khoản bị khóa
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Tài khoản của bạn đã bị hạn chế truy cập. Vui lòng liên hệ quản trị viên để được hỗ trợ.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[85vh] items-center justify-center px-4 py-10">
       <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-2 lg:gap-12">
 
-        {/* Left side - branding */}
+        {/* Left side — branding */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -108,7 +154,7 @@ export default function UserLoginPage() {
           </div>
         </motion.div>
 
-        {/* Right side - form */}
+        {/* Right side — form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -139,23 +185,29 @@ export default function UserLoginPage() {
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Email
+                </label>
                 <Input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   placeholder="you@email.com"
+                  autoComplete="email"
                   className="h-12 rounded-xl border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mật khẩu</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Mật khẩu
+                </label>
                 <div className="relative">
                   <Input
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                     className="h-12 rounded-xl border-border/60 bg-background/60 pr-11 text-foreground placeholder:text-muted-foreground/50"
                   />
                   <button
@@ -167,7 +219,12 @@ export default function UserLoginPage() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl text-sm font-bold tracking-wide">
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-12 w-full rounded-xl text-sm font-bold tracking-wide"
+              >
                 {loading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP"}
               </Button>
             </form>
@@ -180,6 +237,7 @@ export default function UserLoginPage() {
             </div>
           </section>
         </motion.div>
+
       </div>
     </div>
   );

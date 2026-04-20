@@ -73,6 +73,7 @@ export type UserItem = {
   views: number;
   is_banned: boolean;
   is_verified?: boolean;
+  avatar_url?: string | null;
   created_at: string;
 };
 

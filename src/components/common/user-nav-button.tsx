@@ -35,6 +35,7 @@ export function UserNavButton({ className }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,10 +47,11 @@ export function UserNavButton({ className }: Props) {
       if (userEmail) {
         const { data: profile } = await supabase
           .from("users")
-          .select("display_name")
+          .select("display_name, avatar_url")
           .eq("id", data.user!.id)
-          .maybeSingle() as { data: { display_name: string | null } | null };
+          .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null } | null };
         setDisplayName(profile?.display_name ?? null);
+        setAvatarUrl(profile?.avatar_url ?? null);
       }
       setLoading(false);
     });
@@ -114,13 +116,17 @@ export function UserNavButton({ className }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-black transition-all",
-          `bg-gradient-to-br ${avatarGradient} text-white shadow-sm hover:shadow-md hover:scale-105`,
+          "inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-black transition-all overflow-hidden",
+          avatarUrl ? "bg-muted" : `bg-gradient-to-br ${avatarGradient} text-white`,
+          "shadow-sm hover:shadow-md hover:scale-105",
           className,
         )}
         title={label}
       >
-        {initial}
+        {avatarUrl
+          ? <img src={avatarUrl} alt={label} className="size-full object-cover" />
+          : initial
+        }
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 rounded-xl border-border bg-card">
         <div className="px-3 py-2.5">

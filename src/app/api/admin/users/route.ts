@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserByEmail } from "@/lib/data/content-service";
+import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserByEmail, updateUserIsVerified } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -26,6 +26,11 @@ const updateRoleSchema = z.object({
 const updateBanSchema = z.object({
   id: z.string().min(1),
   is_banned: z.boolean(),
+});
+
+const updateVerifySchema = z.object({
+  id: z.string().min(1),
+  is_verified: z.boolean(),
 });
 
 const deleteUserSchema = z.object({
@@ -73,6 +78,22 @@ export async function PATCH(request: NextRequest) {
       targetType: "USER",
       targetId: user.id,
       summary: `Cập nhật thông tin tài khoản ${user.email}`,
+    });
+    return NextResponse.json({ user });
+  }
+
+  // Handle verify/unverify (IT only)
+  const verifyParsed = updateVerifySchema.safeParse(payload);
+  if (verifyParsed.success && "is_verified" in payload) {
+    const denied = await enforceAdminApiAuth({ minimumRole: "it" });
+    if (denied) return denied;
+
+    const user = await updateUserIsVerified(verifyParsed.data.id, verifyParsed.data.is_verified);
+    await logAdminActivity({
+      action: verifyParsed.data.is_verified ? "USER_VERIFIED" : "USER_UNVERIFIED",
+      targetType: "USER",
+      targetId: user.id,
+      summary: `${verifyParsed.data.is_verified ? "Cấp" : "Thu hồi"} tích xanh cho ${user.email}`,
     });
     return NextResponse.json({ user });
   }

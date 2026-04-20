@@ -148,6 +148,7 @@ function normalizeUserItem(row: Partial<UserItem>): UserItem {
     views: Number.isFinite(views) ? views : 0,
     is_banned: Boolean(row.is_banned),
     is_verified: row.is_verified === true,
+    avatar_url: row.avatar_url ?? null,
     created_at: String(row.created_at ?? new Date().toISOString()),
   };
 }
@@ -639,6 +640,26 @@ export async function banUser(id: string, banned: boolean): Promise<UserItem> {
   const { data, error } = await supabase
     .from("users")
     .update({ is_banned: banned } as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return normalizeUserItem(data as Partial<UserItem>);
+}
+
+export async function updateUserIsVerified(id: string, is_verified: boolean): Promise<UserItem> {
+  if (!hasSupabaseEnv) {
+    const demo = getDemoStore();
+    const idx = demo.users.findIndex((u) => u.id === id);
+    if (idx < 0) throw new Error("User not found.");
+    demo.users[idx].is_verified = is_verified;
+    return demo.users[idx];
+  }
+
+  const supabase = getSupabaseAdminOrThrow();
+  const { data, error } = await supabase
+    .from("users")
+    .update({ is_verified } as never)
     .eq("id", id)
     .select("*")
     .single();

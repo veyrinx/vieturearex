@@ -41,7 +41,10 @@ const eventFormSchema = z.object({
   end_time: z.string().trim().optional(),
   image_url: z.string().trim().min(1, "Vui lòng nhập URL ảnh.").url("Ảnh sự kiện phải là URL hợp lệ."),
   thumbnail_url: z.string().trim().optional().catch("").default(""),
-  link: z.string().trim().optional().catch("").default(""),
+  link: z.string().trim().optional().default("").refine(
+    (v) => !v || z.string().url().safeParse(v).success,
+    { message: "Liên kết phải là URL hợp lệ (vd: https://example.com)." }
+  ),
 });
 
 type EventFormValues = z.input<typeof eventFormSchema>;

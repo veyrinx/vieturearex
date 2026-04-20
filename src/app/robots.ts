@@ -6,51 +6,55 @@ const BASE = siteConfig.url;
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      // ── Googlebot — full access (tốt nhất cho SEO) ───────────────────────
+      // ── Googlebot — only public content ──────────────────────────────────
       {
         userAgent: "Googlebot",
         allow: ["/", "/news/", "/tin-tuc/", "/events", "/su-kien", "/esports", "/calendar", "/lich", "/gallery", "/contact", "/lien-he"],
-        disallow: ["/admin", "/api/", "/auth", "/_next/", "/login", "/register"],
+        disallow: [
+          "/admin", "/admin/",
+          "/api/", "/api/admin/", "/api/auth/",
+          "/auth/", "/auth/login", "/auth/callback",
+          "/login", "/register",
+          "/_next/", "/*.map",
+          "/profile",
+        ],
       },
-      // ── Googlebot Image — cho phép crawl ảnh ─────────────────────────────
       {
         userAgent: "Googlebot-Image",
         allow: "/",
-        disallow: ["/admin", "/api/"],
+        disallow: ["/admin", "/api/", "/auth/", "/*.map"],
       },
-      // ── Bingbot ──────────────────────────────────────────────────────────
+      // ── Bingbot — limited ────────────────────────────────────────────────
       {
         userAgent: "Bingbot",
-        allow: "/",
-        disallow: ["/admin", "/api/", "/auth", "/login", "/register"],
-        crawlDelay: 2,
+        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact"],
+        disallow: ["/admin", "/api/", "/auth/", "/login", "/register", "/*.map"],
+        crawlDelay: 5,
       },
-      // ── Bot SEO tools (giữ crawl budget) ─────────────────────────────────
+      // ── Known scrapers: block completely ─────────────────────────────────
       {
-        userAgent: ["AhrefsBot", "SemrushBot", "MJ12bot", "DotBot"],
+        userAgent: [
+          "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot",
+          "BLEXBot", "MajesticBot", "OpenLinkProfiler",
+        ],
         disallow: "/",
       },
-      // ── Tất cả bot khác ──────────────────────────────────────────────────
+      // ── All others: public pages only, no crawl of admin/api/source ──────
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact"],
         disallow: [
-          "/admin",
-          "/admin/",
-          "/api/",
-          "/api/admin/",
-          "/auth/",
-          "/login",
-          "/register",
-          "/_next/",
-          "/static/",
+          "/admin", "/admin/",
+          "/api/", "/api/admin/", "/api/auth/",
+          "/auth/", "/auth/login",
+          "/login", "/register",
+          "/_next/", "/*.map",
+          "/profile",
         ],
-        crawlDelay: 1,
+        crawlDelay: 3,
       },
     ],
-    sitemap: [
-      `${BASE}/sitemap.xml`,
-    ],
+    sitemap: [`${BASE}/sitemap.xml`],
     host: BASE,
   };
 }

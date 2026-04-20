@@ -12,6 +12,12 @@ import { sanitizePlainText } from "@/lib/server/sanitize";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 
+function normalizeUrlField(raw: unknown): string {
+  const str = String(raw ?? "").trim();
+  if (!str) return "";
+  try { new URL(str); return str; } catch { return ""; }
+}
+
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-events", limit: 80, windowMs: 60_000 });
   if (limited) {
@@ -49,8 +55,8 @@ export async function POST(request: NextRequest) {
       start_date: String(rawPayload?.start_date ?? "").trim(),
       end_date: String(rawPayload?.end_date ?? "").trim(),
       image_url: String(rawPayload?.image_url ?? "").trim(),
-      thumbnail_url: String(rawPayload?.thumbnail_url ?? "").trim() || "",
-      link: String(rawPayload?.link ?? "").trim() || "",
+      thumbnail_url: normalizeUrlField(rawPayload?.thumbnail_url),
+      link: normalizeUrlField(rawPayload?.link),
       status: rawPayload?.status,
     };
     const parsed = eventSchema.safeParse(payload);
@@ -117,8 +123,8 @@ export async function PATCH(request: NextRequest) {
       start_date: String(rawPayload?.start_date ?? "").trim(),
       end_date: String(rawPayload?.end_date ?? "").trim(),
       image_url: String(rawPayload?.image_url ?? "").trim(),
-      thumbnail_url: String(rawPayload?.thumbnail_url ?? "").trim() || "",
-      link: String(rawPayload?.link ?? "").trim() || "",
+      thumbnail_url: normalizeUrlField(rawPayload?.thumbnail_url),
+      link: normalizeUrlField(rawPayload?.link),
       status: rawPayload?.status,
     };
 

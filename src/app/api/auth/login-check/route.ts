@@ -7,6 +7,7 @@ import {
 } from "@/lib/server/login-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getUserByEmail } from "@/lib/data/content-service";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function getIp(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -18,12 +19,17 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
 
-  // Verify user có trong bảng users không
+  // Verify user có trong bảng users — chỉ cho phép khi đã xác thực Supabase session
   if (searchParams.get("verify") === "1") {
-    const email = searchParams.get("email") ?? "";
+    const supabase = createServerSupabaseClient();
+    if (!supabase) return NextResponse.json({ allowed: false });
+    const { data: { user: sessionUser } } = await supabase.auth.getUser();
+    // Only allow the currently authenticated user to verify their own email
+    if (!sessionUser) return NextResponse.json({ allowed: false });
+    const email = sessionUser.email ?? "";
     if (!email) return NextResponse.json({ allowed: false });
-    const user = await getUserByEmail(email).catch(() => null);
-    return NextResponse.json({ allowed: Boolean(user) });
+    const dbUser = await getUserByEmail(email).catch(() => null);
+    return NextResponse.json({ allowed: Boolean(dbUser) });
   }
 
   const ip = getIp(request);

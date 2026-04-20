@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
-  Smartphone,
+  Smartphone, Camera, Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ type ProfileData = {
   views: number;
   created_at: string;
   is_verified?: boolean;
+  avatar_url?: string | null;
 };
 
 type TotpFactor = {
@@ -56,10 +57,15 @@ type TotpFactor = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Avatar upload
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Password change
   const [newPassword, setNewPassword] = useState("");
@@ -83,6 +89,7 @@ export default function ProfilePage() {
         if (!data.email) { router.replace("/login"); return; }
         setProfile(data);
         setDisplayName(data.display_name ?? "");
+        setAvatarPreview(data.avatar_url ?? null);
         setLoading(false);
       })
       .catch(() => router.replace("/login"));
@@ -98,6 +105,63 @@ export default function ProfilePage() {
     const { data } = await supabase.auth.mfa.listFactors();
     setMfaFactors((data?.totp ?? []) as TotpFactor[]);
   }
+
+  const onAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ảnh tối đa 5MB.");
+      return;
+    }
+
+    // Show local preview immediately
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
+
+    setUploadingAvatar(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/user/avatar", { method: "POST", body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error ?? "Không thể tải ảnh lên.");
+        setAvatarPreview(profile?.avatar_url ?? null);
+        return;
+      }
+      const { avatar_url } = await res.json() as { avatar_url: string };
+      setAvatarPreview(avatar_url);
+      setProfile((prev) => prev ? { ...prev, avatar_url } : prev);
+      toast.success("Đã cập nhật ảnh đại diện.");
+    } catch {
+      toast.error("Lỗi mạng.");
+      setAvatarPreview(profile?.avatar_url ?? null);
+    } finally {
+      setUploadingAvatar(false);
+      URL.revokeObjectURL(objectUrl);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const onRemoveAvatar = async () => {
+    setUploadingAvatar(true);
+    try {
+      const res = await fetch("/api/user/avatar", { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error ?? "Không thể xóa ảnh.");
+        return;
+      }
+      setAvatarPreview(null);
+      setProfile((prev) => prev ? { ...prev, avatar_url: null } : prev);
+      toast.success("Đã xóa ảnh đại diện.");
+    } catch {
+      toast.error("Lỗi mạng.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const onSave = async () => {
     if (!displayName.trim()) { toast.error("Tên hiển thị không được để trống."); return; }
@@ -216,13 +280,61 @@ export default function ProfilePage() {
       <section className="border-b border-border bg-muted/30 py-10">
         <div className="mx-auto max-w-2xl px-6">
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-            <div
-              className={cn(
-                "flex size-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-3xl font-extrabold text-white shadow-lg",
-                avatarGradient,
+
+            {/* Avatar with upload overlay */}
+            <div className="relative shrink-0">
+              <div
+                className={cn(
+                  "flex size-20 items-center justify-center rounded-2xl text-3xl font-extrabold text-white shadow-lg overflow-hidden",
+                  !avatarPreview && `bg-gradient-to-br ${avatarGradient}`,
+                )}
+              >
+                {avatarPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarPreview}
+                    alt="Avatar"
+                    className="size-full object-cover"
+                  />
+                ) : initial}
+              </div>
+
+              {/* Upload button overlay */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                title="Đổi ảnh đại diện"
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 transition-opacity hover:opacity-100",
+                  uploadingAvatar && "opacity-100 cursor-wait",
+                )}
+              >
+                {uploadingAvatar
+                  ? <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  : <Camera className="size-5 text-white" />
+                }
+              </button>
+
+              {/* Remove avatar button */}
+              {avatarPreview && !uploadingAvatar && (
+                <button
+                  type="button"
+                  onClick={onRemoveAvatar}
+                  title="Xóa ảnh đại diện"
+                  className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow hover:brightness-110"
+                >
+                  <Trash2 className="size-3" />
+                </button>
               )}
-            >
-              {initial}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={onAvatarFileChange}
+              />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -263,12 +375,61 @@ export default function ProfilePage() {
       <div className="mx-auto max-w-2xl px-6 py-10">
         <div className="space-y-5">
 
-          {/* Display name */}
+          {/* Display name + avatar upload hint */}
           <div className="rounded-2xl border border-border bg-card p-6">
             <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground">
               Thông tin cá nhân
             </h2>
             <div className="space-y-4">
+
+              {/* Avatar upload section */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  <Camera className="size-3.5" /> Ảnh đại diện
+                </label>
+                <div className="flex items-center gap-4">
+                  <div
+                    className={cn(
+                      "flex size-14 shrink-0 items-center justify-center rounded-xl text-lg font-extrabold text-white shadow overflow-hidden",
+                      !avatarPreview && `bg-gradient-to-br ${avatarGradient}`,
+                    )}
+                  >
+                    {avatarPreview
+                      ? <img src={avatarPreview} alt="Avatar" className="size-full object-cover" />
+                      : initial}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={uploadingAvatar}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="gap-1.5 rounded-xl text-xs"
+                    >
+                      <Camera className="size-3.5" />
+                      {uploadingAvatar ? "Đang tải..." : "Chọn ảnh"}
+                    </Button>
+                    {avatarPreview && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={uploadingAvatar}
+                        onClick={onRemoveAvatar}
+                        className="gap-1.5 rounded-xl text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                        Xóa
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  JPEG, PNG, WebP hoặc GIF. Tối đa 5MB.
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                   <User className="size-3.5" /> Tên hiển thị
@@ -375,7 +536,6 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">
                   Quét mã QR bằng ứng dụng xác thực, sau đó nhập mã 6 chữ số để xác nhận.
                 </p>
-                {/* QR Code */}
                 <div className="flex justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={totpQr} alt="2FA QR Code" className="size-48 rounded-xl border border-border bg-white p-2" />
