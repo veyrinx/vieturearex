@@ -12,7 +12,7 @@ async function fetchActiveAdmins() {
   }
 
   const data = (await response.json()) as { activeAdmins: ActiveAdminItem[] };
-  return data.activeAdmins;
+  return data.activeAdmins ?? [];
 }
 
 export function useActiveAdminsQuery() {

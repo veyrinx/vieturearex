@@ -14,7 +14,7 @@ async function fetchRatings(): Promise<Rating[]> {
   const res = await fetch("/api/admin/ratings", { cache: "no-store" });
   if (!res.ok) throw new Error("Failed");
   const data = await res.json() as { ratings: Rating[] };
-  return data.ratings;
+  return data.ratings ?? [];
 }
 
 export function RatingsAdminPanel() {

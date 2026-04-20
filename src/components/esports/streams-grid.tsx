@@ -14,7 +14,7 @@ async function fetchStreams(): Promise<StreamItem[]> {
   const res = await fetch("/api/streams", { cache: "no-store" });
   if (!res.ok) throw new Error("Unable to load streams.");
   const data = (await res.json()) as { streams: StreamItem[] };
-  return data.streams;
+  return data.streams ?? [];
 }
 
 type StreamsGridProps = {
