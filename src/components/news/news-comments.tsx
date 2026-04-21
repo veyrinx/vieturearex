@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { MessageSquare, Send, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -47,26 +48,7 @@ export function NewsComments({ newsId }: Props) {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    const supabase = createClient();
-    if (supabase) {
-      supabase.auth.getUser().then(async ({ data }) => {
-        if (data.user?.email) {
-          setUserEmail(data.user.email);
-          const { data: profile } = await supabase
-            .from("users")
-            .select("display_name, avatar_url")
-            .eq("id", data.user.id)
-            .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null } | null };
-          setDisplayName(profile?.display_name ?? null);
-          setAvatarUrl(profile?.avatar_url ?? null);
-        }
-      });
-    }
-    fetchComments();
-  }, [newsId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const res = await fetch(`/api/news/${newsId}/comments`);
       if (res.ok) {
@@ -78,7 +60,29 @@ export function NewsComments({ newsId }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [newsId]);
+
+  // Fetch user info once on mount
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user?.email) return;
+      setUserEmail(data.user.email);
+      const { data: profile } = await supabase
+        .from("users")
+        .select("display_name, avatar_url")
+        .eq("id", data.user.id)
+        .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null } | null };
+      setDisplayName(profile?.display_name ?? null);
+      setAvatarUrl(profile?.avatar_url ?? null);
+    });
+  }, []);
+
+  // Re-fetch comments when newsId changes
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const onSubmit = async () => {
     if (!content.trim()) return;
@@ -128,7 +132,7 @@ export function NewsComments({ newsId }: Props) {
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={label} className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />
+              <Image src={avatarUrl} alt={label} width={32} height={32} className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />
             ) : (
               <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white", avatarColor(label))}>
                 {label.charAt(0).toUpperCase()}

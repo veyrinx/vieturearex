@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, UserCircle, UserPlus, User, LayoutDashboard } from "lucide-react";
@@ -128,7 +129,7 @@ export function UserNavButton({ className }: Props) {
         title={label}
       >
         {avatarUrl
-          ? <img src={avatarUrl} alt={label} className="size-full object-cover" />
+          ? <Image src={avatarUrl} alt={label} width={36} height={36} className="size-full object-cover" />
           : initial
         }
       </DropdownMenuTrigger>

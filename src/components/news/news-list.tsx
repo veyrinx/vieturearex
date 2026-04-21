@@ -32,8 +32,8 @@ export function NewsList({ news: initialNews }: NewsListProps) {
   const [toDate, setToDate] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeDate, setActiveDate] = useState<"from" | "to" | null>(null);
-  const { data: news = initialNews } = useNewsQuery("published");
-  const safeNews = news ?? initialNews ?? [];
+  const { data: news } = useNewsQuery("published");
+  const safeNews = useMemo(() => news ?? initialNews ?? [], [news, initialNews]);
 
   const categories = useMemo(() => ["all", ...Array.from(new Set(safeNews.map((item) => item.category)))], [safeNews]);
 

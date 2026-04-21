@@ -48,8 +48,8 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [toDate, setToDate] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const { data = initialEvents } = useEventsQuery({ status });
-  const safeData = data ?? initialEvents ?? [];
+  const { data } = useEventsQuery({ status });
+  const safeData = useMemo(() => data ?? initialEvents ?? [], [data, initialEvents]);
 
   const events = useMemo(() => {
     const parsedFrom = fromDate ? parseVietnamDateInputStart(fromDate) : null;

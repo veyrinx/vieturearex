@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -250,9 +251,11 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
             {/* Avatar */}
             <div className="relative shrink-0">
               {user.avatar_url ? (
-                <img
+                <Image
                   src={user.avatar_url}
                   alt={displayName}
+                  width={64}
+                  height={64}
                   className={cn(
                     "size-16 rounded-2xl object-cover shadow-lg ring-2 ring-border",
                     user.is_banned && "opacity-50 grayscale",

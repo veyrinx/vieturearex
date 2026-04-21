@@ -395,6 +395,7 @@ export default function ProfilePage() {
                     )}
                   >
                     {avatarPreview
+                      // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={avatarPreview} alt="Avatar" className="size-full object-cover" />
                       : initial}
                   </div>
