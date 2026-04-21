@@ -5,6 +5,7 @@ import { hasSupabaseEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env
 import { updateSession } from "@/lib/supabase/middleware";
 import { isBlockedInMemory, refreshBlockedCache, shouldRefreshCache } from "@/lib/server/ip-blocker";
 import { signRedirectCookie, COOKIE_NAME } from "@/lib/server/next-token";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 // ── Always accessible without auth (auth flow + legal + maintenance + all API) ──
 const PUBLIC_PATHS = [
@@ -35,6 +36,7 @@ const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"] as cons
 
 let maintenanceCache: { on: boolean; expires: number } | null = null;
 let whitelistCache: { ips: string[]; expires: number } | null = null;
+const WHITELIST_TTL = 30_000;
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
@@ -85,19 +87,53 @@ export async function middleware(request: NextRequest) {
     return notFound();
   }
 
-  // ── IP block check for admin paths ───────────────────────────────────
+  // ── IP block + whitelist check for admin paths ───────────────────────
   if (isAdminPath) {
     const ip = getClientIp(request);
+
+    // Refresh blocked-IP cache via security API (requires an active session cookie)
     if (shouldRefreshCache()) {
       try {
         const res = await fetch(new URL("/api/admin/security", request.url), {
           headers: { cookie: request.headers.get("cookie") ?? "" },
         });
         if (res.ok) {
-          const data = (await res.json()) as { blocked: Array<{ ip: string; blockedAt: number; reason: string }> };
+          const data = (await res.json()) as {
+            blocked: Array<{ ip: string; blockedAt: number; reason: string }>;
+            whitelist?: string[];
+          };
           refreshBlockedCache(data.blocked ?? []);
+          // Also update whitelist from the same response when available
+          if (Array.isArray(data.whitelist)) {
+            whitelistCache = { ips: data.whitelist, expires: Date.now() + WHITELIST_TTL };
+          }
         }
       } catch { /* non-fatal */ }
+    }
+
+    // Refresh whitelist independently using service-role key (bypasses RLS, works for all requests)
+    const now = Date.now();
+    if (!whitelistCache || now > whitelistCache.expires) {
+      try {
+        const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const dbClient = serviceKey && supabaseUrl
+          ? createSupabaseAdmin(supabaseUrl, serviceKey)
+          : null;
+        if (dbClient) {
+          const { data: wlRow } = await dbClient
+            .from("settings")
+            .select("value")
+            .eq("key", "security.admin_ip_whitelist")
+            .maybeSingle() as { data: { value: string } | null };
+          const ips: string[] = wlRow?.value ? (JSON.parse(wlRow.value) as string[]) : [];
+          whitelistCache = { ips, expires: now + WHITELIST_TTL };
+        } else {
+          // No service key — cache empty list so we don't retry every request
+          whitelistCache = { ips: [], expires: now + WHITELIST_TTL };
+        }
+      } catch {
+        whitelistCache = { ips: [], expires: now + WHITELIST_TTL };
+      }
     }
 
     if (ip !== "unknown" && isBlockedInMemory(ip)) {
@@ -110,6 +146,14 @@ export async function middleware(request: NextRequest) {
         <p style="margin-top:1.5rem;font-size:.75rem;color:#555">IP: ${ip.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c] ?? c))}</p></div></body></html>`,
         { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } },
       );
+    }
+
+    // ── Whitelist check — applies to ALL visitors (authenticated or not) ──
+    if (whitelistCache.ips.length > 0) {
+      const clientIp = getClientIp(request);
+      if (clientIp !== "unknown" && !whitelistCache.ips.includes(clientIp)) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
     }
   }
 
@@ -127,29 +171,6 @@ export async function middleware(request: NextRequest) {
   // ── Unauthenticated ───────────────────────────────────────────────────
   if (!user) {
     if (isAdminPath) {
-      // ── IP whitelist check (unauthenticated admin access) ──────────────
-      const now = Date.now();
-      if (!whitelistCache || now > whitelistCache.expires) {
-        try {
-          const { data: wlSetting } = await supabase
-            .from("settings")
-            .select("value")
-            .eq("key", "security.admin_ip_whitelist")
-            .maybeSingle() as { data: { value: string } | null };
-          const ips: string[] = wlSetting?.value ? (JSON.parse(wlSetting.value) as string[]) : [];
-          whitelistCache = { ips, expires: now + 30_000 };
-        } catch { whitelistCache = { ips: [], expires: now + 30_000 }; }
-      }
-
-      const clientIp = getClientIp(request);
-      if (
-        whitelistCache.ips.length > 0 &&
-        clientIp !== "unknown" &&
-        !whitelistCache.ips.includes(clientIp)
-      ) {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-
       // Redirect to admin login with encrypted destination cookie
       const redirect = NextResponse.redirect(new URL("/auth/login", request.url));
       if (pathname.startsWith("/") && !pathname.includes("//") && !pathname.includes(":")) {
