@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { isAfter, isBefore } from "date-fns";
-import { ArrowUpRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -191,6 +192,21 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
                     Tham gia sự kiện
                   </a>
                 )}
+                <Link
+                  href={`/events/${event.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
+                    event.status === "active"
+                      ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
+                      : event.status === "upcoming"
+                        ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
+                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <ArrowRight className="size-3 shrink-0" />
+                  Truy cập sự kiện
+                </Link>
               </div>
             </article>
           ))}

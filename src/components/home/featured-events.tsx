@@ -203,28 +203,24 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                     )}
                   </div>
 
-                  {/* Quick-access link below card content */}
-                  {event.link && (
-                    <div className="px-4 pb-4 pt-1">
-                      <a
-                        href={event.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] transition-all",
-                          event.status === "active"
-                            ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
-                            : event.status === "upcoming"
-                              ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
-                              : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
-                        )}
-                      >
-                        <ExternalLink className="size-3 shrink-0" />
-                        Truy cập sự kiện
-                      </a>
-                    </div>
-                  )}
+                  {/* Quick-access link to internal event detail page */}
+                  <div className="px-4 pb-4 pt-1">
+                    <Link
+                      href={`/events/${event.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        "flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] transition-all",
+                        event.status === "active"
+                          ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
+                          : event.status === "upcoming"
+                            ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
+                            : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      <ArrowRight className="size-3 shrink-0" />
+                      Truy cập sự kiện
+                    </Link>
+                  </div>
                 </article>
               </Reveal>
             );
