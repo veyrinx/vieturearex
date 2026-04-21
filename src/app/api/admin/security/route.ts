@@ -4,9 +4,19 @@ import { enforceAdminApiAuth, enforceRateLimit, getClientKey } from "@/lib/serve
 import { getSettings, updateSetting } from "@/lib/data/content-service";
 import { unblockInMemory, getInMemoryBlockedIps, getFailureCount } from "@/lib/server/ip-blocker";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { VISITOR_IPS_KEY, type VisitorEntry } from "@/lib/server/visitor-logger";
 
 const BLOCKED_IPS_KEY = "security.blocked_ips";
 const WHITELIST_KEY = "security.admin_ip_whitelist";
+
+async function getVisitorLog(): Promise<VisitorEntry[]> {
+  const settings = await getSettings();
+  const raw = settings.find((s) => s.key === VISITOR_IPS_KEY)?.value ?? "{}";
+  try {
+    const map = JSON.parse(raw) as Record<string, VisitorEntry>;
+    return Object.values(map).sort((a, b) => b.lastSeen - a.lastSeen);
+  } catch { return []; }
+}
 
 type BlockedEntry = { ip: string; blockedAt: number; reason: string };
 
@@ -49,8 +59,8 @@ export async function GET(request: NextRequest) {
   const active = merged.filter((e) => now - e.blockedAt < BLOCK_DURATION_MS);
   const history = merged.slice(0, 100);
 
-  const whitelist = await getWhitelist();
-  return NextResponse.json({ blocked: active, history, whitelist });
+  const [whitelist, visitors] = await Promise.all([getWhitelist(), getVisitorLog()]);
+  return NextResponse.json({ blocked: active, history, whitelist, visitors });
 }
 
 const unblockSchema = z.object({ ip: z.string().min(1) });

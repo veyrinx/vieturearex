@@ -3,12 +3,13 @@ import { cookies } from "next/headers";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { getClientIp } from "@/lib/server/get-client-ip";
 
 export function getClientKey(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() ?? "unknown";
-  return ip;
+  return getClientIp(request);
 }
+
+export { getClientIp };
 
 export function enforceRateLimit(
   request: NextRequest,

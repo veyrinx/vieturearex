@@ -6,6 +6,35 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { isBlockedInMemory, refreshBlockedCache, shouldRefreshCache } from "@/lib/server/ip-blocker";
 import { signRedirectCookie, COOKIE_NAME } from "@/lib/server/next-token";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { getClientIp } from "@/lib/server/get-client-ip";
+import { shouldLogVisitor, mergeVisitorEntry, VISITOR_IPS_KEY, type VisitorEntry } from "@/lib/server/visitor-logger";
+
+// ── Visitor logging ───────────────────────────────────────────────────────────
+async function logVisitorIp(ip: string, path: string, ua: string) {
+  try {
+    const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey || !supabaseUrl) return;
+    const db = createSupabaseAdmin(supabaseUrl, serviceKey);
+
+    const { data: row } = await db
+      .from("settings")
+      .select("value")
+      .eq("key", VISITOR_IPS_KEY)
+      .maybeSingle() as { data: { value: string } | null };
+
+    let existing: Record<string, VisitorEntry> = {};
+    try { existing = row?.value ? (JSON.parse(row.value) as Record<string, VisitorEntry>) : {}; } catch { /**/ }
+
+    const updated = mergeVisitorEntry(existing, ip, path, ua);
+    const json = JSON.stringify(updated);
+
+    if (row) {
+      await db.from("settings").update({ value: json, updated_at: new Date().toISOString() } as never).eq("key", VISITOR_IPS_KEY);
+    } else {
+      await db.from("settings").insert({ key: VISITOR_IPS_KEY, value: json } as never);
+    }
+  } catch { /* non-fatal */ }
+}
 
 // ── Always accessible without auth (auth flow + legal + maintenance + all API) ──
 const PUBLIC_PATHS = [
@@ -40,14 +69,6 @@ const WHITELIST_TTL = 30_000;
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
-}
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
 }
 
 function notFound(): NextResponse {
@@ -87,31 +108,49 @@ export async function middleware(request: NextRequest) {
     return notFound();
   }
 
-  // ── IP block + whitelist check for admin paths ───────────────────────
-  if (isAdminPath) {
-    const ip = getClientIp(request);
+  const ip = getClientIp(request);
 
-    // Refresh blocked-IP cache via security API (requires an active session cookie)
-    if (shouldRefreshCache()) {
-      try {
-        const res = await fetch(new URL("/api/admin/security", request.url), {
-          headers: { cookie: request.headers.get("cookie") ?? "" },
-        });
-        if (res.ok) {
-          const data = (await res.json()) as {
-            blocked: Array<{ ip: string; blockedAt: number; reason: string }>;
-            whitelist?: string[];
-          };
-          refreshBlockedCache(data.blocked ?? []);
-          // Also update whitelist from the same response when available
-          if (Array.isArray(data.whitelist)) {
-            whitelistCache = { ips: data.whitelist, expires: Date.now() + WHITELIST_TTL };
-          }
+  // ── Refresh blocked-IP cache (once per CACHE_TTL window) ─────────────
+  if (shouldRefreshCache()) {
+    try {
+      const res = await fetch(new URL("/api/admin/security", request.url), {
+        headers: { cookie: request.headers.get("cookie") ?? "" },
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          blocked: Array<{ ip: string; blockedAt: number; reason: string }>;
+          whitelist?: string[];
+        };
+        refreshBlockedCache(data.blocked ?? []);
+        if (Array.isArray(data.whitelist)) {
+          whitelistCache = { ips: data.whitelist, expires: Date.now() + WHITELIST_TTL };
         }
-      } catch { /* non-fatal */ }
-    }
+      }
+    } catch { /* non-fatal */ }
+  }
 
-    // Refresh whitelist independently using service-role key (bypasses RLS, works for all requests)
+  // ── Site-wide IP block — applies to ALL pages, not just admin ─────────
+  if (ip !== "unknown" && isBlockedInMemory(ip)) {
+    const safeIp = ip.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c] ?? c));
+    return new NextResponse(
+      `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Bị chặn</title>
+      <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0a;color:#fff;margin:0;}
+      .box{text-align:center;padding:2rem;max-width:400px;}h1{color:#ef4444;font-size:1.5rem;}p{color:#888;font-size:.9rem;margin-top:.5rem;}</style>
+      </head><body><div class="box"><h1>🚫 Truy cập bị từ chối</h1>
+      <p>Địa chỉ IP của bạn đã bị chặn.<br>Liên hệ quản trị viên để được hỗ trợ.</p>
+      <p style="margin-top:1.5rem;font-size:.75rem;color:#555">IP: ${safeIp}</p></div></body></html>`,
+      { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } },
+    );
+  }
+
+  // ── Visitor IP logging (page requests only, skip API/assets) ──────────
+  if (isPageRequest && shouldLogVisitor(ip)) {
+    void logVisitorIp(ip, pathname, request.headers.get("user-agent") ?? "");
+  }
+
+  // ── Admin path: whitelist + extra checks ─────────────────────────────
+  if (isAdminPath) {
+    // Refresh whitelist using service-role key (bypasses RLS)
     const now = Date.now();
     if (!whitelistCache || now > whitelistCache.expires) {
       try {
@@ -128,7 +167,6 @@ export async function middleware(request: NextRequest) {
           const ips: string[] = wlRow?.value ? (JSON.parse(wlRow.value) as string[]) : [];
           whitelistCache = { ips, expires: now + WHITELIST_TTL };
         } else {
-          // No service key — cache empty list so we don't retry every request
           whitelistCache = { ips: [], expires: now + WHITELIST_TTL };
         }
       } catch {
@@ -136,24 +174,9 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (ip !== "unknown" && isBlockedInMemory(ip)) {
-      return new NextResponse(
-        `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Bị chặn</title>
-        <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0a;color:#fff;margin:0;}
-        .box{text-align:center;padding:2rem;max-width:400px;}h1{color:#ef4444;font-size:1.5rem;}p{color:#888;font-size:.9rem;margin-top:.5rem;}</style>
-        </head><body><div class="box"><h1>🚫 Truy cập bị từ chối</h1>
-        <p>IP của bạn đã bị chặn do quá nhiều lần đăng nhập thất bại.<br>Liên hệ quản trị viên để được hỗ trợ.</p>
-        <p style="margin-top:1.5rem;font-size:.75rem;color:#555">IP: ${ip.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c] ?? c))}</p></div></body></html>`,
-        { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } },
-      );
-    }
-
-    // ── Whitelist check — applies to ALL visitors (authenticated or not) ──
-    if (whitelistCache.ips.length > 0) {
-      const clientIp = getClientIp(request);
-      if (clientIp !== "unknown" && !whitelistCache.ips.includes(clientIp)) {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
+    // Whitelist check — applies to ALL admin visitors (authenticated or not)
+    if (whitelistCache.ips.length > 0 && ip !== "unknown" && !whitelistCache.ips.includes(ip)) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
