@@ -192,6 +192,69 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["rating_replies"]["Insert"]>;
       };
+      news_comments: {
+        Row: {
+          id: string;
+          news_id: string;
+          user_id: string | null;
+          display_name: string;
+          content: string;
+          status: "pending" | "approved" | "rejected";
+          parent_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          news_id: string;
+          user_id?: string | null;
+          display_name: string;
+          content: string;
+          status?: "pending" | "approved" | "rejected";
+          parent_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["news_comments"]["Insert"]>;
+      };
+      support_sessions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          anonymous_id: string | null;
+          display_name: string;
+          status: "open" | "closed";
+          last_message_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          anonymous_id?: string | null;
+          display_name: string;
+          status?: "open" | "closed";
+          last_message_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["support_sessions"]["Insert"]>;
+      };
+      support_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          sender_type: "user" | "admin";
+          sender_name: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          sender_type: "user" | "admin";
+          sender_name: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["support_messages"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -48,6 +48,26 @@ export type NewsCommentItem = {
   display_name: string;
   content: string;
   status: "pending" | "approved" | "rejected";
+  parent_id: string | null;
+  created_at: string;
+};
+
+export type SupportSession = {
+  id: string;
+  user_id: string | null;
+  anonymous_id: string | null;
+  display_name: string;
+  status: "open" | "closed";
+  last_message_at: string;
+  created_at: string;
+};
+
+export type SupportMessage = {
+  id: string;
+  session_id: string;
+  sender_type: "user" | "admin";
+  sender_name: string;
+  content: string;
   created_at: string;
 };
 

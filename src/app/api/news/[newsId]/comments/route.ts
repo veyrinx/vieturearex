@@ -6,6 +6,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 
 const postSchema = z.object({
   content: z.string().min(1).max(500),
+  parent_id: z.string().uuid().nullable().optional(),
 });
 
 type RouteContext = { params: { newsId: string } };
@@ -16,11 +17,11 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
   const { data, error } = await supabase
     .from("news_comments")
-    .select("id, display_name, content, status, created_at")
+    .select("id, display_name, content, status, created_at, parent_id")
     .eq("news_id", params.newsId)
     .eq("status", "approved")
     .order("created_at", { ascending: true })
-    .limit(100) as { data: Array<{ id: string; display_name: string; content: string; status: string; created_at: string }> | null; error: { code?: string } | null };
+    .limit(200) as { data: Array<{ id: string; display_name: string; content: string; status: string; created_at: string; parent_id: string | null }> | null; error: { code?: string } | null };
 
   // Table missing or any DB error → return empty silently
   if (error) return NextResponse.json({ comments: [] });
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     display_name: displayName,
     content: parsed.data.content,
     status: "pending",
+    parent_id: parsed.data.parent_id ?? null,
   } as never);
 
   if (error) {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { MessageSquare, Send, User } from "lucide-react";
+import { MessageSquare, Send, User, CornerDownRight, ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,7 @@ type Comment = {
   content: string;
   created_at: string;
   status: "pending" | "approved" | "rejected";
+  parent_id: string | null;
 };
 
 type Props = { newsId: string };
@@ -37,6 +38,130 @@ function timeAgo(dateStr: string) {
   if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
   return `${Math.floor(diff / 86400)} ngày trước`;
+}
+
+function Avatar({ name, src }: { name: string; src?: string | null }) {
+  if (src) {
+    return <Image src={src} alt={name} width={32} height={32} className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />;
+  }
+  return (
+    <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white", avatarColor(name))}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+type CommentItemProps = {
+  comment: Comment;
+  replies: Comment[];
+  userEmail: string | null;
+  avatarUrl: string | null;
+  displayName: string;
+  onReplySubmit: (parentId: string, content: string) => Promise<void>;
+};
+
+function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItemProps) {
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [repliesOpen, setRepliesOpen] = useState(false);
+  const [replyContent, setReplyContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleReply = async () => {
+    if (!replyContent.trim()) return;
+    setSubmitting(true);
+    await onReplySubmit(comment.id, replyContent.trim());
+    setReplyContent("");
+    setReplyOpen(false);
+    setRepliesOpen(true);
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-3">
+        <Avatar name={comment.display_name} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-foreground">{comment.display_name}</span>
+            <span className="text-[11px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
+          </div>
+          <p className="mt-1 text-sm leading-relaxed text-foreground/90">{comment.content}</p>
+          <div className="mt-1.5 flex items-center gap-3">
+            {replies.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setRepliesOpen((v) => !v)}
+                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline dark:text-amber-400"
+              >
+                {repliesOpen ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                {replies.length} trả lời
+              </button>
+            )}
+            {userEmail && (
+              <button
+                type="button"
+                onClick={() => setReplyOpen((v) => !v)}
+                className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-primary transition"
+              >
+                <CornerDownRight className="size-3" />
+                Trả lời
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Nested replies */}
+      {repliesOpen && replies.length > 0 && (
+        <div className="ml-11 space-y-3 border-l-2 border-border pl-4">
+          {replies.map((reply) => (
+            <div key={reply.id} className="flex gap-3">
+              <Avatar name={reply.display_name} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-foreground">{reply.display_name}</span>
+                  <span className="text-[11px] text-muted-foreground">{timeAgo(reply.created_at)}</span>
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">{reply.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Inline reply form */}
+      {replyOpen && (
+        <div className="ml-11 space-y-2">
+          <Textarea
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            placeholder={`Trả lời ${comment.display_name}...`}
+            rows={2}
+            maxLength={500}
+            className="resize-none text-sm"
+            autoFocus
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{replyContent.length}/500</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setReplyOpen(false)} className="rounded-xl text-xs">
+                Hủy
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleReply}
+                disabled={submitting || !replyContent.trim()}
+                className="gap-1.5 rounded-xl text-xs"
+              >
+                <Send className="size-3" />
+                {submitting ? "Đang gửi..." : "Gửi"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function NewsComments({ newsId }: Props) {
@@ -62,7 +187,6 @@ export function NewsComments({ newsId }: Props) {
     }
   }, [newsId]);
 
-  // Fetch user info once on mount
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
@@ -79,23 +203,18 @@ export function NewsComments({ newsId }: Props) {
     });
   }, []);
 
-  // Re-fetch comments when newsId changes
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+  useEffect(() => { fetchComments(); }, [fetchComments]);
 
-  const onSubmit = async () => {
-    if (!content.trim()) return;
-    if (!userEmail) {
-      toast.error("Vui lòng đăng nhập để bình luận.");
+  const submitComment = async (parentId: string | null, text: string) => {
+    if (!text.trim() || !userEmail) {
+      if (!userEmail) toast.error("Vui lòng đăng nhập để bình luận.");
       return;
     }
-    setSubmitting(true);
     try {
       const res = await fetch(`/api/news/${newsId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim() }),
+        body: JSON.stringify({ content: text.trim(), parent_id: parentId }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -103,17 +222,33 @@ export function NewsComments({ newsId }: Props) {
         return;
       }
       toast.success("Bình luận đã được gửi và đang chờ duyệt.");
-      setContent("");
       await fetchComments();
     } catch {
       toast.error("Lỗi mạng, vui lòng thử lại.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
+  const onSubmit = async () => {
+    setSubmitting(true);
+    await submitComment(null, content);
+    setContent("");
+    setSubmitting(false);
+  };
+
+  const onReplySubmit = async (parentId: string, text: string) => {
+    await submitComment(parentId, text);
+  };
+
   const label = displayName || userEmail?.split("@")[0] || "";
-  const approved = comments.filter((c) => c.status === "approved");
+  const topLevel = comments.filter((c) => c.status === "approved" && !c.parent_id);
+  const repliesMap = comments
+    .filter((c) => c.status === "approved" && c.parent_id)
+    .reduce<Record<string, Comment[]>>((acc, c) => {
+      if (c.parent_id) {
+        acc[c.parent_id] = [...(acc[c.parent_id] ?? []), c];
+      }
+      return acc;
+    }, {});
 
   return (
     <section id="comments" className="scroll-mt-24 glass-card rounded-2xl p-6 space-y-6">
@@ -121,23 +256,16 @@ export function NewsComments({ newsId }: Props) {
         <MessageSquare className="size-5 text-primary dark:text-amber-400" />
         <h2 className="font-heading text-base font-bold uppercase tracking-[0.08em] text-foreground">
           Bình luận
-          {approved.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-muted-foreground">({approved.length})</span>
+          {topLevel.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">({topLevel.length})</span>
           )}
         </h2>
       </div>
 
-      {/* Submit form */}
       {userEmail ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt={label} width={32} height={32} className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />
-            ) : (
-              <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white", avatarColor(label))}>
-                {label.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <Avatar name={label} src={avatarUrl} />
             <span className="text-sm font-medium text-foreground">{label}</span>
           </div>
           <Textarea
@@ -150,12 +278,7 @@ export function NewsComments({ newsId }: Props) {
           />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{content.length}/500</span>
-            <Button
-              size="sm"
-              onClick={onSubmit}
-              disabled={submitting || !content.trim()}
-              className="gap-1.5 rounded-xl"
-            >
+            <Button size="sm" onClick={onSubmit} disabled={submitting || !content.trim()} className="gap-1.5 rounded-xl">
               <Send className="size-3.5" />
               {submitting ? "Đang gửi..." : "Gửi bình luận"}
             </Button>
@@ -174,7 +297,6 @@ export function NewsComments({ newsId }: Props) {
         </div>
       )}
 
-      {/* Comments list */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
@@ -187,25 +309,20 @@ export function NewsComments({ newsId }: Props) {
             </div>
           ))}
         </div>
-      ) : approved.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-4">
-          Chưa có bình luận nào. Hãy là người đầu tiên!
-        </p>
+      ) : topLevel.length === 0 ? (
+        <p className="text-center text-sm text-muted-foreground py-4">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
       ) : (
-        <div className="space-y-4">
-          {approved.map((c) => (
-            <div key={c.id} className="flex gap-3">
-              <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white", avatarColor(c.display_name))}>
-                {c.display_name.charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-foreground">{c.display_name}</span>
-                  <span className="text-[11px] text-muted-foreground">{timeAgo(c.created_at)}</span>
-                </div>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">{c.content}</p>
-              </div>
-            </div>
+        <div className="space-y-5">
+          {topLevel.map((c) => (
+            <CommentItem
+              key={c.id}
+              comment={c}
+              replies={repliesMap[c.id] ?? []}
+              userEmail={userEmail}
+              avatarUrl={avatarUrl}
+              displayName={label}
+              onReplySubmit={onReplySubmit}
+            />
           ))}
         </div>
       )}

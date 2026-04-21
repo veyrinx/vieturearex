@@ -21,7 +21,17 @@
       "Bash(cat)",
       "Read(//tmp/**)",
       "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(node *)",
+      "Bash(ls src/app/esports/)",
+      "Bash(ls \"src/app/\\(site\\)/esports/\")",
+      "Bash(sed -i 's/return data\\\\.users;/return data.users ?? [];/' src/hooks/use-users-query.ts)",
+      "Bash(sed -i 's/return data\\\\.events;/return data.events ?? [];/' src/hooks/use-admin-events-query.ts)",
+      "Bash(sed -i 's/return data\\\\.news;/return data.news ?? [];/' src/hooks/use-admin-news-query.ts)",
+      "Bash(sed -i 's/return data\\\\.logs;/return data.logs ?? [];/' src/hooks/use-admin-logs-query.ts)",
+      "Bash(sed -i 's/return data\\\\.settings;/return data.settings ?? [];/' src/hooks/use-settings-query.ts)",
+      "Bash(cat .env.local)",
+      "Bash(cat .env)"
     ]
   }
 }

@@ -1,0 +1,62 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from "@/lib/server/api-guard";
+
+const schema = z.object({
+  display_name: z.string().trim().min(1).max(30),
+  anonymous_id: z.string().trim().min(1).max(60),
+});
+
+export async function POST(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "support-session", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
+
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
+
+  const body = await request.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
+
+  const { display_name, anonymous_id } = parsed.data;
+
+  // Resolve logged-in user if any
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id ?? null;
+
+  // Try to find existing open session for this anonymous_id or user_id
+  const matchColumn = userId ? "user_id" : "anonymous_id";
+  const matchValue = userId ?? anonymous_id;
+
+  const { data: existing } = await supabase
+    .from("support_sessions")
+    .select("id, status")
+    .eq(matchColumn, matchValue as string)
+    .eq("status", "open")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle() as { data: { id: string; status: string } | null };
+
+  if (existing) {
+    return NextResponse.json({ session_id: existing.id });
+  }
+
+  // Create new session
+  const { data: session, error } = await supabase
+    .from("support_sessions")
+    .insert({
+      display_name,
+      anonymous_id: userId ? null : anonymous_id,
+      user_id: userId,
+      status: "open",
+    } as never)
+    .select("id")
+    .single() as { data: { id: string } | null; error: unknown };
+
+  if (error || !session) {
+    return NextResponse.json({ error: "Không thể tạo phiên hỗ trợ." }, { status: 500 });
+  }
+
+  return NextResponse.json({ session_id: session.id }, { status: 201 });
+}
