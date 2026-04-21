@@ -57,7 +57,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
         const right = new Date(b.created_at).getTime();
         return sort === "newest" ? right - left : left - right;
       });
-  }, [category, fromDate, news, sort, toDate]);
+  }, [category, fromDate, safeNews, sort, toDate]);
 
   return (
     <div className="space-y-4">

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, UserCircle, UserPlus, User } from "lucide-react";
+import { LogOut, UserCircle, UserPlus, User, LayoutDashboard } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -36,7 +36,10 @@ export function UserNavButton({ className }: Props) {
   const [email, setEmail] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"];
 
   useEffect(() => {
     const supabase = createClient();
@@ -47,11 +50,12 @@ export function UserNavButton({ className }: Props) {
       if (userEmail) {
         const { data: profile } = await supabase
           .from("users")
-          .select("display_name, avatar_url")
+          .select("display_name, avatar_url, role")
           .eq("id", data.user!.id)
-          .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null } | null };
+          .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null; role: string | null } | null };
         setDisplayName(profile?.display_name ?? null);
         setAvatarUrl(profile?.avatar_url ?? null);
+        setRole(profile?.role ?? null);
       }
       setLoading(false);
     });
@@ -141,6 +145,17 @@ export function UserNavButton({ className }: Props) {
             <span className="text-sm font-medium">Hồ sơ cá nhân</span>
           </Link>
         </DropdownMenuItem>
+        {role && ADMIN_ROLES.includes(role) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer gap-2 p-0">
+              <Link href="/admin" className="flex w-full items-center gap-2 px-2 py-1.5 text-primary dark:text-amber-400">
+                <LayoutDashboard className="size-4" />
+                <span className="text-sm font-medium">Trang quản trị</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
           <LogOut className="size-4" />

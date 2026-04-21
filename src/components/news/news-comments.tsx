@@ -45,6 +45,7 @@ export function NewsComments({ newsId }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -54,10 +55,11 @@ export function NewsComments({ newsId }: Props) {
           setUserEmail(data.user.email);
           const { data: profile } = await supabase
             .from("users")
-            .select("display_name")
+            .select("display_name, avatar_url")
             .eq("id", data.user.id)
-            .maybeSingle() as { data: { display_name: string | null } | null };
+            .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null } | null };
           setDisplayName(profile?.display_name ?? null);
+          setAvatarUrl(profile?.avatar_url ?? null);
         }
       });
     }
@@ -125,9 +127,13 @@ export function NewsComments({ newsId }: Props) {
       {userEmail ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white", avatarColor(label))}>
-              {label.charAt(0).toUpperCase()}
-            </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={label} className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />
+            ) : (
+              <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white", avatarColor(label))}>
+                {label.charAt(0).toUpperCase()}
+              </div>
+            )}
             <span className="text-sm font-medium text-foreground">{label}</span>
           </div>
           <Textarea

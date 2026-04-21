@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BarChart3, CalendarRange, Newspaper, Users, Shield, Zap,
   Settings, ImageIcon, Radio, Star, FileText, Activity,
-  ArrowRight,
+  ArrowRight, MessageSquare,
 } from "lucide-react";
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
@@ -40,6 +40,7 @@ const QUICK_ACTIONS = [
   { href: "/admin/gallery",  icon: ImageIcon,     label: "Gallery",   desc: "Ảnh cộng đồng",       color: "text-pink-500 bg-pink-500/10" },
   { href: "/admin/users",    icon: Users,         label: "Thành viên", desc: "Quản lý người dùng", color: "text-blue-500 bg-blue-500/10" },
   { href: "/admin/esports",  icon: Radio,         label: "Esports",   desc: "Stream & giải đấu",   color: "text-red-500 bg-red-500/10" },
+  { href: "/admin/comments", icon: MessageSquare,  label: "Bình luận", desc: "Kiểm duyệt bình luận", color: "text-indigo-500 bg-indigo-500/10" },
   { href: "/admin/ratings",  icon: Star,          label: "Đánh giá",  desc: "Phản hồi người dùng", color: "text-yellow-500 bg-yellow-500/10" },
   { href: "/admin/logs",     icon: Activity,      label: "Nhật ký",   desc: "Hoạt động admin",     color: "text-green-500 bg-green-500/10" },
   { href: "/admin/settings", icon: Settings,      label: "Cài đặt",   desc: "Cấu hình hệ thống",  color: "text-foreground bg-muted" },

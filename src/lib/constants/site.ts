@@ -33,6 +33,8 @@ export const adminNavItems = [
   { title: "TIN TỨC", href: "/admin/news" },
   { title: "THƯ VIỆN", href: "/admin/gallery" },
   { title: "NGƯỜI DÙNG", href: "/admin/users" },
+  { title: "BÌNH LUẬN", href: "/admin/comments" },
+  { title: "ĐÁNH GIÁ", href: "/admin/ratings" },
   { title: "POP-UP", href: "/admin/popup" },
   { title: "NHẬT KÝ", href: "/admin/logs" },
   { title: "BẢO MẬT", href: "/admin/security" },
