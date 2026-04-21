@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Shield, ShieldOff, ShieldAlert, RefreshCw, Trash2,
-  Plus, Clock, AlertTriangle, CheckCircle2, Lock,
+  Plus, Clock, AlertTriangle, CheckCircle2, Lock, ListChecks, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,10 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { vi } from "date-fns/locale";
 
 type BlockedEntry = { ip: string; blockedAt: number; reason: string };
+
+function isValidIp(ip: string) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) || /^[0-9a-f:]{3,39}$/.test(ip);
+}
 
 function timeAgo(ts: number) {
   try {
@@ -29,23 +33,37 @@ function blockedUntil(blockedAt: number) {
 
 export function SecurityPanel() {
   const [blocked, setBlocked] = useState<BlockedEntry[]>([]);
+  const [whitelist, setWhitelist] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [newIp, setNewIp] = useState("");
   const [newReason, setNewReason] = useState("");
   const [adding, setAdding] = useState(false);
   const [unblocking, setUnblocking] = useState<string | null>(null);
+  const [wlNewIp, setWlNewIp] = useState("");
+  const [wlAdding, setWlAdding] = useState(false);
+  const [wlRemoving, setWlRemoving] = useState<string | null>(null);
+  const [clientIp, setClientIp] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/security");
       if (res.ok) {
-        const d = (await res.json()) as { blocked: BlockedEntry[] };
+        const d = (await res.json()) as { blocked: BlockedEntry[]; whitelist?: string[] };
         setBlocked(d.blocked ?? []);
+        setWhitelist(d.whitelist ?? []);
       }
     } catch { toast.error("Không thể tải danh sách IP."); }
     finally { setLoading(false); }
   };
+
+  // Detect current client IP
+  useEffect(() => {
+    fetch("https://api.ipify.org?format=json")
+      .then((r) => r.json())
+      .then((d: { ip: string }) => setClientIp(d.ip))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { load(); }, []);
 
@@ -62,6 +80,40 @@ export function SecurityPanel() {
       await load();
     } catch { toast.error("Không thể mở chặn IP."); }
     finally { setUnblocking(null); }
+  };
+
+  const wlAdd = async (ip: string) => {
+    if (!isValidIp(ip)) { toast.error("IP không hợp lệ."); return; }
+    setWlAdding(true);
+    try {
+      const res = await fetch("/api/admin/security", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", ip }),
+      });
+      if (!res.ok) throw new Error();
+      const d = (await res.json()) as { whitelist: string[] };
+      setWhitelist(d.whitelist);
+      setWlNewIp("");
+      toast.success(`Đã thêm IP: ${ip} vào danh sách trắng.`);
+    } catch { toast.error("Không thể thêm IP."); }
+    finally { setWlAdding(false); }
+  };
+
+  const wlRemove = async (ip: string) => {
+    setWlRemoving(ip);
+    try {
+      const res = await fetch("/api/admin/security", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", ip }),
+      });
+      if (!res.ok) throw new Error();
+      const d = (await res.json()) as { whitelist: string[] };
+      setWhitelist(d.whitelist);
+      toast.success(`Đã xóa IP: ${ip} khỏi danh sách trắng.`);
+    } catch { toast.error("Không thể xóa IP."); }
+    finally { setWlRemoving(null); }
   };
 
   const addBlock = async () => {
@@ -117,6 +169,96 @@ export function SecurityPanel() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* IP Whitelist */}
+      <div className="glass-card rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ListChecks className="size-4 text-green-500" />
+            <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              Danh sách IP được phép truy cập Admin
+            </h2>
+          </div>
+          {whitelist.length > 0 && (
+            <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-600 dark:text-green-400">
+              {whitelist.length} IP
+            </span>
+          )}
+        </div>
+
+        {clientIp && (
+          <div className="flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
+            <Shield className="size-3.5 shrink-0 text-blue-500" />
+            <p className="flex-1 text-xs text-blue-600 dark:text-blue-400">
+              IP hiện tại của bạn: <code className="font-mono font-bold">{clientIp}</code>
+            </p>
+            {!whitelist.includes(clientIp) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => wlAdd(clientIp)}
+                disabled={wlAdding}
+                className="h-7 gap-1 rounded-lg border-green-500/30 px-2 text-[11px] text-green-600 hover:bg-green-500/10 dark:text-green-400"
+              >
+                <Plus className="size-3" /> Thêm
+              </Button>
+            ) : (
+              <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">✓ Đã có</span>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Input
+            value={wlNewIp}
+            onChange={(e) => setWlNewIp(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") wlAdd(wlNewIp.trim()); }}
+            placeholder="Nhập IP thủ công (vd: 1.2.3.4)"
+            className="h-9 flex-1 font-mono text-sm"
+          />
+          <Button
+            size="sm"
+            onClick={() => wlAdd(wlNewIp.trim())}
+            disabled={wlAdding || !wlNewIp.trim()}
+            className="gap-1.5 rounded-xl"
+          >
+            <Plus className="size-3.5" />
+            {wlAdding ? "Đang thêm..." : "Thêm IP"}
+          </Button>
+        </div>
+
+        {whitelist.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted/20 py-4 text-center">
+            <p className="text-xs font-semibold text-muted-foreground">Chưa có IP nào trong danh sách trắng</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">Khi danh sách trống, tất cả IP đều được phép thử đăng nhập admin.</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {whitelist.map((ip) => (
+              <div key={ip} className="flex items-center gap-3 rounded-xl border border-green-500/20 bg-green-500/5 px-3 py-2">
+                <CheckCircle2 className="size-3.5 shrink-0 text-green-500" />
+                <code className="flex-1 font-mono text-sm font-semibold text-foreground">{ip}</code>
+                {clientIp && ip === clientIp && (
+                  <span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-500">IP của bạn</span>
+                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  disabled={wlRemoving === ip}
+                  onClick={() => wlRemove(ip)}
+                  className="size-6 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-[11px] text-muted-foreground">
+          Nếu danh sách có IP, chỉ IP trong đây mới được phép truy cập <code>/admin</code>. IP không hợp lệ sẽ bị chuyển hướng về trang chủ.
+        </p>
       </div>
 
       {/* Manual block */}

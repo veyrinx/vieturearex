@@ -263,7 +263,7 @@ export default function ProfilePage() {
 
   if (!profile) return null;
 
-  const label = profile.display_name || profile.email.split("@")[0];
+  const label = displayName.trim() || profile.display_name || profile.email.split("@")[0];
   const initial = label.charAt(0).toUpperCase();
   const avatarGradient = getAvatarColor(profile.email);
   const roleMeta = ROLE_META[profile.role] ?? ROLE_META.user;
@@ -339,17 +339,15 @@ export default function ProfilePage() {
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">
+                <h1 className="inline-flex items-center gap-1.5 font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">
                   {label}
+                  {profile.is_verified && (
+                    <BadgeCheck aria-label="Đã được xác minh bởi IT" className="size-6 shrink-0 text-blue-500" />
+                  )}
                 </h1>
                 <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide", roleMeta.color)}>
                   {roleMeta.label}
                 </span>
-                {profile.is_verified && (
-                  <span title="Đã được xác minh bởi IT" className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-bold text-blue-500">
-                    <BadgeCheck className="size-3.5" /> Đã xác minh
-                  </span>
-                )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
               <div className="mt-2 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground sm:justify-start">

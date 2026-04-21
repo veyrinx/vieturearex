@@ -34,6 +34,7 @@ const GOOGLE_BOT_PATTERN =
 const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"] as const;
 
 let maintenanceCache: { on: boolean; expires: number } | null = null;
+let whitelistCache: { ips: string[]; expires: number } | null = null;
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
@@ -126,6 +127,29 @@ export async function middleware(request: NextRequest) {
   // ── Unauthenticated ───────────────────────────────────────────────────
   if (!user) {
     if (isAdminPath) {
+      // ── IP whitelist check (unauthenticated admin access) ──────────────
+      const now = Date.now();
+      if (!whitelistCache || now > whitelistCache.expires) {
+        try {
+          const { data: wlSetting } = await supabase
+            .from("settings")
+            .select("value")
+            .eq("key", "security.admin_ip_whitelist")
+            .maybeSingle() as { data: { value: string } | null };
+          const ips: string[] = wlSetting?.value ? (JSON.parse(wlSetting.value) as string[]) : [];
+          whitelistCache = { ips, expires: now + 30_000 };
+        } catch { whitelistCache = { ips: [], expires: now + 30_000 }; }
+      }
+
+      const clientIp = getClientIp(request);
+      if (
+        whitelistCache.ips.length > 0 &&
+        clientIp !== "unknown" &&
+        !whitelistCache.ips.includes(clientIp)
+      ) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+
       // Redirect to admin login with encrypted destination cookie
       const redirect = NextResponse.redirect(new URL("/auth/login", request.url));
       if (pathname.startsWith("/") && !pathname.includes("//") && !pathname.includes(":")) {

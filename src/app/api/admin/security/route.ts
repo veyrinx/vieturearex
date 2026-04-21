@@ -6,8 +6,15 @@ import { unblockInMemory, getInMemoryBlockedIps, getFailureCount } from "@/lib/s
 import { logAdminActivity } from "@/lib/server/admin-activity";
 
 const BLOCKED_IPS_KEY = "security.blocked_ips";
+const WHITELIST_KEY = "security.admin_ip_whitelist";
 
 type BlockedEntry = { ip: string; blockedAt: number; reason: string };
+
+async function getWhitelist(): Promise<string[]> {
+  const settings = await getSettings();
+  const raw = settings.find((s) => s.key === WHITELIST_KEY)?.value ?? "[]";
+  try { return JSON.parse(raw) as string[]; } catch { return []; }
+}
 
 async function getBlockedList(): Promise<BlockedEntry[]> {
   const settings = await getSettings();
@@ -42,7 +49,8 @@ export async function GET(request: NextRequest) {
   const active = merged.filter((e) => now - e.blockedAt < BLOCK_DURATION_MS);
   const history = merged.slice(0, 100);
 
-  return NextResponse.json({ blocked: active, history });
+  const whitelist = await getWhitelist();
+  return NextResponse.json({ blocked: active, history, whitelist });
 }
 
 const unblockSchema = z.object({ ip: z.string().min(1) });
@@ -77,6 +85,37 @@ export async function DELETE(request: NextRequest) {
   });
 
   return NextResponse.json({ ok: true });
+}
+
+const whitelistSchema = z.object({
+  action: z.enum(["add", "remove"]),
+  ip: z.string().min(7, "IP không hợp lệ."),
+});
+
+export async function PATCH(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-security", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
+  const denied = await enforceAdminApiAuth({ minimumRole: "it" });
+  if (denied) return denied;
+
+  const payload = await request.json().catch(() => null);
+  const parsed = whitelistSchema.safeParse(payload);
+  if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
+
+  const { action, ip } = parsed.data;
+  const list = await getWhitelist();
+  const updated = action === "add"
+    ? list.includes(ip) ? list : [...list, ip]
+    : list.filter((x) => x !== ip);
+  await updateSetting(WHITELIST_KEY, JSON.stringify(updated));
+
+  await logAdminActivity({
+    action: action === "add" ? "IP_WHITELIST_ADD" : "IP_WHITELIST_REMOVE",
+    targetType: "SECURITY",
+    summary: `${action === "add" ? "Thêm" : "Xóa"} IP khỏi danh sách trắng admin: ${ip}`,
+  });
+
+  return NextResponse.json({ ok: true, whitelist: updated });
 }
 
 const blockSchema = z.object({ ip: z.string().min(1), reason: z.string().optional() });
