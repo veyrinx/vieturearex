@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { toast } from "sonner";
 import { MessageSquare, Send, User, CornerDownRight, ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 type Comment = {
   id: string;
+  user_id: string | null;
   display_name: string;
   content: string;
   created_at: string;
@@ -79,10 +81,22 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
   return (
     <div className="space-y-2">
       <div className="flex gap-3">
-        <Avatar name={comment.display_name} />
+        {comment.user_id ? (
+          <Link href={`/u/${comment.user_id}`} className="shrink-0">
+            <Avatar name={comment.display_name} />
+          </Link>
+        ) : (
+          <Avatar name={comment.display_name} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-foreground">{comment.display_name}</span>
+            {comment.user_id ? (
+              <Link href={`/u/${comment.user_id}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
+                {comment.display_name}
+              </Link>
+            ) : (
+              <span className="text-sm font-semibold text-foreground">{comment.display_name}</span>
+            )}
             <span className="text-[11px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
           </div>
           <p className="mt-1 text-sm leading-relaxed text-foreground/90">{comment.content}</p>
@@ -116,10 +130,22 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
         <div className="ml-11 space-y-3 border-l-2 border-border pl-4">
           {replies.map((reply) => (
             <div key={reply.id} className="flex gap-3">
-              <Avatar name={reply.display_name} />
+              {reply.user_id ? (
+                <Link href={`/u/${reply.user_id}`} className="shrink-0">
+                  <Avatar name={reply.display_name} />
+                </Link>
+              ) : (
+                <Avatar name={reply.display_name} />
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-foreground">{reply.display_name}</span>
+                  {reply.user_id ? (
+                    <Link href={`/u/${reply.user_id}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
+                      {reply.display_name}
+                    </Link>
+                  ) : (
+                    <span className="text-sm font-semibold text-foreground">{reply.display_name}</span>
+                  )}
                   <span className="text-[11px] text-muted-foreground">{timeAgo(reply.created_at)}</span>
                 </div>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/90">{reply.content}</p>

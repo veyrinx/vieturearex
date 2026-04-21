@@ -27,6 +27,9 @@ export type EventItem = {
   thumbnail_url?: string;
   link: string | null;
   status: EventStatus;
+  view_count: number;
+  created_by_name: string | null;
+  updated_by_name: string | null;
 };
 
 export type NewsItem = {

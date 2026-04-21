@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, Eye, UserCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getEventById } from "@/lib/data/content-service";
 import { StatusBadge } from "@/components/common/status-badge";
+import { EventViewTracker } from "@/components/events/event-view-tracker";
 import { siteConfig } from "@/lib/constants/site";
 import { cn } from "@/lib/utils";
 
@@ -36,8 +37,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const event = await getEventById(params.id);
   if (!event) notFound();
 
+  const authorName = event.updated_by_name || event.created_by_name;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 pt-6 md:pt-8">
+      <EventViewTracker eventId={event.id} />
+
       <Link
         href="/events"
         className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground transition hover:text-foreground"
@@ -53,14 +58,34 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 md:text-3xl">
           {event.title}
         </h1>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <CalendarDays className="size-4 shrink-0" />
-          <span className="font-semibold">
-            {formatEventDate(event.start_date)}
-            {event.end_date && event.end_date !== event.start_date && (
-              <> → {formatEventDate(event.end_date)}</>
-            )}
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <CalendarDays className="size-4 shrink-0" />
+            <span className="font-semibold">
+              {formatEventDate(event.start_date)}
+              {event.end_date && event.end_date !== event.start_date && (
+                <> → {formatEventDate(event.end_date)}</>
+              )}
+            </span>
           </span>
+
+          {event.view_count > 0 && (
+            <span className="flex items-center gap-1.5">
+              <Eye className="size-4 shrink-0" />
+              <span>{event.view_count.toLocaleString("vi-VN")} lượt xem</span>
+            </span>
+          )}
+
+          {authorName && (
+            <span className="flex items-center gap-1.5">
+              <UserCircle2 className="size-4 shrink-0" />
+              <span>
+                Đăng bởi{" "}
+                <span className="font-semibold text-foreground">{authorName}</span>
+              </span>
+            </span>
+          )}
         </div>
       </div>
 

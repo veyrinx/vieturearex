@@ -11,6 +11,16 @@ import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { sanitizePlainText } from "@/lib/server/sanitize";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+async function getAdminName(): Promise<string> {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return "Admin";
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "Admin";
+  const { data: profile } = await supabase.from("users").select("display_name").eq("id", user.id).maybeSingle() as { data: { display_name: string | null } | null };
+  return profile?.display_name || user.email?.split("@")[0] || "Admin";
+}
 
 function normalizeUrlField(raw: unknown): string {
   const str = String(raw ?? "").trim();
@@ -70,6 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const adminName = await getAdminName();
     const event = await createEvent({
       ...parsed.data,
       description: sanitizePlainText(parsed.data.description ?? ""),
@@ -77,6 +88,9 @@ export async function POST(request: NextRequest) {
       thumbnail_url: parsed.data.thumbnail_url || parsed.data.image_url,
       link: parsed.data.link || null,
       status: getEventStatusInVietnam(parsed.data.start_date, parsed.data.end_date),
+      view_count: 0,
+      created_by_name: adminName,
+      updated_by_name: adminName,
     });
 
     await logAdminActivity({
@@ -139,6 +153,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const adminName = await getAdminName();
     const event = await updateEvent(parsed.data.id, {
       ...parsed.data,
       title: sanitizePlainText(parsed.data.title),
@@ -146,6 +161,7 @@ export async function PATCH(request: NextRequest) {
       thumbnail_url: parsed.data.thumbnail_url || parsed.data.image_url,
       link: parsed.data.link || null,
       status: getEventStatusInVietnam(parsed.data.start_date, parsed.data.end_date),
+      updated_by_name: adminName,
     });
 
     await logAdminActivity({

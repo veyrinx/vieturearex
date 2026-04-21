@@ -163,11 +163,17 @@ function mapEventRow(row: {
   link: string | null;
   status: EventStatus;
   thumbnail_url?: string | null;
+  view_count?: number | null;
+  created_by_name?: string | null;
+  updated_by_name?: string | null;
 }): EventItem {
   return {
     ...row,
     description: row.description.replace(SAMPLE_EVENT_TEXT_PATTERN, "").trim(),
     thumbnail_url: row.thumbnail_url ?? undefined,
+    view_count: Number(row.view_count ?? 0),
+    created_by_name: row.created_by_name ?? null,
+    updated_by_name: row.updated_by_name ?? null,
   };
 }
 
@@ -282,6 +288,9 @@ export async function createEvent(
       thumbnail_url: payload.thumbnail_url ?? null,
       link: payload.link ?? null,
       status: payload.status,
+      view_count: 0,
+      created_by_name: payload.created_by_name ?? null,
+      updated_by_name: payload.created_by_name ?? null,
     } as never)
     .select("*")
     .single();
@@ -313,6 +322,7 @@ export async function updateEvent(
       ...payload,
       thumbnail_url: payload.thumbnail_url ?? null,
       link: payload.link ?? null,
+      updated_by_name: payload.updated_by_name ?? null,
     } as never)
     .eq("id", id)
     .select("*")
@@ -665,6 +675,32 @@ export async function updateUserIsVerified(id: string, is_verified: boolean): Pr
     .single();
   if (error) throw new Error(error.message);
   return normalizeUserItem(data as Partial<UserItem>);
+}
+
+export type PublicUserProfile = {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  role: UserRole;
+  is_verified: boolean;
+  created_at: string;
+};
+
+export async function getUserPublicProfile(id: string): Promise<PublicUserProfile | null> {
+  if (!hasSupabaseEnv) {
+    const user = getDemoStore().users.find((u) => u.id === id);
+    if (!user) return null;
+    return { id: user.id, display_name: user.display_name, avatar_url: user.avatar_url ?? null, role: user.role, is_verified: user.is_verified ?? false, created_at: user.created_at };
+  }
+  const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+  const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+    .from("users")
+    .select("id, display_name, avatar_url, role, is_verified, created_at")
+    .eq("id", id)
+    .maybeSingle() as { data: PublicUserProfile | null };
+  if (!data) return null;
+  const role = VALID_USER_ROLES.includes(data.role as UserRole) ? (data.role as UserRole) : "user";
+  return { ...data, role, is_verified: Boolean(data.is_verified) };
 }
 
 export async function resetUserPassword(id: string): Promise<{ tempPassword: string }> {
