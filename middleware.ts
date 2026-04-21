@@ -7,35 +7,6 @@ import { isBlockedInMemory, refreshBlockedCache, shouldRefreshCache } from "@/li
 import { signRedirectCookie, COOKIE_NAME } from "@/lib/server/next-token";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { getClientIp } from "@/lib/server/get-client-ip";
-import { shouldLogVisitor, mergeVisitorEntry, VISITOR_IPS_KEY, type VisitorEntry } from "@/lib/server/visitor-logger";
-
-// ── Visitor logging ───────────────────────────────────────────────────────────
-async function logVisitorIp(ip: string, path: string, ua: string) {
-  try {
-    const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey || !supabaseUrl) return;
-    const db = createSupabaseAdmin(supabaseUrl, serviceKey);
-
-    const { data: row } = await db
-      .from("settings")
-      .select("value")
-      .eq("key", VISITOR_IPS_KEY)
-      .maybeSingle() as { data: { value: string } | null };
-
-    let existing: Record<string, VisitorEntry> = {};
-    try { existing = row?.value ? (JSON.parse(row.value) as Record<string, VisitorEntry>) : {}; } catch { /**/ }
-
-    const updated = mergeVisitorEntry(existing, ip, path, ua);
-    const json = JSON.stringify(updated);
-
-    if (row) {
-      await db.from("settings").update({ value: json, updated_at: new Date().toISOString() } as never).eq("key", VISITOR_IPS_KEY);
-    } else {
-      await db.from("settings").insert({ key: VISITOR_IPS_KEY, value: json } as never);
-    }
-  } catch { /* non-fatal */ }
-}
-
 // ── Always accessible without auth (auth flow + legal + maintenance + all API) ──
 const PUBLIC_PATHS = [
   "/login",
@@ -141,11 +112,6 @@ export async function middleware(request: NextRequest) {
       <p style="margin-top:1.5rem;font-size:.75rem;color:#555">IP: ${safeIp}</p></div></body></html>`,
       { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } },
     );
-  }
-
-  // ── Visitor IP logging (page requests only, skip API/assets) ──────────
-  if (isPageRequest && shouldLogVisitor(ip)) {
-    void logVisitorIp(ip, pathname, request.headers.get("user-agent") ?? "");
   }
 
   // ── Admin path: whitelist + extra checks ─────────────────────────────
