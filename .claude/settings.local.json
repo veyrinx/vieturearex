@@ -32,7 +32,8 @@
       "Bash(sed -i 's/return data\\\\.settings;/return data.settings ?? [];/' src/hooks/use-settings-query.ts)",
       "Bash(cat .env.local)",
       "Bash(cat .env)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(git checkout *)"
     ]
   }
 }
