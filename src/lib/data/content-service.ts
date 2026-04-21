@@ -684,6 +684,13 @@ export type PublicUserProfile = {
   role: UserRole;
   is_verified: boolean;
   created_at: string;
+  bio?: string | null;
+  phone?: string | null;
+  facebook_url?: string | null;
+  tiktok_url?: string | null;
+  instagram_url?: string | null;
+  youtube_url?: string | null;
+  website_url?: string | null;
 };
 
 export async function getUserPublicProfile(id: string): Promise<PublicUserProfile | null> {
@@ -695,7 +702,7 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
   const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
     .from("users")
-    .select("id, display_name, avatar_url, role, is_verified, created_at")
+    .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url")
     .eq("id", id)
     .maybeSingle() as { data: PublicUserProfile | null };
   if (!data) return null;

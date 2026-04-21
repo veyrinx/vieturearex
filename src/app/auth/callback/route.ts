@@ -10,6 +10,8 @@ import {
   isEmailInvited,
 } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { getClientIp } from "@/lib/server/get-client-ip";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -109,6 +111,22 @@ export async function GET(request: NextRequest) {
     targetId: user.id,
     summary: `Đăng nhập Google thành công với email ${ensuredUser.email}`,
   });
+
+  // Log to login_logs for profile history
+  const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey && supabaseUrl) {
+    const db = createAdminClient(supabaseUrl, serviceKey);
+    const ip = getClientIp(request);
+    try {
+      await db.from("login_logs").insert({
+        user_id: user.id,
+        email: normalizedEmail,
+        ip: ip !== "unknown" ? ip : null,
+        user_agent: request.headers.get("user-agent"),
+        method: "google",
+      } as never);
+    } catch { /* non-fatal */ }
+  }
 
   return response;
 }

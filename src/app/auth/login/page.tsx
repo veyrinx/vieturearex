@@ -177,6 +177,7 @@ export default function LoginPage() {
     }
 
     await serverRecordSuccess(email);
+    fetch("/api/user/login-logs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: "password" }) }).catch(() => null);
     finishAttempt("success", "ĐĂNG NHẬP THÀNH CÔNG. ĐANG CHUYỂN VÀO TRANG QUẢN TRỊ.");
   };
 
