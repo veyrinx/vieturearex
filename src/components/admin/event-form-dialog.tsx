@@ -179,19 +179,15 @@ export function EventFormDialog({
             <DialogTitle className="font-heading text-xl uppercase text-foreground pr-8">
               {initialData ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
             </DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">
-                  Trạng thái sẽ tự động cập nhật theo múi giờ Việt Nam.
-                </p>
-                {adminEmail && (
-                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">
-                    <UserCog className="size-3 shrink-0" />
-                    {initialData ? "Cập nhật bởi:" : "Tạo bởi:"} {adminEmail}
-                  </div>
-                )}
-              </div>
+            <DialogDescription className="text-muted-foreground text-sm">
+              Trạng thái sẽ tự động cập nhật theo múi giờ Việt Nam.
             </DialogDescription>
+            {adminEmail && (
+              <div className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">
+                <UserCog className="size-3 shrink-0" />
+                {initialData ? "Cập nhật bởi:" : "Tạo bởi:"} {adminEmail}
+              </div>
+            )}
           </DialogHeader>
 
           <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
