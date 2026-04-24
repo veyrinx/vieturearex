@@ -154,4 +154,7 @@ export type PublicUserProfile = {
   youtube_url?: string | null;
   website_url?: string | null;
   last_seen_at?: string | null;
+  show_in_team?: boolean;
+  points?: number;
+  rank?: string;
 };

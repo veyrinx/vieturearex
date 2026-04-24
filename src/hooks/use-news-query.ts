@@ -23,6 +23,8 @@ export function useNewsQuery(status: "published" | "draft" | "all" = "published"
   return useQuery({
     queryKey: ["news", status],
     queryFn: () => fetchNews(status),
-    refetchInterval: 60_000,
+    staleTime: 2 * 60 * 60 * 1000,    // 2 hours — don't refetch unless stale
+    refetchInterval: 2 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

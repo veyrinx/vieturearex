@@ -198,6 +198,7 @@ export function NewsComments({ newsId }: Props) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [newCount, setNewCount] = useState(0);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -206,13 +207,12 @@ export function NewsComments({ newsId }: Props) {
         const data = (await res.json()) as { comments: Comment[] };
         setComments(data.comments ?? []);
       }
-    } catch {
-      // non-fatal
-    } finally {
+    } catch { /* non-fatal */ } finally {
       setLoading(false);
     }
   }, [newsId]);
 
+  // Auth + profile
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
@@ -220,16 +220,38 @@ export function NewsComments({ newsId }: Props) {
       if (!data.user?.email) return;
       setUserEmail(data.user.email);
       const { data: profile } = await supabase
-        .from("users")
-        .select("display_name, avatar_url")
-        .eq("id", data.user.id)
-        .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null } | null };
+        .from("users").select("display_name, avatar_url").eq("id", data.user.id).maybeSingle() as
+        { data: { display_name: string | null; avatar_url: string | null } | null };
       setDisplayName(profile?.display_name ?? null);
       setAvatarUrl(profile?.avatar_url ?? null);
     });
   }, []);
 
   useEffect(() => { fetchComments(); }, [fetchComments]);
+
+  // Supabase Realtime — new approved comments appear instantly
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+    const channel = supabase
+      .channel(`comments:${newsId}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "news_comments",
+        filter: `news_id=eq.${newsId}`,
+      }, (payload) => {
+        const incoming = payload.new as Comment;
+        if (incoming.status !== "approved") return;
+        setComments((prev) => {
+          if (prev.some((c) => c.id === incoming.id)) return prev;
+          setNewCount((n) => n + 1);
+          return [...prev, incoming];
+        });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [newsId]);
 
   const submitComment = async (parentId: string | null, text: string) => {
     if (!text.trim() || !userEmail) {
@@ -242,13 +264,14 @@ export function NewsComments({ newsId }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text.trim(), parent_id: parentId }),
       });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(err.error ?? "Không thể gửi bình luận.");
-        return;
+      const json = (await res.json().catch(() => ({}))) as { error?: string; pending?: boolean; message?: string };
+      if (!res.ok) { toast.error(json.error ?? "Không thể gửi bình luận."); return; }
+      if (json.pending) {
+        toast.info(json.message ?? "Bình luận đang chờ kiểm duyệt.");
+      } else {
+        toast.success("Bình luận đã được đăng.");
+        await fetchComments();
       }
-      toast.success("Bình luận đã được gửi và đang chờ duyệt.");
-      await fetchComments();
     } catch {
       toast.error("Lỗi mạng, vui lòng thử lại.");
     }
@@ -286,6 +309,12 @@ export function NewsComments({ newsId }: Props) {
             <span className="ml-2 text-sm font-normal text-muted-foreground">({topLevel.length})</span>
           )}
         </h2>
+        {newCount > 0 && (
+          <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-bold text-green-500">
+            <span className="size-1.5 animate-pulse rounded-full bg-green-500" />
+            +{newCount} mới
+          </span>
+        )}
       </div>
 
       {userEmail ? (

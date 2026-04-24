@@ -39,6 +39,8 @@ export const adminNavItems = [
   { title: "ĐÁNH GIÁ", href: "/admin/ratings" },
   { title: "POP-UP", href: "/admin/popup" },
   { title: "NHẬT KÝ", href: "/admin/logs" },
+  { title: "THỐNG KÊ", href: "/admin/stats" },
+  { title: "ĐỘI NGŨ", href: "/admin/team" },
   { title: "BẢO MẬT", href: "/admin/security" },
   { title: "CÀI ĐẶT", href: "/admin/settings" },
   { title: "HỒ SƠ", href: "/admin/profile" },

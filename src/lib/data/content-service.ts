@@ -679,7 +679,7 @@ export async function updateUserIsVerified(id: string, is_verified: boolean): Pr
 }
 
 const ADMIN_PROFILE_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
-const PROFILE_SELECT = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at";
+const PROFILE_SELECT = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank";
 
 export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
   if (!hasSupabaseEnv) {
@@ -692,8 +692,26 @@ export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
         role: u.role,
         is_verified: u.is_verified ?? false,
         created_at: u.created_at,
+        show_in_team: true,
       }));
   }
+  const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+  const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+    .from("users")
+    .select(PROFILE_SELECT)
+    .in("role", ADMIN_PROFILE_ROLES)
+    .eq("is_banned", false)
+    .eq("show_in_team", true)
+    .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null };
+  return (data ?? []).map((row) => ({
+    ...row,
+    role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
+    is_verified: Boolean(row.is_verified),
+  }));
+}
+
+export async function getAllStaffProfiles(): Promise<PublicUserProfile[]> {
+  if (!hasSupabaseEnv) return [];
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
   const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
     .from("users")

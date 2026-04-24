@@ -32,7 +32,9 @@ export function useEventsQuery(params: Params) {
   return useQuery({
     queryKey: ["events", params.search ?? "", params.status ?? "all"],
     queryFn: () => fetchEvents(params),
-    refetchInterval: 30_000,
+    staleTime: 2 * 60 * 60 * 1000,
+    refetchInterval: 2 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
 }

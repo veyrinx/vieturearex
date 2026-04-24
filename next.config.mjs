@@ -4,8 +4,10 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // Never expose source maps to the browser in production
   productionBrowserSourceMaps: false,
+  compiler: {
+    removeConsole: isDevelopment ? false : { exclude: ["error"] },
+  },
   images: {
     remotePatterns: [
       {

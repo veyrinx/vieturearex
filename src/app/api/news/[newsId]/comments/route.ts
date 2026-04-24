@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { checkContent } from "@/lib/server/content-filter";
+import { POINTS } from "@/lib/constants/ranks";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const postSchema = z.object({
   content: z.string().min(1).max(500),
@@ -79,6 +81,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     targetId: params.newsId,
     summary: `${displayName} (${user.email}) bình luận bài viết ${params.newsId}`,
   }).catch(() => {});
+
+  // Award points for approved comment
+  if (verdict === "approved") {
+    const admin = createAdminSupabaseClient();
+    if (admin) {
+      void (admin as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
+        .rpc("increment_user_points", { uid: user.id, amount: POINTS.COMMENT_APPROVED })
+        .catch(() => null);
+    }
+  }
 
   if (verdict === "pending") {
     return NextResponse.json({ ok: true, pending: true, message: "Bình luận của bạn đang chờ kiểm duyệt." });
