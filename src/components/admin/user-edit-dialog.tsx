@@ -23,15 +23,15 @@ import type { UserItem, UserRole } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 
 const ROLE_META: Record<string, { label: string; color: string; bg: string; dot: string; level: number }> = {
+  super_admin: { label: "Super Admin", color: "text-red-500",    bg: "bg-red-500/10 border-red-500/30",       dot: "bg-red-500",    level: 200 },
   it:          { label: "IT",          color: "text-violet-500", bg: "bg-violet-500/10 border-violet-500/30", dot: "bg-violet-500", level: 150 },
-  super_admin: { label: "Super Admin", color: "text-red-500",    bg: "bg-red-500/10 border-red-500/30",       dot: "bg-red-500",    level: 100 },
-  admin:       { label: "Admin",       color: "text-amber-500",  bg: "bg-amber-500/10 border-amber-500/30",   dot: "bg-amber-500",  level: 80 },
+  admin:       { label: "Admin",       color: "text-amber-500",  bg: "bg-amber-500/10 border-amber-500/30",   dot: "bg-amber-500",  level: 100 },
   manager:     { label: "Quản Lý",     color: "text-blue-500",   bg: "bg-blue-500/10 border-blue-500/30",     dot: "bg-blue-500",   level: 60 },
   support:     { label: "CSKH",        color: "text-green-500",  bg: "bg-green-500/10 border-green-500/30",   dot: "bg-green-500",  level: 40 },
   user:        { label: "Người Dùng",  color: "text-muted-foreground", bg: "bg-muted border-border",          dot: "bg-muted-foreground", level: 20 },
 };
 
-const ROLE_ORDER: UserRole[] = ["it", "super_admin", "admin", "manager", "support", "user"];
+const ROLE_ORDER: UserRole[] = ["super_admin", "it", "admin", "manager", "support", "user"];
 
 const AVATAR_COLORS = [
   "from-blue-500 to-indigo-600", "from-purple-500 to-pink-600",
@@ -102,7 +102,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const canManage = !isSelf && targetLevel < callerLevel;
   const canEditEmail = callerRole === "super_admin" || callerRole === "it";
   const canVerify = callerRole === "it";
-  const canDelete = (callerRole === "super_admin" || callerRole === "it") && !isSelf;
+  const canDelete = callerRole === "super_admin" && !isSelf;
   const assignableRoles = ROLE_ORDER.filter((r) => (ROLE_META[r]?.level ?? 0) < callerLevel);
   const avatarGradient = getAvatarColor(user.email);
   const displayName = user.display_name || user.email.split("@")[0];
