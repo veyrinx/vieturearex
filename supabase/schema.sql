@@ -273,17 +273,23 @@ security definer
 set search_path = public
 as $$
 declare
+  caller_role text;
   user_uuid uuid;
 begin
-  select id into user_uuid from auth.users where email = target_email;
+  -- Only an existing super_admin may call this function
+  select role into caller_role from public.users where id = auth.uid();
+  if caller_role is distinct from 'super_admin' then
+    return query select false::boolean, 'Không có quyền thực hiện thao tác này.'::text;
+    return;
+  end if;
 
+  select id into user_uuid from auth.users where email = target_email;
   if user_uuid is null then
     return query select false::boolean, 'User không tồn tại trong auth.users.'::text;
     return;
   end if;
 
   update public.users set role = 'super_admin' where id = user_uuid;
-
   if found then
     return query select true::boolean, ('Đã gán role super_admin cho ' || target_email)::text;
   else
@@ -292,6 +298,10 @@ begin
   end if;
 end;
 $$;
+
+-- Revoke anon access; only authenticated sessions may invoke this
+revoke execute on function public.promote_to_super_admin(text) from anon;
+grant  execute on function public.promote_to_super_admin(text) to authenticated;
 
 -- ============================================================
 -- POLICIES – EVENTS

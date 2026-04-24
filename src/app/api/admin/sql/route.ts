@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if (denied) return denied;
 
   const auth = await getAuthContext();
-  if (auth.role !== "super_admin" || auth.email !== "admin@arex.tech") {
+  if (auth.role !== "super_admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

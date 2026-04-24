@@ -11,8 +11,7 @@ export const metadata: Metadata = {
 export default async function SqlEditorPage() {
   const auth = await getAuthContext();
 
-  // Chỉ super_admin với email admin@arex.tech mới được truy cập
-  if (auth.role !== "super_admin" || auth.email !== "admin@arex.tech") {
+  if (auth.role !== "super_admin") {
     redirect("/admin");
   }
 
