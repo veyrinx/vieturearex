@@ -3,16 +3,19 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarDays, ArrowRight, ExternalLink } from "lucide-react";
+import { CalendarDays, ArrowRight, ExternalLink, Pencil, Trash2, Plus, User } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
 import { MediaFrame } from "@/components/common/media-frame";
 import { EventModal } from "@/components/timeline/event-modal";
+import { EventFormDialog } from "@/components/admin/event-form-dialog";
 import { Button } from "@/components/ui/button";
 import type { EventItem } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
+import { useAdminRole } from "@/hooks/use-admin-role";
 
 type FeaturedEventsProps = {
   events: EventItem[];
@@ -49,9 +52,39 @@ function formatEventDate(dateStr: string) {
 export function FeaturedEvents({ events }: FeaturedEventsProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [editTarget, setEditTarget] = useState<EventItem | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [localEvents, setLocalEvents] = useState<EventItem[]>(events);
+  const { canEdit } = useAdminRole();
 
-  const filtered = activeTab === "all" ? events : events.filter((e) => e.status === activeTab);
+  const filtered = activeTab === "all" ? localEvents : localEvents.filter((e) => e.status === activeTab);
   const visible = filtered.slice(0, 6);
+
+  const handleDelete = async (event: EventItem) => {
+    if (!confirm(`Xóa sự kiện "${event.title}"?`)) return;
+    const res = await fetch("/api/admin/events", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: event.id }),
+    });
+    if (res.ok) {
+      setLocalEvents((prev) => prev.filter((e) => e.id !== event.id));
+      toast.success("Đã xóa sự kiện.");
+    } else {
+      toast.error("Không thể xóa.");
+    }
+  };
+
+  const handleSaved = async () => {
+    const res = await fetch("/api/events");
+    if (res.ok) {
+      const data = await res.json() as { events?: EventItem[] };
+      if (data.events) setLocalEvents(data.events);
+    }
+    setEditOpen(false);
+    setCreateOpen(false);
+  };
 
   return (
     <section className="space-y-6">
@@ -60,12 +93,24 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
           title="SỰ KIỆN NỔI BẬT"
           description="THEO DÕI NHANH CÁC HOẠT ĐỘNG ĐANG CHẠY VÀ SẮP MỞ TRONG CỘNG ĐỒNG."
         />
-        <Button asChild size="sm" variant="outline" className="shrink-0 rounded-xl">
-          <Link href="/events">
-            Xem tất cả
-            <ArrowRight className="ml-1.5 size-3.5" />
-          </Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {canEdit && (
+            <Button
+              size="sm"
+              onClick={() => { setEditTarget(null); setCreateOpen(true); }}
+              className="h-8 gap-1.5 rounded-xl text-xs"
+            >
+              <Plus className="size-3.5" />
+              Thêm sự kiện
+            </Button>
+          )}
+          <Button asChild size="sm" variant="outline" className="shrink-0 rounded-xl">
+            <Link href="/events">
+              Xem tất cả
+              <ArrowRight className="ml-1.5 size-3.5" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -122,6 +167,27 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                   )}
                   onClick={() => setSelectedEvent(event)}
                 >
+                  {/* Admin inline edit controls */}
+                  {canEdit && (
+                    <div className="absolute right-2 top-2 z-50 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setEditTarget(event); setEditOpen(true); }}
+                        className="flex size-7 items-center justify-center rounded-lg bg-black/70 text-white backdrop-blur-sm transition hover:bg-primary/90"
+                        title="Chỉnh sửa"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); void handleDelete(event); }}
+                        className="flex size-7 items-center justify-center rounded-lg bg-black/70 text-white backdrop-blur-sm transition hover:bg-destructive/90"
+                        title="Xóa"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
                   <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
 
                   <div className="relative overflow-hidden rounded-t-[14px]">
@@ -143,6 +209,13 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                     <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-2 text-center leading-snug">
                       {event.title}
                     </h3>
+
+                    {event.created_by_name && (
+                      <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+                        <User className="size-3 shrink-0" />
+                        <span className="font-medium">{event.created_by_name}</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                       <CalendarDays className="size-3 shrink-0" />
@@ -233,6 +306,27 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
         open={Boolean(selectedEvent)}
         onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}
       />
+
+      {canEdit && (
+        <>
+          <EventFormDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            initialData={editTarget}
+            triggerLabel="Chỉnh sửa"
+            showTrigger={false}
+            onSaved={handleSaved}
+          />
+          <EventFormDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            initialData={null}
+            triggerLabel="Tạo mới"
+            showTrigger={false}
+            onSaved={handleSaved}
+          />
+        </>
+      )}
     </section>
   );
 }

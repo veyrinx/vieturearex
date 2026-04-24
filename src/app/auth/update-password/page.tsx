@@ -92,10 +92,25 @@ export default function UpdatePasswordPage() {
       return;
     }
 
-    toast.success("ĐỔI MẬT KHẨU THÀNH CÔNG! ĐANG CHUYỂN VÀO HỆ THỐNG.");
-    // After changing password, they are already authenticated, so go to admin.
+    toast.success("ĐỔI MẬT KHẨU THÀNH CÔNG!");
+    // Check user role to redirect correctly
+    const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"];
+    let destination = "/";
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", currentUser.id)
+          .maybeSingle() as { data: { role: string } | null };
+        if (profile?.role && ADMIN_ROLES.includes(profile.role)) {
+          destination = "/admin";
+        }
+      }
+    } catch { /* fall back to homepage */ }
     window.setTimeout(() => {
-      router.push("/admin");
+      router.push(destination);
     }, 1000);
   };
 

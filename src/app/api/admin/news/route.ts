@@ -11,6 +11,16 @@ import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
 import { sendPushNotification } from "@/lib/server/push-notify";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+async function getAdminName(): Promise<string> {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return "Admin";
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "Admin";
+  const { data: profile } = await supabase.from("users").select("display_name").eq("id", user.id).maybeSingle() as { data: { display_name: string | null } | null };
+  return profile?.display_name || user.email?.split("@")[0] || "Admin";
+}
 
 function createSlug(value: string) {
   return value
@@ -70,6 +80,7 @@ export async function POST(request: NextRequest) {
     const title = sanitizePlainText(parsed.data.title);
     const slug = parsed.data.slug?.trim() ? parsed.data.slug : createSlug(title);
 
+    const adminName = await getAdminName();
     const article = await createNews({
       ...parsed.data,
       title,
@@ -79,6 +90,7 @@ export async function POST(request: NextRequest) {
       category: sanitizePlainText(parsed.data.category ?? "ESPORTS"),
       created_at: parsed.data.created_at ?? new Date().toISOString(),
       status: parsed.data.status ?? "published",
+      created_by_name: adminName,
     });
     await logAdminActivity({
       action: "NEWS_CREATED",

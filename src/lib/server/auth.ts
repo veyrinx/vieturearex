@@ -48,6 +48,8 @@ export async function getAuthContext(): Promise<AuthContext> {
   };
 }
 
+const ADMIN_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
+
 export async function requireAdminAccess() {
   const auth = await getAuthContext();
 
@@ -55,8 +57,7 @@ export async function requireAdminAccess() {
     redirect("/auth/login?next=/admin");
   }
 
-  // Middleware đã check user có trong DB chưa, đây chỉ check session
-  if (!auth.role) {
-    redirect("/auth/login?error=google_not_allowed");
+  if (!ADMIN_ROLES.includes(auth.role)) {
+    redirect("/?error=unauthorized");
   }
 }

@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
 import type { AdminActivityLogItem } from "@/lib/types/content";
 
 const USER_ACTIONS = new Set(["USER_REGISTERED", "USER_COMMENTED"]);
-type TypeFilter = "all" | "admin" | "user";
+const VISITOR_ACTIONS = new Set(["VISITOR_PAGE_VIEW"]);
+type TypeFilter = "all" | "admin" | "user" | "visitor";
 
 function exportLogsCSV(logs: AdminActivityLogItem[]) {
   const headers = ["Thời gian", "Tài khoản", "Hành động", "Đối tượng", "ID đối tượng", "Chi tiết"];
@@ -55,6 +56,7 @@ const ACTION_COLORS: Record<string, string> = {
   EVENT_DELETED: "bg-red-500/10 text-red-500 border-red-500/20",
   COMMENT_APPROVED: "bg-green-500/10 text-green-500 border-green-500/20",
   COMMENT_REJECTED: "bg-red-500/10 text-red-500 border-red-500/20",
+  VISITOR_PAGE_VIEW: "bg-slate-500/10 text-slate-400 border-slate-500/20",
 };
 
 export function ActivityLogsPanel() {
@@ -63,21 +65,25 @@ export function ActivityLogsPanel() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
   const typeFiltered = typeFilter === "admin"
-    ? logs.filter((l) => !USER_ACTIONS.has(l.action))
+    ? logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action))
     : typeFilter === "user"
       ? logs.filter((l) => USER_ACTIONS.has(l.action))
-      : logs;
+      : typeFilter === "visitor"
+        ? logs.filter((l) => VISITOR_ACTIONS.has(l.action))
+        : logs;
 
   const filtered = search
     ? typeFiltered.filter((l) =>
         l.actor_email.toLowerCase().includes(search.toLowerCase()) ||
         l.action.toLowerCase().includes(search.toLowerCase()) ||
-        l.summary.toLowerCase().includes(search.toLowerCase())
+        l.summary.toLowerCase().includes(search.toLowerCase()) ||
+        (l.ip ?? "").includes(search)
       )
     : typeFiltered;
 
-  const adminCount = logs.filter((l) => !USER_ACTIONS.has(l.action)).length;
+  const adminCount = logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action)).length;
   const userCount = logs.filter((l) => USER_ACTIONS.has(l.action)).length;
+  const visitorCount = logs.filter((l) => VISITOR_ACTIONS.has(l.action)).length;
 
   return (
     <section className="space-y-4">
@@ -119,9 +125,10 @@ export function ActivityLogsPanel() {
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
-              { id: "all",   label: "Tất cả",      count: logs.length,  icon: ShieldCheck },
-              { id: "admin", label: "Quản trị",    count: adminCount,   icon: Shield },
-              { id: "user",  label: "Người dùng",  count: userCount,    icon: Users },
+              { id: "all",     label: "Tất cả",         count: logs.length,   icon: ShieldCheck },
+              { id: "admin",   label: "Quản trị",       count: adminCount,    icon: Shield },
+              { id: "user",    label: "Người dùng",     count: userCount,     icon: Users },
+              { id: "visitor", label: "Khách truy cập", count: visitorCount,  icon: Search },
             ] as const
           ).map(({ id, label, count, icon: Icon }) => (
             <button
@@ -189,7 +196,14 @@ export function ActivityLogsPanel() {
                             </p>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs">{item.actor_email}</td>
+                        <td className="px-4 py-3 text-xs">
+                          <div className="space-y-0.5">
+                            <p>{item.actor_email}</p>
+                            {item.ip && (
+                              <p className="font-mono text-[10px] text-muted-foreground">{item.ip}</p>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${badgeColor}`}>
                             <ShieldCheck className="size-3" />

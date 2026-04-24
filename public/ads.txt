@@ -1,0 +1,3 @@
+# Google AdSense
+# Thay YOUR_PUB_ID bằng Publisher ID thực của bạn (ví dụ: pub-1234567890123456)
+# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

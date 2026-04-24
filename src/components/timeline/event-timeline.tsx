@@ -8,6 +8,7 @@ import {
   isAfter,
   isBefore,
   startOfDay,
+  subDays,
 } from "date-fns";
 import { Search } from "lucide-react";
 import { DatePickerInput } from "@/components/common/date-picker-input";
@@ -25,6 +26,7 @@ import {
   formatVietnamMonthLabel,
   formatVietnamWeekdayShort,
   getVietnamCurrentMonthRange,
+  getVietnamDateKey,
   parseVietnamDateInputEnd,
   parseVietnamDateInputStart,
 } from "@/lib/utils/vietnam-time";
@@ -122,9 +124,12 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   const timelineWidth = days.length * dayWidth;
 
   const visibleEvents = useMemo(() => {
+    const cutoff = startOfDay(subDays(new Date(), 1));
     return events.filter((event) => {
       const eventStart = startOfDay(new Date(event.start_date));
       const eventEnd = endOfDay(new Date(event.end_date));
+      // Ẩn events đã kết thúc hơn 1 ngày trước
+      if (isBefore(eventEnd, cutoff)) return false;
       return !isAfter(eventStart, rangeEnd) && !isBefore(eventEnd, rangeStart);
     });
   }, [events, rangeEnd, rangeStart]);
@@ -220,7 +225,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
             <div className="timeline-track overflow-hidden rounded-2xl border border-border bg-card/70">
               <div className="flex border-b border-border">
                 {days.map((day) => {
-                  const isToday = day.toDateString() === new Date().toDateString();
+                  const isToday = getVietnamDateKey(day) === getVietnamDateKey(new Date());
                   return (
                     <div
                       key={day.toISOString()}

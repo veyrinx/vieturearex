@@ -26,8 +26,8 @@ type EventsGridProps = {
 
 const statusOptions: Array<{ value: EventStatus | "all"; label: string }> = [
   { value: "all", label: "TẤT CẢ TRẠNG THÁI" },
-  { value: "upcoming", label: "SẮP RA MẮT" },
-  { value: "active", label: "ĐANG HOẠT ĐỘNG" },
+  { value: "upcoming", label: "SẮP DIỄN RA" },
+  { value: "active", label: "ĐANG DIỄN RA" },
   { value: "expired", label: "ĐÃ KẾT THÚC" },
 ];
 

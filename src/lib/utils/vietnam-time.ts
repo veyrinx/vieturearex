@@ -38,7 +38,7 @@ export function formatVietnamDate(value: Date | string) {
 }
 
 export function formatVietnamDateTime(value: Date | string) {
-  return new Intl.DateTimeFormat("vi-VN", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: VIETNAM_TIMEZONE,
     day: "2-digit",
     month: "2-digit",
@@ -46,7 +46,16 @@ export function formatVietnamDateTime(value: Date | string) {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  }).formatToParts(new Date(value));
+
+  const day = parts.find((p) => p.type === "day")?.value ?? "01";
+  const month = parts.find((p) => p.type === "month")?.value ?? "01";
+  const year = parts.find((p) => p.type === "year")?.value ?? "2024";
+  const hour = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
+  const normalizedHour = hour === "24" ? "00" : hour;
+
+  return `${day}/${month}/${year} ${normalizedHour}:${minute}`;
 }
 
 export function formatVietnamTimeInput(value: Date | string) {

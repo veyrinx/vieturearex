@@ -42,6 +42,7 @@ export type NewsItem = {
   category: string;
   status: PublishStatus;
   created_at: string;
+  created_by_name: string | null;
 };
 
 export type NewsCommentItem = {
@@ -120,6 +121,7 @@ export type AdminActivityLogItem = {
   target_type: string;
   target_id?: string | null;
   summary: string;
+  ip?: string | null;
   created_at: string;
 };
 
@@ -135,4 +137,21 @@ export type DashboardStats = {
   events: number;
   news: number;
   views: number;
+};
+
+export type PublicUserProfile = {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  role: UserRole;
+  is_verified: boolean;
+  created_at: string;
+  bio?: string | null;
+  phone?: string | null;
+  facebook_url?: string | null;
+  tiktok_url?: string | null;
+  instagram_url?: string | null;
+  youtube_url?: string | null;
+  website_url?: string | null;
+  last_seen_at?: string | null;
 };

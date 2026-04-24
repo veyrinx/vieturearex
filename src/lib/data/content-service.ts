@@ -20,6 +20,7 @@ import type {
   GalleryItem,
   InvitedEmailItem,
   NewsItem,
+  PublicUserProfile,
   SiteSetting,
   UserItem,
   UserRole,
@@ -677,21 +678,35 @@ export async function updateUserIsVerified(id: string, is_verified: boolean): Pr
   return normalizeUserItem(data as Partial<UserItem>);
 }
 
-export type PublicUserProfile = {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  role: UserRole;
-  is_verified: boolean;
-  created_at: string;
-  bio?: string | null;
-  phone?: string | null;
-  facebook_url?: string | null;
-  tiktok_url?: string | null;
-  instagram_url?: string | null;
-  youtube_url?: string | null;
-  website_url?: string | null;
-};
+const ADMIN_PROFILE_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
+const PROFILE_SELECT = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at";
+
+export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
+  if (!hasSupabaseEnv) {
+    return getDemoStore().users
+      .filter((u) => ADMIN_PROFILE_ROLES.includes(u.role as UserRole))
+      .map((u) => ({
+        id: u.id,
+        display_name: u.display_name,
+        avatar_url: u.avatar_url ?? null,
+        role: u.role,
+        is_verified: u.is_verified ?? false,
+        created_at: u.created_at,
+      }));
+  }
+  const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+  const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+    .from("users")
+    .select(PROFILE_SELECT)
+    .in("role", ADMIN_PROFILE_ROLES)
+    .eq("is_banned", false)
+    .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null };
+  return (data ?? []).map((row) => ({
+    ...row,
+    role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
+    is_verified: Boolean(row.is_verified),
+  }));
+}
 
 export async function getUserPublicProfile(id: string): Promise<PublicUserProfile | null> {
   if (!hasSupabaseEnv) {
@@ -702,7 +717,7 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
   const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
     .from("users")
-    .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url")
+    .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at")
     .eq("id", id)
     .maybeSingle() as { data: PublicUserProfile | null };
   if (!data) return null;
@@ -895,7 +910,7 @@ export async function getActiveAdmins(): Promise<ActiveAdminItem[]> {
   return [...demo.activeAdmins].sort((a, b) => compareDesc(new Date(a.last_seen), new Date(b.last_seen)));
 }
 
-export async function markAdminActive(email: string): Promise<ActiveAdminItem[]> {
+export async function markAdminActive(email: string, userId?: string): Promise<ActiveAdminItem[]> {
   const demo = getDemoStore();
   const normalizedEmail = email.trim().toLowerCase();
   const now = new Date().toISOString();
@@ -913,6 +928,16 @@ export async function markAdminActive(email: string): Promise<ActiveAdminItem[]>
   }
 
   demo.activeAdmins = activeAdmins;
+
+  if (hasSupabaseEnv && userId) {
+    try {
+      const supabase = createAdminSupabaseClient();
+      if (supabase) {
+        await supabase.from("users").update({ last_seen_at: now } as never).eq("id", userId);
+      }
+    } catch { /* non-critical */ }
+  }
+
   return getActiveAdmins();
 }
 
@@ -1036,6 +1061,7 @@ export async function createAdminActivityLog(
       target_type: payload.target_type,
       target_id: payload.target_id ?? null,
       summary: payload.summary,
+      ip: payload.ip ?? null,
       created_at: payload.created_at ?? new Date().toISOString(),
     };
 
@@ -1076,8 +1102,24 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   ]);
 
   const viewsSetting = settings.find((item) => item.key === "analytics.views");
+  const dailySetting = settings.find((item) => item.key === "analytics.daily_views");
   const fallbackViews = users.reduce((acc, user) => acc + user.views, 0);
-  const views = viewsSetting ? Number(viewsSetting.value) : fallbackViews;
+
+  let views = viewsSetting ? Number(viewsSetting.value) : 0;
+
+  // Nếu counter bị reset (0 hoặc thiếu), tính từ daily_views
+  if (!views && dailySetting?.value) {
+    try {
+      const daily = JSON.parse(dailySetting.value) as Record<string, number>;
+      views = Object.values(daily).reduce((sum, v) => sum + (Number(v) || 0), 0);
+      // Đồng bộ lại counter từ daily nếu hợp lệ
+      if (views > 0) {
+        void updateSetting("analytics.views", String(views)).catch(() => null);
+      }
+    } catch { /* ignore */ }
+  }
+
+  if (!views) views = fallbackViews;
 
   return {
     users: users.length,

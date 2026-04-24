@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { siteConfig } from "@/lib/constants/site";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Users, Bell, MessageSquare, CalendarDays, MailCheck } from "lucide-react";
+import { Eye, EyeOff, Users, Bell, MessageSquare, CalendarDays } from "lucide-react";
 
 export default function UserRegisterPage() {
   const router = useRouter();
@@ -48,7 +49,22 @@ export default function UserRegisterPage() {
         toast.error(data.error ?? "Đăng ký thất bại.");
         return;
       }
-      toast.success("Tạo tài khoản thành công! Vui lòng kiểm tra email để xác thực.");
+      // Auto-login sau đăng ký (email_confirm: true đã active ngay)
+      const supabase = createClient();
+      if (supabase) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+        if (!signInError) {
+          toast.success("Tạo tài khoản thành công! Chào mừng bạn đến với Arex.");
+          router.push("/");
+          router.refresh();
+          return;
+        }
+      }
+      // Fallback nếu auto-login thất bại
+      toast.success("Tạo tài khoản thành công! Vui lòng đăng nhập.");
       setRegistered(true);
     } catch {
       toast.error("Lỗi mạng, vui lòng thử lại.");
@@ -65,17 +81,12 @@ export default function UserRegisterPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-md rounded-3xl border border-border/50 bg-card/90 p-10 text-center shadow-xl backdrop-blur-xl"
         >
-          <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl bg-green-500/10">
-            <MailCheck className="size-8 text-green-500" />
-          </div>
-          <h2 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground">Xác nhận email</h2>
+          <h2 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground">Đăng ký thành công</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Chúng tôi đã gửi email xác thực đến <strong className="text-foreground">{email}</strong>.
-            Vui lòng kiểm tra hộp thư và nhấn vào liên kết xác nhận để kích hoạt tài khoản.
+            Tài khoản của bạn đã được tạo. Vui lòng đăng nhập để tiếp tục.
           </p>
-          <p className="mt-3 text-xs text-muted-foreground">Không thấy email? Kiểm tra thư mục Spam/Junk.</p>
           <Link href="/login" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline dark:text-amber-400">
-            Về trang đăng nhập →
+            Đăng nhập ngay →
           </Link>
         </motion.div>
       </div>

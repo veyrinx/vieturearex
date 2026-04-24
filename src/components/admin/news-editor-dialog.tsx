@@ -93,7 +93,7 @@ type NewsEditorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: NewsItem | null;
-  triggerLabel: string;
+  triggerLabel?: string;
   showTrigger?: boolean;
   onSaved: () => Promise<void>;
 };

@@ -4,12 +4,12 @@ import type { EventStatus } from "@/lib/types/content";
 
 const statusMap: Record<EventStatus, { label: string; className: string }> = {
   active: {
-    label: "ĐANG HOẠT ĐỘNG",
+    label: "ĐANG DIỄN RA",
     className:
       "border-[#ffb45c] bg-[#ff9800] text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)] dark:border-[#ffb45c] dark:text-white dark:shadow-[0_4px_12px_rgba(0,0,0,0.38)]",
   },
   upcoming: {
-    label: "SẮP RA MẮT",
+    label: "SẮP DIỄN RA",
     className:
       "border-[#81c784] bg-[#4CAF50] text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)] dark:border-[#81c784] dark:text-white dark:shadow-[0_4px_12px_rgba(0,0,0,0.38)]",
   },

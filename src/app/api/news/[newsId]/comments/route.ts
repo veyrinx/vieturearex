@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { checkContent } from "@/lib/server/content-filter";
 
 const postSchema = z.object({
   content: z.string().min(1).max(500),
@@ -50,12 +51,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const displayName = profile?.display_name || user.email?.split("@")[0] || "Người dùng";
 
+  const verdict = checkContent(parsed.data.content);
+  if (verdict === "rejected") {
+    return NextResponse.json({ error: "Bình luận chứa nội dung vi phạm. Vui lòng chỉnh sửa lại." }, { status: 422 });
+  }
+
   const { error } = await (supabase.from("news_comments") as ReturnType<typeof supabase.from>).insert({
     news_id: params.newsId,
     user_id: user.id,
     display_name: displayName,
     content: parsed.data.content,
-    status: "pending",
+    status: verdict,
     parent_id: parsed.data.parent_id ?? null,
   } as never);
 
@@ -64,11 +70,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (code === "42P01" || code === "PGRST204") {
       return NextResponse.json({ error: "Hệ thống bình luận đang được thiết lập. Vui lòng thử lại sau." }, { status: 503 });
     }
-    // Never expose raw DB error messages to client
     return NextResponse.json({ error: "Không thể gửi bình luận. Vui lòng thử lại." }, { status: 500 });
   }
 
-  // Log user activity
   await logAdminActivity({
     action: "USER_COMMENTED",
     targetType: "NEWS",
@@ -76,5 +80,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     summary: `${displayName} (${user.email}) bình luận bài viết ${params.newsId}`,
   }).catch(() => {});
 
+  if (verdict === "pending") {
+    return NextResponse.json({ ok: true, pending: true, message: "Bình luận của bạn đang chờ kiểm duyệt." });
+  }
   return NextResponse.json({ ok: true });
 }

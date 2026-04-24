@@ -39,6 +39,6 @@ export async function POST(request: NextRequest) {
 
   const auth = await getAuthContext();
   const fallbackEmail = auth.role === "admin" ? "demo@arex.tech" : "editor@arex.tech";
-  const activeAdmins = await markAdminActive(auth.email ?? fallbackEmail);
+  const activeAdmins = await markAdminActive(auth.email ?? fallbackEmail, auth.userId ?? undefined);
   return NextResponse.json({ activeAdmins });
 }

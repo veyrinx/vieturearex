@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
-import { getSettings, updateSetting } from "@/lib/data/content-service";
+import { getSettings, updateSetting, createAdminActivityLog } from "@/lib/data/content-service";
 import { shouldLogVisitor, mergeVisitorEntry, VISITOR_IPS_KEY, type VisitorEntry } from "@/lib/server/visitor-logger";
 
 const VIEWS_KEY = "analytics.views";
@@ -48,6 +48,18 @@ export async function POST(request: NextRequest) {
     try { existing = JSON.parse(visitorRaw); } catch { existing = {}; }
     const updated = mergeVisitorEntry(existing, ip, path, ua);
     await updateSetting(VISITOR_IPS_KEY, JSON.stringify(updated));
+
+    // Ghi vào nhật ký hoạt động để admin theo dõi
+    try {
+      await createAdminActivityLog({
+        actor_email: "visitor@system",
+        action: "VISITOR_PAGE_VIEW",
+        target_type: "PAGE",
+        target_id: null,
+        summary: `Khách truy cập ${path} — IP: ${ip}`,
+        ip,
+      });
+    } catch { /* non-fatal */ }
   }
 
   return NextResponse.json({ ok: true });
