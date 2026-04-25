@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
@@ -24,7 +25,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ role: null, isAdmin: false, canEdit: false });
   }
 
-  const { data: profile } = await supabase
+  const adminClient = createAdminSupabaseClient();
+  const roleClient = (adminClient ?? supabase) as typeof supabase;
+
+  const { data: profile } = await roleClient
     .from("users")
     .select("role, is_banned")
     .eq("id", user.id)

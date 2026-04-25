@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import type { UserRole } from "@/lib/types/content";
 
@@ -29,16 +30,19 @@ export async function getAuthContext(): Promise<AuthContext> {
     return { userId: null, email: null, role: "user", bypass: false };
   }
 
-  const appRole = user.app_metadata?.role as UserRole | undefined;
-  if (appRole && VALID_ROLES.includes(appRole)) {
-    return { userId: user.id, email: user.email ?? null, role: appRole, bypass: false };
-  }
+  // Always fetch role from DB — never trust app_metadata which can be stale
+  const adminClient = createAdminSupabaseClient();
+  const roleClient = (adminClient ?? supabase) as typeof supabase;
 
-  const { data: profile } = (await supabase
+  const { data: profile } = (await roleClient
     .from("users")
-    .select("role")
+    .select("role, is_banned")
     .eq("id", user.id)
-    .maybeSingle()) as { data: { role: UserRole } | null };
+    .maybeSingle()) as { data: { role: UserRole; is_banned: boolean | null } | null };
+
+  if (profile?.is_banned) {
+    return { userId: user.id, email: user.email ?? null, role: "user", bypass: false };
+  }
 
   return {
     userId: user.id,
