@@ -7,6 +7,7 @@ import { getNewsBySlug } from "@/lib/data/content-service";
 import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-renderer";
 import { NewsToc } from "@/components/news/news-toc";
 import { NewsComments } from "@/components/news/news-comments";
+import { AwardViewPoints } from "@/components/news/award-view-points";
 import { siteConfig } from "@/lib/constants/site";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 
@@ -41,6 +42,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
   return (
     <div className="mx-auto max-w-7xl pt-6 md:pt-8 space-y-6">
+      <AwardViewPoints newsId={article.id} />
       <BreadcrumbJsonLd
         items={[
           { name: "Trang chủ", item: siteConfig.url },

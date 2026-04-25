@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar, Newspaper, Filter, X } from "lucide-react";
+import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -26,6 +26,10 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "event" | "news">("all");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [category, setCategory] = useState<string>("all");
 
   const doSearch = async (q: string) => {
     if (!q.trim()) { setResults([]); return; }
@@ -75,10 +79,31 @@ export default function SearchPage() {
     if (initialQuery) doSearch(initialQuery);
   }, [initialQuery]);
 
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    results.forEach((r) => { if (r.category) set.add(r.category); });
+    return Array.from(set).sort();
+  }, [results]);
+
   const filtered = useMemo(() => {
-    if (filter === "all") return results;
-    return results.filter((r) => r.type === filter);
-  }, [results, filter]);
+    return results.filter((r) => {
+      if (filter !== "all" && r.type !== filter) return false;
+      if (category !== "all" && r.category !== category) return false;
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        if (new Date(r.date) < from) return false;
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59);
+        if (new Date(r.date) > to) return false;
+      }
+      return true;
+    });
+  }, [results, filter, category, dateFrom, dateTo]);
+
+  const hasActiveAdvanced = Boolean(dateFrom || dateTo || category !== "all");
+  const clearAdvanced = () => { setDateFrom(""); setDateTo(""); setCategory("all"); };
 
   return (
     <div className="space-y-6 pt-6 md:pt-8">
@@ -120,12 +145,71 @@ export default function SearchPage() {
               {f === "all" ? "TẤT CẢ" : f === "event" ? "SỰ KIỆN" : "TIN TỨC"}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((v) => !v)}
+            className={`ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase transition ${
+              showAdvanced || hasActiveAdvanced
+                ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <SlidersHorizontal className="size-3.5" />
+            NÂNG CAO
+            {hasActiveAdvanced && <span className="ml-1 size-1.5 rounded-full bg-current" />}
+          </button>
           {results.length > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {filtered.length} kết quả
             </span>
           )}
         </div>
+
+        {showAdvanced && (
+          <div className="grid gap-3 rounded-xl border border-border/40 bg-muted/20 p-3 sm:grid-cols-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Từ ngày</label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 rounded-lg text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đến ngày</label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 rounded-lg text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Chuyên mục</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs text-foreground"
+              >
+                <option value="all">Tất cả</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            {hasActiveAdvanced && (
+              <button
+                type="button"
+                onClick={clearAdvanced}
+                className="col-span-full inline-flex items-center justify-center gap-1 self-end rounded-lg border border-border/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
+              >
+                <X className="size-3" />
+                Xóa bộ lọc
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Results */}
