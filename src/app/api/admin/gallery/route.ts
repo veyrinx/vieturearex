@@ -53,10 +53,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid gallery payload." }, { status: 400 });
   }
 
-  const item = await createGalleryItem({
-    image_url: parsed.data.image_url,
-    tag: sanitizePlainText(parsed.data.tag),
-  });
+  let item;
+  try {
+    item = await createGalleryItem({
+      image_url: parsed.data.image_url,
+      tag: sanitizePlainText(parsed.data.tag),
+    });
+  } catch {
+    return NextResponse.json({ error: "Không thể thêm ảnh gallery." }, { status: 500 });
+  }
 
   await logAdminActivity({
     action: "GALLERY_CREATED",
@@ -88,7 +93,11 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Missing gallery id." }, { status: 400 });
   }
 
-  await deleteGalleryItem(payload.id);
+  try {
+    await deleteGalleryItem(payload.id);
+  } catch {
+    return NextResponse.json({ error: "Không thể xóa ảnh gallery." }, { status: 500 });
+  }
   await logAdminActivity({
     action: "GALLERY_DELETED",
     targetType: "GALLERY",

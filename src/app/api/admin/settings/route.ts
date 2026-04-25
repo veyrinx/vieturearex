@@ -61,9 +61,8 @@ export async function PATCH(request: NextRequest) {
   try {
     setting = await updateSetting(sanitizedKey, sanitizePlainText(parsed.data.value));
   } catch (error) {
-    console.error("[settings PATCH] updateSetting failed:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update setting." },
+      { error: error instanceof Error ? error.message : "Không thể cập nhật cài đặt." },
       { status: 500 },
     );
   }

@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, CalendarDays, MessageSquare, Bell, Users, ShieldAlert } from "lucide-react";
 
-const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"];
 
 export default function UserLoginPage() {
   const router = useRouter();
@@ -54,19 +53,11 @@ export default function UserLoginPage() {
       return;
     }
 
-    // Check role to redirect correctly
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle() as { data: { role: string } | null };
-
-      const role = profile?.role ?? "user";
-
-      if (ADMIN_ROLES.includes(role)) {
-        // Admin-role users belong in the admin panel, not the public site
+    // Check role via server API (bypasses RLS)
+    const meRes = await fetch("/api/user/me", { credentials: "same-origin" }).catch(() => null);
+    if (meRes?.ok) {
+      const me = await meRes.json() as { role: string | null; isAdmin: boolean };
+      if (me.isAdmin) {
         toast.success("Chào mừng trở lại!");
         router.push("/admin");
         router.refresh();

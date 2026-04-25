@@ -49,11 +49,15 @@ export async function PATCH(request: NextRequest) {
   const sanitizedTitle = sanitizePlainText(parsed.data.title).slice(0, 200);
   const sanitizedContent = sanitizeRichText(parsed.data.content).slice(0, 50_000);
 
-  await Promise.all([
-    updateSetting(POPUP_ENABLED_KEY, String(parsed.data.enabled)),
-    updateSetting(POPUP_TITLE_KEY, sanitizedTitle),
-    updateSetting(POPUP_CONTENT_KEY, sanitizedContent),
-  ]);
+  try {
+    await Promise.all([
+      updateSetting(POPUP_ENABLED_KEY, String(parsed.data.enabled)),
+      updateSetting(POPUP_TITLE_KEY, sanitizedTitle),
+      updateSetting(POPUP_CONTENT_KEY, sanitizedContent),
+    ]);
+  } catch {
+    return NextResponse.json({ error: "Không thể lưu cài đặt popup." }, { status: 500 });
+  }
 
   await logAdminActivity({
     action: "SETTING_UPDATED",
