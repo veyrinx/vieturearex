@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl } from "@/lib/supabase/env";
@@ -11,7 +12,11 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-  const { data } = await supabase
+  // Bypass RLS via admin client when available
+  const adminClient = createAdminSupabaseClient();
+  const readClient = (adminClient ?? supabase) as typeof supabase;
+
+  const { data } = await readClient
     .from("login_logs")
     .select("id, ip, user_agent, method, created_at")
     .eq("user_id", user.id)

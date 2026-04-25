@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 
 const urlOrEmpty = z.string().max(300).optional().default("").transform((v) => {
@@ -43,17 +44,24 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-  const { data: profile } = await supabase
+  // Use admin client to bypass RLS — falls back to server client if not configured
+  const adminClient = createAdminSupabaseClient();
+  const roleClient = (adminClient ?? supabase) as typeof supabase;
+
+  const { data: profile } = await roleClient
     .from("users")
     .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
 
+  // Fallback role from app_metadata if DB query was blocked
+  const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
+
   return NextResponse.json({
     id: user.id,
     email: user.email,
     display_name: profile?.display_name ?? null,
-    role: profile?.role ?? "user",
+    role: profile?.role ?? appMetaRole ?? "user",
     views: profile?.views ?? 0,
     created_at: profile?.created_at ?? user.created_at,
     is_verified: profile?.is_verified ?? false,
@@ -99,7 +107,11 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Không có thông tin nào để cập nhật." }, { status: 400 });
   }
 
-  const { error } = await supabase.from("users").update(updates as never).eq("id", user.id);
+  // Use admin client to bypass RLS so users can update their own profile reliably
+  const adminClient = createAdminSupabaseClient();
+  const writeClient = (adminClient ?? supabase) as typeof supabase;
+
+  const { error } = await writeClient.from("users").update(updates as never).eq("id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
