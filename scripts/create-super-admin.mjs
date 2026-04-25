@@ -40,16 +40,19 @@ async function run() {
 
   if (existing) {
     console.log(`ℹ️   Auth user đã tồn tại (${existing.id})`);
-    // Update password
-    const { error: pwErr } = await supabase.auth.admin.updateUserById(existing.id, { password: PASSWORD });
+    const { error: pwErr } = await supabase.auth.admin.updateUserById(existing.id, {
+      password: PASSWORD,
+      app_metadata: { role: "super_admin" },
+    });
     if (pwErr) throw pwErr;
-    console.log("✅  Đã cập nhật mật khẩu");
+    console.log("✅  Đã cập nhật mật khẩu + app_metadata.role");
     userId = existing.id;
   } else {
     const { data, error } = await supabase.auth.admin.createUser({
       email: EMAIL,
       password: PASSWORD,
       email_confirm: true,
+      app_metadata: { role: "super_admin" },
     });
     if (error) throw error;
     userId = data.user.id;

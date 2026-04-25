@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ role: null, isAdmin: false, canEdit: false });
   }
 
-  const role = (profile?.role ?? null) as string | null;
+  const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
+  const role = profile?.role ?? (ADMIN_ROLES.has(appMetaRole ?? "") ? appMetaRole : null);
+
   return NextResponse.json(
     {
       role,

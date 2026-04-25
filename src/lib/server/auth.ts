@@ -30,7 +30,9 @@ export async function getAuthContext(): Promise<AuthContext> {
     return { userId: null, email: null, role: "user", bypass: false };
   }
 
-  // Always fetch role from DB — never trust app_metadata which can be stale
+  // 1. Prefer admin client (bypasses RLS) — needs SUPABASE_SERVICE_ROLE_KEY
+  // 2. Fall back to server client (subject to RLS — needs "Users read own profile" policy)
+  // 3. Last resort: app_metadata.role (set by Supabase triggers/admin API)
   const adminClient = createAdminSupabaseClient();
   const roleClient = (adminClient ?? supabase) as typeof supabase;
 
@@ -44,10 +46,16 @@ export async function getAuthContext(): Promise<AuthContext> {
     return { userId: user.id, email: user.email ?? null, role: "user", bypass: false };
   }
 
+  const appMetaRole = user.app_metadata?.role as UserRole | undefined;
+  const role: UserRole =
+    profile?.role ??
+    (appMetaRole && VALID_ROLES.includes(appMetaRole) ? appMetaRole : null) ??
+    "user";
+
   return {
     userId: user.id,
     email: user.email ?? null,
-    role: profile?.role ?? "user",
+    role,
     bypass: false,
   };
 }
