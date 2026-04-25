@@ -281,25 +281,36 @@ export async function createEvent(
   }
 
   const supabase = getSupabaseOrThrow();
-  const { data, error } = await supabase
+  const fullPayload = {
+    ...payload,
+    id: payload.id ?? crypto.randomUUID(),
+    thumbnail_url: payload.thumbnail_url ?? null,
+    link: payload.link ?? null,
+    status: payload.status,
+    view_count: 0,
+    created_by_name: payload.created_by_name ?? null,
+    updated_by_name: payload.created_by_name ?? null,
+  };
+  let result = await supabase
     .from("events")
-    .insert({
-      ...payload,
-      id: payload.id ?? crypto.randomUUID(),
-      thumbnail_url: payload.thumbnail_url ?? null,
-      link: payload.link ?? null,
-      status: payload.status,
-      view_count: 0,
-      created_by_name: payload.created_by_name ?? null,
-      updated_by_name: payload.created_by_name ?? null,
-    } as never)
+    .insert(fullPayload as never)
     .select("*")
     .single();
 
-  if (error) {
-    throw new Error(error.message);
+  // Retry without author/view columns if migration not run yet
+  if (result.error && /created_by_name|updated_by_name|view_count/.test(result.error.message ?? "")) {
+    const { created_by_name: _a, updated_by_name: _b, view_count: _c, ...safePayload } = fullPayload as Record<string, unknown>;
+    result = await supabase
+      .from("events")
+      .insert(safePayload as never)
+      .select("*")
+      .single();
   }
-  return mapEventRow(data);
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+  return mapEventRow(result.data);
 }
 
 export async function updateEvent(
@@ -405,18 +416,30 @@ export async function createNews(
   }
 
   const supabase = getSupabaseOrThrow();
-  const { data, error } = await supabase
+  const insertPayload = {
+    ...payload,
+    id: payload.id ?? crypto.randomUUID(),
+  };
+  let result = await supabase
     .from("news")
-    .insert({
-      ...payload,
-      id: payload.id ?? crypto.randomUUID(),
-    } as never)
+    .insert(insertPayload as never)
     .select("*")
     .single();
-  if (error) {
-    throw new Error(error.message);
+
+  // Retry without created_by_name if that column doesn't exist yet
+  if (result.error && /created_by_name/.test(result.error.message ?? "")) {
+    const { created_by_name: _omit, ...safePayload } = insertPayload as Record<string, unknown>;
+    result = await supabase
+      .from("news")
+      .insert(safePayload as never)
+      .select("*")
+      .single();
   }
-  return data;
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+  return result.data;
 }
 
 export async function updateNews(
@@ -679,7 +702,8 @@ export async function updateUserIsVerified(id: string, is_verified: boolean): Pr
 }
 
 const ADMIN_PROFILE_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
-const PROFILE_SELECT = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank";
+const PROFILE_SELECT_FULL = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank";
+const PROFILE_SELECT_SAFE = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url";
 
 export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
   if (!hasSupabaseEnv) {
@@ -696,14 +720,28 @@ export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
       }));
   }
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
-  const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+  const client = supabase as ReturnType<typeof getSupabaseReadClientOrThrow>;
+
+  // Try full select with show_in_team filter; fall back if migration columns missing
+  let result = await client
     .from("users")
-    .select(PROFILE_SELECT)
+    .select(PROFILE_SELECT_FULL)
     .in("role", ADMIN_PROFILE_ROLES)
     .eq("is_banned", false)
     .eq("show_in_team", true)
-    .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null };
-  return (data ?? []).map((row) => ({
+    .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null; error: { message?: string } | null };
+
+  if (result.error) {
+    // Migration columns not present — fall back to safe set, return all admins
+    result = await client
+      .from("users")
+      .select(PROFILE_SELECT_SAFE)
+      .in("role", ADMIN_PROFILE_ROLES)
+      .eq("is_banned", false)
+      .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null; error: { message?: string } | null };
+  }
+
+  return (result.data ?? []).map((row) => ({
     ...row,
     role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
     is_verified: Boolean(row.is_verified),
@@ -713,13 +751,25 @@ export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
 export async function getAllStaffProfiles(): Promise<PublicUserProfile[]> {
   if (!hasSupabaseEnv) return [];
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
-  const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+  const client = supabase as ReturnType<typeof getSupabaseReadClientOrThrow>;
+
+  let result = await client
     .from("users")
-    .select(PROFILE_SELECT)
+    .select(PROFILE_SELECT_FULL)
     .in("role", ADMIN_PROFILE_ROLES)
     .eq("is_banned", false)
-    .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null };
-  return (data ?? []).map((row) => ({
+    .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null; error: { message?: string } | null };
+
+  if (result.error) {
+    result = await client
+      .from("users")
+      .select(PROFILE_SELECT_SAFE)
+      .in("role", ADMIN_PROFILE_ROLES)
+      .eq("is_banned", false)
+      .order("created_at", { ascending: true }) as { data: PublicUserProfile[] | null; error: { message?: string } | null };
+  }
+
+  return (result.data ?? []).map((row) => ({
     ...row,
     role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
     is_verified: Boolean(row.is_verified),
@@ -733,14 +783,25 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
     return { id: user.id, display_name: user.display_name, avatar_url: user.avatar_url ?? null, role: user.role, is_verified: user.is_verified ?? false, created_at: user.created_at };
   }
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
-  const { data } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+  const client = supabase as ReturnType<typeof getSupabaseReadClientOrThrow>;
+
+  let result = await client
     .from("users")
     .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at")
     .eq("id", id)
-    .maybeSingle() as { data: PublicUserProfile | null };
-  if (!data) return null;
-  const role = VALID_USER_ROLES.includes(data.role as UserRole) ? (data.role as UserRole) : "user";
-  return { ...data, role, is_verified: Boolean(data.is_verified) };
+    .maybeSingle() as { data: PublicUserProfile | null; error: { message?: string } | null };
+
+  if (result.error) {
+    result = await client
+      .from("users")
+      .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url")
+      .eq("id", id)
+      .maybeSingle() as { data: PublicUserProfile | null; error: { message?: string } | null };
+  }
+
+  if (!result.data) return null;
+  const role = VALID_USER_ROLES.includes(result.data.role as UserRole) ? (result.data.role as UserRole) : "user";
+  return { ...result.data, role, is_verified: Boolean(result.data.is_verified) };
 }
 
 export async function resetUserPassword(id: string): Promise<{ tempPassword: string }> {
@@ -1093,22 +1154,33 @@ export async function createAdminActivityLog(
     .delete()
     .lt("created_at", new Date(Date.now() - ADMIN_ACTIVITY_RETENTION_MS).toISOString());
 
-  const { data, error } = await supabase
+  const fullLog = {
+    ...payload,
+    id: payload.id ?? crypto.randomUUID(),
+    created_at: payload.created_at ?? new Date().toISOString(),
+    target_id: payload.target_id ?? null,
+  };
+  let result = await supabase
     .from("admin_activity_logs")
-    .insert({
-      ...payload,
-      id: payload.id ?? crypto.randomUUID(),
-      created_at: payload.created_at ?? new Date().toISOString(),
-      target_id: payload.target_id ?? null,
-    } as never)
+    .insert(fullLog as never)
     .select("*")
     .single();
 
-  if (error) {
-    throw new Error(error.message);
+  // Retry without ip column if migration not run yet
+  if (result.error && /column "ip"|ip/i.test(result.error.message ?? "") && /column/i.test(result.error.message ?? "")) {
+    const { ip: _ip, ...safeLog } = fullLog as Record<string, unknown>;
+    result = await supabase
+      .from("admin_activity_logs")
+      .insert(safeLog as never)
+      .select("*")
+      .single();
   }
 
-  return data;
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
+  return result.data;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {

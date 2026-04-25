@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getClientIp } from "@/lib/server/get-client-ip";
 
@@ -81,8 +82,13 @@ export async function enforceAdminApiAuth(options?: { minimumRole?: MinimumRole 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Always verify against DB — never shortcut on app_metadata so role revocation takes effect immediately
-  const { data: profile } = (await supabase
+  // 1. Admin client (bypasses RLS) — preferred
+  // 2. Server client (subject to RLS — needs "Users read own profile" policy)
+  // 3. Last resort: app_metadata.role
+  const adminClient = createAdminSupabaseClient();
+  const roleClient = (adminClient ?? supabase) as typeof supabase;
+
+  const { data: profile } = (await roleClient
     .from("users")
     .select("role, is_banned")
     .eq("id", user.id)
@@ -92,7 +98,10 @@ export async function enforceAdminApiAuth(options?: { minimumRole?: MinimumRole 
     return NextResponse.json({ error: "Account suspended." }, { status: 403 });
   }
 
-  if (!matchesMinimumRole(profile?.role, minimumRole)) {
+  const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
+  const role = profile?.role ?? appMetaRole;
+
+  if (!matchesMinimumRole(role, minimumRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

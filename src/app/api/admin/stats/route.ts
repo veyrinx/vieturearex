@@ -42,16 +42,16 @@ export async function GET() {
     }
   }
 
-  // Points leaderboard (top 10)
+  // Points leaderboard (top 10) — gracefully handle missing migration columns
   type LeaderRow = { id: string; display_name: string | null; points: number; rank: string };
   let leaderboard: LeaderRow[] = [];
   if (supabase) {
-    const { data } = await supabase.from("users")
+    const { data, error } = await supabase.from("users")
       .select("id, display_name, points, rank")
       .order("points", { ascending: false })
       .limit(10)
-      .neq("role", "user") as { data: LeaderRow[] | null };
-    leaderboard = data ?? [];
+      .neq("role", "user") as { data: LeaderRow[] | null; error: { message?: string } | null };
+    if (!error && data) leaderboard = data;
   }
 
   return NextResponse.json({ chart, topNews, leaderboard });

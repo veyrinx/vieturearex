@@ -19,11 +19,19 @@ export async function POST(request: NextRequest) {
   const admin = createAdminSupabaseClient();
   if (!admin) return NextResponse.json({ error: "No DB." }, { status: 503 });
 
-  const { error } = await (admin as unknown as { from: (t: string) => { update: (v: Record<string, unknown>) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> } } })
+  const { error } = await (admin as unknown as { from: (t: string) => { update: (v: Record<string, unknown>) => { eq: (col: string, val: string) => Promise<{ error: { message: string; code?: string } | null }> } } })
     .from("users")
     .update({ show_in_team: parsed.data.show })
     .eq("id", parsed.data.userId);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.code === "42703" || error.message?.includes("show_in_team")) {
+      return NextResponse.json(
+        { error: "Cột show_in_team chưa có trong DB. Chạy migrate_points_team.sql trước." },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
