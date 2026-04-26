@@ -5,21 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import {
-  BadgeCheck, CalendarDays, Facebook, Globe,
-  Instagram, Youtube,
-} from "lucide-react";
+import { BadgeCheck, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PublicUserProfile, UserRole } from "@/lib/types/content";
-
-// TikTok icon
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.84 4.84 0 0 1-1.01-.07z" />
-    </svg>
-  );
-}
+import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 
 const ROLE_META: Record<string, { label: string; color: string; ring: string }> = {
   super_admin: {
@@ -107,38 +96,10 @@ export function TeamGrid({ profiles }: Props) {
           ? format(new Date(profile.created_at), "dd/MM/yyyy", { locale: vi })
           : null;
 
-        const socials = [
-          profile.facebook_url && {
-            href: profile.facebook_url,
-            icon: <Facebook className="size-4" />,
-            label: "Facebook",
-            color: "hover:text-[#1877F2] hover:border-[#1877F2]/30",
-          },
-          profile.tiktok_url && {
-            href: profile.tiktok_url,
-            icon: <TikTokIcon className="size-4" />,
-            label: "TikTok",
-            color: "hover:text-foreground hover:border-border",
-          },
-          profile.instagram_url && {
-            href: profile.instagram_url,
-            icon: <Instagram className="size-4" />,
-            label: "Instagram",
-            color: "hover:text-[#E1306C] hover:border-[#E1306C]/30",
-          },
-          profile.youtube_url && {
-            href: profile.youtube_url,
-            icon: <Youtube className="size-4" />,
-            label: "YouTube",
-            color: "hover:text-[#FF0000] hover:border-[#FF0000]/30",
-          },
-          profile.website_url && {
-            href: profile.website_url,
-            icon: <Globe className="size-4" />,
-            label: "Website",
-            color: "hover:text-primary hover:border-primary/30",
-          },
-        ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string; color: string }[];
+        const profileRecord = profile as unknown as Record<string, string | null | undefined>;
+        const socials = SOCIAL_DEFS
+          .map((s) => ({ ...s, href: profileRecord[s.field] }))
+          .filter((s): s is typeof s & { href: string } => Boolean(s.href));
 
         return (
           <Link
@@ -234,25 +195,28 @@ export function TeamGrid({ profiles }: Props) {
 
               {/* Socials */}
               {socials.length > 0 && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  {socials.map((s) => (
-                    <button
-                      key={s.href}
-                      type="button"
-                      aria-label={s.label}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.open(s.href, "_blank", "noopener,noreferrer");
-                      }}
-                      className={cn(
-                        "flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all",
-                        s.color,
-                      )}
-                    >
-                      {s.icon}
-                    </button>
-                  ))}
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                  {socials.map((s) => {
+                    const Icon = s.icon;
+                    return (
+                      <button
+                        key={s.field}
+                        type="button"
+                        aria-label={s.label}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(s.href, "_blank", "noopener,noreferrer");
+                        }}
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all",
+                          s.brand,
+                        )}
+                      >
+                        <Icon className="size-4" />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

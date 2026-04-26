@@ -153,6 +153,13 @@ export type PublicUserProfile = {
   instagram_url?: string | null;
   youtube_url?: string | null;
   website_url?: string | null;
+  discord_url?: string | null;
+  twitch_url?: string | null;
+  twitter_url?: string | null;
+  telegram_url?: string | null;
+  zalo_url?: string | null;
+  threads_url?: string | null;
+  github_url?: string | null;
   last_seen_at?: string | null;
   show_in_team?: boolean;
   points?: number;

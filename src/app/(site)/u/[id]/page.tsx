@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CalendarDays, BadgeCheck, ShieldCheck, Globe, Phone, Youtube, Instagram, Facebook,
-  Eye, Trophy, Sparkles,
+  CalendarDays, BadgeCheck, ShieldCheck, Phone, Eye, Trophy, Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getUserPublicProfile } from "@/lib/data/content-service";
 import { getRank } from "@/lib/constants/ranks";
+import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 import { cn } from "@/lib/utils";
 
 type Props = { params: { id: string } };
@@ -35,14 +35,6 @@ function avatarColor(id: string) {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.84 4.84 0 0 1-1.01-.07z"/>
-    </svg>
-  );
-}
-
 const ONLINE_MS = 90_000;
 
 export const revalidate = 120;
@@ -62,13 +54,10 @@ export default async function PublicProfilePage({ params }: Props) {
     ? Date.now() - new Date(profile.last_seen_at).getTime() < ONLINE_MS
     : false;
 
-  const socials = [
-    { icon: Facebook, label: "Facebook", url: profile.facebook_url, color: "hover:text-[#1877F2] hover:border-[#1877F2]/40" },
-    { icon: TikTokIcon, label: "TikTok", url: profile.tiktok_url, color: "hover:text-foreground hover:border-foreground/40" },
-    { icon: Instagram, label: "Instagram", url: profile.instagram_url, color: "hover:text-[#E1306C] hover:border-[#E1306C]/40" },
-    { icon: Youtube, label: "YouTube", url: profile.youtube_url, color: "hover:text-[#FF0000] hover:border-[#FF0000]/40" },
-    { icon: Globe, label: "Website", url: profile.website_url, color: "hover:text-primary hover:border-primary/40" },
-  ].filter((s) => s.url);
+  const profileRecord = profile as unknown as Record<string, string | null | undefined>;
+  const socials = SOCIAL_DEFS
+    .map((s) => ({ ...s, url: profileRecord[s.field] }))
+    .filter((s) => Boolean(s.url));
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-16">
@@ -150,15 +139,15 @@ export default async function PublicProfilePage({ params }: Props) {
                 Kênh liên kết
               </p>
               <div className="flex flex-wrap gap-2">
-                {socials.map(({ icon: Icon, label, url, color }) => (
+                {socials.map(({ icon: Icon, label, url, brand }) => (
                   <Link
                     key={label}
-                    href={url!}
+                    href={url as string}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition",
-                      color,
+                      brand,
                     )}
                   >
                     <Icon className="size-3.5" /> {label}

@@ -275,3 +275,12 @@ ALTER TABLE public.team_invites ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Admins manage team invites" ON public.team_invites;
 CREATE POLICY "Admins manage team invites" ON public.team_invites
   FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- More social links on user profile
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS discord_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS twitch_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS twitter_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS telegram_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS zalo_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS threads_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS github_url text;

@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
-  Smartphone, Camera, Trash2, Phone, Globe, Facebook, Instagram, Youtube,
+  Smartphone, Camera, Trash2, Phone,
 } from "lucide-react";
+import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,12 +49,7 @@ type ProfileData = {
   avatar_url?: string | null;
   bio?: string | null;
   phone?: string | null;
-  facebook_url?: string | null;
-  tiktok_url?: string | null;
-  instagram_url?: string | null;
-  youtube_url?: string | null;
-  website_url?: string | null;
-};
+} & Partial<Record<`${SocialKey}_url` & string, string | null>>;
 
 type TotpFactor = {
   id: string;
@@ -70,11 +66,9 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
-  const [facebookUrl, setFacebookUrl] = useState("");
-  const [tiktokUrl, setTiktokUrl] = useState("");
-  const [instagramUrl, setInstagramUrl] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [socials, setSocials] = useState<Record<string, string>>(
+    Object.fromEntries(SOCIAL_DEFS.map((s) => [s.field, ""])),
+  );
   const [saving, setSaving] = useState(false);
 
   // Avatar upload
@@ -105,11 +99,11 @@ export default function ProfilePage() {
         setDisplayName(data.display_name ?? "");
         setBio(data.bio ?? "");
         setPhone(data.phone ?? "");
-        setFacebookUrl(data.facebook_url ?? "");
-        setTiktokUrl(data.tiktok_url ?? "");
-        setInstagramUrl(data.instagram_url ?? "");
-        setYoutubeUrl(data.youtube_url ?? "");
-        setWebsiteUrl(data.website_url ?? "");
+        const next: Record<string, string> = {};
+        for (const s of SOCIAL_DEFS) {
+          next[s.field] = (data as Record<string, string | null | undefined>)[s.field] ?? "";
+        }
+        setSocials(next);
         setAvatarPreview(data.avatar_url ?? null);
         setLoading(false);
       })
@@ -188,15 +182,13 @@ export default function ProfilePage() {
     if (!displayName.trim()) { toast.error("Tên hiển thị không được để trống."); return; }
     setSaving(true);
     try {
+      const trimmedSocials: Record<string, string> = {};
+      for (const s of SOCIAL_DEFS) trimmedSocials[s.field] = (socials[s.field] ?? "").trim();
       const payload = {
         display_name: displayName.trim(),
         bio: bio.trim(),
         phone: phone.trim(),
-        facebook_url: facebookUrl.trim(),
-        tiktok_url: tiktokUrl.trim(),
-        instagram_url: instagramUrl.trim(),
-        youtube_url: youtubeUrl.trim(),
-        website_url: websiteUrl.trim(),
+        ...trimmedSocials,
       };
       const res = await fetch("/api/user/profile", {
         method: "PATCH",
@@ -306,11 +298,10 @@ export default function ProfilePage() {
     displayName.trim() !== (profile.display_name ?? "") ||
     bio.trim() !== (profile.bio ?? "") ||
     phone.trim() !== (profile.phone ?? "") ||
-    facebookUrl.trim() !== (profile.facebook_url ?? "") ||
-    tiktokUrl.trim() !== (profile.tiktok_url ?? "") ||
-    instagramUrl.trim() !== (profile.instagram_url ?? "") ||
-    youtubeUrl.trim() !== (profile.youtube_url ?? "") ||
-    websiteUrl.trim() !== (profile.website_url ?? "");
+    SOCIAL_DEFS.some((s) =>
+      (socials[s.field] ?? "").trim() !==
+      (((profile as Record<string, string | null | undefined>)[s.field]) ?? ""),
+    );
   const has2FA = mfaFactors.some((f) => f.status === "verified");
 
   return (
@@ -515,36 +506,22 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    <Facebook className="size-3.5" /> Facebook
-                  </label>
-                  <Input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." className="h-10" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    <Instagram className="size-3.5" /> Instagram
-                  </label>
-                  <Input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." className="h-10" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    <Youtube className="size-3.5" /> YouTube
-                  </label>
-                  <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/@..." className="h-10" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    TikTok
-                  </label>
-                  <Input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://tiktok.com/@..." className="h-10" />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    <Globe className="size-3.5" /> Website / Link cá nhân
-                  </label>
-                  <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://..." className="h-10" />
-                </div>
+                {SOCIAL_DEFS.map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={s.field} className="space-y-1.5">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        <Icon className="size-3.5" /> {s.label}
+                      </label>
+                      <Input
+                        value={socials[s.field] ?? ""}
+                        onChange={(e) => setSocials((prev) => ({ ...prev, [s.field]: e.target.value }))}
+                        placeholder={s.placeholder}
+                        className="h-10"
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
               <Button onClick={onSave} disabled={saving || !isDirty} className="w-full gap-2 rounded-xl sm:w-auto">
