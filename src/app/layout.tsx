@@ -124,9 +124,9 @@ export default function RootLayout({
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         </Script>
-        {/* Google AdSense - thay YOUR_ADSENSE_ID bằng ID thật */}
+        {/* Google AdSense */}
         <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXX"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6400047965945515"
           strategy="afterInteractive"
           crossOrigin="anonymous"
         />

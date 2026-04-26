@@ -229,3 +229,49 @@ CREATE POLICY "Admin manage all avatars" ON storage.objects
   FOR ALL USING (
     bucket_id = 'avatars' AND public.is_admin()
   );
+
+-- ============================================================
+-- Profile expansion: bio + phone + social links
+-- (idempotent — safe to re-run)
+-- ============================================================
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS bio text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS phone text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS facebook_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS tiktok_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS instagram_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS youtube_url text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS website_url text;
+
+-- ============================================================
+-- Team invites + IT approval flow (#6)
+-- ============================================================
+
+-- Extend role enum to include team_member
+ALTER TABLE IF EXISTS public.users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE IF EXISTS public.users ADD CONSTRAINT users_role_check
+  CHECK (role IN ('super_admin', 'admin', 'it', 'manager', 'support', 'team_member', 'user'));
+
+-- Approval status for team_member accounts
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_status text
+  CHECK (team_status IN ('pending', 'approved', 'rejected'));
+
+-- Team invite tokens
+CREATE TABLE IF NOT EXISTS public.team_invites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  token text NOT NULL UNIQUE,
+  label text,
+  created_by uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  used_by uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  used_at timestamptz,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS team_invites_token_idx ON public.team_invites(token);
+CREATE INDEX IF NOT EXISTS team_invites_used_at_idx ON public.team_invites(used_at);
+
+ALTER TABLE public.team_invites ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins manage team invites" ON public.team_invites;
+CREATE POLICY "Admins manage team invites" ON public.team_invites
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());

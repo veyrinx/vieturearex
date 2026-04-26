@@ -8,7 +8,6 @@ import {
   isAfter,
   isBefore,
   startOfDay,
-  subDays,
 } from "date-fns";
 import { Search } from "lucide-react";
 import { DatePickerInput } from "@/components/common/date-picker-input";
@@ -124,12 +123,15 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   const timelineWidth = days.length * dayWidth;
 
   const visibleEvents = useMemo(() => {
-    const cutoff = startOfDay(subDays(new Date(), 1));
+    // Ẩn events đã kết thúc hơn 24h trước (theo timestamp thực, không clamp giờ địa phương)
+    const cutoffMs = Date.now() - 24 * 60 * 60 * 1000;
     return events.filter((event) => {
+      const eventStartMs = new Date(event.start_date).getTime();
+      const eventEndMs = new Date(event.end_date).getTime();
+      if (Number.isNaN(eventStartMs) || Number.isNaN(eventEndMs)) return false;
+      if (eventEndMs < cutoffMs) return false;
       const eventStart = startOfDay(new Date(event.start_date));
       const eventEnd = endOfDay(new Date(event.end_date));
-      // Ẩn events đã kết thúc hơn 1 ngày trước
-      if (isBefore(eventEnd, cutoff)) return false;
       return !isAfter(eventStart, rangeEnd) && !isBefore(eventEnd, rangeStart);
     });
   }, [events, rangeEnd, rangeStart]);

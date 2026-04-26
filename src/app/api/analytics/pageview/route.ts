@@ -22,11 +22,7 @@ export async function POST(request: NextRequest) {
 
   const settings = await getSettings();
 
-  // Increment global counter
-  const current = Number(settings.find((s) => s.key === VIEWS_KEY)?.value ?? 0);
-  await updateSetting(VIEWS_KEY, String(current + 1));
-
-  // Update daily counter
+  // Update daily counter (source of truth for total views)
   const dailyRaw = settings.find((s) => s.key === DAILY_KEY)?.value ?? "{}";
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }
@@ -34,12 +30,24 @@ export async function POST(request: NextRequest) {
   const today = todayKey();
   daily[today] = (daily[today] ?? 0) + 1;
 
-  // Keep only last MAX_DAYS
-  const keys = Object.keys(daily).sort().slice(-MAX_DAYS);
-  const trimmed: Record<string, number> = {};
-  for (const k of keys) trimmed[k] = daily[k];
+  // Trim to last MAX_DAYS — accumulate dropped buckets into archived total so
+  // the long-range counter never resets when old days fall out of the window.
+  const sortedKeys = Object.keys(daily).sort();
+  let archivedDelta = 0;
+  if (sortedKeys.length > MAX_DAYS) {
+    const droppedKeys = sortedKeys.slice(0, sortedKeys.length - MAX_DAYS);
+    for (const k of droppedKeys) {
+      archivedDelta += Number(daily[k]) || 0;
+      delete daily[k];
+    }
+  }
 
-  await updateSetting(DAILY_KEY, JSON.stringify(trimmed));
+  await updateSetting(DAILY_KEY, JSON.stringify(daily));
+
+  if (archivedDelta > 0) {
+    const archivedCurrent = Number(settings.find((s) => s.key === VIEWS_KEY)?.value ?? 0);
+    await updateSetting(VIEWS_KEY, String(archivedCurrent + archivedDelta));
+  }
 
   // Log visitor IP
   if (shouldLogVisitor(ip)) {

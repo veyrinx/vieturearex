@@ -72,4 +72,6 @@ export async function requireAdminAccess() {
   if (!ADMIN_ROLES.includes(auth.role)) {
     redirect("/?error=unauthorized");
   }
+
+  return auth;
 }

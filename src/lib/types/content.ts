@@ -15,7 +15,7 @@ export type StreamItem = {
 
 export type PublishStatus = "draft" | "published";
 
-export type UserRole = "super_admin" | "admin" | "it" | "manager" | "support" | "user";
+export type UserRole = "super_admin" | "admin" | "it" | "manager" | "support" | "team_member" | "user";
 
 export type EventItem = {
   id: string;

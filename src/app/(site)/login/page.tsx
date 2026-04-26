@@ -218,6 +218,15 @@ export default function UserLoginPage() {
               >
                 {loading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP"}
               </Button>
+
+              <div className="flex justify-end">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-primary dark:hover:text-amber-400 transition-colors"
+                >
+                  Quên mật khẩu?
+                </Link>
+              </div>
             </form>
 
             <div className="mt-5 text-center text-sm text-muted-foreground">

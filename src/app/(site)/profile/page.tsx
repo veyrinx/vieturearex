@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
-  Smartphone, Camera, Trash2,
+  Smartphone, Camera, Trash2, Phone, Globe, Facebook, Instagram, Youtube,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,13 @@ type ProfileData = {
   created_at: string;
   is_verified?: boolean;
   avatar_url?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  facebook_url?: string | null;
+  tiktok_url?: string | null;
+  instagram_url?: string | null;
+  youtube_url?: string | null;
+  website_url?: string | null;
 };
 
 type TotpFactor = {
@@ -61,6 +68,13 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [phone, setPhone] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Avatar upload
@@ -89,6 +103,13 @@ export default function ProfilePage() {
         if (!data.email) { router.replace("/login"); return; }
         setProfile(data);
         setDisplayName(data.display_name ?? "");
+        setBio(data.bio ?? "");
+        setPhone(data.phone ?? "");
+        setFacebookUrl(data.facebook_url ?? "");
+        setTiktokUrl(data.tiktok_url ?? "");
+        setInstagramUrl(data.instagram_url ?? "");
+        setYoutubeUrl(data.youtube_url ?? "");
+        setWebsiteUrl(data.website_url ?? "");
         setAvatarPreview(data.avatar_url ?? null);
         setLoading(false);
       })
@@ -167,17 +188,27 @@ export default function ProfilePage() {
     if (!displayName.trim()) { toast.error("Tên hiển thị không được để trống."); return; }
     setSaving(true);
     try {
+      const payload = {
+        display_name: displayName.trim(),
+        bio: bio.trim(),
+        phone: phone.trim(),
+        facebook_url: facebookUrl.trim(),
+        tiktok_url: tiktokUrl.trim(),
+        instagram_url: instagramUrl.trim(),
+        youtube_url: youtubeUrl.trim(),
+        website_url: websiteUrl.trim(),
+      };
       const res = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ display_name: displayName.trim() }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         toast.error(err.error ?? "Không thể cập nhật hồ sơ."); return;
       }
       toast.success("Đã cập nhật hồ sơ.");
-      setProfile((prev) => prev ? { ...prev, display_name: displayName.trim() } : prev);
+      setProfile((prev) => prev ? { ...prev, ...payload } : prev);
     } catch { toast.error("Lỗi mạng, không thể lưu thay đổi."); }
     finally { setSaving(false); }
   };
@@ -271,7 +302,15 @@ export default function ProfilePage() {
   const joinDate = Number.isNaN(_joinDateObj.getTime()) ? "-" : _joinDateObj.toLocaleDateString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
-  const isDirty = displayName.trim() !== (profile.display_name ?? "");
+  const isDirty =
+    displayName.trim() !== (profile.display_name ?? "") ||
+    bio.trim() !== (profile.bio ?? "") ||
+    phone.trim() !== (profile.phone ?? "") ||
+    facebookUrl.trim() !== (profile.facebook_url ?? "") ||
+    tiktokUrl.trim() !== (profile.tiktok_url ?? "") ||
+    instagramUrl.trim() !== (profile.instagram_url ?? "") ||
+    youtubeUrl.trim() !== (profile.youtube_url ?? "") ||
+    websiteUrl.trim() !== (profile.website_url ?? "");
   const has2FA = mfaFactors.some((f) => f.status === "verified");
 
   return (
@@ -453,6 +492,61 @@ export default function ProfilePage() {
                   Email không thể thay đổi từ hồ sơ. Liên hệ quản trị viên nếu cần.
                 </p>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Giới thiệu
+                </label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value.slice(0, 300))}
+                  placeholder="Vài dòng về bạn..."
+                  rows={3}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <p className="text-[11px] text-muted-foreground">{bio.length}/300 ký tự</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  <Phone className="size-3.5" /> Số điện thoại
+                </label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0xxxxxxxxx" maxLength={20} className="h-10" />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Facebook className="size-3.5" /> Facebook
+                  </label>
+                  <Input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Instagram className="size-3.5" /> Instagram
+                  </label>
+                  <Input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Youtube className="size-3.5" /> YouTube
+                  </label>
+                  <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/@..." className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    TikTok
+                  </label>
+                  <Input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://tiktok.com/@..." className="h-10" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Globe className="size-3.5" /> Website / Link cá nhân
+                  </label>
+                  <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://..." className="h-10" />
+                </div>
+              </div>
+
               <Button onClick={onSave} disabled={saving || !isDirty} className="w-full gap-2 rounded-xl sm:w-auto">
                 <Save className="size-4" />
                 {saving ? "Đang lưu..." : "Lưu thay đổi"}

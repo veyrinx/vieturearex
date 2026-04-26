@@ -1195,20 +1195,19 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const dailySetting = settings.find((item) => item.key === "analytics.daily_views");
   const fallbackViews = users.reduce((acc, user) => acc + user.views, 0);
 
-  let views = viewsSetting ? Number(viewsSetting.value) : 0;
-
-  // Nếu counter bị reset (0 hoặc thiếu), tính từ daily_views
-  if (!views && dailySetting?.value) {
+  // Total = archived (out-of-window) + sum(daily_views still in window)
+  // analytics.views giờ chỉ chứa phần lịch sử đã rơi ra khỏi cửa sổ daily,
+  // nên cộng với daily_views ra tổng tích luỹ thật, không bị reset hằng tuần.
+  const archived = viewsSetting ? Number(viewsSetting.value) || 0 : 0;
+  let dailyTotal = 0;
+  if (dailySetting?.value) {
     try {
       const daily = JSON.parse(dailySetting.value) as Record<string, number>;
-      views = Object.values(daily).reduce((sum, v) => sum + (Number(v) || 0), 0);
-      // Đồng bộ lại counter từ daily nếu hợp lệ
-      if (views > 0) {
-        void updateSetting("analytics.views", String(views)).catch(() => null);
-      }
+      dailyTotal = Object.values(daily).reduce((sum, v) => sum + (Number(v) || 0), 0);
     } catch { /* ignore */ }
   }
 
+  let views = archived + dailyTotal;
   if (!views) views = fallbackViews;
 
   return {

@@ -118,18 +118,22 @@ export function getEventStatusInVietnam(
   endDate: Date | string,
   now: Date = new Date(),
 ): EventStatus {
-  const todayKey = getVietnamDateKey(now);
-  const startKey = getVietnamDateKey(startDate);
-  const endKey = getVietnamDateKey(endDate);
+  const nowMs = now.getTime();
+  const startMs = new Date(startDate).getTime();
+  const endMs = new Date(endDate).getTime();
 
-  if (todayKey < startKey) {
-    return "upcoming";
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+    // Fallback to date-key comparison when input is malformed
+    const todayKey = getVietnamDateKey(now);
+    const startKey = getVietnamDateKey(startDate);
+    const endKey = getVietnamDateKey(endDate);
+    if (todayKey < startKey) return "upcoming";
+    if (todayKey > endKey) return "expired";
+    return "active";
   }
 
-  if (todayKey > endKey) {
-    return "expired";
-  }
-
+  if (nowMs < startMs) return "upcoming";
+  if (nowMs > endMs) return "expired";
   return "active";
 }
 
@@ -180,13 +184,14 @@ export function formatVietnamDayNumber(value: Date | string) {
   }).format(new Date(value));
 }
 
-const WEEKDAY_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+const WEEKDAY_SHORT_BY_EN: Record<string, string> = {
+  Sun: "CN", Mon: "T2", Tue: "T3", Wed: "T4", Thu: "T5", Fri: "T6", Sat: "T7",
+};
 
 export function formatVietnamWeekdayShort(value: Date | string) {
-  const date = new Date(value);
-  // Tính ngày trong tuần theo giờ Việt Nam (UTC+7)
-  const utcMs = date.getTime() + date.getTimezoneOffset() * 60000;
-  const vnMs = utcMs + 7 * 3600000;
-  const dayOfWeek = new Date(vnMs).getDay(); // 0=CN, 1=T2...6=T7
-  return WEEKDAY_SHORT[dayOfWeek];
+  const en = new Intl.DateTimeFormat("en-US", {
+    timeZone: VIETNAM_TIMEZONE,
+    weekday: "short",
+  }).format(new Date(value));
+  return WEEKDAY_SHORT_BY_EN[en] ?? en;
 }
