@@ -787,7 +787,7 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
 
   let result = await client
     .from("users")
-    .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at")
+    .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, points, rank, views")
     .eq("id", id)
     .maybeSingle() as { data: PublicUserProfile | null; error: { message?: string } | null };
 

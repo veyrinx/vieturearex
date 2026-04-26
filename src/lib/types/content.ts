@@ -157,4 +157,5 @@ export type PublicUserProfile = {
   show_in_team?: boolean;
   points?: number;
   rank?: string;
+  views?: number;
 };

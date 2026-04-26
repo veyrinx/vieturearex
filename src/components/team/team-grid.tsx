@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
@@ -140,9 +141,11 @@ export function TeamGrid({ profiles }: Props) {
         ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string; color: string }[];
 
         return (
-          <article
+          <Link
             key={`${profile.id}-${tick}`}
-            className="group relative flex flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 dark:bg-card dark:border-border"
+            href={`/u/${profile.id}`}
+            aria-label={`Xem hồ sơ ${name}`}
+            className="group relative flex flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 hover:border-primary/40 dark:bg-card dark:border-border dark:hover:border-amber-400/40"
           >
             <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-10" />
 
@@ -233,19 +236,22 @@ export function TeamGrid({ profiles }: Props) {
               {socials.length > 0 && (
                 <div className="mt-2 flex items-center gap-1.5">
                   {socials.map((s) => (
-                    <a
+                    <button
                       key={s.href}
-                      href={s.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      type="button"
                       aria-label={s.label}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(s.href, "_blank", "noopener,noreferrer");
+                      }}
                       className={cn(
                         "flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all",
                         s.color,
                       )}
                     >
                       {s.icon}
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
@@ -258,7 +264,7 @@ export function TeamGrid({ profiles }: Props) {
                 </div>
               )}
             </div>
-          </article>
+          </Link>
         );
       })}
     </div>
