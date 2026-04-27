@@ -101,7 +101,7 @@ export default function ProfilePage() {
         setPhone(data.phone ?? "");
         const next: Record<string, string> = {};
         for (const s of SOCIAL_DEFS) {
-          next[s.field] = (data as Record<string, string | null | undefined>)[s.field] ?? "";
+          next[s.field] = (data as unknown as Record<string, string | null | undefined>)[s.field] ?? "";
         }
         setSocials(next);
         setAvatarPreview(data.avatar_url ?? null);
@@ -300,7 +300,7 @@ export default function ProfilePage() {
     phone.trim() !== (profile.phone ?? "") ||
     SOCIAL_DEFS.some((s) =>
       (socials[s.field] ?? "").trim() !==
-      (((profile as Record<string, string | null | undefined>)[s.field]) ?? ""),
+      (((profile as unknown as Record<string, string | null | undefined>)[s.field]) ?? ""),
     );
   const has2FA = mfaFactors.some((f) => f.status === "verified");
 
