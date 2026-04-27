@@ -15,6 +15,13 @@ export type StreamItem = {
 
 export type PublishStatus = "draft" | "published";
 
+export type GameProfile = {
+  game: string;       // GameKey or free-form when game === "other"
+  custom_label?: string; // populated when game === "other"
+  uid: string;
+  nickname?: string;
+};
+
 export type UserRole = "super_admin" | "admin" | "it" | "manager" | "support" | "team_member" | "user";
 
 export type EventItem = {
@@ -160,6 +167,7 @@ export type PublicUserProfile = {
   zalo_url?: string | null;
   threads_url?: string | null;
   github_url?: string | null;
+  game_profiles?: GameProfile[] | null;
   last_seen_at?: string | null;
   show_in_team?: boolean;
   points?: number;

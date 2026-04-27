@@ -284,3 +284,6 @@ ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS telegram_url text;
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS zalo_url text;
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS threads_url text;
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS github_url text;
+
+-- Game profiles (Free Fire UID, etc) on user profile
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS game_profiles jsonb NOT NULL DEFAULT '[]'::jsonb;

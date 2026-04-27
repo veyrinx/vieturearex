@@ -2,13 +2,15 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CalendarDays, BadgeCheck, ShieldCheck, Phone, Eye, Trophy, Sparkles,
+  CalendarDays, BadgeCheck, ShieldCheck, Phone, Eye, Trophy, Sparkles, Gamepad2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getUserPublicProfile } from "@/lib/data/content-service";
 import { getRank } from "@/lib/constants/ranks";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
+import { GAME_META_BY_KEY } from "@/lib/constants/game-list";
+import type { GameProfile } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 
 type Props = { params: { id: string } };
@@ -58,6 +60,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const socials = SOCIAL_DEFS
     .map((s) => ({ ...s, url: profileRecord[s.field] }))
     .filter((s) => Boolean(s.url));
+  const games = (Array.isArray(profile.game_profiles) ? profile.game_profiles : []) as GameProfile[];
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-16">
@@ -129,6 +132,35 @@ export default async function PublicProfilePage({ params }: Props) {
             <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5">
               <Phone className="size-4 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">{profile.phone}</span>
+            </div>
+          )}
+
+          {/* Games */}
+          {games.length > 0 && (
+            <div className="mt-5">
+              <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <Gamepad2 className="size-3" /> Game đang chơi
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {games.map((g, i) => {
+                  const meta = GAME_META_BY_KEY[g.game];
+                  const label = meta?.label ?? g.custom_label ?? g.game;
+                  const short = meta?.short ?? (g.custom_label ?? g.game).slice(0, 3).toUpperCase();
+                  return (
+                    <div key={`${g.game}-${i}`} className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3 py-2">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 text-[11px] font-black text-primary dark:from-amber-400/20 dark:to-amber-400/5 dark:text-amber-400">
+                        {short}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-foreground">{label}</p>
+                        <p className="truncate font-mono text-[11px] text-muted-foreground">
+                          {g.nickname ? `${g.nickname} · ` : ""}{g.uid}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

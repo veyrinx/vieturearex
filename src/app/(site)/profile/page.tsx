@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
-  Smartphone, Camera, Trash2, Phone,
+  Smartphone, Camera, Trash2, Phone, Gamepad2, Plus,
 } from "lucide-react";
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
+import { GAME_LIST } from "@/lib/constants/game-list";
+import type { GameProfile } from "@/lib/types/content";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +51,7 @@ type ProfileData = {
   avatar_url?: string | null;
   bio?: string | null;
   phone?: string | null;
+  game_profiles?: GameProfile[];
 } & Partial<Record<`${SocialKey}_url` & string, string | null>>;
 
 type TotpFactor = {
@@ -69,6 +72,7 @@ export default function ProfilePage() {
   const [socials, setSocials] = useState<Record<string, string>>(
     Object.fromEntries(SOCIAL_DEFS.map((s) => [s.field, ""])),
   );
+  const [games, setGames] = useState<GameProfile[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Avatar upload
@@ -104,6 +108,7 @@ export default function ProfilePage() {
           next[s.field] = (data as unknown as Record<string, string | null | undefined>)[s.field] ?? "";
         }
         setSocials(next);
+        setGames(Array.isArray(data.game_profiles) ? data.game_profiles : []);
         setAvatarPreview(data.avatar_url ?? null);
         setLoading(false);
       })
@@ -184,10 +189,19 @@ export default function ProfilePage() {
     try {
       const trimmedSocials: Record<string, string> = {};
       for (const s of SOCIAL_DEFS) trimmedSocials[s.field] = (socials[s.field] ?? "").trim();
+      const cleanGames = games
+        .map((g) => ({
+          game: g.game.trim(),
+          custom_label: g.custom_label?.trim() || undefined,
+          uid: g.uid.trim(),
+          nickname: g.nickname?.trim() || undefined,
+        }))
+        .filter((g) => g.game && g.uid);
       const payload = {
         display_name: displayName.trim(),
         bio: bio.trim(),
         phone: phone.trim(),
+        game_profiles: cleanGames,
         ...trimmedSocials,
       };
       const res = await fetch("/api/user/profile", {
@@ -301,7 +315,8 @@ export default function ProfilePage() {
     SOCIAL_DEFS.some((s) =>
       (socials[s.field] ?? "").trim() !==
       (((profile as unknown as Record<string, string | null | undefined>)[s.field]) ?? ""),
-    );
+    ) ||
+    JSON.stringify(games) !== JSON.stringify(profile.game_profiles ?? []);
   const has2FA = mfaFactors.some((f) => f.status === "verified");
 
   return (
@@ -522,6 +537,93 @@ export default function ProfilePage() {
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  <Gamepad2 className="size-3.5" /> ID game đang chơi
+                </label>
+                <div className="space-y-2">
+                  {games.map((g, idx) => {
+                    const isOther = g.game === "other";
+                    return (
+                      <div key={idx} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-2.5 sm:grid-cols-[140px,1fr,1fr,auto]">
+                        <select
+                          value={g.game}
+                          onChange={(e) => {
+                            const next = [...games];
+                            next[idx] = { ...next[idx], game: e.target.value };
+                            setGames(next);
+                          }}
+                          className="h-9 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          {GAME_LIST.map((opt) => (
+                            <option key={opt.key} value={opt.key}>{opt.label}</option>
+                          ))}
+                        </select>
+                        {isOther ? (
+                          <Input
+                            value={g.custom_label ?? ""}
+                            onChange={(e) => {
+                              const next = [...games];
+                              next[idx] = { ...next[idx], custom_label: e.target.value };
+                              setGames(next);
+                            }}
+                            placeholder="Tên game"
+                            maxLength={40}
+                            className="h-9"
+                          />
+                        ) : (
+                          <Input
+                            value={g.nickname ?? ""}
+                            onChange={(e) => {
+                              const next = [...games];
+                              next[idx] = { ...next[idx], nickname: e.target.value };
+                              setGames(next);
+                            }}
+                            placeholder="Nickname trong game (tuỳ chọn)"
+                            maxLength={60}
+                            className="h-9"
+                          />
+                        )}
+                        <Input
+                          value={g.uid}
+                          onChange={(e) => {
+                            const next = [...games];
+                            next[idx] = { ...next[idx], uid: e.target.value };
+                            setGames(next);
+                          }}
+                          placeholder={GAME_LIST.find((x) => x.key === g.game)?.hint ?? "ID game"}
+                          maxLength={60}
+                          className="h-9"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setGames(games.filter((_, i) => i !== idx))}
+                          className="h-9 gap-1 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {games.length < 20 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setGames([...games, { game: "free_fire", uid: "" }])}
+                      className="gap-1.5 rounded-xl text-xs"
+                    >
+                      <Plus className="size-3.5" /> Thêm game
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  ID hiển thị công khai trên hồ sơ /u/{profile.id.slice(0, 8)}…. Tối đa 20 game.
+                </p>
               </div>
 
               <Button onClick={onSave} disabled={saving || !isDirty} className="w-full gap-2 rounded-xl sm:w-auto">

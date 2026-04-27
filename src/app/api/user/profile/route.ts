@@ -9,10 +9,18 @@ const urlOrEmpty = z.string().max(300).optional().default("").transform((v) => {
   try { new URL(v); return v; } catch { return null; }
 });
 
+const gameProfileSchema = z.object({
+  game: z.string().min(1).max(40),
+  custom_label: z.string().max(40).optional(),
+  uid: z.string().min(1).max(60),
+  nickname: z.string().max(60).optional(),
+});
+
 const schema = z.object({
   display_name: z.string().min(1).max(80).optional(),
   bio: z.string().max(300).optional(),
   phone: z.string().max(20).optional(),
+  game_profiles: z.array(gameProfileSchema).max(20).optional(),
   avatar_url: urlOrEmpty,
   facebook_url: urlOrEmpty,
   tiktok_url: urlOrEmpty,
@@ -49,6 +57,7 @@ type ProfileRow = {
   zalo_url?: string | null;
   threads_url?: string | null;
   github_url?: string | null;
+  game_profiles?: unknown;
 };
 
 export async function GET() {
@@ -64,7 +73,7 @@ export async function GET() {
 
   const { data: profile } = await roleClient
     .from("users")
-    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url")
+    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
 
@@ -94,6 +103,7 @@ export async function GET() {
     zalo_url: profile?.zalo_url ?? null,
     threads_url: profile?.threads_url ?? null,
     github_url: profile?.github_url ?? null,
+    game_profiles: Array.isArray(profile?.game_profiles) ? profile?.game_profiles : [],
   });
 }
 
@@ -111,12 +121,22 @@ export async function PATCH(request: NextRequest) {
   const parsed = schema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
 
-  const updates: Record<string, string | null> = {};
+  const updates: Record<string, unknown> = {};
   const d = parsed.data;
 
   if (d.display_name !== undefined) updates.display_name = d.display_name || null;
   if (d.bio !== undefined) updates.bio = d.bio || null;
   if (d.phone !== undefined) updates.phone = d.phone || null;
+  if (d.game_profiles !== undefined) {
+    updates.game_profiles = d.game_profiles
+      .map((g) => ({
+        game: g.game.trim(),
+        custom_label: g.custom_label?.trim() || undefined,
+        uid: g.uid.trim(),
+        nickname: g.nickname?.trim() || undefined,
+      }))
+      .filter((g) => g.game && g.uid);
+  }
   if (d.avatar_url !== undefined) updates.avatar_url = d.avatar_url;
   if (d.facebook_url !== undefined) updates.facebook_url = d.facebook_url;
   if (d.tiktok_url !== undefined) updates.tiktok_url = d.tiktok_url;
