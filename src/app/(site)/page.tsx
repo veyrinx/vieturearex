@@ -62,7 +62,7 @@ export default async function HomePage() {
   const liveAndUpcomingStreams = streams.filter((s) => s.status === "live" || s.status === "upcoming");
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-20 md:space-y-24 pb-12">
       {firstHeroImage && (
         // eslint-disable-next-line @next/next/no-head-element
         <link rel="preload" as="image" href={firstHeroImage} fetchPriority="high" />
@@ -104,7 +104,7 @@ export default async function HomePage() {
 
       <NewsTicker news={latestNews.slice(0, 8)} />
 
-      <div className="overflow-x-clip">
+      <div className="space-y-20 overflow-x-clip md:space-y-24">
         <FeaturedEvents events={latestEvents} />
         {liveAndUpcomingStreams.length > 0 && (
           <LivestreamPreview streams={liveAndUpcomingStreams} />
