@@ -713,6 +713,31 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </div>
         </Card>
         <SaveRow onSave={() => save(["ads.google_adsense_id", "ads.slot_header", "ads.slot_sidebar", "ads.slot_article"], "ads")} saving={saving === "ads"} />
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={LayoutGrid} title="Banner trang chủ (2 bên hero)" desc="Ảnh + link, hiển thị ở mép trái/phải khi màn hình ≥ 1280px" />
+          </div>
+          <Field label="Ảnh banner trái" hint="URL ảnh, tỉ lệ dọc 3:5 đẹp nhất" icon={LayoutGrid}>
+            <Input value={v("home.ads.left.image_url")} onChange={(e) => set("home.ads.left.image_url", e.target.value)} placeholder="https://..." />
+          </Field>
+          <Field label="Link banner trái" hint="URL khi bấm vào ảnh" icon={LayoutGrid}>
+            <Input value={v("home.ads.left.link_url")} onChange={(e) => set("home.ads.left.link_url", e.target.value)} placeholder="https://..." />
+          </Field>
+          <Field label="Ảnh banner phải" hint="URL ảnh, tỉ lệ dọc 3:5 đẹp nhất" icon={LayoutGrid}>
+            <Input value={v("home.ads.right.image_url")} onChange={(e) => set("home.ads.right.image_url", e.target.value)} placeholder="https://..." />
+          </Field>
+          <Field label="Link banner phải" hint="URL khi bấm vào ảnh" icon={LayoutGrid}>
+            <Input value={v("home.ads.right.link_url")} onChange={(e) => set("home.ads.right.link_url", e.target.value)} placeholder="https://..." />
+          </Field>
+        </Card>
+        <SaveRow
+          onSave={() => save(
+            ["home.ads.left.image_url", "home.ads.left.link_url", "home.ads.right.image_url", "home.ads.right.link_url"],
+            "home-ads",
+          )}
+          saving={saving === "home-ads"}
+        />
       </div>
     ),
 

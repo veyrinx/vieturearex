@@ -16,10 +16,12 @@ import {
 } from "@/lib/data/content-service";
 import { getStreams } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
+import { SideAds } from "@/components/home/side-ads";
 import {
   buildSettingsMap,
   resolveCommunityStats,
   resolveHeroSliderSettings,
+  resolveHomeSideAds,
   resolveSocialLinks,
 } from "@/lib/utils/site-settings";
 
@@ -42,6 +44,7 @@ export default async function HomePage() {
   const settingsMap = buildSettingsMap(settings);
   const socialLinks = resolveSocialLinks(settingsMap);
   const heroSlider = resolveHeroSliderSettings(settingsMap);
+  const sideAds = resolveHomeSideAds(settingsMap);
   const communityStats = resolveCommunityStats(settingsMap);
 
   const firstHeroImage = heroSlider.desktopImages[0];
@@ -63,6 +66,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-20 md:space-y-24 pb-12">
+      <SideAds left={sideAds.left} right={sideAds.right} />
       {firstHeroImage && (
         // eslint-disable-next-line @next/next/no-head-element
         <link rel="preload" as="image" href={firstHeroImage} fetchPriority="high" />

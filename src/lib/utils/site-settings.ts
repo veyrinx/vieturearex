@@ -159,6 +159,19 @@ export function resolveCommunityStats(settingsMap: Record<string, string>) {
   };
 }
 
+export function resolveHomeSideAds(settingsMap: Record<string, string>) {
+  return {
+    left: {
+      image: settingsMap["home.ads.left.image_url"] || null,
+      link: settingsMap["home.ads.left.link_url"] || null,
+    },
+    right: {
+      image: settingsMap["home.ads.right.image_url"] || null,
+      link: settingsMap["home.ads.right.link_url"] || null,
+    },
+  };
+}
+
 export function resolveHeroSliderSettings(settingsMap: Record<string, string>) {
   const desktopImages =
     parseSliderImages(settingsMap["home.background.desktop_urls"]).length > 0
