@@ -1,15 +1,15 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck } from "lucide-react";
 
-export default function TeamJoinPage({ params }: { params: Promise<{ token: string }> }) {
+export default function TeamJoinPage({ params }: { params: { token: string } }) {
   const router = useRouter();
-  const { token } = use(params);
+  const { token } = params;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
