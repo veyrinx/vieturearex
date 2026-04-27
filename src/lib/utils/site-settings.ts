@@ -159,6 +159,14 @@ export function resolveCommunityStats(settingsMap: Record<string, string>) {
   };
 }
 
+export function resolveEventsBackdrop(settingsMap: Record<string, string>) {
+  return {
+    imageUrl: settingsMap["home.events_bg.image_url"] || "",
+    videoUrl: settingsMap["home.events_bg.video_url"] || "",
+    caption: settingsMap["home.events_bg.caption"] || "",
+  };
+}
+
 export function resolveHomeSideAds(settingsMap: Record<string, string>) {
   return {
     left: {

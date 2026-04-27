@@ -9,11 +9,15 @@ import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
 const POPUP_ENABLED_KEY = "popup.enabled";
 const POPUP_CONTENT_KEY = "popup.content";
 const POPUP_TITLE_KEY = "popup.title";
+const POPUP_IMAGE_URL_KEY = "popup.image_url";
+const POPUP_LINK_URL_KEY = "popup.link_url";
 
 const popupSchema = z.object({
   enabled: z.boolean(),
   title: z.string().max(200),
   content: z.string().max(50000),
+  image_url: z.string().max(500).optional().default(""),
+  link_url: z.string().max(500).optional().default(""),
 });
 
 export async function GET(request: NextRequest) {
@@ -30,6 +34,8 @@ export async function GET(request: NextRequest) {
     enabled: map[POPUP_ENABLED_KEY] === "true",
     title: map[POPUP_TITLE_KEY] ?? "",
     content: map[POPUP_CONTENT_KEY] ?? "",
+    image_url: map[POPUP_IMAGE_URL_KEY] ?? "",
+    link_url: map[POPUP_LINK_URL_KEY] ?? "",
   });
 }
 
@@ -54,6 +60,8 @@ export async function PATCH(request: NextRequest) {
       updateSetting(POPUP_ENABLED_KEY, String(parsed.data.enabled)),
       updateSetting(POPUP_TITLE_KEY, sanitizedTitle),
       updateSetting(POPUP_CONTENT_KEY, sanitizedContent),
+      updateSetting(POPUP_IMAGE_URL_KEY, (parsed.data.image_url ?? "").trim().slice(0, 500)),
+      updateSetting(POPUP_LINK_URL_KEY, (parsed.data.link_url ?? "").trim().slice(0, 500)),
     ]);
   } catch {
     return NextResponse.json({ error: "Không thể lưu cài đặt popup." }, { status: 500 });

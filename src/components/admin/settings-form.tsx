@@ -519,9 +519,45 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               ))}
             </div>
           </div>
+
+          {/* Background phía sau khối Sự kiện */}
+          <div className="mt-6 border-t border-border pt-5 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Background khối &quot;Sự kiện&quot; (Việt Nam, ví dụ event đang chạy…)
+            </p>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">URL ảnh nền</label>
+              <Input
+                value={v("home.events_bg.image_url")}
+                onChange={(e) => set("home.events_bg.image_url", e.target.value)}
+                placeholder="https://... (jpg/png/webp)"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">URL video nền (mp4) — tuỳ chọn, ưu tiên hơn ảnh</label>
+              <Input
+                value={v("home.events_bg.video_url")}
+                onChange={(e) => set("home.events_bg.video_url", e.target.value)}
+                placeholder="https://....mp4"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Caption ngắn (tuỳ chọn)</label>
+              <Input
+                value={v("home.events_bg.caption")}
+                onChange={(e) => set("home.events_bg.caption", e.target.value)}
+                placeholder="VD: SỰ KIỆN HOT TUẦN NÀY"
+                maxLength={80}
+              />
+            </div>
+          </div>
         </div>
         <SaveRow
-          onSave={() => save(["home.hero.title", "home.background.transition_effect", "home.background.interval_seconds", "home.background.transition_seconds", "home.background.desktop_urls", "home.background.mobile_urls"], "home")}
+          onSave={() => save([
+            "home.hero.title", "home.background.transition_effect", "home.background.interval_seconds",
+            "home.background.transition_seconds", "home.background.desktop_urls", "home.background.mobile_urls",
+            "home.events_bg.image_url", "home.events_bg.video_url", "home.events_bg.caption",
+          ], "home")}
           saving={saving === "home"}
         />
       </div>

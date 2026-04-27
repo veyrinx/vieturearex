@@ -20,6 +20,7 @@ import { SideAds } from "@/components/home/side-ads";
 import {
   buildSettingsMap,
   resolveCommunityStats,
+  resolveEventsBackdrop,
   resolveHeroSliderSettings,
   resolveHomeSideAds,
   resolveSocialLinks,
@@ -45,6 +46,7 @@ export default async function HomePage() {
   const socialLinks = resolveSocialLinks(settingsMap);
   const heroSlider = resolveHeroSliderSettings(settingsMap);
   const sideAds = resolveHomeSideAds(settingsMap);
+  const eventsBackdrop = resolveEventsBackdrop(settingsMap);
   const communityStats = resolveCommunityStats(settingsMap);
 
   const firstHeroImage = heroSlider.desktopImages[0];
@@ -55,6 +57,8 @@ export default async function HomePage() {
   const popupEnabled = settingsMap["popup.enabled"] === "true";
   const popupTitle = settingsMap["popup.title"] ?? "";
   const popupContent = settingsMap["popup.content"] ?? "";
+  const popupImageUrl = settingsMap["popup.image_url"] ?? "";
+  const popupLinkUrl = settingsMap["popup.link_url"] ?? "";
   const heroTitle = settingsMap["home.hero.title"];
   const activeEvent = latestEvents.find((e) => e.status === "active");
 
@@ -71,8 +75,13 @@ export default async function HomePage() {
         // eslint-disable-next-line @next/next/no-head-element
         <link rel="preload" as="image" href={firstHeroImage} fetchPriority="high" />
       )}
-      {popupEnabled && popupContent && (
-        <AnnouncementPopup title={popupTitle} content={popupContent} />
+      {popupEnabled && (popupContent || popupImageUrl) && (
+        <AnnouncementPopup
+          title={popupTitle}
+          content={popupContent}
+          imageUrl={popupImageUrl}
+          linkUrl={popupLinkUrl}
+        />
       )}
       <OrganizationJsonLd
         type="Organization"
@@ -109,7 +118,39 @@ export default async function HomePage() {
       <NewsTicker news={latestNews.slice(0, 8)} />
 
       <div className="space-y-20 overflow-x-clip md:space-y-24">
-        <FeaturedEvents events={latestEvents} />
+        <div className="relative isolate">
+          {(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
+            <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
+              {eventsBackdrop.videoUrl ? (
+                <video
+                  src={eventsBackdrop.videoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  poster={eventsBackdrop.imageUrl || undefined}
+                  className="absolute inset-0 size-full object-cover"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={eventsBackdrop.imageUrl}
+                  alt=""
+                  className="absolute inset-0 size-full object-cover"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background" />
+            </div>
+          )}
+          <div className={(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) ? "px-4 py-10 md:px-8 md:py-14" : ""}>
+            {eventsBackdrop.caption && (eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
+              <p className="mb-4 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-primary dark:text-amber-400">
+                {eventsBackdrop.caption}
+              </p>
+            )}
+            <FeaturedEvents events={latestEvents} />
+          </div>
+        </div>
         {liveAndUpcomingStreams.length > 0 && (
           <LivestreamPreview streams={liveAndUpcomingStreams} />
         )}

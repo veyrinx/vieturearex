@@ -17,9 +17,16 @@ import {
   AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Heading2, Heading3,
   Eye, EyeOff, Save, Link as LinkIcon, Palette,
+  ImagePlus, Trash2, ExternalLink,
 } from "lucide-react";
 
-type PopupData = { enabled: boolean; title: string; content: string };
+type PopupData = {
+  enabled: boolean;
+  title: string;
+  content: string;
+  image_url?: string;
+  link_url?: string;
+};
 
 const COLORS = [
   "#ffffff", "#e8e8f0", "#94a3b8", "#64748b",
@@ -45,6 +52,10 @@ export function PopupManager() {
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [title, setTitle] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [linkUrlAd, setLinkUrlAd] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState(false);
   const [showColors, setShowColors] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -102,6 +113,8 @@ export function PopupManager() {
         const data = (await r.json()) as PopupData;
         setEnabled(data.enabled);
         setTitle(data.title);
+        setImageUrl(data.image_url ?? "");
+        setLinkUrlAd(data.link_url ?? "");
         editor?.commands.setContent(data.content || "");
       })
       .catch(() => toast.error("Không thể tải cài đặt popup."))
@@ -118,13 +131,47 @@ export function PopupManager() {
     setShowLinkInput(false);
   }, [editor, linkUrl]);
 
+  const onUploadImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Chỉ hỗ trợ file ảnh.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ảnh tối đa 5MB.");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("bucket", "gallery");
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      if (!res.ok) {
+        toast.error("Tải ảnh lên thất bại.");
+        return;
+      }
+      const data = (await res.json()) as { publicUrl: string };
+      setImageUrl(data.publicUrl);
+      toast.success("Đã tải ảnh lên.");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const onSave = async () => {
     setSaving(true);
     try {
       const res = await fetch("/api/admin/popup", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled, title, content: editor?.getHTML() ?? "" }),
+        body: JSON.stringify({
+          enabled,
+          title,
+          content: editor?.getHTML() ?? "",
+          image_url: imageUrl.trim(),
+          link_url: linkUrlAd.trim(),
+        }),
       });
       if (res.ok) {
         toast.success("ĐÃ LƯU CÀI ĐẶT POP-UP.");
@@ -162,6 +209,78 @@ export function PopupManager() {
         <label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">TIÊU ĐỀ POP-UP</label>
         <Input value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="Nhập tiêu đề thông báo..." className="border-border bg-background text-foreground" />
+      </div>
+
+      {/* Ảnh + link nhanh */}
+      <div className="glass-card rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">ẢNH HIỂN THỊ TRÊN POP-UP</label>
+          <span className="text-[10px] text-muted-foreground">Tuỳ chọn — JPEG/PNG/WebP, ≤5MB</span>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="relative size-32 shrink-0 overflow-hidden rounded-xl border border-dashed border-border bg-muted/30">
+            {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt="Popup" className="size-full object-cover" />
+            ) : (
+              <div className="flex size-full items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                Chưa có ảnh
+              </div>
+            )}
+            {imageUrl && (
+              <button
+                type="button"
+                onClick={() => setImageUrl("")}
+                className="absolute right-1 top-1 rounded-md bg-destructive/90 p-1 text-white shadow hover:bg-destructive"
+                title="Xoá ảnh"
+              >
+                <Trash2 size={12} />
+              </button>
+            )}
+          </div>
+          <div className="flex-1 space-y-2">
+            <Input
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="Dán URL ảnh hoặc bấm Tải lên..."
+              className="border-border bg-background"
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="gap-1.5 rounded-lg text-xs"
+              >
+                <ImagePlus size={14} />
+                {uploadingImage ? "Đang tải..." : "Tải ảnh lên"}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onUploadImage(f);
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <ExternalLink size={11} /> Link khi bấm vào ảnh (tuỳ chọn)
+              </label>
+              <Input
+                value={linkUrlAd}
+                onChange={(e) => setLinkUrlAd(e.target.value)}
+                placeholder="https://..."
+                className="border-border bg-background"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Editor */}

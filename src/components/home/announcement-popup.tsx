@@ -6,9 +6,9 @@ import { X } from "lucide-react";
 const STORAGE_KEY = "vt_popup_dismissed";
 const DISMISS_DURATION_MS = 3 * 60 * 60 * 1000; // 3 giờ
 
-type Props = { title: string; content: string };
+type Props = { title: string; content: string; imageUrl?: string; linkUrl?: string };
 
-export function AnnouncementPopup({ title, content }: Props) {
+export function AnnouncementPopup({ title, content, imageUrl, linkUrl }: Props) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -75,6 +75,26 @@ export function AnnouncementPopup({ title, content }: Props) {
             <X size={16} />
           </button>
         </div>
+
+        {/* Image (optional) */}
+        {imageUrl && (
+          <div className="border-b border-border bg-muted/20">
+            {linkUrl ? (
+              <a
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block transition hover:opacity-90"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt={title || "Thông báo"} className="max-h-72 w-full object-cover" />
+              </a>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt={title || "Thông báo"} className="max-h-72 w-full object-cover" />
+            )}
+          </div>
+        )}
 
         {/* Content */}
         <div

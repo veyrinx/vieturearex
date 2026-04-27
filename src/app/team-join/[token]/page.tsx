@@ -81,7 +81,7 @@ export default function TeamJoinPage({ params }: { params: { token: string } }) 
       <section className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 text-center">
           <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">
-            Tham gia team Arex
+            Tham gia team Arex Isc NetWork
           </h1>
           <p className="mt-2 text-xs text-muted-foreground">
             Bạn được mời tạo tài khoản team. Sau khi gửi, IT sẽ duyệt hồ sơ.
