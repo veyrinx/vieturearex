@@ -287,3 +287,6 @@ ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS github_url text;
 
 -- Game profiles (Free Fire UID, etc) on user profile
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS game_profiles jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+-- Personal contact email (separate from login email)
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS contact_email text;

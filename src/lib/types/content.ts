@@ -167,6 +167,7 @@ export type PublicUserProfile = {
   zalo_url?: string | null;
   threads_url?: string | null;
   github_url?: string | null;
+  contact_email?: string | null;
   game_profiles?: GameProfile[] | null;
   last_seen_at?: string | null;
   show_in_team?: boolean;

@@ -52,6 +52,7 @@ type ProfileData = {
   bio?: string | null;
   phone?: string | null;
   game_profiles?: GameProfile[];
+  contact_email?: string | null;
 } & Partial<Record<`${SocialKey}_url` & string, string | null>>;
 
 type TotpFactor = {
@@ -69,6 +70,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [socials, setSocials] = useState<Record<string, string>>(
     Object.fromEntries(SOCIAL_DEFS.map((s) => [s.field, ""])),
   );
@@ -103,6 +105,7 @@ export default function ProfilePage() {
         setDisplayName(data.display_name ?? "");
         setBio(data.bio ?? "");
         setPhone(data.phone ?? "");
+        setContactEmail(data.contact_email ?? "");
         const next: Record<string, string> = {};
         for (const s of SOCIAL_DEFS) {
           next[s.field] = (data as unknown as Record<string, string | null | undefined>)[s.field] ?? "";
@@ -201,6 +204,7 @@ export default function ProfilePage() {
         display_name: displayName.trim(),
         bio: bio.trim(),
         phone: phone.trim(),
+        contact_email: contactEmail.trim(),
         game_profiles: cleanGames,
         ...trimmedSocials,
       };
@@ -312,6 +316,7 @@ export default function ProfilePage() {
     displayName.trim() !== (profile.display_name ?? "") ||
     bio.trim() !== (profile.bio ?? "") ||
     phone.trim() !== (profile.phone ?? "") ||
+    contactEmail.trim() !== (profile.contact_email ?? "") ||
     SOCIAL_DEFS.some((s) =>
       (socials[s.field] ?? "").trim() !==
       (((profile as unknown as Record<string, string | null | undefined>)[s.field]) ?? ""),
@@ -513,11 +518,26 @@ export default function ProfilePage() {
                 <p className="text-[11px] text-muted-foreground">{bio.length}/300 ký tự</p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  <Phone className="size-3.5" /> Số điện thoại
-                </label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0xxxxxxxxx" maxLength={20} className="h-10" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Phone className="size-3.5" /> Số điện thoại
+                  </label>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0xxxxxxxxx" maxLength={20} className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Mail className="size-3.5" /> Email cá nhân (liên hệ)
+                  </label>
+                  <Input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="contact@example.com"
+                    maxLength={120}
+                    className="h-10"
+                  />
+                </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">

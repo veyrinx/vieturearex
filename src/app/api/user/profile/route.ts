@@ -20,6 +20,7 @@ const schema = z.object({
   display_name: z.string().min(1).max(80).optional(),
   bio: z.string().max(300).optional(),
   phone: z.string().max(20).optional(),
+  contact_email: z.union([z.string().email().max(120), z.literal("")]).optional(),
   game_profiles: z.array(gameProfileSchema).max(20).optional(),
   avatar_url: urlOrEmpty,
   facebook_url: urlOrEmpty,
@@ -57,6 +58,7 @@ type ProfileRow = {
   zalo_url?: string | null;
   threads_url?: string | null;
   github_url?: string | null;
+  contact_email?: string | null;
   game_profiles?: unknown;
 };
 
@@ -73,7 +75,7 @@ export async function GET() {
 
   const { data: profile } = await roleClient
     .from("users")
-    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
+    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
 
@@ -103,6 +105,7 @@ export async function GET() {
     zalo_url: profile?.zalo_url ?? null,
     threads_url: profile?.threads_url ?? null,
     github_url: profile?.github_url ?? null,
+    contact_email: profile?.contact_email ?? null,
     game_profiles: Array.isArray(profile?.game_profiles) ? profile?.game_profiles : [],
   });
 }
@@ -127,6 +130,7 @@ export async function PATCH(request: NextRequest) {
   if (d.display_name !== undefined) updates.display_name = d.display_name || null;
   if (d.bio !== undefined) updates.bio = d.bio || null;
   if (d.phone !== undefined) updates.phone = d.phone || null;
+  if (d.contact_email !== undefined) updates.contact_email = d.contact_email || null;
   if (d.game_profiles !== undefined) {
     updates.game_profiles = d.game_profiles
       .map((g) => ({

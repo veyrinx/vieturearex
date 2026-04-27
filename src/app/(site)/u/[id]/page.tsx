@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CalendarDays, BadgeCheck, ShieldCheck, Phone, Eye, Trophy, Sparkles, Gamepad2,
+  CalendarDays, BadgeCheck, ShieldCheck, Phone, Mail, Eye, Trophy, Sparkles, Gamepad2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -127,11 +127,27 @@ export default async function PublicProfilePage({ params }: Props) {
             <Stat icon={CalendarDays} label="Tham gia" value={joinDate} accent="text-emerald-500" small />
           </div>
 
-          {/* Contact row */}
-          {profile.phone && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5">
-              <Phone className="size-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">{profile.phone}</span>
+          {/* Contact rows */}
+          {(profile.phone || profile.contact_email) && (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {profile.phone && (
+                <a
+                  href={`tel:${profile.phone}`}
+                  className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 transition hover:border-primary/40 hover:bg-muted/60"
+                >
+                  <Phone className="size-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">{profile.phone}</span>
+                </a>
+              )}
+              {profile.contact_email && (
+                <a
+                  href={`mailto:${profile.contact_email}`}
+                  className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 transition hover:border-primary/40 hover:bg-muted/60"
+                >
+                  <Mail className="size-4 text-muted-foreground" />
+                  <span className="truncate text-sm font-medium text-foreground">{profile.contact_email}</span>
+                </a>
+              )}
             </div>
           )}
 
