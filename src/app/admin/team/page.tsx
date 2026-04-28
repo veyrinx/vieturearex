@@ -11,9 +11,10 @@ export default async function AdminTeamPage() {
   const session = await requireAdminAccess();
   const profiles = await getAllStaffProfiles();
   const canCreateInvites = session.role === "super_admin";
+  const isAdmin = session.role === "super_admin" || session.role === "admin";
   return (
     <div className="space-y-8">
-      <TeamInvitesPanel canCreate={canCreateInvites} />
+      <TeamInvitesPanel canCreate={canCreateInvites} isAdmin={isAdmin} />
       <TeamManagementClient initialProfiles={profiles} />
     </div>
   );

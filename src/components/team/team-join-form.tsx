@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, Mail, Phone, User, Sparkles, MessageSquare, Facebook, Instagram, MessageCircle } from "lucide-react";
+import { ShieldCheck, Mail, Phone, User, Sparkles, MessageSquare, Facebook, Instagram, MessageCircle, ScrollText, AlertTriangle } from "lucide-react";
 import type { TeamJoinConfig } from "@/lib/utils/site-settings";
 
 type Props = { token: string; config: TeamJoinConfig };
@@ -24,6 +24,7 @@ export function TeamJoinForm({ token, config }: Props) {
     discord_url: "",
     zalo_url: "",
   });
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -40,13 +41,22 @@ export function TeamJoinForm({ token, config }: Props) {
       toast.error("Vui lòng nhập số điện thoại.");
       return;
     }
+    if (!acceptTerms) {
+      toast.error("Bạn cần đồng ý với điều khoản team trước khi gửi.");
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await fetch("/api/team-join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, ...form, email: form.email.trim().toLowerCase() }),
+        body: JSON.stringify({
+          token,
+          ...form,
+          email: form.email.trim().toLowerCase(),
+          accept_terms: true,
+        }),
       });
       const data = (await res.json()) as { error?: string; status?: string };
       if (!res.ok) {
@@ -152,11 +162,47 @@ export function TeamJoinForm({ token, config }: Props) {
             </fieldset>
           )}
 
-          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl text-sm font-bold tracking-wide">
+          {/* Điều khoản */}
+          <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+            <div className="space-y-1.5">
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                <ScrollText className="size-3.5" /> Điều khoản team
+              </p>
+              <p className="whitespace-pre-line text-xs leading-relaxed text-foreground/90">
+                {config.termsText}
+              </p>
+            </div>
+            <div className="space-y-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 p-3">
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-rose-500">
+                <AlertTriangle className="size-3.5" /> Hậu quả nếu vi phạm
+              </p>
+              <p className="whitespace-pre-line text-xs leading-relaxed text-rose-700 dark:text-rose-300">
+                {config.violationText}
+              </p>
+            </div>
+            <label className="flex cursor-pointer items-start gap-2 pt-1">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-0.5 size-4 cursor-pointer accent-primary"
+              />
+              <span className="text-xs leading-relaxed">
+                Tôi đã đọc và đồng ý với toàn bộ điều khoản team Arex, hiểu rõ hậu quả nếu vi phạm
+                và chịu trách nhiệm trước các hành vi của mình.
+              </span>
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={loading || !acceptTerms}
+            className="h-11 w-full rounded-xl text-sm font-bold tracking-wide"
+          >
             {loading ? "Đang gửi..." : "Gửi yêu cầu gia nhập"}
           </Button>
           <p className="text-center text-[11px] text-muted-foreground">
-            Bằng cách gửi, bạn đồng ý cho Arex liên hệ qua email/MXH bạn cung cấp.
+            Yêu cầu sẽ qua 2 vòng: <span className="font-semibold">IT duyệt</span> → <span className="font-semibold">Admin duyệt cuối</span> → email kích hoạt gửi tới bạn.
           </p>
         </form>
       </section>

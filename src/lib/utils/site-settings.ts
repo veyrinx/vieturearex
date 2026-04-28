@@ -186,6 +186,12 @@ export function resolveTeamJoinSettings(settingsMap: Record<string, string>) {
     roleOptions: roleOptions.length > 0 ? roleOptions : defaults,
     requirePhone: settingsMap["team_join.require_phone"] === "true",
     showSocials: settingsMap["team_join.show_socials"] !== "false", // default on
+    termsText:
+      settingsMap["team_join.terms_text"] ||
+      "Khi tham gia team Arex, bạn cam kết: tôn trọng cộng đồng, không phát ngôn thù ghét/spam, không tiết lộ thông tin nội bộ, tuân thủ quy định Garena Free Fire và pháp luật Việt Nam.",
+    violationText:
+      settingsMap["team_join.violation_text"] ||
+      "Nếu vi phạm sẽ bị: cảnh cáo lần 1, tước quyền thành viên lần 2, ban vĩnh viễn + công khai vi phạm trên kênh chính thức nếu nghiêm trọng.",
     noteMaxLength:
       Math.max(50, Math.min(2000, Number.parseInt(settingsMap["team_join.note_max_length"] || "500", 10) || 500)),
   };

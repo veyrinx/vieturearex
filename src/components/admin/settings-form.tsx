@@ -808,6 +808,26 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               className="resize-none"
             />
           </Field>
+          <Field label="Điều khoản team (hiển thị trên form)" hint="Cam kết, quy tắc cộng đồng…" icon={Users}>
+            <Textarea
+              value={v("team_join.terms_text")}
+              onChange={(e) => set("team_join.terms_text", e.target.value)}
+              placeholder="Tôn trọng cộng đồng, không phát ngôn thù ghét..."
+              rows={5}
+              maxLength={2000}
+              className="resize-none text-sm"
+            />
+          </Field>
+          <Field label="Hậu quả nếu vi phạm" hint="Mức xử lý cảnh cáo / tước quyền / ban / công khai" icon={Users}>
+            <Textarea
+              value={v("team_join.violation_text")}
+              onChange={(e) => set("team_join.violation_text", e.target.value)}
+              placeholder="Vi phạm lần 1 cảnh cáo, lần 2 tước quyền..."
+              rows={4}
+              maxLength={1500}
+              className="resize-none text-sm"
+            />
+          </Field>
           <Field label="Danh sách vị trí ứng tuyển" hint="Mỗi dòng một vị trí. Để trống để dùng mặc định." icon={Users}>
             <Textarea
               value={v("team_join.role_options")}
@@ -864,6 +884,8 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
             "team_join.title",
             "team_join.subtitle",
             "team_join.success_message",
+            "team_join.terms_text",
+            "team_join.violation_text",
             "team_join.role_options",
             "team_join.note_max_length",
             "team_join.require_phone",

@@ -22,13 +22,16 @@ type Pending = {
   display_name: string | null;
   role: string;
   team_status: string | null;
+  applied_role?: string | null;
+  application_note?: string | null;
   created_at: string;
   avatar_url: string | null;
 };
 
-export function TeamInvitesPanel({ canCreate }: { canCreate: boolean }) {
+export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; isAdmin: boolean }) {
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [pending, setPending] = useState<Pending[]>([]);
+  const [pendingIt, setPendingIt] = useState<Pending[]>([]);
+  const [pendingAdmin, setPendingAdmin] = useState<Pending[]>([]);
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState("");
   const [days, setDays] = useState(7);
@@ -47,8 +50,9 @@ export function TeamInvitesPanel({ canCreate }: { canCreate: boolean }) {
         setInvites(d.invites ?? []);
       }
       if (pRes.ok) {
-        const d = (await pRes.json()) as { pending: Pending[] };
-        setPending(d.pending ?? []);
+        const d = (await pRes.json()) as { pending_it?: Pending[]; pending_admin?: Pending[] };
+        setPendingIt(d.pending_it ?? []);
+        setPendingAdmin(d.pending_admin ?? []);
       }
     } finally {
       setLoading(false);
@@ -94,7 +98,10 @@ export function TeamInvitesPanel({ canCreate }: { canCreate: boolean }) {
     } finally { setBusy(null); }
   };
 
-  const onApproval = async (userId: string, action: "approve" | "reject") => {
+  const onApproval = async (
+    userId: string,
+    action: "approve_it" | "approve_admin" | "reject",
+  ) => {
     setBusy(userId);
     try {
       const res = await fetch("/api/admin/team/approval", {
@@ -104,60 +111,44 @@ export function TeamInvitesPanel({ canCreate }: { canCreate: boolean }) {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) { toast.error(data.error ?? "Không thực hiện được."); return; }
-      toast.success(action === "approve" ? "Đã duyệt." : "Đã từ chối.");
+      toast.success(
+        action === "approve_it" ? "IT đã duyệt — chuyển sang admin duyệt."
+          : action === "approve_admin" ? "Đã duyệt cuối, gửi email đặt mật khẩu."
+          : "Đã từ chối.",
+      );
       void refresh();
     } finally { setBusy(null); }
   };
 
   return (
     <div className="space-y-6">
-      {/* Pending approvals — visible to IT+ */}
-      <section className="glass-card rounded-2xl p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-heading text-base font-bold uppercase tracking-[0.06em]">
-            Yêu cầu chờ duyệt ({pending.length})
-          </h2>
-          <button onClick={() => void refresh()} className="text-xs text-muted-foreground hover:text-foreground">
-            Làm mới
-          </button>
-        </div>
-        {loading ? (
-          <p className="text-xs text-muted-foreground">Đang tải...</p>
-        ) : pending.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Không có yêu cầu nào.</p>
-        ) : (
-          <div className="divide-y divide-border">
-            {pending.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{p.display_name ?? p.email}</p>
-                  <p className="truncate text-xs text-muted-foreground">{p.email}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={busy === p.id}
-                  onClick={() => void onApproval(p.id, "approve")}
-                  className="gap-1 rounded-lg border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10"
-                >
-                  {busy === p.id ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-                  Duyệt
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={busy === p.id}
-                  onClick={() => void onApproval(p.id, "reject")}
-                  className="gap-1 rounded-lg border-rose-500/40 text-rose-500 hover:bg-rose-500/10"
-                >
-                  <X className="size-3.5" />
-                  Từ chối
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Vòng 1: IT duyệt */}
+      <PendingSection
+        title="Vòng 1 — IT duyệt"
+        subtitle="IT/Admin/Super Admin có thể duyệt"
+        list={pendingIt}
+        loading={loading}
+        busy={busy}
+        approveLabel="IT duyệt"
+        approveAction="approve_it"
+        canApprove={true}
+        onApprove={onApproval}
+        onRefresh={refresh}
+      />
+
+      {/* Vòng 2: Admin duyệt cuối */}
+      <PendingSection
+        title="Vòng 2 — Admin duyệt cuối"
+        subtitle="Chỉ Admin/Super Admin duyệt được. Sau khi duyệt sẽ gửi email đặt mật khẩu."
+        list={pendingAdmin}
+        loading={loading}
+        busy={busy}
+        approveLabel="Duyệt cuối"
+        approveAction="approve_admin"
+        canApprove={isAdmin}
+        onApprove={onApproval}
+        onRefresh={refresh}
+      />
 
       {/* Invite links — only super_admin can create */}
       <section className="glass-card rounded-2xl p-5">
@@ -236,5 +227,86 @@ export function TeamInvitesPanel({ canCreate }: { canCreate: boolean }) {
         )}
       </section>
     </div>
+  );
+}
+
+function PendingSection({
+  title, subtitle, list, loading, busy, approveLabel, approveAction, canApprove,
+  onApprove, onRefresh,
+}: {
+  title: string;
+  subtitle: string;
+  list: Pending[];
+  loading: boolean;
+  busy: string | null;
+  approveLabel: string;
+  approveAction: "approve_it" | "approve_admin";
+  canApprove: boolean;
+  onApprove: (userId: string, action: "approve_it" | "approve_admin" | "reject") => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <section className="glass-card rounded-2xl p-5">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-base font-bold uppercase tracking-[0.06em]">
+            {title} ({list.length})
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        <button onClick={() => onRefresh()} className="text-xs text-muted-foreground hover:text-foreground">
+          Làm mới
+        </button>
+      </div>
+      {loading ? (
+        <p className="text-xs text-muted-foreground">Đang tải...</p>
+      ) : list.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Không có yêu cầu nào.</p>
+      ) : (
+        <div className="divide-y divide-border">
+          {list.map((p) => (
+            <div key={p.id} className="space-y-2 py-3">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{p.display_name ?? p.email}</p>
+                  <p className="truncate text-xs text-muted-foreground">{p.email}</p>
+                  {p.applied_role && (
+                    <p className="mt-0.5 truncate text-[11px] text-primary dark:text-amber-400">
+                      Vị trí: {p.applied_role}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy === p.id || !canApprove}
+                  onClick={() => onApprove(p.id, approveAction)}
+                  className="gap-1 rounded-lg border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-40"
+                  title={canApprove ? approveLabel : "Bạn không có quyền duyệt vòng này"}
+                >
+                  {busy === p.id ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                  {approveLabel}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy === p.id}
+                  onClick={() => onApprove(p.id, "reject")}
+                  className="gap-1 rounded-lg border-rose-500/40 text-rose-500 hover:bg-rose-500/10"
+                >
+                  <X className="size-3.5" />
+                  Từ chối
+                </Button>
+              </div>
+              {p.application_note && (
+                <p className="rounded-md bg-muted/40 px-2.5 py-1.5 text-[11px] italic text-muted-foreground">
+                  &ldquo;{p.application_note}&rdquo;
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

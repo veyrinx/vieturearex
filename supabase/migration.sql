@@ -294,3 +294,18 @@ ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS contact_email text;
 -- Team-join richer application info
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS applied_role text;
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS application_note text;
+
+-- Two-stage team approval: pending_it → pending_admin → approved
+ALTER TABLE IF EXISTS public.users DROP CONSTRAINT IF EXISTS users_team_status_check;
+ALTER TABLE IF EXISTS public.users ADD CONSTRAINT users_team_status_check
+  CHECK (team_status IS NULL OR team_status IN ('pending_it', 'pending_admin', 'approved', 'rejected', 'pending'));
+
+-- Migrate any legacy rows still on 'pending' to 'pending_it'
+UPDATE public.users SET team_status = 'pending_it' WHERE team_status = 'pending';
+
+-- Track who approved at each stage
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_it_approved_by uuid REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_it_approved_at timestamptz;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_admin_approved_by uuid REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_admin_approved_at timestamptz;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_terms_accepted_at timestamptz;

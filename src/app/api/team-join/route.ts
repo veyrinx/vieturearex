@@ -23,6 +23,9 @@ const schema = z.object({
   tiktok_url: optionalUrl,
   discord_url: optionalUrl,
   zalo_url: optionalUrl,
+  accept_terms: z.literal(true, {
+    errorMap: () => ({ message: "Bạn cần đồng ý với điều khoản team trước khi gửi." }),
+  }),
 });
 
 type InviteRow = {
@@ -89,7 +92,8 @@ export async function POST(request: NextRequest) {
   // Save extra info — graceful: drop columns the migration may not have created yet.
   const updates: Record<string, unknown> = {
     role: "team_member",
-    team_status: "pending",
+    team_status: "pending_it",
+    team_terms_accepted_at: new Date().toISOString(),
     display_name: displayName,
     phone: parsed.data.phone || null,
     applied_role: parsed.data.applied_role || null,
@@ -136,7 +140,7 @@ export async function POST(request: NextRequest) {
 
   // Lark notification (fire and forget)
   void sendLarkNotification({
-    title: `🆕 Yêu cầu gia nhập team Arex${invite.label ? ` — ${invite.label}` : ""}`,
+    title: `🆕 Yêu cầu gia nhập team — chờ IT duyệt${invite.label ? ` (${invite.label})` : ""}`,
     lines: [
       { label: "Tên", value: displayName },
       { label: "Email", value: email },
