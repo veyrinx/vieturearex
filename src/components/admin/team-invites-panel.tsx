@@ -14,6 +14,8 @@ type Invite = {
   used_at: string | null;
   expires_at: string;
   created_at: string;
+  max_uses?: number | null;
+  uses_count?: number | null;
 };
 
 type Pending = {
@@ -37,6 +39,7 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState("");
   const [days, setDays] = useState(7);
+  const [maxUses, setMaxUses] = useState(1);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -69,7 +72,11 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
       const res = await fetch("/api/admin/team/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: label.trim() || undefined, expiresInDays: days }),
+        body: JSON.stringify({
+          label: label.trim() || undefined,
+          expiresInDays: days,
+          maxUses,
+        }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
@@ -159,25 +166,44 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
         </h2>
 
         {canCreate && (
-          <div className="mb-4 grid gap-2 sm:grid-cols-[1fr,120px,auto]">
-            <Input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Ghi chú (vd. 'Đợt mời tháng 4')"
-              maxLength={80}
-              className="h-10"
-            />
-            <Input
-              type="number"
-              min={1}
-              max={30}
-              value={days}
-              onChange={(e) => setDays(Math.max(1, Math.min(30, Number(e.target.value) || 7)))}
-              className="h-10"
-            />
-            <Button onClick={() => void onCreate()} disabled={creating} className="gap-1.5 rounded-xl">
-              <Plus className="size-4" /> {creating ? "Đang tạo..." : "Tạo & Copy"}
-            </Button>
+          <div className="mb-4 space-y-2">
+            <div className="grid gap-2 sm:grid-cols-[1fr,110px,110px,auto]">
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Ghi chú (vd. 'Đợt mời tháng 4')"
+                maxLength={80}
+                className="h-10"
+              />
+              <div className="space-y-0.5">
+                <Input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={days}
+                  onChange={(e) => setDays(Math.max(1, Math.min(30, Number(e.target.value) || 7)))}
+                  className="h-10"
+                />
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Ngày hết hạn</p>
+              </div>
+              <div className="space-y-0.5">
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={maxUses}
+                  onChange={(e) => setMaxUses(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+                  className="h-10"
+                />
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Số lượt dùng</p>
+              </div>
+              <Button onClick={() => void onCreate()} disabled={creating} className="h-10 gap-1.5 rounded-xl">
+                <Plus className="size-4" /> {creating ? "Đang tạo..." : "Tạo & Copy"}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Đặt &ldquo;Số lượt dùng&rdquo; &gt; 1 để 1 link mời cùng lúc nhiều người (vd. 50 — phù hợp gửi vào group).
+            </p>
           </div>
         )}
 
@@ -187,7 +213,9 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
           <div className="divide-y divide-border">
             {invites.map((inv) => {
               const expired = new Date(inv.expires_at).getTime() < Date.now();
-              const used = Boolean(inv.used_at);
+              const max = Number(inv.max_uses ?? 1);
+              const used = Number(inv.uses_count ?? (inv.used_at ? 1 : 0));
+              const fullyUsed = used >= max;
               return (
                 <div key={inv.id} className="flex items-center gap-3 py-2.5">
                   <div className="min-w-0 flex-1">
@@ -195,18 +223,19 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
                       {inv.label ?? "(không nhãn)"}
                       <span className={cn(
                         "ml-2 rounded-full border px-1.5 py-0.5 text-[10px] font-bold",
-                        used ? "border-muted-foreground/30 bg-muted text-muted-foreground"
+                        fullyUsed ? "border-muted-foreground/30 bg-muted text-muted-foreground"
                           : expired ? "border-rose-500/30 bg-rose-500/10 text-rose-500"
                           : "border-emerald-500/30 bg-emerald-500/10 text-emerald-500",
                       )}>
-                        {used ? "ĐÃ DÙNG" : expired ? "HẾT HẠN" : "CÒN HIỆU LỰC"}
+                        {fullyUsed ? "HẾT LƯỢT" : expired ? "HẾT HẠN" : "CÒN HIỆU LỰC"}
                       </span>
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      Hết hạn {new Date(inv.expires_at).toLocaleString("vi-VN")}
+                      Đã dùng <span className="font-semibold text-foreground">{used}</span>/{max} lượt · Hết hạn{" "}
+                      {new Date(inv.expires_at).toLocaleString("vi-VN")}
                     </p>
                   </div>
-                  {!used && !expired && (
+                  {!fullyUsed && !expired && (
                     <Button size="sm" variant="outline" onClick={() => void copyUrl(inv.token)} className="gap-1 rounded-lg">
                       <Copy className="size-3.5" /> Copy
                     </Button>

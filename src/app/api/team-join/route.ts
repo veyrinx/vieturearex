@@ -35,8 +35,8 @@ const schema = z.object({
     .max(10)
     .optional()
     .default([]),
-  accept_terms: z.literal(true, {
-    errorMap: () => ({ message: "Bạn cần đồng ý với điều khoản team trước khi gửi." }),
+  accept_terms: z.boolean().refine((v) => v === true, {
+    message: "Bạn cần đồng ý với điều khoản team trước khi gửi.",
   }),
 });
 
@@ -46,6 +46,8 @@ type InviteRow = {
   used_at: string | null;
   expires_at: string;
   label: string | null;
+  max_uses?: number | null;
+  uses_count?: number | null;
 };
 
 function generateRandomPassword() {
@@ -67,16 +69,34 @@ export async function POST(request: NextRequest) {
   if (!admin) return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
 
   // Verify token
-  const { data: invite } = await admin
-    .from("team_invites")
-    .select("id, token, used_at, expires_at, label")
-    .eq("token", parsed.data.token)
-    .maybeSingle() as { data: InviteRow | null };
+  // Try with multi-use columns; fall back to legacy schema if migration hasn't run yet.
+  let invite: InviteRow | null = null;
+  {
+    const { data, error } = await admin
+      .from("team_invites")
+      .select("id, token, used_at, expires_at, label, max_uses, uses_count")
+      .eq("token", parsed.data.token)
+      .maybeSingle();
+    if (!error) {
+      invite = data as InviteRow | null;
+    } else {
+      const { data: legacy } = await admin
+        .from("team_invites")
+        .select("id, token, used_at, expires_at, label")
+        .eq("token", parsed.data.token)
+        .maybeSingle();
+      invite = legacy as InviteRow | null;
+    }
+  }
 
   if (!invite) return NextResponse.json({ error: "Mã mời không tồn tại." }, { status: 404 });
-  if (invite.used_at) return NextResponse.json({ error: "Mã mời đã được sử dụng." }, { status: 410 });
   if (new Date(invite.expires_at).getTime() < Date.now()) {
     return NextResponse.json({ error: "Mã mời đã hết hạn." }, { status: 410 });
+  }
+  const maxUses = Number(invite.max_uses ?? 1);
+  const usesCount = Number(invite.uses_count ?? (invite.used_at ? 1 : 0));
+  if (usesCount >= maxUses) {
+    return NextResponse.json({ error: "Mã mời đã hết lượt sử dụng." }, { status: 410 });
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -144,11 +164,30 @@ export async function POST(request: NextRequest) {
     break;
   }
 
-  // Mark invite consumed
-  await admin
-    .from("team_invites")
-    .update({ used_by: authUser.id, used_at: new Date().toISOString() } as never)
-    .eq("id", invite.id);
+  // Mark invite consumed — increment uses_count; only mark as fully used when reaching max_uses.
+  const newCount = usesCount + 1;
+  const consumed = newCount >= maxUses;
+  const inviteUpdate: Record<string, unknown> = {
+    uses_count: newCount,
+    used_by: authUser.id,
+  };
+  if (consumed) inviteUpdate.used_at = new Date().toISOString();
+  // First try with new columns; fall back to legacy schema if cols are missing.
+  {
+    const { error } = await admin
+      .from("team_invites")
+      .update(inviteUpdate as never)
+      .eq("id", invite.id);
+    if (error) {
+      await admin
+        .from("team_invites")
+        .update({
+          used_by: authUser.id,
+          ...(consumed ? { used_at: new Date().toISOString() } : {}),
+        } as never)
+        .eq("id", invite.id);
+    }
+  }
 
   await logAdminActivity({
     actorEmail: email,

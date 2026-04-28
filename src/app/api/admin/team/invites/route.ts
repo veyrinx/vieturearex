@@ -8,6 +8,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 const createSchema = z.object({
   label: z.string().max(80).optional(),
   expiresInDays: z.number().int().min(1).max(30).optional().default(7),
+  maxUses: z.number().int().min(1).max(500).optional().default(1),
 });
 
 type InviteRow = {
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
       label: parsed.data.label ?? null,
       created_by: user?.id ?? null,
       expires_at: expiresAt,
+      max_uses: parsed.data.maxUses,
     } as never)
     .select()
     .single();

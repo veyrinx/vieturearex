@@ -309,3 +309,7 @@ ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_it_approved_at 
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_admin_approved_by uuid REFERENCES public.users(id) ON DELETE SET NULL;
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_admin_approved_at timestamptz;
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_terms_accepted_at timestamptz;
+
+-- Multi-use team invite links
+ALTER TABLE IF EXISTS public.team_invites ADD COLUMN IF NOT EXISTS max_uses int NOT NULL DEFAULT 1;
+ALTER TABLE IF EXISTS public.team_invites ADD COLUMN IF NOT EXISTS uses_count int NOT NULL DEFAULT 0;
