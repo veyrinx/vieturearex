@@ -32,7 +32,8 @@ const NAV_ITEMS = [
   { id: "social",       icon: Share2,       label: "Mạng Xã Hội", desc: "Facebook, YouTube…" },
   { id: "community",    icon: Users,        label: "Cộng Đồng",   desc: "Thống kê & ngày ra mắt" },
   { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
-  { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord" },
+  { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
+  { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark" },
   { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
   { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
 ] as const;
@@ -773,6 +774,102 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
             "home-ads",
           )}
           saving={saving === "home-ads"}
+        />
+      </div>
+    ),
+
+    // ── TEAM JOIN ────────────────────────────────────────────────────────────
+    team_join: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Users} title="Form mời gia nhập team" desc="Tuỳ chỉnh nội dung trang /team-join/[token]" />
+          </div>
+          <Field label="Tiêu đề trang" hint="Hiện ở header form" icon={Users}>
+            <Input value={v("team_join.title")} onChange={(e) => set("team_join.title", e.target.value)} placeholder="Tham gia team Arex" maxLength={120} />
+          </Field>
+          <Field label="Mô tả ngắn" hint="Hiện dưới tiêu đề" icon={Users}>
+            <Textarea
+              value={v("team_join.subtitle")}
+              onChange={(e) => set("team_join.subtitle", e.target.value)}
+              placeholder="Điền thông tin bên dưới..."
+              rows={2}
+              maxLength={300}
+              className="resize-none"
+            />
+          </Field>
+          <Field label="Thông báo sau khi gửi" hint="Lời cảm ơn hiển thị sau khi nộp form" icon={Users}>
+            <Textarea
+              value={v("team_join.success_message")}
+              onChange={(e) => set("team_join.success_message", e.target.value)}
+              placeholder="Cảm ơn bạn..."
+              rows={3}
+              maxLength={500}
+              className="resize-none"
+            />
+          </Field>
+          <Field label="Danh sách vị trí ứng tuyển" hint="Mỗi dòng một vị trí. Để trống để dùng mặc định." icon={Users}>
+            <Textarea
+              value={v("team_join.role_options")}
+              onChange={(e) => set("team_join.role_options", e.target.value)}
+              placeholder={"Caster\nEditor video\nDesigner\n..."}
+              rows={6}
+              className="font-mono text-xs"
+            />
+          </Field>
+          <Field label="Giới hạn ký tự phần Giới thiệu" hint="50 – 2000" icon={Users}>
+            <Input
+              type="number"
+              min={50}
+              max={2000}
+              step={50}
+              value={v("team_join.note_max_length") || "500"}
+              onChange={(e) => set("team_join.note_max_length", e.target.value)}
+              className="max-w-32"
+            />
+          </Field>
+
+          <div className="border-t border-border mt-3 pt-3 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tuỳ chọn hiển thị</p>
+
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Bắt buộc số điện thoại</p>
+                <p className="text-xs text-muted-foreground">Nếu bật, người ứng tuyển phải nhập SĐT mới gửi được.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={v("team_join.require_phone") === "true"}
+                onChange={(e) => set("team_join.require_phone", e.target.checked ? "true" : "false")}
+                className="mt-1 size-4 cursor-pointer accent-primary"
+              />
+            </label>
+
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Hiển thị mục Mạng xã hội</p>
+                <p className="text-xs text-muted-foreground">FB, IG, TikTok, Discord, Zalo. Tắt nếu không cần thu thập.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={v("team_join.show_socials") !== "false"}
+                onChange={(e) => set("team_join.show_socials", e.target.checked ? "true" : "false")}
+                className="mt-1 size-4 cursor-pointer accent-primary"
+              />
+            </label>
+          </div>
+        </Card>
+        <SaveRow
+          onSave={() => save([
+            "team_join.title",
+            "team_join.subtitle",
+            "team_join.success_message",
+            "team_join.role_options",
+            "team_join.note_max_length",
+            "team_join.require_phone",
+            "team_join.show_socials",
+          ], "team_join")}
+          saving={saving === "team_join"}
         />
       </div>
     ),

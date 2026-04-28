@@ -159,6 +159,40 @@ export function resolveCommunityStats(settingsMap: Record<string, string>) {
   };
 }
 
+export function resolveTeamJoinSettings(settingsMap: Record<string, string>) {
+  const rawRoles = settingsMap["team_join.role_options"];
+  const defaults = [
+    "Caster / Bình luận viên",
+    "Editor video",
+    "Designer / Đồ hoạ",
+    "Content writer",
+    "Mod / Quản trị viên cộng đồng",
+    "Streamer",
+    "Photographer",
+    "Marketing",
+    "Khác",
+  ];
+  const roleOptions = (rawRoles ? rawRoles.split(/\r?\n|,/) : [])
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return {
+    title: settingsMap["team_join.title"] || "Tham gia team Arex",
+    subtitle:
+      settingsMap["team_join.subtitle"] ||
+      "Điền thông tin bên dưới. Bộ phận IT sẽ duyệt hồ sơ và gửi email kích hoạt cho bạn — không cần đặt mật khẩu ngay tại đây.",
+    successMessage:
+      settingsMap["team_join.success_message"] ||
+      "Cảm ơn bạn! Bộ phận IT đã nhận hồ sơ và sẽ liên hệ qua email sau khi duyệt (kèm link đặt mật khẩu).",
+    roleOptions: roleOptions.length > 0 ? roleOptions : defaults,
+    requirePhone: settingsMap["team_join.require_phone"] === "true",
+    showSocials: settingsMap["team_join.show_socials"] !== "false", // default on
+    noteMaxLength:
+      Math.max(50, Math.min(2000, Number.parseInt(settingsMap["team_join.note_max_length"] || "500", 10) || 500)),
+  };
+}
+
+export type TeamJoinConfig = ReturnType<typeof resolveTeamJoinSettings>;
+
 export function resolveEventsBackdrop(settingsMap: Record<string, string>) {
   return {
     imageUrl: settingsMap["home.events_bg.image_url"] || "",
