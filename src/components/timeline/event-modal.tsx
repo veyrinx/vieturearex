@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MediaFrame } from "@/components/common/media-frame";
+import { FavoriteButton, FollowButton } from "@/components/events/event-actions";
 import type { EventItem } from "@/lib/types/content";
 import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 
@@ -63,6 +64,11 @@ export function EventModal({ event, open, onOpenChange }: EventModalProps) {
                     {formatVietnamDateTime(event.end_date)}
                   </span>
                 </p>
+              </div>
+
+              <div className="mt-2 flex w-full flex-wrap items-center justify-center gap-2">
+                <FavoriteButton eventId={event.id} title={event.title} />
+                <FollowButton eventId={event.id} title={event.title} />
               </div>
 
               {event.link?.trim() ? (

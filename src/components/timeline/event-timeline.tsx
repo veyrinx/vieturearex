@@ -201,10 +201,56 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
       </div>
 
       {visibleEvents.length === 0 ? (
-        <EmptyState
-          title="KHÔNG CÓ SỰ KIỆN PHÙ HỢP"
-          description="HÃY ĐỔI BỘ LỌC TRẠNG THÁI, TỪ KHÓA HOẶC KHOẢNG NGÀY ĐỂ XEM THÊM SỰ KIỆN."
-        />
+        <div className="space-y-5">
+          <EmptyState
+            title="KHÔNG CÓ SỰ KIỆN TRONG KHOẢNG NÀY"
+            description="HÃY ĐỔI BỘ LỌC TRẠNG THÁI, TỪ KHÓA HOẶC KHOẢNG NGÀY ĐỂ XEM THÊM SỰ KIỆN."
+          />
+          {(() => {
+            const suggestions = events
+              .filter((e) => e.status !== "expired")
+              .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+              .slice(0, 6);
+            if (suggestions.length === 0) return null;
+            return (
+              <div className="glass-card rounded-2xl p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  GỢI Ý — SỰ KIỆN SẮP DIỄN RA
+                </p>
+                <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                  {suggestions.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => setSelectedEvent(e)}
+                      className="group flex items-center gap-3 rounded-xl border border-border bg-background/60 p-2.5 text-left transition hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      {e.thumbnail_url || e.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={e.thumbnail_url || e.image_url}
+                          alt=""
+                          className="size-12 shrink-0 rounded-md object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="size-12 shrink-0 rounded-md bg-muted" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">
+                          {e.title}
+                        </p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {formatVietnamDate(e.start_date)} → {formatVietnamDate(e.end_date)}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       ) : (
         <div className="glass-card overflow-x-auto rounded-2xl border-border p-4 md:p-5">
           <div style={{ width: timelineWidth }} className="space-y-4">
@@ -244,7 +290,20 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
                 })}
               </div>
 
-              <div className="space-y-1.5 px-0 pb-2 pt-2">
+              <div className="relative min-h-[120px] space-y-1.5 px-0 pb-2 pt-2">
+                {/* Today vertical marker */}
+                {(() => {
+                  const todayKey = getVietnamDateKey(new Date());
+                  const idx = days.findIndex((d) => getVietnamDateKey(d) === todayKey);
+                  if (idx < 0) return null;
+                  return (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute top-0 bottom-0 w-px bg-primary/40 dark:bg-amber-400/40"
+                      style={{ left: idx * dayWidth + dayWidth / 2 }}
+                    />
+                  );
+                })()}
                 {visibleEvents.map((event) => {
                   const eventStart = startOfDay(new Date(event.start_date));
                   const eventEnd = endOfDay(new Date(event.end_date));
