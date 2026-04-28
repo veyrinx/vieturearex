@@ -5,30 +5,46 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Mail, Phone, User, Sparkles, MessageSquare, Facebook, Instagram, MessageCircle } from "lucide-react";
+
+const ROLE_OPTIONS = [
+  "Caster / Bình luận viên",
+  "Editor video",
+  "Designer / Đồ hoạ",
+  "Content writer",
+  "Mod / Quản trị viên cộng đồng",
+  "Streamer",
+  "Photographer",
+  "Marketing",
+  "Khác",
+];
 
 export default function TeamJoinPage({ params }: { params: { token: string } }) {
   const router = useRouter();
   const { token } = params;
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const [displayName, setDisplayName] = useState("");
+
+  const [form, setForm] = useState({
+    display_name: "",
+    email: "",
+    phone: "",
+    applied_role: ROLE_OPTIONS[0],
+    application_note: "",
+    facebook_url: "",
+    instagram_url: "",
+    tiktok_url: "",
+    discord_url: "",
+    zalo_url: "",
+  });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
+  const set = <K extends keyof typeof form>(k: K, v: string) =>
+    setForm((p) => ({ ...p, [k]: v }));
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password || !displayName.trim()) {
-      toast.error("Vui lòng điền đầy đủ thông tin.");
-      return;
-    }
-    if (password !== confirmPwd) {
-      toast.error("Mật khẩu xác nhận không khớp.");
-      return;
-    }
-    if (password.length < 6) {
-      toast.error("Mật khẩu tối thiểu 6 ký tự.");
+    if (!form.display_name.trim() || !form.email.trim()) {
+      toast.error("Vui lòng nhập tên và email.");
       return;
     }
 
@@ -37,12 +53,7 @@ export default function TeamJoinPage({ params }: { params: { token: string } }) 
       const res = await fetch("/api/team-join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          email: email.trim().toLowerCase(),
-          password,
-          display_name: displayName.trim(),
-        }),
+        body: JSON.stringify({ token, ...form, email: form.email.trim().toLowerCase() }),
       });
       const data = (await res.json()) as { error?: string; status?: string };
       if (!res.ok) {
@@ -67,49 +78,118 @@ export default function TeamJoinPage({ params }: { params: { token: string } }) 
           <h1 className="font-heading text-xl font-bold uppercase tracking-[0.06em]">
             Đã gửi yêu cầu
           </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Tài khoản của bạn đã được tạo và đang chờ bộ phận IT duyệt. Bạn sẽ được thông báo khi hồ sơ được phê duyệt.
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Cảm ơn bạn! Bộ phận IT đã nhận hồ sơ và sẽ liên hệ qua email{" "}
+            <span className="font-semibold text-foreground">{form.email}</span> sau khi duyệt
+            (kèm link đặt mật khẩu).
           </p>
-          <Button onClick={() => router.push("/")} className="mt-6 rounded-xl">Về trang chủ</Button>
+          <Button onClick={() => router.push("/")} className="mt-6 rounded-xl">
+            Về trang chủ
+          </Button>
         </section>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
-        <div className="mb-6 text-center">
-          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">
-            Tham gia team Arex Isc NetWork
+    <main className="flex min-h-screen items-start justify-center px-4 py-10">
+      <section className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-xl md:p-8">
+        <header className="mb-6 text-center">
+          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] md:text-3xl">
+            Tham gia team Arex
           </h1>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Bạn được mời tạo tài khoản team. Sau khi gửi, IT sẽ duyệt hồ sơ.
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground md:text-sm">
+            Điền thông tin bên dưới. Bộ phận IT sẽ duyệt hồ sơ và gửi email kích hoạt cho bạn —
+            không cần đặt mật khẩu ngay tại đây.
           </p>
-        </div>
+        </header>
 
-        <form onSubmit={onSubmit} className="space-y-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tên hiển thị</label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={60} className="h-11 rounded-xl" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email</label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="h-11 rounded-xl" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mật khẩu</label>
-            <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="h-11 rounded-xl" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Xác nhận mật khẩu</label>
-            <Input value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} type="password" className="h-11 rounded-xl" />
-          </div>
-          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl">
-            {loading ? "Đang gửi..." : "Gửi yêu cầu"}
+        <form onSubmit={onSubmit} className="space-y-5">
+          {/* Thông tin cơ bản */}
+          <fieldset className="space-y-3">
+            <legend className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              <User className="size-3.5" /> Thông tin cơ bản
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Tên hiển thị *">
+                <Input value={form.display_name} onChange={(e) => set("display_name", e.target.value)} maxLength={80} className="h-10" />
+              </Field>
+              <Field label="Email liên hệ *" icon={<Mail className="size-3.5" />}>
+                <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} maxLength={120} className="h-10" />
+              </Field>
+              <Field label="Số điện thoại" icon={<Phone className="size-3.5" />}>
+                <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} maxLength={20} placeholder="0xxxxxxxxx" className="h-10" />
+              </Field>
+              <Field label="Vị trí muốn ứng tuyển" icon={<Sparkles className="size-3.5" />}>
+                <select
+                  value={form.applied_role}
+                  onChange={(e) => set("applied_role", e.target.value)}
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {ROLE_OPTIONS.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </fieldset>
+
+          {/* Lời nhắn */}
+          <Field label="Giới thiệu về bạn (kinh nghiệm, kỹ năng, lý do…)" icon={<MessageSquare className="size-3.5" />}>
+            <textarea
+              value={form.application_note}
+              onChange={(e) => set("application_note", e.target.value.slice(0, 500))}
+              placeholder="Viết vài dòng để team biết thêm về bạn..."
+              rows={4}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="mt-1 text-right text-[10px] text-muted-foreground">{form.application_note.length}/500</p>
+          </Field>
+
+          {/* MXH */}
+          <fieldset className="space-y-3">
+            <legend className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              <Facebook className="size-3.5" /> Mạng xã hội (tuỳ chọn — giúp xác minh nhanh hơn)
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Facebook" icon={<Facebook className="size-3.5" />}>
+                <Input value={form.facebook_url} onChange={(e) => set("facebook_url", e.target.value)} placeholder="https://facebook.com/..." className="h-10" />
+              </Field>
+              <Field label="Instagram" icon={<Instagram className="size-3.5" />}>
+                <Input value={form.instagram_url} onChange={(e) => set("instagram_url", e.target.value)} placeholder="https://instagram.com/..." className="h-10" />
+              </Field>
+              <Field label="TikTok">
+                <Input value={form.tiktok_url} onChange={(e) => set("tiktok_url", e.target.value)} placeholder="https://tiktok.com/@..." className="h-10" />
+              </Field>
+              <Field label="Discord" icon={<MessageCircle className="size-3.5" />}>
+                <Input value={form.discord_url} onChange={(e) => set("discord_url", e.target.value)} placeholder="username hoặc invite link" className="h-10" />
+              </Field>
+              <Field label="Zalo">
+                <Input value={form.zalo_url} onChange={(e) => set("zalo_url", e.target.value)} placeholder="https://zalo.me/..." className="h-10" />
+              </Field>
+            </div>
+          </fieldset>
+
+          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl text-sm font-bold tracking-wide">
+            {loading ? "Đang gửi..." : "Gửi yêu cầu gia nhập"}
           </Button>
+          <p className="text-center text-[11px] text-muted-foreground">
+            Bằng cách gửi, bạn đồng ý cho Arex liên hệ qua email/MXH bạn cung cấp.
+          </p>
         </form>
       </section>
     </main>
+  );
+}
+
+function Field({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+        {icon}
+        {label}
+      </label>
+      {children}
+    </div>
   );
 }

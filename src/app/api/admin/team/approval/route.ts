@@ -3,6 +3,7 @@ import { z } from "zod";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 const schema = z.object({
   userId: z.string().uuid(),
@@ -54,13 +55,38 @@ export async function POST(request: NextRequest) {
       .update({ team_status: "approved" } as never)
       .eq("id", parsed.data.userId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Lookup email + name for the welcome / password-set email
+    const { data: row } = await admin
+      .from("users")
+      .select("email, display_name")
+      .eq("id", parsed.data.userId)
+      .maybeSingle() as { data: { email: string; display_name: string | null } | null };
+
+    // Send password-recovery email so user sets their own password
+    let resetSent = false;
+    if (row?.email) {
+      const { error: linkError } = await admin.auth.resetPasswordForEmail(row.email);
+      resetSent = !linkError;
+    }
+
     await logAdminActivity({
       action: "TEAM_APPROVED",
       targetType: "USER",
       targetId: parsed.data.userId,
-      summary: `Duyệt thành viên team ${parsed.data.userId}`,
+      summary: `Duyệt thành viên team ${row?.email ?? parsed.data.userId}${resetSent ? " — đã gửi email đặt mật khẩu" : ""}`,
     }).catch(() => {});
-    return NextResponse.json({ ok: true });
+
+    void sendLarkNotification({
+      title: "✅ Đã duyệt thành viên team",
+      lines: [
+        { label: "Tên", value: row?.display_name || "—" },
+        { label: "Email", value: row?.email || "—" },
+        { label: "Email reset password", value: resetSent ? "đã gửi" : "thất bại" },
+      ],
+    }).catch(() => null);
+
+    return NextResponse.json({ ok: true, resetSent });
   }
 
   // reject — downgrade to plain user, status=rejected

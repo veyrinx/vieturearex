@@ -806,8 +806,28 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               )}
             </div>
           </Field>
+
+          <div className="py-3 border-t border-border mt-3">
+            <SectionHeader icon={Plug} title="Lark / Feishu" desc="Webhook nhóm Lark — nhận thông báo khi có yêu cầu gia nhập team" />
+          </div>
+          <Field label="Webhook URL" hint="https://open.larksuite.com/open-apis/bot/v2/hook/..." icon={Plug}>
+            <div className="space-y-2">
+              <Input value={v("integrations.lark_webhook_url")} onChange={(e) => set("integrations.lark_webhook_url", e.target.value)} placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..." className="font-mono text-xs" />
+              {v("integrations.lark_webhook_url") && (
+                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" /> Sẽ gửi thông báo khi có yêu cầu gia nhập / duyệt thành viên.
+                </p>
+              )}
+            </div>
+          </Field>
         </Card>
-        <SaveRow onSave={() => save(["zalo.webhook_url", "zalo.group_id", "site.discord_webhook"], "integrations")} saving={saving === "integrations"} />
+        <SaveRow
+          onSave={() => save(
+            ["zalo.webhook_url", "zalo.group_id", "site.discord_webhook", "integrations.lark_webhook_url"],
+            "integrations",
+          )}
+          saving={saving === "integrations"}
+        />
       </div>
     ),
 

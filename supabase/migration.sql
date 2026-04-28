@@ -290,3 +290,7 @@ ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS game_profiles jsonb 
 
 -- Personal contact email (separate from login email)
 ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS contact_email text;
+
+-- Team-join richer application info
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS applied_role text;
+ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS application_note text;
