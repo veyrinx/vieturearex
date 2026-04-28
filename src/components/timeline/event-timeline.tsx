@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   differenceInCalendarDays,
   eachDayOfInterval,
@@ -9,13 +9,14 @@ import {
   isBefore,
   startOfDay,
 } from "date-fns";
-import { Search } from "lucide-react";
+import { Search, Heart, Locate } from "lucide-react";
 import { DatePickerInput } from "@/components/common/date-picker-input";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { EventModal } from "@/components/timeline/event-modal";
+import { useFavoriteEventIds } from "@/components/events/event-actions";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -70,8 +71,11 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({});
+  const favIds = useFavoriteEventIds();
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: events = initialEvents, isLoading } = useEventsQuery({
     search,
@@ -126,6 +130,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
     // Ẩn events đã kết thúc hơn 24h trước (theo timestamp thực, không clamp giờ địa phương)
     const cutoffMs = Date.now() - 24 * 60 * 60 * 1000;
     return events.filter((event) => {
+      if (favoritesOnly && !favIds.includes(event.id)) return false;
       const eventStartMs = new Date(event.start_date).getTime();
       const eventEndMs = new Date(event.end_date).getTime();
       if (Number.isNaN(eventStartMs) || Number.isNaN(eventEndMs)) return false;
@@ -134,7 +139,24 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
       const eventEnd = endOfDay(new Date(event.end_date));
       return !isAfter(eventStart, rangeEnd) && !isBefore(eventEnd, rangeStart);
     });
-  }, [events, rangeEnd, rangeStart]);
+  }, [events, rangeEnd, rangeStart, favoritesOnly, favIds]);
+
+  const scrollToToday = () => {
+    const todayKey = getVietnamDateKey(new Date());
+    const idx = days.findIndex((d) => getVietnamDateKey(d) === todayKey);
+    if (idx < 0 || !scrollerRef.current) return;
+    const container = scrollerRef.current;
+    const target = idx * dayWidth + dayWidth / 2 - container.clientWidth / 2;
+    container.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  };
+
+  // Auto-center on today when timeline first renders with events
+  useEffect(() => {
+    if (visibleEvents.length === 0) return;
+    const id = window.setTimeout(scrollToToday, 100);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days.length, visibleEvents.length]);
 
   if (isLoading && events.length === 0) {
     return <LoadingSpinner className="py-20" label="ĐANG TẢI TIMELINE SỰ KIỆN..." />;
@@ -198,6 +220,36 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
             />
           </div>
         </div>
+
+        {/* Quick actions */}
+        <div className={cn("mt-3 flex flex-wrap items-center gap-2", filterOpen ? "" : "hidden md:flex")}>
+          <button
+            type="button"
+            onClick={() => setFavoritesOnly((v) => !v)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.06em] transition",
+              favoritesOnly
+                ? "border-rose-500/40 bg-rose-500/10 text-rose-500"
+                : "border-border bg-muted text-muted-foreground hover:border-rose-500/40 hover:text-rose-500",
+            )}
+            title="Chỉ hiển thị sự kiện đã yêu thích"
+          >
+            <Heart className={cn("size-3.5", favoritesOnly && "fill-current")} />
+            Yêu thích của tôi
+            {favIds.length > 0 && (
+              <span className="ml-1 rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[10px]">{favIds.length}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={scrollToToday}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground transition hover:border-primary/40 hover:text-primary dark:hover:border-amber-400/40 dark:hover:text-amber-400"
+            title="Đưa hôm nay vào giữa khung nhìn"
+          >
+            <Locate className="size-3.5" />
+            Hôm nay
+          </button>
+        </div>
       </div>
 
       {visibleEvents.length === 0 ? (
@@ -252,7 +304,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
           })()}
         </div>
       ) : (
-        <div className="glass-card overflow-x-auto rounded-2xl border-border p-4 md:p-5">
+        <div ref={scrollerRef} className="glass-card overflow-x-auto rounded-2xl border-border p-4 md:p-5">
           <div style={{ width: timelineWidth }} className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-background">
               <div className="flex h-14" style={{ width: timelineWidth }}>
