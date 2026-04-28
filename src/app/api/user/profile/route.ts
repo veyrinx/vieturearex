@@ -163,8 +163,37 @@ export async function PATCH(request: NextRequest) {
   const adminClient = createAdminSupabaseClient();
   const writeClient = (adminClient ?? supabase) as typeof supabase;
 
-  const { error } = await writeClient.from("users").update(updates as never).eq("id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Retry-without-unknown-columns: when migration hasn't been run on Supabase
+  // some optional columns (game_profiles, contact_email, *_url) won't exist
+  // yet and PostgREST returns PGRST204 / 42703. Drop the offending column from
+  // the payload and retry instead of failing the whole save.
+  const COLUMN_ERR = /column ["']?([a-z0-9_]+)["']? .*does not exist|could not find the ['"]?([a-z0-9_]+)['"]? column/i;
+  const REQUIRED_COLS = new Set(["display_name"]);
+  const remaining = { ...updates };
+  let attempts = 0;
+  let lastError: { message?: string } | null = null;
 
+  while (Object.keys(remaining).length > 0 && attempts < 12) {
+    const { error } = await writeClient
+      .from("users")
+      .update(remaining as never)
+      .eq("id", user.id);
+    if (!error) {
+      return NextResponse.json({ ok: true });
+    }
+    lastError = error;
+    const match = COLUMN_ERR.exec(error.message ?? "");
+    const missingCol = match?.[1] ?? match?.[2];
+    if (missingCol && remaining[missingCol] !== undefined && !REQUIRED_COLS.has(missingCol)) {
+      delete remaining[missingCol];
+      attempts += 1;
+      continue;
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (lastError) {
+    return NextResponse.json({ error: lastError.message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
