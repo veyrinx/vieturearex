@@ -23,6 +23,18 @@ const schema = z.object({
   tiktok_url: optionalUrl,
   discord_url: optionalUrl,
   zalo_url: optionalUrl,
+  game_profiles: z
+    .array(
+      z.object({
+        game: z.string().min(1).max(40),
+        custom_label: z.string().max(40).optional(),
+        uid: z.string().min(1).max(60),
+        nickname: z.string().max(60).optional(),
+      }),
+    )
+    .max(10)
+    .optional()
+    .default([]),
   accept_terms: z.literal(true, {
     errorMap: () => ({ message: "Bạn cần đồng ý với điều khoản team trước khi gửi." }),
   }),
@@ -103,6 +115,14 @@ export async function POST(request: NextRequest) {
     tiktok_url: parsed.data.tiktok_url || null,
     discord_url: parsed.data.discord_url || null,
     zalo_url: parsed.data.zalo_url || null,
+    game_profiles: parsed.data.game_profiles
+      .map((g) => ({
+        game: g.game.trim(),
+        custom_label: g.custom_label?.trim() || undefined,
+        uid: g.uid.trim(),
+        nickname: g.nickname?.trim() || undefined,
+      }))
+      .filter((g) => g.game && g.uid),
   };
 
   const COLUMN_ERR = /column ["']?([a-z0-9_]+)["']? .*does not exist|could not find the ['"]?([a-z0-9_]+)['"]? column/i;
@@ -152,6 +172,15 @@ export async function POST(request: NextRequest) {
       { label: "TikTok", value: parsed.data.tiktok_url || "—" },
       { label: "Discord", value: parsed.data.discord_url || "—" },
       { label: "Zalo", value: parsed.data.zalo_url || "—" },
+      {
+        label: "Game đang chơi",
+        value:
+          parsed.data.game_profiles.length === 0
+            ? "—"
+            : parsed.data.game_profiles
+                .map((g) => `${g.custom_label || g.game}: ${g.uid}${g.nickname ? ` (${g.nickname})` : ""}`)
+                .join(" | "),
+      },
       { label: "IP", value: getClientIp(request) },
     ],
   }).catch(() => null);

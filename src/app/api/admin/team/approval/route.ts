@@ -35,7 +35,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from("users")
-    .select("id, email, display_name, role, team_status, applied_role, application_note, created_at, avatar_url")
+    .select("id, email, display_name, role, team_status, applied_role, application_note, game_profiles, phone, created_at, avatar_url")
     .in("team_status", ["pending_it", "pending_admin", "pending"])
     .order("created_at", { ascending: false })
     .limit(200);

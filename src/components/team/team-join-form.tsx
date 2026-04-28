@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, Mail, Phone, User, Sparkles, MessageSquare, Facebook, Instagram, MessageCircle, ScrollText, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Mail, Phone, User, Sparkles, MessageSquare, Facebook, Instagram, MessageCircle, ScrollText, AlertTriangle, Gamepad2, Plus, Trash2 } from "lucide-react";
 import type { TeamJoinConfig } from "@/lib/utils/site-settings";
+import { GAME_LIST } from "@/lib/constants/game-list";
+import type { GameProfile } from "@/lib/types/content";
 
 type Props = { token: string; config: TeamJoinConfig };
 
@@ -24,6 +26,7 @@ export function TeamJoinForm({ token, config }: Props) {
     discord_url: "",
     zalo_url: "",
   });
+  const [games, setGames] = useState<GameProfile[]>([{ game: "free_fire", uid: "" }]);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -56,6 +59,14 @@ export function TeamJoinForm({ token, config }: Props) {
           ...form,
           email: form.email.trim().toLowerCase(),
           accept_terms: true,
+          game_profiles: games
+            .map((g) => ({
+              game: g.game.trim(),
+              custom_label: g.custom_label?.trim() || undefined,
+              uid: g.uid.trim(),
+              nickname: g.nickname?.trim() || undefined,
+            }))
+            .filter((g) => g.game && g.uid),
         }),
       });
       const data = (await res.json()) as { error?: string; status?: string };
@@ -136,6 +147,97 @@ export function TeamJoinForm({ token, config }: Props) {
               {form.application_note.length}/{config.noteMaxLength}
             </p>
           </Field>
+
+          {/* Game đang chơi */}
+          <fieldset className="space-y-3">
+            <legend className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              <Gamepad2 className="size-3.5" /> ID game đang chơi (bắt buộc Free Fire — UID)
+            </legend>
+            <div className="space-y-2">
+              {games.map((g, idx) => {
+                const isOther = g.game === "other";
+                const meta = GAME_LIST.find((x) => x.key === g.game);
+                return (
+                  <div key={idx} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-2.5 sm:grid-cols-[140px,1fr,1fr,auto]">
+                    <select
+                      value={g.game}
+                      onChange={(e) => {
+                        const next = [...games];
+                        next[idx] = { ...next[idx], game: e.target.value };
+                        setGames(next);
+                      }}
+                      className="h-9 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      {GAME_LIST.map((opt) => (
+                        <option key={opt.key} value={opt.key}>{opt.label}</option>
+                      ))}
+                    </select>
+                    {isOther ? (
+                      <Input
+                        value={g.custom_label ?? ""}
+                        onChange={(e) => {
+                          const next = [...games];
+                          next[idx] = { ...next[idx], custom_label: e.target.value };
+                          setGames(next);
+                        }}
+                        placeholder="Tên game"
+                        maxLength={40}
+                        className="h-9"
+                      />
+                    ) : (
+                      <Input
+                        value={g.nickname ?? ""}
+                        onChange={(e) => {
+                          const next = [...games];
+                          next[idx] = { ...next[idx], nickname: e.target.value };
+                          setGames(next);
+                        }}
+                        placeholder="Nickname trong game (tuỳ chọn)"
+                        maxLength={60}
+                        className="h-9"
+                      />
+                    )}
+                    <Input
+                      value={g.uid}
+                      onChange={(e) => {
+                        const next = [...games];
+                        next[idx] = { ...next[idx], uid: e.target.value };
+                        setGames(next);
+                      }}
+                      placeholder={meta?.hint ?? "ID / UID"}
+                      maxLength={60}
+                      className="h-9"
+                    />
+                    {games.length > 1 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setGames(games.filter((_, i) => i !== idx))}
+                        className="h-9 gap-1 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+              {games.length < 10 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setGames([...games, { game: "free_fire", uid: "" }])}
+                  className="gap-1.5 rounded-xl text-xs"
+                >
+                  <Plus className="size-3.5" /> Thêm game khác
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tối đa 10 game. ID này sẽ hiển thị trên hồ sơ team sau khi được duyệt.
+            </p>
+          </fieldset>
 
           {config.showSocials && (
             <fieldset className="space-y-3">

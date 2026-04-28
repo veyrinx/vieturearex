@@ -24,6 +24,8 @@ type Pending = {
   team_status: string | null;
   applied_role?: string | null;
   application_note?: string | null;
+  phone?: string | null;
+  game_profiles?: Array<{ game: string; uid: string; nickname?: string; custom_label?: string }> | null;
   created_at: string;
   avatar_url: string | null;
 };
@@ -298,6 +300,25 @@ function PendingSection({
                   Từ chối
                 </Button>
               </div>
+              {p.phone && (
+                <p className="text-[11px] text-muted-foreground">📱 {p.phone}</p>
+              )}
+              {Array.isArray(p.game_profiles) && p.game_profiles.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {p.game_profiles.map((g, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[10px]"
+                    >
+                      <span className="font-bold uppercase text-primary dark:text-amber-400">
+                        {g.custom_label || g.game.replace("_", " ")}
+                      </span>
+                      <span>{g.uid}</span>
+                      {g.nickname && <span className="text-muted-foreground">({g.nickname})</span>}
+                    </span>
+                  ))}
+                </div>
+              )}
               {p.application_note && (
                 <p className="rounded-md bg-muted/40 px-2.5 py-1.5 text-[11px] italic text-muted-foreground">
                   &ldquo;{p.application_note}&rdquo;
