@@ -4,6 +4,12 @@
       "NODE_OPTIONS": "--max-old-space-size=4096"
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/daily-report",
+      "schedule": "0 1 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/dmca-validation.html",

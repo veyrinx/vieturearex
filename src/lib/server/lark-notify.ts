@@ -1,11 +1,15 @@
 import "server-only";
 import { getSettings } from "@/lib/data/content-service";
 
-const SETTING_KEY = "integrations.lark_webhook_url";
+const MAIN_KEY = "integrations.lark_webhook_url";
+const ALERTS_KEY = "integrations.lark_alerts_webhook_url";
+
+export type LarkChannel = "main" | "alerts";
 
 /**
  * Send a Lark/Feishu group webhook notification.
- * Webhook URL stored at setting key `integrations.lark_webhook_url`.
+ * - channel="main"   → integrations.lark_webhook_url (default)
+ * - channel="alerts" → integrations.lark_alerts_webhook_url, falls back to main
  *
  * Lark "Custom Bot" webhook accepts simple text or richer post format.
  * We send post-format with a title + bullet content for nice rendering.
@@ -14,9 +18,13 @@ export async function sendLarkNotification(opts: {
   title: string;
   lines: Array<{ label: string; value: string }>;
   url?: string;
+  channel?: LarkChannel;
 }) {
   const settings = await getSettings();
-  const webhookUrl = settings.find((s) => s.key === SETTING_KEY)?.value;
+  const main = settings.find((s) => s.key === MAIN_KEY)?.value || "";
+  const alerts = settings.find((s) => s.key === ALERTS_KEY)?.value || "";
+  const channel: LarkChannel = opts.channel ?? "main";
+  const webhookUrl = channel === "alerts" ? (alerts || main) : main;
   if (!webhookUrl) return { sent: false, reason: "no_webhook" };
 
   // Lark "post" message format

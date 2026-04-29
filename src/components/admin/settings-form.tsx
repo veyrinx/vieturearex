@@ -927,22 +927,45 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </Field>
 
           <div className="py-3 border-t border-border mt-3">
-            <SectionHeader icon={Plug} title="Lark / Feishu" desc="Webhook nhóm Lark — nhận thông báo khi có yêu cầu gia nhập team" />
+            <SectionHeader icon={Plug} title="Lark / Feishu" desc="Webhook bot Lark — báo gia nhập team, báo cáo ngày, cảnh báo bảo mật" />
           </div>
-          <Field label="Webhook URL" hint="https://open.larksuite.com/open-apis/bot/v2/hook/..." icon={Plug}>
+          <Field label="Tên bot (hiển thị nội bộ)" hint="VD: Arex-Notifier" icon={Plug}>
+            <Input value={v("integrations.lark_bot_name")} onChange={(e) => set("integrations.lark_bot_name", e.target.value)} placeholder="Arex-Notifier" maxLength={60} />
+          </Field>
+          <Field label="Webhook chính" hint="Báo team join, duyệt, báo cáo ngày" icon={Plug}>
             <div className="space-y-2">
               <Input value={v("integrations.lark_webhook_url")} onChange={(e) => set("integrations.lark_webhook_url", e.target.value)} placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..." className="font-mono text-xs" />
               {v("integrations.lark_webhook_url") && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="size-3.5" /> Sẽ gửi thông báo khi có yêu cầu gia nhập / duyệt thành viên.
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình.
                 </p>
               )}
             </div>
           </Field>
+          <Field label="Webhook cảnh báo (tuỳ chọn)" hint="Riêng cho IP bị chặn, đăng nhập sai bất thường — để trống sẽ dùng webhook chính" icon={Plug}>
+            <Input value={v("integrations.lark_alerts_webhook_url")} onChange={(e) => set("integrations.lark_alerts_webhook_url", e.target.value)} placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..." className="font-mono text-xs" />
+          </Field>
+          <Field label="Bật báo cáo lượt xem hằng ngày" hint="Cron 08:00 sáng giờ VN" icon={Plug}>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={v("integrations.lark_daily_report") !== "false"}
+                onChange={(e) => set("integrations.lark_daily_report", e.target.checked ? "true" : "false")}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
+            </label>
+          </Field>
         </Card>
         <SaveRow
           onSave={() => save(
-            ["zalo.webhook_url", "zalo.group_id", "site.discord_webhook", "integrations.lark_webhook_url"],
+            [
+              "zalo.webhook_url", "zalo.group_id", "site.discord_webhook",
+              "integrations.lark_webhook_url",
+              "integrations.lark_alerts_webhook_url",
+              "integrations.lark_bot_name",
+              "integrations.lark_daily_report",
+            ],
             "integrations",
           )}
           saving={saving === "integrations"}
