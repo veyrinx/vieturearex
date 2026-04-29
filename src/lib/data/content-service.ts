@@ -164,6 +164,7 @@ function mapEventRow(row: {
   link: string | null;
   status: EventStatus;
   thumbnail_url?: string | null;
+  server_region?: string | null;
   view_count?: number | null;
   created_by_name?: string | null;
   updated_by_name?: string | null;
@@ -172,6 +173,7 @@ function mapEventRow(row: {
     ...row,
     description: row.description.replace(SAMPLE_EVENT_TEXT_PATTERN, "").trim(),
     thumbnail_url: row.thumbnail_url ?? undefined,
+    server_region: row.server_region ?? null,
     view_count: Number(row.view_count ?? 0),
     created_by_name: row.created_by_name ?? null,
     updated_by_name: row.updated_by_name ?? null,
@@ -285,6 +287,7 @@ export async function createEvent(
     ...payload,
     id: payload.id ?? crypto.randomUUID(),
     thumbnail_url: payload.thumbnail_url ?? null,
+    server_region: payload.server_region ?? null,
     link: payload.link ?? null,
     status: payload.status,
     view_count: 0,
@@ -297,9 +300,9 @@ export async function createEvent(
     .select("*")
     .single();
 
-  // Retry without author/view columns if migration not run yet
-  if (result.error && /created_by_name|updated_by_name|view_count/.test(result.error.message ?? "")) {
-    const { created_by_name: _a, updated_by_name: _b, view_count: _c, ...safePayload } = fullPayload as Record<string, unknown>;
+  // Retry without optional columns if migration not run yet
+  if (result.error && /created_by_name|updated_by_name|view_count|server_region/.test(result.error.message ?? "")) {
+    const { created_by_name: _a, updated_by_name: _b, view_count: _c, server_region: _d, ...safePayload } = fullPayload as Record<string, unknown>;
     result = await supabase
       .from("events")
       .insert(safePayload as never)
@@ -328,22 +331,33 @@ export async function updateEvent(
   }
 
   const supabase = getSupabaseOrThrow();
-  const { data, error } = await supabase
+  const updatePayload: Record<string, unknown> = {
+    ...payload,
+    thumbnail_url: payload.thumbnail_url ?? null,
+    server_region: payload.server_region ?? null,
+    link: payload.link ?? null,
+    updated_by_name: payload.updated_by_name ?? null,
+  };
+  let result = await supabase
     .from("events")
-    .update({
-      ...payload,
-      thumbnail_url: payload.thumbnail_url ?? null,
-      link: payload.link ?? null,
-      updated_by_name: payload.updated_by_name ?? null,
-    } as never)
+    .update(updatePayload as never)
     .eq("id", id)
     .select("*")
     .single();
-
-  if (error) {
-    throw new Error(error.message);
+  if (result.error && /server_region/.test(result.error.message ?? "")) {
+    const { server_region: _, ...safe } = updatePayload as Record<string, unknown>;
+    result = await supabase
+      .from("events")
+      .update(safe as never)
+      .eq("id", id)
+      .select("*")
+      .single();
   }
-  return mapEventRow(data);
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+  return mapEventRow(result.data);
 }
 
 export async function deleteEvent(id: string): Promise<void> {

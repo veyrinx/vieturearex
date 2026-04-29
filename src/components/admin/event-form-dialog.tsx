@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { EventItem } from "@/lib/types/content";
+import { EVENT_SERVERS } from "@/lib/constants/event-servers";
 import { createClient } from "@/lib/supabase/client";
 import {
   formatVietnamDateInput,
@@ -49,6 +50,7 @@ const eventFormSchema = z.object({
     (v) => !v || z.string().url().safeParse(v).success,
     { message: "Liên kết phải là URL hợp lệ (vd: https://example.com)." }
   ),
+  server_region: z.string().trim().optional().default(""),
 });
 
 type EventFormValues = z.input<typeof eventFormSchema>;
@@ -79,6 +81,7 @@ export function EventFormDialog({
       image_url: "",
       thumbnail_url: "",
       link: "",
+      server_region: "vn",
     },
   });
 
@@ -111,6 +114,7 @@ export function EventFormDialog({
         image_url: initialData.image_url,
         thumbnail_url: initialData.thumbnail_url ?? initialData.image_url,
         link: initialData.link ?? "",
+        server_region: initialData.server_region ?? "vn",
       });
       return;
     }
@@ -125,6 +129,7 @@ export function EventFormDialog({
       image_url: "",
       thumbnail_url: "",
       link: "",
+      server_region: "vn",
     });
   }, [initialData, open, reset]);
 
@@ -151,6 +156,7 @@ export function EventFormDialog({
         end_date: toVietnamIsoFromDateTimeInput(cleanedEndDate, values.end_time || "23:59"),
         thumbnail_url: values.thumbnail_url || values.image_url,
         link: values.link || "",
+        server_region: (values.server_region || "").trim() || "vn",
       }),
     });
 
@@ -266,7 +272,22 @@ export function EventFormDialog({
               {errors.image_url ? <p className="text-xs text-rose-500">{errors.image_url.message}</p> : null}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Server / Khu vực
+              </label>
+              <select
+                {...register("server_region")}
+                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                {EVENT_SERVERS.map((s) => (
+                  <option key={s.key} value={s.key}>{s.flag} {s.label}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">Sự kiện thuộc server nào (Việt Nam, Global, SEA…)</p>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Liên kết ngoài (không bắt buộc)
               </label>

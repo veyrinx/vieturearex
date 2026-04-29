@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       image_url: String(rawPayload?.image_url ?? "").trim(),
       thumbnail_url: normalizeUrlField(rawPayload?.thumbnail_url),
       link: normalizeUrlField(rawPayload?.link),
+      server_region: typeof rawPayload?.server_region === "string" ? rawPayload.server_region : "",
       status: rawPayload?.status,
     };
     const parsed = eventSchema.safeParse(payload);
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
       description: sanitizePlainText(parsed.data.description ?? ""),
       title: sanitizePlainText(parsed.data.title),
       thumbnail_url: parsed.data.thumbnail_url || parsed.data.image_url,
+      server_region: parsed.data.server_region || null,
       link: parsed.data.link || null,
       status: getEventStatusInVietnam(parsed.data.start_date, parsed.data.end_date),
       view_count: 0,
@@ -139,6 +141,7 @@ export async function PATCH(request: NextRequest) {
       image_url: String(rawPayload?.image_url ?? "").trim(),
       thumbnail_url: normalizeUrlField(rawPayload?.thumbnail_url),
       link: normalizeUrlField(rawPayload?.link),
+      server_region: typeof rawPayload?.server_region === "string" ? rawPayload.server_region : "",
       status: rawPayload?.status,
     };
 
@@ -159,6 +162,7 @@ export async function PATCH(request: NextRequest) {
       title: sanitizePlainText(parsed.data.title),
       description: sanitizePlainText(parsed.data.description ?? ""),
       thumbnail_url: parsed.data.thumbnail_url || parsed.data.image_url,
+      server_region: parsed.data.server_region || null,
       link: parsed.data.link || null,
       status: getEventStatusInVietnam(parsed.data.start_date, parsed.data.end_date),
       updated_by_name: adminName,

@@ -32,6 +32,7 @@ export type EventItem = {
   end_date: string;
   image_url: string;
   thumbnail_url?: string;
+  server_region?: string | null;
   link: string | null;
   status: EventStatus;
   view_count: number;

@@ -11,6 +11,8 @@ import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventModal } from "@/components/timeline/event-modal";
 import { MediaFrame } from "@/components/common/media-frame";
+import { ServerBadge } from "@/components/events/server-badge";
+import { EVENT_SERVERS } from "@/lib/constants/event-servers";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -44,6 +46,7 @@ const statusCardClassMap: Record<EventStatus, string> = {
 
 export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [status, setStatus] = useState<EventStatus | "all">("all");
+  const [server, setServer] = useState<string>("all");
   const [sort, setSort] = useState<(typeof sortOptions)[number]["value"]>("newest");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -61,6 +64,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
 
     return safeData
       .filter((event) => {
+        if (server !== "all" && (event.server_region ?? "vn") !== server) return false;
         const eventStart = new Date(event.start_date);
         const eventEnd = new Date(event.end_date);
         const matchFrom = from ? !isBefore(eventEnd, from) : isEventInCurrentVietnamMonthWindow(event.start_date);
@@ -72,7 +76,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         const right = new Date(b.start_date).getTime();
         return sort === "newest" ? right - left : left - right;
       });
-  }, [safeData, fromDate, sort, toDate]);
+  }, [safeData, fromDate, sort, toDate, server]);
 
   return (
     <>
@@ -136,6 +140,39 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
           <DatePickerInput value={toDate} onChange={setToDate} />
         </div>
         </div>
+
+        {/* Server chips */}
+        <div className={cn("mt-3 flex flex-wrap items-center gap-1.5", filterOpen ? "" : "hidden md:flex")}>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">SERVER:</span>
+          <button
+            type="button"
+            onClick={() => setServer("all")}
+            className={cn(
+              "rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
+              server === "all"
+                ? "border-primary/40 bg-primary/10 text-primary dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
+                : "border-border bg-muted text-muted-foreground hover:border-primary/40",
+            )}
+          >
+            Tất cả
+          </button>
+          {EVENT_SERVERS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setServer(s.key)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
+                server === s.key
+                  ? s.color
+                  : "border-border bg-muted text-muted-foreground hover:border-primary/40",
+              )}
+            >
+              <span aria-hidden>{s.flag}</span>
+              {s.short}
+            </button>
+          ))}
+        </div>
       </div>
 
       {events.length === 0 ? (
@@ -167,6 +204,12 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
                   status={event.status}
                   className="absolute right-0 top-0 z-30 rounded-[6px] px-[7px] py-3 text-[0.8rem] shadow-sm uppercase font-bold"
                 />
+                {event.server_region && (
+                  <ServerBadge
+                    serverKey={event.server_region}
+                    className="absolute left-2 top-2 z-30 shadow-sm"
+                  />
+                )}
               </div>
 
               <div className="flex flex-1 flex-col gap-2 p-3 text-center">

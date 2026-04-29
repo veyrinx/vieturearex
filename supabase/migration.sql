@@ -313,3 +313,7 @@ ALTER TABLE IF EXISTS public.users ADD COLUMN IF NOT EXISTS team_terms_accepted_
 -- Multi-use team invite links
 ALTER TABLE IF EXISTS public.team_invites ADD COLUMN IF NOT EXISTS max_uses int NOT NULL DEFAULT 1;
 ALTER TABLE IF EXISTS public.team_invites ADD COLUMN IF NOT EXISTS uses_count int NOT NULL DEFAULT 0;
+
+-- Event server/region tagging (Free Fire có nhiều server: VN, Global, SEA, BR, IN, ME...)
+ALTER TABLE IF EXISTS public.events ADD COLUMN IF NOT EXISTS server_region text;
+CREATE INDEX IF NOT EXISTS events_server_region_idx ON public.events(server_region);

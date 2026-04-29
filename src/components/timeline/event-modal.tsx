@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MediaFrame } from "@/components/common/media-frame";
 import { FavoriteButton, FollowButton } from "@/components/events/event-actions";
+import { ServerBadge } from "@/components/events/server-badge";
 import type { EventItem } from "@/lib/types/content";
 import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 
@@ -33,6 +34,11 @@ export function EventModal({ event, open, onOpenChange }: EventModalProps) {
                   {event.title}
                 </DialogTitle>
               </DialogHeader>
+              {event.server_region && (
+                <div className="mt-2 flex justify-center">
+                  <ServerBadge serverKey={event.server_region} variant="full" />
+                </div>
+              )}
             </div>
 
             {/* Khung ảnh — Lớp 2 */}

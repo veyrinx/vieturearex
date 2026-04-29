@@ -7,6 +7,7 @@ import { CalendarDays, ArrowRight, ExternalLink, Pencil, Trash2, Plus, User } fr
 import Link from "next/link";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/common/status-badge";
+import { ServerBadge } from "@/components/events/server-badge";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
 import { MediaFrame } from "@/components/common/media-frame";
@@ -203,6 +204,12 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       status={event.status}
                       className="absolute right-0 top-0 z-30 rounded-[6px] px-[7px] py-3 text-[0.8rem] font-bold uppercase shadow-sm"
                     />
+                    {event.server_region && (
+                      <ServerBadge
+                        serverKey={event.server_region}
+                        className="absolute left-2 top-2 z-30 shadow-sm"
+                      />
+                    )}
                   </div>
 
                   <div className="flex flex-1 flex-col gap-2 px-4 py-3">

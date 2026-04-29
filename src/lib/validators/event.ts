@@ -39,6 +39,7 @@ export const eventSchema = z.object({
   image_url: z.string().url(),
   thumbnail_url: z.union([z.string().url(), z.literal(""), z.null()]).optional().default(""),
   link: z.union([z.string().url(), z.literal(""), z.null()]).optional().default(""),
+  server_region: z.string().max(20).optional().default("").transform((v) => v.trim().toLowerCase()),
   status: z.enum(["active", "upcoming", "expired"]).optional(),
 });
 
