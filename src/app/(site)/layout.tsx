@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { CskhChat } from "@/components/community/cskh-chat";
+import { AutoTranslate } from "@/components/common/auto-translate";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -52,6 +53,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       </PageTransition>
       <SiteFooter />
       <CskhChat />
+      <AutoTranslate />
     </div>
   );
 }

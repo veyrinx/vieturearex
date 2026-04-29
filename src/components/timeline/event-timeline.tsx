@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { EventModal } from "@/components/timeline/event-modal";
 import { useFavoriteEventIds } from "@/components/events/event-actions";
+import { ServerBadge } from "@/components/events/server-badge";
+import { EVENT_SERVERS } from "@/lib/constants/event-servers";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -72,6 +74,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   const [toDate, setToDate] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [server, setServer] = useState<string>("all");
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({});
   const favIds = useFavoriteEventIds();
@@ -131,6 +134,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
     const cutoffMs = Date.now() - 24 * 60 * 60 * 1000;
     return events.filter((event) => {
       if (favoritesOnly && !favIds.includes(event.id)) return false;
+      if (server !== "all" && (event.server_region ?? "vn") !== server) return false;
       const eventStartMs = new Date(event.start_date).getTime();
       const eventEndMs = new Date(event.end_date).getTime();
       if (Number.isNaN(eventStartMs) || Number.isNaN(eventEndMs)) return false;
@@ -139,7 +143,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
       const eventEnd = endOfDay(new Date(event.end_date));
       return !isAfter(eventStart, rangeEnd) && !isBefore(eventEnd, rangeStart);
     });
-  }, [events, rangeEnd, rangeStart, favoritesOnly, favIds]);
+  }, [events, rangeEnd, rangeStart, favoritesOnly, favIds, server]);
 
   const scrollToToday = () => {
     const todayKey = getVietnamDateKey(new Date());
@@ -250,6 +254,39 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
             Hôm nay
           </button>
         </div>
+
+        {/* Server chips */}
+        <div className={cn("mt-2 flex flex-wrap items-center gap-1.5", filterOpen ? "" : "hidden md:flex")}>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">SERVER:</span>
+          <button
+            type="button"
+            onClick={() => setServer("all")}
+            className={cn(
+              "rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
+              server === "all"
+                ? "border-primary/40 bg-primary/10 text-primary dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
+                : "border-border bg-muted text-muted-foreground hover:border-primary/40",
+            )}
+          >
+            Tất cả
+          </button>
+          {EVENT_SERVERS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setServer(s.key)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
+                server === s.key
+                  ? s.color
+                  : "border-border bg-muted text-muted-foreground hover:border-primary/40",
+              )}
+            >
+              <span aria-hidden>{s.flag}</span>
+              {s.short}
+            </button>
+          ))}
+        </div>
       </div>
 
       {visibleEvents.length === 0 ? (
@@ -342,7 +379,17 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
                 })}
               </div>
 
-              <div className="relative min-h-[120px] space-y-1.5 px-0 pb-2 pt-2">
+              <div className="relative min-h-[160px] space-y-1.5 px-0 pb-2 pt-2">
+                {/* Vertical day separators extending through body for uniform grid */}
+                <div aria-hidden className="pointer-events-none absolute inset-0 flex">
+                  {days.map((day, i) => (
+                    <div
+                      key={`sep-${i}`}
+                      style={{ width: dayWidth }}
+                      className="shrink-0 border-r border-border/30 last:border-r-0"
+                    />
+                  ))}
+                </div>
                 {/* Today vertical marker */}
                 {(() => {
                   const todayKey = getVietnamDateKey(new Date());
@@ -410,7 +457,12 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
                           return null;
                         })()}
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">{event.title}</p>
+                          <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-foreground">
+                            {event.server_region && (
+                              <ServerBadge serverKey={event.server_region} className="shrink-0" />
+                            )}
+                            <span className="truncate">{event.title}</span>
+                          </p>
                           <p className="text-xs text-foreground/85">
                             {formatVietnamDate(event.start_date)}{showMeta ? ` - ${formatVietnamDate(event.end_date)}` : ""}
                           </p>
