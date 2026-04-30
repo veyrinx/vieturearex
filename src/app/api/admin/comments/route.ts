@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const guard = await enforceAdminApiAuth({ minimumRole: "support" });
+  const guard = await enforceAdminApiAuth({ capability: "comments.moderate" });
   if (guard) return guard;
 
   const body = await request.json().catch(() => null) as { id?: string; status?: string } | null;
@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const guard = await enforceAdminApiAuth({ minimumRole: "support" });
+  const guard = await enforceAdminApiAuth({ capability: "comments.moderate" });
   if (guard) return guard;
 
   const body = await request.json().catch(() => null) as { id?: string } | null;

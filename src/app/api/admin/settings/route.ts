@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
   if (limited) {
     return limited;
   }
-  const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
+  const denied = await enforceAdminApiAuth({ minimumRole: "admin", capability: "settings.edit" });
   if (denied) {
     return denied;
   }
@@ -55,6 +55,12 @@ export async function PATCH(request: NextRequest) {
       { error: "Setting key is not editable from this route." },
       { status: 400 },
     );
+  }
+  // The permission matrix is gated by its own capability so admins
+  // can't widen their own privileges.
+  if (sanitizedKey === "permissions.role_capabilities") {
+    const denied2 = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "permissions.edit" });
+    if (denied2) return denied2;
   }
 
   let setting;

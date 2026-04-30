@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getClientIp } from "@/lib/server/get-client-ip";
+import { getSettings } from "@/lib/data/content-service";
+import { hasCapability, parseRoleCapabilities, type CapabilityKey } from "@/lib/permissions";
 
 export function getClientKey(request: NextRequest) {
   return getClientIp(request);
@@ -58,7 +60,15 @@ function matchesMinimumRole(role: string | null | undefined, minimumRole: Minimu
   return userLevel >= requiredLevel;
 }
 
-export async function enforceAdminApiAuth(options?: { minimumRole?: MinimumRole }) {
+export async function enforceAdminApiAuth(options?: {
+  minimumRole?: MinimumRole;
+  /**
+   * If supplied, the caller's role MUST have this capability per the
+   * permissions.role_capabilities matrix (super_admin always passes).
+   * Used together with minimumRole — both checks must succeed.
+   */
+  capability?: CapabilityKey;
+}) {
   const minimumRole = options?.minimumRole ?? "support";
 
   // Production: Supabase authentication is REQUIRED
@@ -103,6 +113,22 @@ export async function enforceAdminApiAuth(options?: { minimumRole?: MinimumRole 
 
   if (!matchesMinimumRole(role, minimumRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (options?.capability) {
+    try {
+      const settings = await getSettings();
+      const raw = settings.find((s) => s.key === "permissions.role_capabilities")?.value ?? null;
+      const matrix = parseRoleCapabilities(raw);
+      if (!hasCapability(role, options.capability, matrix)) {
+        return NextResponse.json(
+          { error: `Forbidden: missing capability '${options.capability}'.` },
+          { status: 403 },
+        );
+      }
+    } catch {
+      // If matrix lookup fails, fall back to role-hierarchy result already passed above.
+    }
   }
 
   return null;

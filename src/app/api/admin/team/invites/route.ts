@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "team-invite", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
-  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "team.invite" });
   if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "team.invite" });
   if (denied) return denied;
 
   const id = request.nextUrl.searchParams.get("id");

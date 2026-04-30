@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-sql", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
-  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "sql.run" });
   if (denied) return denied;
 
   const auth = await getAuthContext();

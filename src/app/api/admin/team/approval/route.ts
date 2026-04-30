@@ -5,6 +5,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
+import { getSettings } from "@/lib/data/content-service";
+import { hasCapability, parseRoleCapabilities } from "@/lib/permissions";
 
 const schema = z.object({
   userId: z.string().uuid(),
@@ -79,9 +81,12 @@ export async function POST(request: NextRequest) {
 
   if (!target) return NextResponse.json({ error: "Không tìm thấy thành viên." }, { status: 404 });
 
+  const settings = await getSettings();
+  const matrix = parseRoleCapabilities(settings.find((s) => s.key === "permissions.role_capabilities")?.value);
+
   // ── REJECT ──────────────────────────────────────────────────────────────
   if (parsed.data.action === "reject") {
-    if (!IT_LEVEL.has(actorRole)) {
+    if (!IT_LEVEL.has(actorRole) || !hasCapability(actorRole, "team.approve_it", matrix)) {
       return NextResponse.json({ error: "Bạn không có quyền từ chối." }, { status: 403 });
     }
     const { error } = await admin
@@ -109,7 +114,7 @@ export async function POST(request: NextRequest) {
 
   // ── IT APPROVE — moves pending_it → pending_admin ───────────────────────
   if (parsed.data.action === "approve_it") {
-    if (!IT_LEVEL.has(actorRole)) {
+    if (!IT_LEVEL.has(actorRole) || !hasCapability(actorRole, "team.approve_it", matrix)) {
       return NextResponse.json({ error: "Chỉ IT trở lên mới được duyệt vòng 1." }, { status: 403 });
     }
     if (target.team_status !== "pending_it" && target.team_status !== "pending") {
@@ -143,7 +148,7 @@ export async function POST(request: NextRequest) {
 
   // ── ADMIN APPROVE — final approval, sends password reset email ──────────
   if (parsed.data.action === "approve_admin") {
-    if (!ADMIN_LEVEL.has(actorRole)) {
+    if (!ADMIN_LEVEL.has(actorRole) || !hasCapability(actorRole, "team.approve_admin", matrix)) {
       return NextResponse.json({ error: "Chỉ admin/super_admin mới được duyệt vòng cuối." }, { status: 403 });
     }
     if (target.team_status !== "pending_admin") {

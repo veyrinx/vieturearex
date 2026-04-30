@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   if (limited) {
     return limited;
   }
-  const denied = await enforceAdminApiAuth();
+  const denied = await enforceAdminApiAuth({ capability: "news.create" });
   if (denied) {
     return denied;
   }
@@ -116,7 +116,7 @@ export async function PATCH(request: NextRequest) {
   if (limited) {
     return limited;
   }
-  const denied = await enforceAdminApiAuth();
+  const denied = await enforceAdminApiAuth({ capability: "news.edit" });
   if (denied) {
     return denied;
   }
@@ -162,7 +162,7 @@ export async function DELETE(request: NextRequest) {
   if (limited) {
     return limited;
   }
-  const denied = await enforceAdminApiAuth();
+  const denied = await enforceAdminApiAuth({ capability: "news.delete" });
   if (denied) {
     return denied;
   }

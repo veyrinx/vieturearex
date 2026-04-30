@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     return limited;
   }
 
-  const denied = await enforceAdminApiAuth();
+  const denied = await enforceAdminApiAuth({ capability: "logs.view" });
   if (denied) {
     return denied;
   }

@@ -62,7 +62,7 @@ export async function PATCH(request: NextRequest) {
   // Handle update user info (super_admin only)
   const infoParsed = updateInfoSchema.safeParse(payload);
   if (infoParsed.success) {
-    const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+    const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "users.edit" });
     if (denied) return denied;
 
     if (!infoParsed.data.display_name && !infoParsed.data.email) {
@@ -101,7 +101,7 @@ export async function PATCH(request: NextRequest) {
   // Handle ban/unban
   const banParsed = updateBanSchema.safeParse(payload);
   if (banParsed.success) {
-    const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
+    const denied = await enforceAdminApiAuth({ minimumRole: "admin", capability: "users.ban" });
     if (denied) return denied;
 
     const callerRole = await getCallerRole();
@@ -135,10 +135,10 @@ export async function PATCH(request: NextRequest) {
 
   const targetRole = roleParsed.data.role;
   if (targetRole === "super_admin" || targetRole === "admin" || targetRole === "it") {
-    const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+    const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "users.edit" });
     if (denied) return denied;
   } else {
-    const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
+    const denied = await enforceAdminApiAuth({ minimumRole: "admin", capability: "users.edit" });
     if (denied) return denied;
 
     // Admin cannot change role of another admin/super_admin
@@ -165,7 +165,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-users-delete", limit: 30, windowMs: 60_000 });
   if (limited) return limited;
-  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin" });
+  const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "users.delete" });
   if (denied) return denied;
 
   const payload = await request.json();
