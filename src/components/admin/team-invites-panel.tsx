@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Plus, Trash2, Check, X, Loader2 } from "lucide-react";
+import { Copy, Plus, Trash2, Check, X, Loader2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ApplicantDetailDialog, type ApplicantDetail } from "@/components/admin/applicant-detail-dialog";
 
 type Invite = {
   id: string;
@@ -42,6 +43,7 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
   const [maxUses, setMaxUses] = useState(1);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ApplicantDetail | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -142,6 +144,7 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
         approveAction="approve_it"
         canApprove={true}
         onApprove={onApproval}
+        onView={setDetail}
         onRefresh={refresh}
       />
 
@@ -156,7 +159,14 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
         approveAction="approve_admin"
         canApprove={isAdmin}
         onApprove={onApproval}
+        onView={setDetail}
         onRefresh={refresh}
+      />
+
+      <ApplicantDetailDialog
+        applicant={detail}
+        open={Boolean(detail)}
+        onOpenChange={(o) => { if (!o) setDetail(null); }}
       />
 
       {/* Invite links — only super_admin can create */}
@@ -263,7 +273,7 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
 
 function PendingSection({
   title, subtitle, list, loading, busy, approveLabel, approveAction, canApprove,
-  onApprove, onRefresh,
+  onApprove, onView, onRefresh,
 }: {
   title: string;
   subtitle: string;
@@ -274,6 +284,7 @@ function PendingSection({
   approveAction: "approve_it" | "approve_admin";
   canApprove: boolean;
   onApprove: (userId: string, action: "approve_it" | "approve_admin" | "reject") => void;
+  onView: (p: ApplicantDetail) => void;
   onRefresh: () => void;
 }) {
   return (
@@ -307,6 +318,16 @@ function PendingSection({
                     </p>
                   )}
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onView(p)}
+                  className="gap-1 rounded-lg"
+                  title="Xem đầy đủ thông tin"
+                >
+                  <Eye className="size-3.5" />
+                  Xem full
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
