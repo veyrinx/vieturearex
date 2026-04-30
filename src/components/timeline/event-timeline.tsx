@@ -87,39 +87,73 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   });
 
   const { days, rangeStart, rangeEnd, months } = useMemo(() => {
-    const defaultRange = getVietnamCurrentMonthRange();
     const rawFrom = fromDate ? parseVietnamDateInputStart(fromDate) : null;
     const rawTo = toDate ? parseVietnamDateInputEnd(toDate) : null;
     const hasDateFilter = Boolean(rawFrom || rawTo);
 
-    let start = hasDateFilter ? rawFrom ?? parseVietnamDateInputStart(toDate) : defaultRange.start;
-    let end = hasDateFilter ? rawTo ?? parseVietnamDateInputEnd(fromDate) : defaultRange.end;
+    let start: Date;
+    let end: Date;
 
-    if (isAfter(start, end)) {
-      start = parseVietnamDateInputStart(toDate);
-      end = parseVietnamDateInputEnd(fromDate);
+    if (hasDateFilter) {
+      start = rawFrom ?? parseVietnamDateInputStart(toDate);
+      end = rawTo ?? parseVietnamDateInputEnd(fromDate);
+      if (isAfter(start, end)) {
+        start = parseVietnamDateInputStart(toDate);
+        end = parseVietnamDateInputEnd(fromDate);
+      }
+    } else {
+      // Tight-fit default window: start a few days before today (or before the
+      // earliest active/upcoming event, whichever is later) and end at the latest
+      // active/upcoming event's end_date. Avoids the long blank stretch from the
+      // 1st of the month when today is mid-month and from running events past
+      // the visible end. Falls back to current-month range when no events.
+      const defaultRange = getVietnamCurrentMonthRange();
+      const todayStart = startOfDay(new Date());
+      const PAD_BEFORE_MS = 3 * 86_400_000;   // 3 ngày đệm trước
+      const PAD_AFTER_MS  = 7 * 86_400_000;   // 7 ngày đệm sau
+      const HARD_CAP_MS   = 180 * 86_400_000; // tối đa 6 tháng
+
+      const interesting = events.filter((e) => e.status !== "expired");
+      if (interesting.length === 0) {
+        start = defaultRange.start;
+        end   = defaultRange.end;
+      } else {
+        let minStart = Infinity;
+        let maxEnd   = -Infinity;
+        for (const e of interesting) {
+          const s = new Date(e.start_date).getTime();
+          const en = new Date(e.end_date).getTime();
+          if (s < minStart) minStart = s;
+          if (en > maxEnd) maxEnd = en;
+        }
+        // Anchor at today: start = min(today − pad, earliestEventStart − pad).
+        const anchor = todayStart.getTime();
+        const startMs = Math.min(anchor - PAD_BEFORE_MS, minStart - PAD_BEFORE_MS);
+        const endMs   = Math.max(anchor + PAD_AFTER_MS,  maxEnd   + PAD_AFTER_MS);
+        // Cap total span to 180 days centered on today so a single weird record
+        // can't blow up the timeline.
+        const cappedStart = Math.max(startMs, anchor - HARD_CAP_MS);
+        const cappedEnd   = Math.min(endMs,   anchor + HARD_CAP_MS);
+        start = startOfDay(new Date(cappedStart));
+        end   = endOfDay(new Date(cappedEnd));
+      }
     }
 
-    // Auto-extend the window so any event that overlaps it is shown end-to-end,
-    // including the months it spills into. Applies for the default current-month
-    // view AND when the user filters by date — otherwise long events get visually
-    // chopped at the filter boundary. Capped at ±180 days to keep widths sane.
-    if (events.length > 0) {
+    // For user-supplied date filters, still extend past the right edge so an
+    // overlapping event isn't visually chopped — but never extend backward.
+    if (hasDateFilter && events.length > 0) {
       const HARD_CAP_MS = 180 * 86_400_000;
-      let maxEnd = end.getTime();
-      let minStart = start.getTime();
       const initialStart = start.getTime();
-      const initialEnd = end.getTime();
+      const initialEnd   = end.getTime();
+      let maxEnd = initialEnd;
       for (const ev of events) {
         const evStart = new Date(ev.start_date).getTime();
-        const evEnd = new Date(ev.end_date).getTime();
-        if (evEnd >= initialStart && evStart <= initialEnd) {
-          if (evEnd > maxEnd) maxEnd = Math.min(evEnd, initialStart + HARD_CAP_MS);
-          if (evStart < minStart) minStart = Math.max(evStart, initialEnd - HARD_CAP_MS);
+        const evEnd   = new Date(ev.end_date).getTime();
+        if (evEnd >= initialStart && evStart <= initialEnd && evEnd > maxEnd) {
+          maxEnd = Math.min(evEnd, initialStart + HARD_CAP_MS);
         }
       }
       if (maxEnd > end.getTime()) end = endOfDay(new Date(maxEnd));
-      if (minStart < start.getTime()) start = startOfDay(new Date(minStart));
     }
 
     const generatedDays = eachDayOfInterval({ start, end });
