@@ -348,67 +348,85 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
         </div>
       ) : (
         <div ref={scrollerRef} className="glass-card overflow-x-auto rounded-2xl border-border p-4 md:p-5">
-          <div style={{ width: timelineWidth }} className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-background">
-              <div className="flex h-14" style={{ width: timelineWidth }}>
-                {months.map((month) => (
-                  <div
-                    key={`${month.label}-${month.start}`}
-                    className="relative shrink-0 border-r border-border last:border-r-0"
-                    style={{ width: month.width }}
-                  >
-                    <div className="sticky left-0 flex h-full items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-                      {month.label}
-                    </div>
+          <div style={{ width: timelineWidth }} className="timeline-track overflow-hidden rounded-2xl border border-border bg-card/70">
+            {/* Month band */}
+            <div className="flex h-12 border-b border-border bg-background" style={{ width: timelineWidth }}>
+              {months.map((month) => (
+                <div
+                  key={`${month.label}-${month.start}`}
+                  className="relative shrink-0 border-r border-border last:border-r-0"
+                  style={{ width: month.width }}
+                >
+                  <div className="sticky left-0 flex h-full items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+                    {month.label}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
-            <div className="timeline-track overflow-hidden rounded-2xl border border-border bg-card/70">
-              <div className="flex border-b border-border">
-                {days.map((day) => {
-                  const isToday = getVietnamDateKey(day) === getVietnamDateKey(new Date());
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={cn(
-                        "shrink-0 border-r border-border px-0.5 py-1 text-center text-xs last:border-r-0",
-                        isToday ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 font-bold" : "text-muted-foreground",
-                      )}
-                      style={{ width: dayWidth }}
-                    >
-                      <div className="text-[11px] font-semibold">{formatVietnamDayNumber(day)}</div>
-                      <div className="text-[9px] uppercase">{formatVietnamWeekdayShort(day)}</div>
-                    </div>
-                  );
-                })}
-              </div>
+            {/* Day header */}
+            <div className="flex border-b border-border" style={{ width: timelineWidth }}>
+              {days.map((day) => {
+                const isToday = getVietnamDateKey(day) === getVietnamDateKey(new Date());
+                const wd = day.getDay();
+                const isWeekend = wd === 0 || wd === 6;
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={cn(
+                      "shrink-0 border-r border-border px-0.5 py-1 text-center text-xs last:border-r-0",
+                      isToday
+                        ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 font-bold"
+                        : isWeekend
+                          ? "bg-muted/30 text-muted-foreground"
+                          : "text-muted-foreground",
+                    )}
+                    style={{ width: dayWidth }}
+                  >
+                    <div className="text-[11px] font-semibold">{formatVietnamDayNumber(day)}</div>
+                    <div className="text-[9px] uppercase">{formatVietnamWeekdayShort(day)}</div>
+                  </div>
+                );
+              })}
+            </div>
 
-              <div className="relative min-h-[160px] space-y-1.5 px-0 pb-2 pt-2">
-                {/* Vertical day separators extending through body for uniform grid */}
-                <div aria-hidden className="pointer-events-none absolute inset-0 flex">
-                  {days.map((day, i) => (
+            {/* Body — separators and column tints share the exact same column geometry as the header above */}
+            <div className="relative min-h-[160px] space-y-1.5 px-0 pb-2 pt-2" style={{ width: timelineWidth }}>
+              {/* Full-height column backdrop: weekend tint + today highlight extending through body */}
+              <div aria-hidden className="pointer-events-none absolute inset-0 flex">
+                {days.map((day, i) => {
+                  const isToday = getVietnamDateKey(day) === getVietnamDateKey(new Date());
+                  const wd = day.getDay();
+                  const isWeekend = wd === 0 || wd === 6;
+                  return (
                     <div
                       key={`sep-${i}`}
                       style={{ width: dayWidth }}
-                      className="shrink-0 border-r border-border/30 last:border-r-0"
-                    />
-                  ))}
-                </div>
-                {/* Today vertical marker */}
-                {(() => {
-                  const todayKey = getVietnamDateKey(new Date());
-                  const idx = days.findIndex((d) => getVietnamDateKey(d) === todayKey);
-                  if (idx < 0) return null;
-                  return (
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute top-0 bottom-0 w-px bg-primary/40 dark:bg-amber-400/40"
-                      style={{ left: idx * dayWidth + dayWidth / 2 }}
+                      className={cn(
+                        "shrink-0 border-r border-border/60 last:border-r-0",
+                        isToday
+                          ? "bg-primary/5 dark:bg-amber-400/5"
+                          : isWeekend
+                            ? "bg-muted/20"
+                            : undefined,
+                      )}
                     />
                   );
-                })()}
+                })}
+              </div>
+              {/* Today vertical marker (centered in today column) */}
+              {(() => {
+                const todayKey = getVietnamDateKey(new Date());
+                const idx = days.findIndex((d) => getVietnamDateKey(d) === todayKey);
+                if (idx < 0) return null;
+                return (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute top-0 bottom-0 w-px bg-primary/40 dark:bg-amber-400/40"
+                    style={{ left: idx * dayWidth + dayWidth / 2 }}
+                  />
+                );
+              })()}
                 {visibleEvents.map((event) => {
                   const eventStart = startOfDay(new Date(event.start_date));
                   const eventEnd = endOfDay(new Date(event.end_date));
@@ -480,7 +498,6 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
               </div>
             </div>
           </div>
-        </div>
       )}
 
       <EventModal
