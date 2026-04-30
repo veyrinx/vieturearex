@@ -116,8 +116,9 @@ export function mergeEventServers(
   const map = new Map<string, EventServer>();
   for (const s of EVENT_SERVERS) map.set(s.key, { ...s });
   for (const s of custom) map.set(s.key, s);
-  for (const s of map.values()) {
+  const list = Array.from(map.values());
+  for (const s of list) {
     if (logoMap[s.key]) s.logoUrl = logoMap[s.key];
   }
-  return Array.from(map.values()).filter((s) => !hidden.has(s.key));
+  return list.filter((s) => !hidden.has(s.key));
 }
