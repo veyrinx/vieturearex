@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { EventItem } from "@/lib/types/content";
-import { EVENT_SERVERS } from "@/lib/constants/event-servers";
+import { useEventServers } from "@/hooks/use-event-servers";
 import { createClient } from "@/lib/supabase/client";
 import {
   formatVietnamDateInput,
@@ -86,6 +86,7 @@ export function EventFormDialog({
   });
 
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const eventServers = useEventServers();
   const initialEventId = initialData?.id;
 
   useEffect(() => {
@@ -280,7 +281,7 @@ export function EventFormDialog({
                 {...register("server_region")}
                 className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
-                {EVENT_SERVERS.map((s) => (
+                {eventServers.map((s) => (
                   <option key={s.key} value={s.key}>{s.flag} {s.label}</option>
                 ))}
               </select>

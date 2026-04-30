@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { EventModal } from "@/components/timeline/event-modal";
 import { useFavoriteEventIds } from "@/components/events/event-actions";
 import { ServerBadge } from "@/components/events/server-badge";
-import { EVENT_SERVERS } from "@/lib/constants/event-servers";
+import { useEventServers } from "@/hooks/use-event-servers";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -78,6 +78,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({});
   const favIds = useFavoriteEventIds();
+  const eventServers = useEventServers();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: events = initialEvents, isLoading } = useEventsQuery({
@@ -270,7 +271,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
           >
             Tất cả
           </button>
-          {EVENT_SERVERS.map((s) => (
+          {eventServers.map((s) => (
             <button
               key={s.key}
               type="button"

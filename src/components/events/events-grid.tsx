@@ -12,7 +12,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { EventModal } from "@/components/timeline/event-modal";
 import { MediaFrame } from "@/components/common/media-frame";
 import { ServerBadge } from "@/components/events/server-badge";
-import { EVENT_SERVERS } from "@/lib/constants/event-servers";
+import { useEventServers } from "@/hooks/use-event-servers";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [toDate, setToDate] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const eventServers = useEventServers();
   const { data } = useEventsQuery({ status });
   const safeData = useMemo(() => data ?? initialEvents ?? [], [data, initialEvents]);
 
@@ -156,7 +157,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
           >
             Tất cả
           </button>
-          {EVENT_SERVERS.map((s) => (
+          {eventServers.map((s) => (
             <button
               key={s.key}
               type="button"

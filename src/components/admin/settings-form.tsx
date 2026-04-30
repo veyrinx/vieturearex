@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { id: "social",       icon: Share2,       label: "Mạng Xã Hội", desc: "Facebook, YouTube…" },
   { id: "community",    icon: Users,        label: "Cộng Đồng",   desc: "Thống kê & ngày ra mắt" },
   { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
+  { id: "event_servers", icon: Globe,       label: "Server",      desc: "Server sự kiện tuỳ chỉnh" },
   { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
   { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark" },
   { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
@@ -560,6 +561,63 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
             "home.events_bg.image_url", "home.events_bg.video_url", "home.events_bg.caption",
           ], "home")}
           saving={saving === "home"}
+        />
+      </div>
+    ),
+
+    // ── SỰ KIỆN: SERVER ─────────────────────────────────────────────────────
+    event_servers: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Globe} title="Server sự kiện tuỳ chỉnh" desc="Thêm server riêng (vd. CN, JP, KR…) ngoài 11 preset có sẵn" />
+          </div>
+          <Field
+            label="Custom servers (JSON)"
+            hint='[{"key":"cn","label":"Trung Quốc","short":"CN","flag":"🇨🇳","colorKey":"red"}] — colorKey: red, orange, amber, yellow, emerald, teal, cyan, blue, violet, pink, rose'
+            icon={Globe}
+          >
+            <Textarea
+              value={v("events.custom_servers")}
+              onChange={(e) => set("events.custom_servers", e.target.value)}
+              placeholder='[{"key":"cn","label":"Trung Quốc","short":"CN","flag":"🇨🇳","colorKey":"red"}]'
+              rows={6}
+              className="resize-none font-mono text-xs"
+            />
+          </Field>
+          <Field
+            label="Ẩn server preset"
+            hint="Liệt kê key cách nhau bởi dấu phẩy (vd: latam,mena,tw) để ẩn các server không dùng"
+            icon={Globe}
+          >
+            <Input
+              value={v("events.hidden_servers")}
+              onChange={(e) => set("events.hidden_servers", e.target.value)}
+              placeholder="latam,mena,tw"
+              className="font-mono text-xs"
+            />
+          </Field>
+          <div className="rounded-xl border border-border bg-muted/30 p-3">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              Preset có sẵn (bấm key để copy nhanh)
+            </p>
+            <div className="flex flex-wrap gap-1.5 text-[10px]">
+              {[
+                ["vn","🇻🇳 Việt Nam"],["global","🌐 Global"],["sea","🌏 SEA"],
+                ["br","🇧🇷 Brazil"],["in","🇮🇳 Ấn Độ"],["id","🇮🇩 Indonesia"],
+                ["th","🇹🇭 Thái Lan"],["ph","🇵🇭 Philippines"],["tw","🇹🇼 Đài Loan"],
+                ["mena","🌍 Trung Đông"],["latam","🌎 Mỹ Latin"],
+              ].map(([k, l]) => (
+                <span key={k} className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-0.5">
+                  <code className="font-mono font-bold text-primary">{k}</code> · {l}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Card>
+        <SaveRow
+          onSave={() => save(["events.custom_servers", "events.hidden_servers"], "event_servers")}
+          saving={saving === "event_servers"}
         />
       </div>
     ),
