@@ -348,72 +348,100 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
         </div>
       ) : (
         <div ref={scrollerRef} className="glass-card overflow-x-auto rounded-2xl border-border p-4 md:p-5">
-          <div style={{ width: timelineWidth }} className="timeline-track overflow-hidden rounded-2xl border border-border bg-card/70">
-            {/* Month band */}
-            <div className="flex h-12 border-b border-border bg-background" style={{ width: timelineWidth }}>
+          <div style={{ width: timelineWidth }} className="timeline-track overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-card/80 to-card/40 shadow-sm">
+            {/* Month band — labels stick to viewport while horizontally scrolling */}
+            <div className="flex h-11 border-b border-border bg-muted/40 backdrop-blur-sm" style={{ width: timelineWidth }}>
               {months.map((month) => (
                 <div
                   key={`${month.label}-${month.start}`}
                   className="relative shrink-0 border-r border-border last:border-r-0"
                   style={{ width: month.width }}
                 >
-                  <div className="sticky left-0 flex h-full items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+                  <div className="sticky left-0 flex h-full items-center px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-primary dark:text-amber-400">
                     {month.label}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Day header */}
-            <div className="flex border-b border-border" style={{ width: timelineWidth }}>
-              {days.map((day) => {
+            {/* Day header — extra-strong border for Mondays (week boundary) */}
+            <div className="flex h-12 border-b border-border bg-background/60" style={{ width: timelineWidth }}>
+              {days.map((day, i) => {
                 const isToday = getVietnamDateKey(day) === getVietnamDateKey(new Date());
                 const wd = day.getDay();
                 const isWeekend = wd === 0 || wd === 6;
+                const isMonday = wd === 1;
+                const nextWd = i + 1 < days.length ? days[i + 1].getDay() : null;
+                const weekBreak = nextWd === 1;
                 return (
                   <div
                     key={day.toISOString()}
                     className={cn(
-                      "shrink-0 border-r border-border px-0.5 py-1 text-center text-xs last:border-r-0",
+                      "relative shrink-0 px-0.5 py-1 text-center text-xs last:border-r-0",
+                      weekBreak ? "border-r-2 border-border" : "border-r border-border/60",
                       isToday
-                        ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 font-bold"
+                        ? "bg-primary/15 text-primary dark:bg-amber-400/15 dark:text-amber-400 font-extrabold"
                         : isWeekend
-                          ? "bg-muted/30 text-muted-foreground"
+                          ? "bg-muted/40 text-muted-foreground"
                           : "text-muted-foreground",
                     )}
                     style={{ width: dayWidth }}
                   >
-                    <div className="text-[11px] font-semibold">{formatVietnamDayNumber(day)}</div>
-                    <div className="text-[9px] uppercase">{formatVietnamWeekdayShort(day)}</div>
+                    <div className={cn("text-[12px] font-bold leading-tight", isMonday && !isToday && "text-foreground")}>
+                      {formatVietnamDayNumber(day)}
+                    </div>
+                    <div className="text-[9px] uppercase tracking-wider opacity-80">
+                      {formatVietnamWeekdayShort(day)}
+                    </div>
+                    {isToday && (
+                      <span className="absolute -bottom-px left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary dark:bg-amber-400" />
+                    )}
                   </div>
                 );
               })}
             </div>
 
             {/* Body — separators and column tints share the exact same column geometry as the header above */}
-            <div className="relative min-h-[160px] space-y-1.5 px-0 pb-2 pt-2" style={{ width: timelineWidth }}>
-              {/* Full-height column backdrop: weekend tint + today highlight extending through body */}
+            <div className="relative min-h-[200px] space-y-1.5 px-0 pb-3 pt-3" style={{ width: timelineWidth }}>
+              {/* Full-height column backdrop: weekend tint + today highlight + week-boundary stroke */}
               <div aria-hidden className="pointer-events-none absolute inset-0 flex">
                 {days.map((day, i) => {
                   const isToday = getVietnamDateKey(day) === getVietnamDateKey(new Date());
                   const wd = day.getDay();
                   const isWeekend = wd === 0 || wd === 6;
+                  const nextWd = i + 1 < days.length ? days[i + 1].getDay() : null;
+                  const weekBreak = nextWd === 1;
                   return (
                     <div
                       key={`sep-${i}`}
                       style={{ width: dayWidth }}
                       className={cn(
-                        "shrink-0 border-r border-border/60 last:border-r-0",
+                        "shrink-0 last:border-r-0",
+                        weekBreak ? "border-r-2 border-border/70" : "border-r border-border/40",
                         isToday
-                          ? "bg-primary/5 dark:bg-amber-400/5"
+                          ? "bg-primary/[0.07] dark:bg-amber-400/[0.07]"
                           : isWeekend
-                            ? "bg-muted/20"
+                            ? "bg-muted/15"
                             : undefined,
                       )}
                     />
                   );
                 })}
               </div>
+
+              {/* Empty-state placeholder when no events fall in the visible range */}
+              {visibleEvents.length === 0 && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
+                  <div className="sticky left-1/2 -translate-x-1/2 rounded-xl border border-dashed border-border bg-background/80 px-4 py-3 text-center backdrop-blur-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                      Không có sự kiện trong khoảng này
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground/80">
+                      Đổi bộ lọc / khoảng ngày, hoặc bấm <span className="font-bold text-primary dark:text-amber-400">Hôm nay</span> để về điểm hiện tại.
+                    </p>
+                  </div>
+                </div>
+              )}
               {/* Today vertical marker (centered in today column) */}
               {(() => {
                 const todayKey = getVietnamDateKey(new Date());
@@ -422,7 +450,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
                 return (
                   <div
                     aria-hidden
-                    className="pointer-events-none absolute top-0 bottom-0 w-px bg-primary/40 dark:bg-amber-400/40"
+                    className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-primary/70 shadow-[0_0_8px_rgba(0,0,0,0.15)] dark:bg-amber-400/70"
                     style={{ left: idx * dayWidth + dayWidth / 2 }}
                   />
                 );

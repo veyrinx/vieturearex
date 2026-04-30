@@ -15,15 +15,27 @@ type EventDetailPageProps = { params: { id: string } };
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const event = await getEventById(params.id);
   if (!event) return { title: "Không tìm thấy sự kiện" };
+  const url = `${siteConfig.url}/events/${event.id}`;
+  const desc = event.description || `Sự kiện ${event.title} – theo dõi tại Arex.`;
   return {
     title: event.title,
-    description: event.description || `Sự kiện ${event.title} – theo dõi tại Arex.`,
+    description: desc,
+    alternates: { canonical: url },
     openGraph: {
       title: event.title,
-      description: event.description || `Sự kiện ${event.title}`,
-      url: `${siteConfig.url}/events/${event.id}`,
-      images: event.image_url ? [{ url: event.image_url }] : [],
+      description: desc,
+      url,
+      type: "article",
+      siteName: siteConfig.name,
+      images: event.image_url ? [{ url: event.image_url, width: 1200, height: 630, alt: event.title }] : [],
     },
+    twitter: {
+      card: "summary_large_image",
+      title: event.title,
+      description: desc,
+      images: event.image_url ? [event.image_url] : [],
+    },
+    robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   };
 }
 
@@ -42,6 +54,34 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pt-6 md:pt-8">
       <EventViewTracker eventId={event.id} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Event",
+            name: event.title,
+            description: event.description || event.title,
+            startDate: event.start_date,
+            endDate: event.end_date || event.start_date,
+            eventStatus:
+              event.status === "active"
+                ? "https://schema.org/EventScheduled"
+                : event.status === "upcoming"
+                  ? "https://schema.org/EventScheduled"
+                  : "https://schema.org/EventCancelled",
+            eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+            location: {
+              "@type": "VirtualLocation",
+              url: event.link || `${siteConfig.url}/events/${event.id}`,
+            },
+            image: event.image_url ? [event.image_url] : undefined,
+            url: `${siteConfig.url}/events/${event.id}`,
+            organizer: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+            inLanguage: "vi-VN",
+          }),
+        }}
+      />
 
       <Link
         href="/events"

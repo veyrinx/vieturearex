@@ -16,16 +16,31 @@ type NewsDetailPageProps = { params: { slug: string } };
 export async function generateMetadata({ params }: NewsDetailPageProps): Promise<Metadata> {
   const article = await getNewsBySlug(params.slug);
   if (!article) return { title: "Không tìm thấy bài viết" };
+  const url = `${siteConfig.url}/news/${article.slug}`;
   return {
     title: article.title,
     description: article.excerpt,
-    alternates: { canonical: `${siteConfig.url}/news/${article.slug}` },
+    alternates: {
+      canonical: url,
+      languages: { vi: `${siteConfig.url}/tin-tuc/${article.slug}`, en: url },
+    },
     openGraph: {
       title: article.title,
       description: article.excerpt,
-      url: `${siteConfig.url}/news/${article.slug}`,
-      images: [{ url: article.cover }],
+      url,
+      type: "article",
+      publishedTime: article.created_at,
+      modifiedTime: article.created_at,
+      siteName: siteConfig.name,
+      images: [{ url: article.cover, width: 1200, height: 630, alt: article.title }],
     },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: article.excerpt,
+      images: [article.cover],
+    },
+    robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   };
 }
 
@@ -49,6 +64,33 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
           { name: "Tin tức", item: `${siteConfig.url}/news` },
           { name: article.title, item: `${siteConfig.url}/news/${article.slug}` },
         ]}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": `${siteConfig.url}/news/${article.slug}`,
+            },
+            headline: article.title,
+            description: article.excerpt,
+            image: [article.cover],
+            datePublished: article.created_at,
+            dateModified: article.created_at,
+            author: { "@type": "Organization", name: "Arex", url: siteConfig.url },
+            publisher: {
+              "@type": "Organization",
+              name: siteConfig.name,
+              logo: { "@type": "ImageObject", url: siteConfig.sidebarIcon },
+            },
+            articleSection: article.category,
+            inLanguage: "vi-VN",
+            isAccessibleForFree: true,
+          }),
+        }}
       />
 
       {/* Header - full width */}
