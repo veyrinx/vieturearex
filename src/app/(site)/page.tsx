@@ -128,14 +128,18 @@ export default async function HomePage() {
                   muted
                   loop
                   playsInline
+                  preload="none"
                   poster={eventsBackdrop.imageUrl || undefined}
                   className="absolute inset-0 size-full object-cover"
+                  aria-hidden="true"
                 />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={eventsBackdrop.imageUrl}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 size-full object-cover"
                 />
               )}
