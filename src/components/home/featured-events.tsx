@@ -7,7 +7,7 @@ import { CalendarDays, ArrowRight, ExternalLink, Pencil, Trash2, Plus, User } fr
 import Link from "next/link";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/common/status-badge";
-import { ServerBadge } from "@/components/events/server-badge";
+import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
 import { MediaFrame } from "@/components/common/media-frame";

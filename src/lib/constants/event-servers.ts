@@ -4,6 +4,7 @@ export type EventServer = {
   short: string;
   flag: string;
   color: string; // tailwind classes for badge
+  logoUrl?: string | null; // optional image override for the flag emoji
 };
 
 export const EVENT_SERVERS: EventServer[] = [
@@ -43,17 +44,27 @@ const VALID_COLORS: Record<string, string> = {
   rose: "bg-rose-500/10 text-rose-500 border-rose-500/30",
 };
 
+function safeUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim();
+  if (!v) return null;
+  try { new URL(v); return v.slice(0, 500); } catch { return null; }
+}
+
 /**
- * Merge built-in presets with admin-defined custom servers and apply hide list.
+ * Merge built-in presets with admin-defined custom servers, apply hide list,
+ * and overlay per-server logo URLs.
  *
- * @param customRaw  JSON string from setting `events.custom_servers`. Expected
- *                   array of { key, label, short, flag, colorKey }.
- * @param hiddenRaw  Comma-separated list of preset keys to hide from
- *                   `events.hidden_servers`.
+ * @param customRaw  JSON from setting `events.custom_servers`.
+ *                   Array of { key, label, short, flag, colorKey, logoUrl }.
+ * @param hiddenRaw  Comma list of preset keys to hide (`events.hidden_servers`).
+ * @param logosRaw   JSON map { key: logoUrl } from `events.server_logos`.
+ *                   Applies to both presets and custom servers.
  */
 export function mergeEventServers(
   customRaw?: string | null,
   hiddenRaw?: string | null,
+  logosRaw?: string | null,
 ): EventServer[] {
   const hidden = new Set(
     (hiddenRaw ?? "")
@@ -61,6 +72,19 @@ export function mergeEventServers(
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
   );
+
+  let logoMap: Record<string, string> = {};
+  if (logosRaw && logosRaw.trim()) {
+    try {
+      const parsed = JSON.parse(logosRaw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        for (const [k, v] of Object.entries(parsed)) {
+          const url = safeUrl(v);
+          if (url) logoMap[k.toLowerCase()] = url;
+        }
+      }
+    } catch { /* ignore */ }
+  }
 
   let custom: EventServer[] = [];
   if (customRaw && customRaw.trim()) {
@@ -71,6 +95,7 @@ export function mergeEventServers(
         short?: string;
         flag?: string;
         colorKey?: string;
+        logoUrl?: string;
       }>;
       if (Array.isArray(parsed)) {
         custom = parsed
@@ -81,14 +106,18 @@ export function mergeEventServers(
             short: (row.short || row.key).toUpperCase().slice(0, 6),
             flag: (row.flag || "🏳️").slice(0, 6),
             color: VALID_COLORS[(row.colorKey || "blue").toLowerCase()] ?? VALID_COLORS.blue,
+            logoUrl: safeUrl(row.logoUrl),
           }));
       }
     } catch { /* ignore */ }
   }
 
-  // Custom overrides preset by key; otherwise concat. Drop hidden.
+  // Custom overrides preset by key; otherwise concat. Drop hidden. Apply logo overlay.
   const map = new Map<string, EventServer>();
-  for (const s of EVENT_SERVERS) map.set(s.key, s);
+  for (const s of EVENT_SERVERS) map.set(s.key, { ...s });
   for (const s of custom) map.set(s.key, s);
+  for (const s of map.values()) {
+    if (logoMap[s.key]) s.logoUrl = logoMap[s.key];
+  }
   return Array.from(map.values()).filter((s) => !hidden.has(s.key));
 }

@@ -10,6 +10,7 @@ export async function GET() {
   const servers = mergeEventServers(
     map["events.custom_servers"],
     map["events.hidden_servers"],
+    map["events.server_logos"],
   );
   return NextResponse.json({ servers });
 }

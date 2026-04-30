@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { EventModal } from "@/components/timeline/event-modal";
 import { useFavoriteEventIds } from "@/components/events/event-actions";
-import { ServerBadge } from "@/components/events/server-badge";
+import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
 import { useEventServers } from "@/hooks/use-event-servers";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
@@ -283,7 +283,12 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
                   : "border-border bg-muted text-muted-foreground hover:border-primary/40",
               )}
             >
-              <span aria-hidden>{s.flag}</span>
+              {s.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={s.logoUrl} alt="" className="size-3.5 rounded-sm object-cover" loading="lazy" />
+              ) : (
+                <span aria-hidden>{s.flag}</span>
+              )}
               {s.short}
             </button>
           ))}

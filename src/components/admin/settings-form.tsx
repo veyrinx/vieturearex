@@ -597,6 +597,19 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               className="font-mono text-xs"
             />
           </Field>
+          <Field
+            label="Logo cho server (JSON)"
+            hint='Ghi đè cờ emoji bằng URL ảnh — { "vn": "https://...", "global": "https://...", "cn": "https://..." }'
+            icon={Globe}
+          >
+            <Textarea
+              value={v("events.server_logos")}
+              onChange={(e) => set("events.server_logos", e.target.value)}
+              placeholder='{"vn":"https://cdn.example.com/vn.png","global":"https://cdn.example.com/global.png"}'
+              rows={4}
+              className="resize-none font-mono text-xs"
+            />
+          </Field>
           <div className="rounded-xl border border-border bg-muted/30 p-3">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               Preset có sẵn (bấm key để copy nhanh)
@@ -616,7 +629,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </div>
         </Card>
         <SaveRow
-          onSave={() => save(["events.custom_servers", "events.hidden_servers"], "event_servers")}
+          onSave={() => save(["events.custom_servers", "events.hidden_servers", "events.server_logos"], "event_servers")}
           saving={saving === "event_servers"}
         />
       </div>

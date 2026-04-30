@@ -1,14 +1,16 @@
-import { getEventServer } from "@/lib/constants/event-servers";
+import { getEventServer, type EventServer } from "@/lib/constants/event-servers";
 import { cn } from "@/lib/utils";
 
 type Props = {
   serverKey?: string | null;
+  /** Optional pre-resolved server (when caller already has merged list). */
+  server?: EventServer | null;
   className?: string;
   variant?: "compact" | "full";
 };
 
-export function ServerBadge({ serverKey, className, variant = "compact" }: Props) {
-  const meta = getEventServer(serverKey);
+export function ServerBadge({ serverKey, server, className, variant = "compact" }: Props) {
+  const meta = server ?? getEventServer(serverKey);
   if (!meta) return null;
   return (
     <span
@@ -19,7 +21,18 @@ export function ServerBadge({ serverKey, className, variant = "compact" }: Props
       )}
       title={`Server ${meta.label}`}
     >
-      <span aria-hidden>{meta.flag}</span>
+      {meta.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={meta.logoUrl}
+          alt={meta.label}
+          className="size-3.5 rounded-sm object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <span aria-hidden>{meta.flag}</span>
+      )}
       <span>{variant === "full" ? meta.label : meta.short}</span>
     </span>
   );
