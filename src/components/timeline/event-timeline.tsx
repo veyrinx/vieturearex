@@ -100,6 +100,28 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
       end = parseVietnamDateInputEnd(fromDate);
     }
 
+    // When the user hasn't filtered by date, auto-extend the window so that
+    // multi-month events starting inside the current month are shown end-to-end.
+    // Events whose start lies between [start, end] get their end_date
+    // considered for the new max; we cap at +180 days to keep the timeline sane.
+    if (!hasDateFilter && events.length > 0) {
+      const HARD_CAP_MS = 180 * 86_400_000;
+      let maxEnd = end.getTime();
+      let minStart = start.getTime();
+      for (const ev of events) {
+        const evStart = new Date(ev.start_date).getTime();
+        const evEnd = new Date(ev.end_date).getTime();
+        // Event overlaps the visible month → extend forward (and backward if it
+        // started earlier). Skip events that don't touch the window at all.
+        if (evEnd >= minStart && evStart <= maxEnd) {
+          if (evEnd > maxEnd) maxEnd = Math.min(evEnd, start.getTime() + HARD_CAP_MS);
+          if (evStart < minStart) minStart = Math.max(evStart, end.getTime() - HARD_CAP_MS);
+        }
+      }
+      if (maxEnd > end.getTime()) end = endOfDay(new Date(maxEnd));
+      if (minStart < start.getTime()) start = startOfDay(new Date(minStart));
+    }
+
     const generatedDays = eachDayOfInterval({ start, end });
     const labels: MonthLabel[] = [];
 
@@ -126,7 +148,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
       rangeEnd: end,
       months: labels,
     };
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, events]);
 
   const timelineWidth = days.length * dayWidth;
 
