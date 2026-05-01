@@ -34,7 +34,8 @@
       "Bash(cat .env)",
       "Bash(git log *)",
       "Bash(git checkout *)",
-      "Bash(python -)"
+      "Bash(python -)",
+      "Bash(xargs sed *)"
     ]
   }
 }

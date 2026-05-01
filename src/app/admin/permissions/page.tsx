@@ -16,6 +16,7 @@ export default async function AdminPermissionsPage() {
   }
   const settings = await getSettings();
   const raw = settings.find((s) => s.key === "permissions.role_capabilities")?.value ?? null;
+  const customRolesRaw = settings.find((s) => s.key === "permissions.custom_roles")?.value ?? null;
 
   return (
     <div className="space-y-4">
@@ -27,7 +28,7 @@ export default async function AdminPermissionsPage() {
           Chỉ <span className="font-bold text-red-500">Super Admin</span> truy cập được trang này.
         </p>
       </div>
-      <PermissionsMatrix initialRaw={raw} />
+      <PermissionsMatrix initialRaw={raw} initialCustomRolesRaw={customRolesRaw} />
     </div>
   );
 }

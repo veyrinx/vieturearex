@@ -1,0 +1,125 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Trophy, Zap } from "lucide-react";
+import { getTmsTournament, getTmsPlayerLeaderboard, getTmsTeamLeaderboard } from "@/lib/tms/data";
+import { cn } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const t = await getTmsTournament(slug).catch(() => null);
+  return { title: t ? `BXH — ${t.name} | Arex` : "Bảng Xếp Hạng" };
+}
+
+export default async function LeaderboardPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const tournament = await getTmsTournament(slug).catch(() => null);
+  if (!tournament) notFound();
+
+  const [playerLB, teamLB] = await Promise.all([
+    getTmsPlayerLeaderboard(tournament.id).catch(() => []),
+    getTmsTeamLeaderboard(tournament.id).catch(() => []),
+  ]);
+
+  return (
+    <div className="py-10 space-y-8">
+      <div className="flex items-center gap-3">
+        <Link href={`/tournaments/${slug}`} className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="size-4" />
+        </Link>
+        <div>
+          <h1 className="font-heading text-xl font-bold uppercase tracking-[0.06em] flex items-center gap-2">
+            <Trophy className="size-5 text-amber-400" /> Bảng Xếp Hạng
+          </h1>
+          <p className="text-xs text-muted-foreground">{tournament.name}</p>
+        </div>
+      </div>
+
+      {/* Team BXH */}
+      <section className="space-y-3">
+        <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">Xếp hạng đội</h2>
+        {teamLB.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Chưa có kết quả.</p>
+        ) : (
+          <div className="rounded-2xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[600px] text-sm">
+              <thead>
+                <tr className="bg-muted/40 border-b border-border">
+                  {["#", "Đội", "Trận", "Thắng", "Thua", "Kills", "Points"].map((h) => (
+                    <th key={h} className="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {teamLB.map((t, i) => (
+                  <tr key={t.team_id} className={cn("border-t border-border/60", i < 3 && "bg-amber-500/5")}>
+                    <td className="px-3 py-2 font-mono font-bold text-muted-foreground">
+                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {t.logo_url
+                          ? <img src={t.logo_url} className="size-6 rounded object-cover" alt={t.team_name} />
+                          : <div className="size-6 rounded bg-muted flex items-center justify-center text-[9px] font-bold">{t.team_tag.slice(0, 2)}</div>
+                        }
+                        <span className="font-semibold">{t.team_name}</span>
+                        <span className="text-[10px] text-muted-foreground">[{t.team_tag}]</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">{t.matches_played}</td>
+                    <td className="px-3 py-2 text-emerald-400 font-semibold">{t.wins}</td>
+                    <td className="px-3 py-2 text-red-400">{t.losses}</td>
+                    <td className="px-3 py-2">{t.total_kills}</td>
+                    <td className="px-3 py-2 font-bold text-amber-400">{t.total_points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Player BXH */}
+      <section className="space-y-3">
+        <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+          <Zap className="size-3.5 text-amber-400" /> Xếp hạng cá nhân
+        </h2>
+        {playerLB.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Chưa có kết quả.</p>
+        ) : (
+          <div className="rounded-2xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[700px] text-sm">
+              <thead>
+                <tr className="bg-muted/40 border-b border-border">
+                  {["#", "Người chơi", "Đội", "Trận", "Kills", "Assists", "Deaths", "K/D", "Points"].map((h) => (
+                    <th key={h} className="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {playerLB.map((p, i) => (
+                  <tr key={p.user_id} className={cn("border-t border-border/60", i < 3 && "bg-amber-500/5")}>
+                    <td className="px-3 py-2 font-mono font-bold text-muted-foreground">
+                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                    </td>
+                    <td className="px-3 py-2 font-semibold">{p.display_name ?? "Ẩn danh"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">[{p.team_tag}]</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.matches_played}</td>
+                    <td className="px-3 py-2 text-red-400 font-semibold">{p.total_kills}</td>
+                    <td className="px-3 py-2 text-blue-400">{p.total_assists}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.total_deaths}</td>
+                    <td className="px-3 py-2 font-mono">{p.kd_ratio}</td>
+                    <td className="px-3 py-2 font-bold text-amber-400">{p.total_points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}

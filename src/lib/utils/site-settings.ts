@@ -49,6 +49,7 @@ export const adminSettingsApiKeys = [
   "events.hidden_servers",
   "events.server_logos",
   "permissions.role_capabilities",
+  "permissions.custom_roles",
 ] as const;
 
 export type SettingsFormFieldKey = (typeof settingsFormFieldOrder)[number];

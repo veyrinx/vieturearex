@@ -1,0 +1,191 @@
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { untypedFrom } from "@/lib/supabase/untyped";
+import type {
+  TmsTeam, TmsTeamMember, TmsTournament, TmsRegistration,
+  TmsMatch, TmsMatchResult, TmsPlayerLeaderboard, TmsTeamLeaderboard,
+  CreateTeamInput, CreateTournamentInput, CreateMatchInput, SubmitResultInput,
+} from "./types";
+
+function getDb() {
+  const sb = createServerSupabaseClient();
+  if (!sb) throw new Error("DB unavailable");
+  return sb;
+}
+
+const u = (table: string) => untypedFrom(getDb(), table);
+
+// ── Teams ─────────────────────────────────────────────────────────────────────
+
+export async function getTmsTeams(): Promise<TmsTeam[]> {
+  const { data, error } = await u("tms_teams").select("*").order("total_points", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsTeam[];
+}
+
+export async function getTmsTeam(id: string): Promise<TmsTeam | null> {
+  const { data } = await u("tms_teams").select("*").eq("id", id).single();
+  return (data ?? null) as TmsTeam | null;
+}
+
+export async function getTmsTeamMembers(teamId: string): Promise<TmsTeamMember[]> {
+  const { data, error } = await u("tms_team_members")
+    .select("*, user:users(display_name, email)")
+    .eq("team_id", teamId);
+  if (error) throw error;
+  return (data ?? []) as TmsTeamMember[];
+}
+
+export async function createTmsTeam(input: CreateTeamInput, captainId: string): Promise<TmsTeam> {
+  const { data, error } = await u("tms_teams")
+    .insert({ ...input, captain_id: captainId })
+    .select()
+    .single();
+  if (error) throw error;
+  const team = data as TmsTeam;
+  await u("tms_team_members").insert({ team_id: team.id, user_id: captainId });
+  return team;
+}
+
+// ── Tournaments ───────────────────────────────────────────────────────────────
+
+export async function getTmsTournaments(adminView = false): Promise<TmsTournament[]> {
+  let q = u("tms_tournaments").select("*").order("created_at", { ascending: false });
+  if (!adminView) q = q.neq("status", "draft");
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as TmsTournament[];
+}
+
+export async function getTmsTournament(slug: string): Promise<TmsTournament | null> {
+  const { data } = await u("tms_tournaments").select("*").eq("slug", slug).single();
+  return (data ?? null) as TmsTournament | null;
+}
+
+export async function getTmsTournamentById(id: string): Promise<TmsTournament | null> {
+  const { data } = await u("tms_tournaments").select("*").eq("id", id).single();
+  return (data ?? null) as TmsTournament | null;
+}
+
+export async function createTmsTournament(input: Partial<CreateTournamentInput>, createdBy: string): Promise<TmsTournament> {
+  const { data, error } = await u("tms_tournaments")
+    .insert({ ...input, created_by: createdBy })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TmsTournament;
+}
+
+export async function updateTmsTournament(id: string, input: Partial<TmsTournament>): Promise<TmsTournament> {
+  const { data, error } = await u("tms_tournaments").update(input).eq("id", id).select().single();
+  if (error) throw error;
+  return data as TmsTournament;
+}
+
+// ── Registrations ─────────────────────────────────────────────────────────────
+
+export async function getTmsRegistrations(tournamentId: string): Promise<TmsRegistration[]> {
+  const { data, error } = await u("tms_registrations")
+    .select("*, team:tms_teams(*)")
+    .eq("tournament_id", tournamentId)
+    .order("registered_at");
+  if (error) throw error;
+  return (data ?? []) as TmsRegistration[];
+}
+
+export async function registerTeam(tournamentId: string, teamId: string): Promise<TmsRegistration> {
+  const { data, error } = await u("tms_registrations")
+    .insert({ tournament_id: tournamentId, team_id: teamId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TmsRegistration;
+}
+
+export async function updateRegistrationStatus(id: string, status: "approved" | "rejected", groupLabel?: string) {
+  const { error } = await u("tms_registrations")
+    .update({ status, ...(groupLabel ? { group_label: groupLabel } : {}) })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// ── Matches ───────────────────────────────────────────────────────────────────
+
+export async function getTmsMatches(tournamentId: string): Promise<TmsMatch[]> {
+  const { data, error } = await u("tms_matches")
+    .select("*, team_a:tms_teams!tms_matches_team_a_id_fkey(id,name,tag,logo_url), team_b:tms_teams!tms_matches_team_b_id_fkey(id,name,tag,logo_url)")
+    .eq("tournament_id", tournamentId)
+    .order("round_num")
+    .order("created_at");
+  if (error) throw error;
+  return (data ?? []) as TmsMatch[];
+}
+
+export async function getTmsMatch(id: string): Promise<TmsMatch | null> {
+  const { data } = await u("tms_matches")
+    .select("*, team_a:tms_teams!tms_matches_team_a_id_fkey(id,name,tag,logo_url), team_b:tms_teams!tms_matches_team_b_id_fkey(id,name,tag,logo_url)")
+    .eq("id", id)
+    .single();
+  return (data ?? null) as TmsMatch | null;
+}
+
+export async function createTmsMatch(input: CreateMatchInput, createdBy: string): Promise<TmsMatch> {
+  const { data, error } = await u("tms_matches")
+    .insert({ ...input, created_by: createdBy })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TmsMatch;
+}
+
+export async function updateTmsMatchStatus(id: string, status: TmsMatch["status"]) {
+  const { error } = await u("tms_matches").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+// ── Results ───────────────────────────────────────────────────────────────────
+
+export async function getTmsMatchResults(matchId: string): Promise<TmsMatchResult[]> {
+  const { data, error } = await u("tms_match_results")
+    .select("*, user:users(display_name), team:tms_teams(id,name,tag)")
+    .eq("match_id", matchId);
+  if (error) throw error;
+  return (data ?? []) as TmsMatchResult[];
+}
+
+export async function submitTmsResults(input: SubmitResultInput, submittedBy: string): Promise<void> {
+  const rows = input.players.map((p) => ({
+    match_id: input.match_id,
+    tournament_id: input.tournament_id,
+    team_id: p.team_id,
+    user_id: p.user_id,
+    kills: p.kills,
+    assists: p.assists,
+    deaths: p.deaths,
+    is_winner: p.team_id === input.winner_id,
+    submitted_by: submittedBy,
+  }));
+
+  const { error: resErr } = await u("tms_match_results").upsert(rows, { onConflict: "match_id,user_id" });
+  if (resErr) throw resErr;
+
+  const { error: matchErr } = await u("tms_matches")
+    .update({ status: "done", winner_id: input.winner_id, proof_url: input.proof_url ?? null })
+    .eq("id", input.match_id);
+  if (matchErr) throw matchErr;
+}
+
+// ── Leaderboards ──────────────────────────────────────────────────────────────
+
+export async function getTmsPlayerLeaderboard(tournamentId: string): Promise<TmsPlayerLeaderboard[]> {
+  const { data, error } = await u("tms_player_leaderboard")
+    .select("*").eq("tournament_id", tournamentId).order("total_points", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsPlayerLeaderboard[];
+}
+
+export async function getTmsTeamLeaderboard(tournamentId: string): Promise<TmsTeamLeaderboard[]> {
+  const { data, error } = await u("tms_team_leaderboard")
+    .select("*").eq("tournament_id", tournamentId).order("total_points", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsTeamLeaderboard[];
+}

@@ -5,7 +5,10 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getClientIp } from "@/lib/server/get-client-ip";
 import { getSettings } from "@/lib/data/content-service";
-import { hasCapability, parseRoleCapabilities, type CapabilityKey } from "@/lib/permissions";
+import {
+  getResolvedRoles, getRoleLevel, hasCapabilityWithRoles, parseRoleCapabilities,
+  BUILTIN_ROLE_LEVELS, type CapabilityKey,
+} from "@/lib/permissions";
 
 export function getClientKey(request: NextRequest) {
   return getClientIp(request);
@@ -44,21 +47,8 @@ export function enforceRateLimit(
 
 type MinimumRole = "super_admin" | "admin" | "it" | "manager" | "support" | "user";
 
-const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 200,
-  it: 150,
-  admin: 100,
-  manager: 60,
-  support: 40,
-  user: 20,
-};
-
-function matchesMinimumRole(role: string | null | undefined, minimumRole: MinimumRole) {
-  if (!role) return false;
-  const userLevel = ROLE_HIERARCHY[role] ?? 0;
-  const requiredLevel = ROLE_HIERARCHY[minimumRole] ?? 0;
-  return userLevel >= requiredLevel;
-}
+/** Re-exported for callers that still rely on built-in levels alone. */
+const ROLE_HIERARCHY = BUILTIN_ROLE_LEVELS;
 
 export async function enforceAdminApiAuth(options?: {
   minimumRole?: MinimumRole;
@@ -111,23 +101,33 @@ export async function enforceAdminApiAuth(options?: {
   const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
   const role = profile?.role ?? appMetaRole;
 
-  if (!matchesMinimumRole(role, minimumRole)) {
+  // Resolve dynamic roles + matrix once; reused for both minimumRole and capability checks.
+  let resolved: ReturnType<typeof getResolvedRoles> = [];
+  let matrix = parseRoleCapabilities(null);
+  try {
+    const settings = await getSettings();
+    const customRaw = settings.find((s) => s.key === "permissions.custom_roles")?.value ?? null;
+    const matrixRaw = settings.find((s) => s.key === "permissions.role_capabilities")?.value ?? null;
+    resolved = getResolvedRoles(customRaw, matrixRaw);
+    matrix = parseRoleCapabilities(matrixRaw);
+  } catch {
+    // No DB? Fall back to built-in levels and DEFAULT_ROLE_CAPABILITIES.
+  }
+
+  // minimumRole compares against the resolved level (custom roles included).
+  const builtinFallback = (BUILTIN_ROLE_LEVELS as Record<string, number>)[role ?? ""] ?? 0;
+  const userLevel = getRoleLevel(role, resolved) || builtinFallback;
+  const requiredLevel = ROLE_HIERARCHY[minimumRole] ?? 0;
+  if (userLevel < requiredLevel) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   if (options?.capability) {
-    try {
-      const settings = await getSettings();
-      const raw = settings.find((s) => s.key === "permissions.role_capabilities")?.value ?? null;
-      const matrix = parseRoleCapabilities(raw);
-      if (!hasCapability(role, options.capability, matrix)) {
-        return NextResponse.json(
-          { error: `Forbidden: missing capability '${options.capability}'.` },
-          { status: 403 },
-        );
-      }
-    } catch {
-      // If matrix lookup fails, fall back to role-hierarchy result already passed above.
+    if (!hasCapabilityWithRoles(role, options.capability, matrix, resolved)) {
+      return NextResponse.json(
+        { error: `Forbidden: missing capability '${options.capability}'.` },
+        { status: 403 },
+      );
     }
   }
 

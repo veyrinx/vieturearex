@@ -42,6 +42,7 @@ export const adminNavItems = [
   { title: "THỐNG KÊ", href: "/admin/stats" },
   { title: "ĐỘI NGŨ", href: "/admin/team" },
   { title: "BẢO MẬT", href: "/admin/security" },
+  { title: "GIẢI ĐẤU", href: "/admin/tournaments" },
   { title: "PHÂN QUYỀN", href: "/admin/permissions" },
   { title: "CÀI ĐẶT", href: "/admin/settings" },
   { title: "HỒ SƠ", href: "/admin/profile" },

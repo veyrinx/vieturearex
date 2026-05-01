@@ -23,6 +23,99 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
   user: "Người Dùng",
 };
 
+/** Built-in role hierarchy levels. Custom roles in settings can use any level. */
+export const BUILTIN_ROLE_LEVELS: Record<RoleKey, number> = {
+  super_admin: 200,
+  it: 150,
+  admin: 100,
+  manager: 60,
+  support: 40,
+  user: 20,
+};
+
+export type CustomRole = {
+  key: string;
+  label: string;
+  /** Higher = more powerful. May exceed 200 (above super_admin) if needed. */
+  level: number;
+  /** Capability keys this role has. */
+  capabilities: string[];
+  /** Optional UI accent: red, orange, amber, blue, violet, pink, etc. */
+  color?: string;
+};
+
+export type ResolvedRole = {
+  key: string;
+  label: string;
+  level: number;
+  capabilities: string[];
+  color?: string;
+  isBuiltin: boolean;
+};
+
+export function parseCustomRoles(raw?: string | null): CustomRole[] {
+  if (!raw || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((r: unknown): r is Partial<CustomRole> =>
+        typeof r === "object" && r !== null
+        && typeof (r as { key?: unknown }).key === "string"
+        && typeof (r as { label?: unknown }).label === "string",
+      )
+      .map((r) => ({
+        key: r.key!.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 32),
+        label: r.label!.slice(0, 40),
+        level: typeof r.level === "number" ? Math.max(0, Math.min(1000, r.level)) : 50,
+        capabilities: Array.isArray(r.capabilities)
+          ? r.capabilities.filter((c): c is string => typeof c === "string")
+          : [],
+        color: typeof r.color === "string" ? r.color.slice(0, 20) : undefined,
+      }))
+      // Built-in keys cannot be overridden as custom roles (avoids confusion)
+      .filter((r) => !(ROLE_KEYS as readonly string[]).includes(r.key));
+  } catch { return []; }
+}
+
+/**
+ * Merge built-in roles with custom roles defined in settings + apply
+ * the role_capabilities matrix override on top.
+ */
+export function getResolvedRoles(
+  customRolesRaw?: string | null,
+  capabilityMatrixRaw?: string | null,
+): ResolvedRole[] {
+  const custom = parseCustomRoles(customRolesRaw);
+  const matrix = parseRoleCapabilities(capabilityMatrixRaw);
+
+  const builtins: ResolvedRole[] = ROLE_KEYS.map((key) => ({
+    key,
+    label: ROLE_LABELS[key],
+    level: BUILTIN_ROLE_LEVELS[key],
+    capabilities: matrix[key] ?? DEFAULT_ROLE_CAPABILITIES[key] ?? [],
+    isBuiltin: true,
+  }));
+
+  const customResolved: ResolvedRole[] = custom.map((r) => ({
+    ...r,
+    capabilities: matrix[r.key] ?? r.capabilities,
+    isBuiltin: false,
+  }));
+
+  return [...builtins, ...customResolved].sort((a, b) => b.level - a.level);
+}
+
+/** Look up the level for a role key against the merged list. */
+export function getRoleLevel(
+  role: string | null | undefined,
+  resolved: ResolvedRole[],
+): number {
+  if (!role) return 0;
+  const found = resolved.find((r) => r.key === role);
+  return found?.level ?? 0;
+}
+
 export const CAPABILITIES = [
   // Events
   { key: "events.create",      group: "Sự kiện",   label: "Tạo sự kiện" },
@@ -104,6 +197,25 @@ export function hasCapability(
 ): boolean {
   if (!role) return false;
   if (role === "super_admin") return true;
+  const caps = matrix[role];
+  return Array.isArray(caps) && caps.includes(capability);
+}
+
+/**
+ * Capability check that also recognises custom roles whose level >= super_admin
+ * (i.e. roles created above super_admin) as always-on. Use this on the server
+ * when you have access to the resolved role list.
+ */
+export function hasCapabilityWithRoles(
+  role: string | null | undefined,
+  capability: CapabilityKey,
+  matrix: RoleCapabilityMap,
+  resolved: ResolvedRole[],
+): boolean {
+  if (!role) return false;
+  if (role === "super_admin") return true;
+  const meta = resolved.find((r) => r.key === role);
+  if (meta && meta.level >= BUILTIN_ROLE_LEVELS.super_admin) return true;
   const caps = matrix[role];
   return Array.isArray(caps) && caps.includes(capability);
 }

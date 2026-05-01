@@ -564,7 +564,7 @@ begin
       else
         if has_provider_id then
 cute 'insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) values ($1, $2, $3, $4, $5, now(), now(), now())'
-            using gen_random_uuid(), admin_uid, identity_data_val, 'email', 'admin@arex.tech';
+            using gen_random_uuid(), admin_uid, identity_data_val, 'email', 'admin@arex.tech ';
         else
           execute 'insert into auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at) values ($1, $2, $3, $4, now(), now(), now())'
             using gen_random_uuid(), admin_uid, identity_data_val, 'email';
