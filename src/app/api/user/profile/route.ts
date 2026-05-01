@@ -21,6 +21,7 @@ const schema = z.object({
   bio: z.string().max(300).optional(),
   phone: z.string().max(20).optional(),
   contact_email: z.union([z.string().email().max(120), z.literal("")]).optional(),
+  ff_id: z.union([z.string().regex(/^\d{6,12}$/, "FF ID phải là 6–12 chữ số"), z.literal("")]).optional(),
   game_profiles: z.array(gameProfileSchema).max(20).optional(),
   avatar_url: urlOrEmpty,
   facebook_url: urlOrEmpty,
@@ -46,6 +47,7 @@ type ProfileRow = {
   avatar_url?: string | null;
   bio?: string | null;
   phone?: string | null;
+  ff_id?: string | null;
   facebook_url?: string | null;
   tiktok_url?: string | null;
   instagram_url?: string | null;
@@ -75,7 +77,7 @@ export async function GET() {
 
   const { data: profile } = await roleClient
     .from("users")
-    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
+    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, ff_id, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
 
@@ -93,6 +95,7 @@ export async function GET() {
     avatar_url: profile?.avatar_url ?? null,
     bio: profile?.bio ?? null,
     phone: profile?.phone ?? null,
+    ff_id: profile?.ff_id ?? null,
     facebook_url: profile?.facebook_url ?? null,
     tiktok_url: profile?.tiktok_url ?? null,
     instagram_url: profile?.instagram_url ?? null,
@@ -130,6 +133,7 @@ export async function PATCH(request: NextRequest) {
   if (d.display_name !== undefined) updates.display_name = d.display_name || null;
   if (d.bio !== undefined) updates.bio = d.bio || null;
   if (d.phone !== undefined) updates.phone = d.phone || null;
+  if (d.ff_id !== undefined) updates.ff_id = d.ff_id || null;
   if (d.contact_email !== undefined) updates.contact_email = d.contact_email || null;
   if (d.game_profiles !== undefined) {
     updates.game_profiles = d.game_profiles

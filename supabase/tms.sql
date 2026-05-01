@@ -130,6 +130,7 @@ select
   r.tournament_id,
   r.user_id,
   u.display_name,
+  u.ff_id,
   r.team_id,
   t.name  as team_name,
   t.tag   as team_tag,

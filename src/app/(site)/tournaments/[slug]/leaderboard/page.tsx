@@ -94,7 +94,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             <table className="w-full min-w-[700px] text-sm">
               <thead>
                 <tr className="bg-muted/40 border-b border-border">
-                  {["#", "Người chơi", "Đội", "Trận", "Kills", "Assists", "Deaths", "K/D", "Points"].map((h) => (
+                  {["#", "Người chơi", "FF ID", "Đội", "Trận", "Kills", "Assists", "Deaths", "K/D", "Points"].map((h) => (
                     <th key={h} className="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-muted-foreground">{h}</th>
                   ))}
                 </tr>
@@ -106,6 +106,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                       {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                     </td>
                     <td className="px-3 py-2 font-semibold">{p.display_name ?? "Ẩn danh"}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-amber-400/80">{p.ff_id ?? "—"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">[{p.team_tag}]</td>
                     <td className="px-3 py-2 text-muted-foreground">{p.matches_played}</td>
                     <td className="px-3 py-2 text-red-400 font-semibold">{p.total_kills}</td>

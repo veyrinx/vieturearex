@@ -51,6 +51,7 @@ type ProfileData = {
   avatar_url?: string | null;
   bio?: string | null;
   phone?: string | null;
+  ff_id?: string | null;
   game_profiles?: GameProfile[];
   contact_email?: string | null;
 } & Partial<Record<`${SocialKey}_url` & string, string | null>>;
@@ -70,6 +71,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
+  const [ffId, setFfId] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [socials, setSocials] = useState<Record<string, string>>(
     Object.fromEntries(SOCIAL_DEFS.map((s) => [s.field, ""])),
@@ -105,6 +107,7 @@ export default function ProfilePage() {
         setDisplayName(data.display_name ?? "");
         setBio(data.bio ?? "");
         setPhone(data.phone ?? "");
+        setFfId(data.ff_id ?? "");
         setContactEmail(data.contact_email ?? "");
         const next: Record<string, string> = {};
         for (const s of SOCIAL_DEFS) {
@@ -204,6 +207,7 @@ export default function ProfilePage() {
         display_name: displayName.trim(),
         bio: bio.trim(),
         phone: phone.trim(),
+        ff_id: ffId.trim(),
         contact_email: contactEmail.trim(),
         game_profiles: cleanGames,
         ...trimmedSocials,
@@ -316,6 +320,7 @@ export default function ProfilePage() {
     displayName.trim() !== (profile.display_name ?? "") ||
     bio.trim() !== (profile.bio ?? "") ||
     phone.trim() !== (profile.phone ?? "") ||
+    ffId.trim() !== (profile.ff_id ?? "") ||
     contactEmail.trim() !== (profile.contact_email ?? "") ||
     SOCIAL_DEFS.some((s) =>
       (socials[s.field] ?? "").trim() !==
@@ -525,6 +530,33 @@ export default function ProfilePage() {
                   </label>
                   <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0xxxxxxxxx" maxLength={20} className="h-10" />
                 </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <Gamepad2 className="size-3.5 text-amber-500" />
+                    ID Free Fire
+                    <span className="ml-auto text-[10px] font-normal text-muted-foreground/60 normal-case tracking-normal">Dùng cho giải đấu</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      value={ffId}
+                      onChange={(e) => setFfId(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                      placeholder="vd: 123456789"
+                      maxLength={12}
+                      className="h-10 font-mono pr-16"
+                    />
+                    {ffId && !/^\d{6,12}$/.test(ffId) && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400">6–12 số</span>
+                    )}
+                    {ffId && /^\d{6,12}$/.test(ffId) && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-emerald-400">✓</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Mỗi tài khoản chỉ được liên kết 1 FF ID. Unique — tránh clone.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     <Mail className="size-3.5" /> Email cá nhân (liên hệ)

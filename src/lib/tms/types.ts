@@ -92,6 +92,7 @@ export type TmsPlayerLeaderboard = {
   tournament_id: string;
   user_id: string;
   display_name: string | null;
+  ff_id: string | null;
   team_id: string;
   team_name: string;
   team_tag: string;

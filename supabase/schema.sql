@@ -25,6 +25,9 @@ alter table if exists public.users add column if not exists is_banned boolean no
 alter table if exists public.users drop constraint if exists users_role_check;
 alter table if exists public.users add constraint users_role_check
   check (role in ('super_admin', 'admin', 'it', 'manager', 'support', 'user'));
+-- FF ID: unique Free Fire in-game ID, prevents clone accounts sharing one FFID
+alter table if exists public.users add column if not exists ff_id text unique;
+create unique index if not exists users_ff_id_unique on public.users(ff_id) where ff_id is not null;
 
 create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
