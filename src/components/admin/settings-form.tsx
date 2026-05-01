@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, ShieldCheck, Palette, Search, Home, Share2, Plug,
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
-  AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar,
+  AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { id: "event_servers", icon: Globe,       label: "Server",      desc: "Server sự kiện tuỳ chỉnh" },
   { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
   { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark" },
+  { id: "tms",          icon: Trophy,       label: "Giải Đấu",    desc: "Quota & thanh toán TMS" },
   { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
   { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
 ] as const;
@@ -1201,6 +1202,80 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
         </div>
 
         <SaveRow onSave={() => save(["mail.smtp_host", "mail.smtp_port", "mail.smtp_user", "mail.smtp_pass", "mail.from_name", "mail.from_email"], "mail")} saving={saving === "mail"} />
+      </div>
+    ),
+
+    tms: (
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 rounded-xl border border-border bg-muted p-2">
+            <Trophy className="size-5" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Cài đặt Giải Đấu (TMS)</p>
+            <p className="text-xs text-muted-foreground">
+              Giới hạn lượt nộp kết quả miễn phí mỗi tuần và thông tin thanh toán khi vượt giới hạn.
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Trophy} title="Hạn mức & Giá" desc="Cấu hình lượt miễn phí và phí nộp thêm" />
+          </div>
+          <Field label="Lượt miễn phí / tuần" hint="Số lần nộp kết quả miễn phí mỗi 7 ngày (mặc định: 4)" icon={Zap}>
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              value={v("tms.free_per_week")}
+              onChange={(e) => set("tms.free_per_week", e.target.value)}
+              placeholder="4"
+              className="max-w-32 font-mono text-sm"
+            />
+          </Field>
+          <Field label="Giá / lần nộp thêm" hint="VD: 10,000đ — hiển thị cho user khi hết lượt" icon={CreditCard}>
+            <Input
+              value={v("tms.payment_price")}
+              onChange={(e) => set("tms.payment_price", e.target.value)}
+              placeholder="10,000đ"
+            />
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={CreditCard} title="Thông tin thanh toán" desc="Hiển thị cho user khi hết lượt miễn phí" />
+          </div>
+          <Field label="Hướng dẫn / Số tài khoản" hint="Hiển thị dưới QR code" icon={MessageSquare}>
+            <Textarea
+              value={v("tms.payment_info")}
+              onChange={(e) => set("tms.payment_info", e.target.value)}
+              placeholder={"MB Bank: 0123456789\nTên: Nguyen Van A\nNội dung: [FF ID] nop ket qua"}
+              rows={4}
+              className="font-mono text-sm"
+            />
+          </Field>
+          <Field label="URL ảnh QR thanh toán" hint="Link ảnh QR chuyển khoản" icon={ImageIcon}>
+            <Input
+              value={v("tms.payment_qr_url")}
+              onChange={(e) => set("tms.payment_qr_url", e.target.value)}
+              placeholder="https://..."
+            />
+            {v("tms.payment_qr_url") && (
+              <div className="mt-2">
+                <img
+                  src={v("tms.payment_qr_url")}
+                  alt="QR preview"
+                  className="max-w-[160px] rounded-xl border border-border"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              </div>
+            )}
+          </Field>
+        </Card>
+
+        <SaveRow onSave={() => save(["tms.free_per_week", "tms.payment_price", "tms.payment_info", "tms.payment_qr_url"], "tms")} saving={saving === "tms"} />
       </div>
     ),
   };

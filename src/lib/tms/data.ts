@@ -234,6 +234,16 @@ export async function getScoreSubmissions(tournamentId: string): Promise<TmsScor
   return (data ?? []) as TmsScoreSubmission[];
 }
 
+export async function getUserWeeklySubmissionCount(userId: string): Promise<number> {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { count, error } = await u("tms_score_submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", since);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function getUserSubmissions(userId: string): Promise<TmsScoreSubmission[]> {
   const { data, error } = await u("tms_score_submissions")
     .select("*, user:users(display_name,ff_id), team:tms_teams(name,tag), match:tms_matches(round)")

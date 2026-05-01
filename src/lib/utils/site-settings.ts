@@ -30,6 +30,10 @@ export const settingsFormFieldOrder = [
   "ads.slot_header",
   "ads.slot_sidebar",
   "ads.slot_article",
+  "tms.free_per_week",
+  "tms.payment_price",
+  "tms.payment_info",
+  "tms.payment_qr_url",
   "site.maintenance_mode",
   "site.maintenance_message",
   "site.maintenance_end_time",
@@ -50,6 +54,10 @@ export const adminSettingsApiKeys = [
   "events.server_logos",
   "permissions.role_capabilities",
   "permissions.custom_roles",
+  "tms.free_per_week",
+  "tms.payment_price",
+  "tms.payment_info",
+  "tms.payment_qr_url",
 ] as const;
 
 export type SettingsFormFieldKey = (typeof settingsFormFieldOrder)[number];
@@ -77,6 +85,10 @@ export const defaultSiteSettingValues: Record<string, string> = {
     "https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/697b5d2e34ac088f5b5a4427d57f6281.jpg",
   "home.background.mobile_url":
     "https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20263/0680c1792156b8a80095c669520f019a.jpg",
+  "tms.free_per_week": "4",
+  "tms.payment_price": "",
+  "tms.payment_info": "",
+  "tms.payment_qr_url": "",
   "site.experimental_mode": "false",
   "social.facebook_url": siteConfig.links.facebook,
   "social.tiktok_url": siteConfig.links.tiktok,

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
-import { createScoreSubmission, getScoreSubmissions, getUserSubmissions } from "@/lib/tms/data";
+import { createScoreSubmission, getScoreSubmissions, getUserSubmissions, getUserWeeklySubmissionCount } from "@/lib/tms/data";
+import { getSettings } from "@/lib/data/content-service";
 
 export async function GET(req: Request) {
   const auth = await getAuthContext();
@@ -9,9 +10,25 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const tournamentId = searchParams.get("tournament_id");
+  const quotaOnly = searchParams.get("quota") === "true";
 
   const adminRoles = ["super_admin", "admin", "it", "manager", "support"];
   const isAdmin = adminRoles.includes(auth.role);
+
+  if (quotaOnly) {
+    const [used, settings] = await Promise.all([
+      getUserWeeklySubmissionCount(auth.userId).catch(() => 0),
+      getSettings().catch(() => []),
+    ]);
+    const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+    return NextResponse.json({
+      used,
+      limit: Math.max(1, parseInt(settingsMap["tms.free_per_week"] ?? "4", 10) || 4),
+      payment_price: settingsMap["tms.payment_price"] ?? "",
+      payment_info: settingsMap["tms.payment_info"] ?? "",
+      payment_qr_url: settingsMap["tms.payment_qr_url"] ?? "",
+    });
+  }
 
   if (isAdmin && tournamentId) {
     const subs = await getScoreSubmissions(tournamentId).catch(() => []);
@@ -41,6 +58,30 @@ export async function POST(req: Request) {
 
   if (!body.tournament_id || !body.ff_id) {
     return NextResponse.json({ error: "tournament_id and ff_id required" }, { status: 400 });
+  }
+
+  // Quota check — skip for admins
+  const adminRoles = ["super_admin", "admin", "it", "manager", "support"];
+  if (!adminRoles.includes(auth.role)) {
+    const [used, settings] = await Promise.all([
+      getUserWeeklySubmissionCount(auth.userId).catch(() => 0),
+      getSettings().catch(() => []),
+    ]);
+    const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+    const limit = Math.max(1, parseInt(settingsMap["tms.free_per_week"] ?? "4", 10) || 4);
+    if (used >= limit) {
+      return NextResponse.json(
+        {
+          error: "quota_exceeded",
+          used,
+          limit,
+          payment_price: settingsMap["tms.payment_price"] ?? "",
+          payment_info: settingsMap["tms.payment_info"] ?? "",
+          payment_qr_url: settingsMap["tms.payment_qr_url"] ?? "",
+        },
+        { status: 402 },
+      );
+    }
   }
 
   try {
