@@ -17,6 +17,8 @@ import {
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { cn } from "@/lib/utils";
 
+const ADMIN_DOMAIN = process.env.NEXT_PUBLIC_ADMIN_EMAIL_DOMAIN ?? "arexnetwork.site";
+
 const ROLE_LABELS: Record<string, string> = {
   admin: "ADMIN",
   manager: "QUẢN LÝ",
@@ -53,7 +55,7 @@ export function InvitedEmailsManager() {
   const onCreateAccount = async () => {
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) { toast.error("VUI LÒNG NHẬP EMAIL."); return; }
-    if (!trimmedEmail.endsWith("@arex.tech")) { toast.error("CHỈ CHẤP NHẬN EMAIL @arex.tech"); return; }
+    if (!trimmedEmail.endsWith(`@${ADMIN_DOMAIN}`)) { toast.error(`CHỈ CHẤP NHẬN EMAIL @${ADMIN_DOMAIN}`); return; }
     if (password.length < 6) { toast.error("MẬT KHẨU PHẢI CÓ ÍT NHẤT 6 KÝ TỰ."); return; }
 
     setSubmitting(true);
@@ -156,13 +158,13 @@ export function InvitedEmailsManager() {
       {/* Direct account creation */}
       {tab === "direct" && (
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">Chỉ chấp nhận email <code className="rounded bg-muted px-1">@arex.tech</code> — admin đặt mật khẩu ngay.</p>
+          <p className="text-xs text-muted-foreground">Chỉ chấp nhận email <code className="rounded bg-muted px-1">@{ADMIN_DOMAIN}</code> — admin đặt mật khẩu ngay.</p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@arex.tech"
+              placeholder={`email@${ADMIN_DOMAIN}`}
               className="border-border bg-background text-foreground"
             />
             <Input

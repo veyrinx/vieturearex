@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
+import { ADMIN_EMAIL_DOMAIN } from "@/lib/constants/admin-domain";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const schema = z.object({
-  email: z.string().email().refine((val) => val.endsWith("@arex.tech"), {
-    message: "Chỉ chấp nhận email @arex.tech",
+  email: z.string().email().refine((val) => val.endsWith(`@${ADMIN_EMAIL_DOMAIN}`), {
+    message: `Chỉ chấp nhận email @${ADMIN_EMAIL_DOMAIN}`,
   }),
   password: z.string().min(6),
   display_name: z.string().min(1).max(50).optional(),

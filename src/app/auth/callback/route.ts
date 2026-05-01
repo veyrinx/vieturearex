@@ -12,6 +12,7 @@ import {
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getClientIp } from "@/lib/server/get-client-ip";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { ADMIN_EMAIL_DOMAIN } from "@/lib/constants/admin-domain";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!normalizedEmail.endsWith("@arex.tech")) {
+  if (!normalizedEmail.endsWith(`@${ADMIN_EMAIL_DOMAIN}`)) {
     await supabase.auth.signOut();
     loginRedirectUrl.searchParams.set("error", "google_not_allowed");
     return NextResponse.redirect(loginRedirectUrl);
