@@ -3,6 +3,7 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import type {
   TmsTeam, TmsTeamMember, TmsTournament, TmsRegistration,
   TmsMatch, TmsMatchResult, TmsPlayerLeaderboard, TmsTeamLeaderboard,
+  TmsScoreSubmission,
   CreateTeamInput, CreateTournamentInput, CreateMatchInput, SubmitResultInput,
 } from "./types";
 
@@ -188,4 +189,91 @@ export async function getTmsTeamLeaderboard(tournamentId: string): Promise<TmsTe
     .select("*").eq("tournament_id", tournamentId).order("total_points", { ascending: false });
   if (error) throw error;
   return (data ?? []) as TmsTeamLeaderboard[];
+}
+
+// ── Score Submissions ─────────────────────────────────────────────────────────
+
+export async function createScoreSubmission(
+  input: {
+    tournament_id: string;
+    match_id?: string | null;
+    team_id?: string | null;
+    ff_id: string;
+    kills: number;
+    assists: number;
+    deaths: number;
+    proof_url?: string | null;
+    notes?: string | null;
+  },
+  userId: string,
+): Promise<TmsScoreSubmission> {
+  const { data, error } = await u("tms_score_submissions")
+    .insert({ ...input, user_id: userId })
+    .select("*, user:users(display_name,ff_id), team:tms_teams(name,tag), match:tms_matches(round)")
+    .single();
+  if (error) throw error;
+  return data as TmsScoreSubmission;
+}
+
+export async function getScoreSubmissions(tournamentId: string): Promise<TmsScoreSubmission[]> {
+  const { data, error } = await u("tms_score_submissions")
+    .select("*, user:users(display_name,ff_id), team:tms_teams(name,tag), match:tms_matches(round)")
+    .eq("tournament_id", tournamentId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsScoreSubmission[];
+}
+
+export async function getUserSubmissions(userId: string): Promise<TmsScoreSubmission[]> {
+  const { data, error } = await u("tms_score_submissions")
+    .select("*, user:users(display_name,ff_id), team:tms_teams(name,tag), match:tms_matches(round)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsScoreSubmission[];
+}
+
+export async function reviewSubmission(
+  id: string,
+  status: "approved" | "rejected",
+  reviewedBy: string,
+): Promise<void> {
+  const db = getDb();
+  const { data: sub, error: fetchErr } = await untypedFrom(db, "tms_score_submissions")
+    .select("match_id, tournament_id, user_id, team_id, kills, assists, deaths")
+    .eq("id", id)
+    .single();
+  if (fetchErr) throw fetchErr;
+
+  const { error } = await untypedFrom(db, "tms_score_submissions")
+    .update({ status, reviewed_by: reviewedBy, reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+
+  if (status === "approved" && (sub as { match_id: string | null }).match_id) {
+    const s = sub as {
+      match_id: string;
+      tournament_id: string;
+      user_id: string;
+      team_id: string | null;
+      kills: number;
+      assists: number;
+      deaths: number;
+    };
+    const { error: upsertErr } = await untypedFrom(db, "tms_match_results").upsert(
+      {
+        match_id: s.match_id,
+        tournament_id: s.tournament_id,
+        user_id: s.user_id,
+        team_id: s.team_id,
+        kills: s.kills,
+        assists: s.assists,
+        deaths: s.deaths,
+        is_winner: false,
+        submitted_by: reviewedBy,
+      },
+      { onConflict: "match_id,user_id" },
+    );
+    if (upsertErr) throw upsertErr;
+  }
 }

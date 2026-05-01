@@ -58,7 +58,7 @@ export default function UserRegisterPage() {
         });
         if (!signInError) {
           toast.success("Tạo tài khoản thành công! Chào mừng bạn đến với Arex.");
-          router.push("/");
+          router.push("/setup?next=/");
           router.refresh();
           return;
         }

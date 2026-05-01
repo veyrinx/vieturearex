@@ -275,3 +275,39 @@ create policy "tms admin manage matches" on public.tms_matches for all
 drop policy if exists "tms admin manage results"      on public.tms_match_results;
 create policy "tms admin manage results" on public.tms_match_results for all
   using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- SCORE SUBMISSIONS
+-- ============================================================
+
+create table if not exists public.tms_score_submissions (
+  id            uuid primary key default gen_random_uuid(),
+  tournament_id uuid not null references public.tms_tournaments(id) on delete cascade,
+  match_id      uuid references public.tms_matches(id) on delete set null,
+  user_id       uuid not null references public.users(id) on delete cascade,
+  team_id       uuid references public.tms_teams(id) on delete set null,
+  ff_id         text not null,
+  kills         integer not null default 0 check (kills >= 0 and kills <= 99),
+  assists       integer not null default 0 check (assists >= 0 and assists <= 99),
+  deaths        integer not null default 0 check (deaths >= 0 and deaths <= 99),
+  proof_url     text,
+  notes         text,
+  status        text not null default 'pending'
+                  check (status in ('pending','approved','rejected')),
+  reviewed_by   uuid references public.users(id),
+  reviewed_at   timestamptz,
+  created_at    timestamptz not null default now()
+);
+create index if not exists tms_score_sub_tourn_idx on public.tms_score_submissions(tournament_id);
+create index if not exists tms_score_sub_user_idx  on public.tms_score_submissions(user_id);
+create index if not exists tms_score_sub_status_idx on public.tms_score_submissions(status);
+alter table public.tms_score_submissions enable row level security;
+drop policy if exists "tms sub public insert" on public.tms_score_submissions;
+create policy "tms sub public insert" on public.tms_score_submissions for insert
+  with check (auth.uid() = user_id);
+drop policy if exists "tms sub own read" on public.tms_score_submissions;
+create policy "tms sub own read" on public.tms_score_submissions for select
+  using (auth.uid() = user_id or public.is_admin());
+drop policy if exists "tms sub admin manage" on public.tms_score_submissions;
+create policy "tms sub admin manage" on public.tms_score_submissions for all
+  using (public.is_admin()) with check (public.is_admin());

@@ -137,6 +137,27 @@ export type SubmitResultInput = {
   }>;
 };
 
+export type TmsScoreSubmission = {
+  id: string;
+  tournament_id: string;
+  match_id: string | null;
+  user_id: string;
+  team_id: string | null;
+  ff_id: string;
+  kills: number;
+  assists: number;
+  deaths: number;
+  proof_url: string | null;
+  notes: string | null;
+  status: "pending" | "approved" | "rejected";
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  user?: { display_name: string | null; ff_id?: string | null };
+  team?: { name: string; tag: string } | null;
+  match?: { round: string } | null;
+};
+
 export const MODE_LABELS: Record<TmsMode, string> = {
   "1v1": "1v1",
   "2v2": "2v2",

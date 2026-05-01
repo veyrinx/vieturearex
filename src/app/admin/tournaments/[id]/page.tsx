@@ -6,6 +6,7 @@ import { getTmsTournamentById, getTmsRegistrations, getTmsMatches } from "@/lib/
 import { TournamentForm } from "@/components/admin/tms/tournament-form";
 import { RegistrationsPanel } from "@/components/admin/tms/registrations-panel";
 import { MatchesPanel } from "@/components/admin/tms/matches-panel";
+import { SubmissionsPanel } from "@/components/admin/tms/submissions-panel";
 
 export const metadata: Metadata = { title: "Quản Lý Giải Đấu" };
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ export default async function AdminTournamentDetailPage({ params }: { params: Pr
       <TournamentForm tournament={tournament} />
       <RegistrationsPanel tournamentId={id} initialRegistrations={registrations} />
       <MatchesPanel tournamentId={id} initialMatches={matches} approvedTeams={approvedTeams} />
+      <SubmissionsPanel tournamentId={id} />
     </div>
   );
 }

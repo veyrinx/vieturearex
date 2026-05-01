@@ -65,8 +65,19 @@ export default function UserLoginPage() {
       }
     }
 
+    const nextParam = new URLSearchParams(window.location.search).get("next") ?? "/";
+    const profileRes = await fetch("/api/user/profile", { credentials: "same-origin" }).catch(() => null);
+    if (profileRes?.ok) {
+      const profile = await profileRes.json() as { ff_id: string | null };
+      if (!profile.ff_id) {
+        toast.success("Chào mừng bạn trở lại!");
+        router.push(`/setup?next=${encodeURIComponent(nextParam)}`);
+        router.refresh();
+        return;
+      }
+    }
     toast.success("Chào mừng bạn trở lại!");
-    router.push("/");
+    router.push(nextParam);
     router.refresh();
   };
 
