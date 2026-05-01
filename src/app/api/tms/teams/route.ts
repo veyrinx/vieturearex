@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/server/auth";
-import { createTmsTeam, getTmsTeams } from "@/lib/tms/data";
+import { createTmsTeam, getTmsTeams, getMyTmsTeam } from "@/lib/tms/data";
 import type { CreateTeamInput } from "@/lib/tms/types";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  if (searchParams.get("mine") === "true") {
+    const auth = await getAuthContext();
+    if (!auth.userId) return NextResponse.json(null);
+    const team = await getMyTmsTeam(auth.userId).catch(() => null);
+    return NextResponse.json(team);
+  }
   const teams = await getTmsTeams().catch(() => []);
   return NextResponse.json(teams);
 }

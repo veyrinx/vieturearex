@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, UserCircle, UserPlus, User, LayoutDashboard, Heart } from "lucide-react";
+import { LogOut, UserCircle, UserPlus, User, LayoutDashboard, Heart, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -150,6 +150,12 @@ export function UserNavButton({ className }: Props) {
           <Link href="/yeu-thich" className="flex w-full items-center gap-2 px-2 py-1.5">
             <Heart className="size-4 text-rose-500" />
             <span className="text-sm font-medium">Sự kiện đã lưu</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer gap-2 p-0">
+          <Link href="/tournaments/my-team" className="flex w-full items-center gap-2 px-2 py-1.5">
+            <Trophy className="size-4 text-amber-400" />
+            <span className="text-sm font-medium">Team của tôi</span>
           </Link>
         </DropdownMenuItem>
         {role && ADMIN_ROLES.includes(role) && (

@@ -28,6 +28,16 @@ export async function getTmsTeam(id: string): Promise<TmsTeam | null> {
   return (data ?? null) as TmsTeam | null;
 }
 
+export async function getMyTmsTeam(userId: string): Promise<TmsTeam | null> {
+  const { data } = await u("tms_team_members")
+    .select("team:tms_teams(*)")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return null;
+  const row = data as unknown as { team: TmsTeam };
+  return row.team ?? null;
+}
+
 export async function getTmsTeamMembers(teamId: string): Promise<TmsTeamMember[]> {
   const { data, error } = await u("tms_team_members")
     .select("*, user:users(display_name, email)")

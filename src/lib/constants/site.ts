@@ -24,6 +24,7 @@ export const navItems = [
   { title: "PHÁT TRỰC TIẾP", href: "/esports" },
   { title: "TIN TỨC", href: "/news" },
   { title: "ĐỘI NGŨ", href: "/team" },
+  { title: "GIẢI ĐẤU", href: "/tournaments" },
   { title: "LIÊN HỆ", href: "/contact" },
 ] as const;
 
