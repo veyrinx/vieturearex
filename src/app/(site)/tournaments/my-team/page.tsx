@@ -267,12 +267,22 @@ export default function MyTeamPage() {
               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 URL logo team
               </label>
-              <Input
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://..."
-                className="h-10 rounded-xl"
-              />
+              <div className="flex items-center gap-3">
+                {logoUrl && (
+                  <img
+                    src={logoUrl}
+                    alt="logo preview"
+                    className="size-12 rounded-xl object-cover border border-border shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                )}
+                <Input
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="h-10 rounded-xl"
+                />
+              </div>
             </div>
 
             <Button type="submit" disabled={saving} className="h-10 w-full rounded-xl font-bold">

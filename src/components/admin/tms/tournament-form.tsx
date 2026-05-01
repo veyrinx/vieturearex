@@ -132,11 +132,20 @@ export function TournamentForm({ tournament }: Props) {
           <label className={LABEL}>Giải thưởng</label>
           <input className={FIELD} value={form.prize_pool} onChange={(e) => set("prize_pool", e.target.value)} placeholder="500.000đ + Rank Booster" />
         </div>
-        <div>
+        <div className="sm:col-span-2">
           <label className={LABEL}>Banner URL</label>
           <input className={FIELD} value={form.banner_url} onChange={(e) => set("banner_url", e.target.value)} placeholder="https://..." />
+          {form.banner_url && (
+            <div className="mt-2 rounded-xl overflow-hidden aspect-[21/6] bg-muted border border-border">
+              <img
+                src={form.banner_url}
+                alt="Banner preview"
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+          )}
         </div>
-        <div />
         <div>
           <label className={LABEL}>Đăng ký từ</label>
           <input type="datetime-local" className={FIELD} value={form.registration_open_at} onChange={(e) => set("registration_open_at", e.target.value)} />
