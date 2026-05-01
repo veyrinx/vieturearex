@@ -12,6 +12,7 @@ export type TmsTeam = {
   logo_url: string | null;
   total_points: number;
   total_kills: number;
+  is_public: boolean;
   created_at: string;
 };
 
@@ -120,7 +121,7 @@ export type TmsTeamLeaderboard = {
 };
 
 // Input types for API
-export type CreateTeamInput = { name: string; tag: string; logo_url?: string };
+export type CreateTeamInput = { name: string; tag: string; logo_url?: string; is_public?: boolean };
 export type CreateTournamentInput = Omit<TmsTournament, "id" | "created_at" | "created_by">;
 export type CreateMatchInput = Pick<TmsMatch, "tournament_id" | "round" | "round_num" | "team_a_id" | "team_b_id" | "scheduled_at">;
 export type SubmitResultInput = {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Trophy, Users, CalendarDays, Swords } from "lucide-react";
+import { Trophy, Users, CalendarDays, Swords, Shield } from "lucide-react";
 import { getTmsTournaments } from "@/lib/tms/data";
 import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS } from "@/lib/tms/types";
 import { cn } from "@/lib/utils";
@@ -26,12 +26,20 @@ export default async function TournamentsPage() {
 
   return (
     <div className="py-10 space-y-8">
-      <div className="flex items-center gap-3">
-        <Trophy className="size-7 text-amber-400" />
-        <div>
-          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">Giải Đấu</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Tournament Management System — Arex</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Trophy className="size-7 text-amber-400" />
+          <div>
+            <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">Giải Đấu</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Tournament Management System — Arex</p>
+          </div>
         </div>
+        <Link
+          href="/tournaments/my-team"
+          className="flex items-center gap-2 rounded-xl border border-primary/30 dark:border-amber-400/30 bg-primary/5 dark:bg-amber-400/5 px-4 py-2.5 text-sm font-bold text-primary dark:text-amber-400 hover:border-primary/60 dark:hover:border-amber-400/60 transition-colors"
+        >
+          <Shield className="size-4" /> Team của tôi
+        </Link>
       </div>
 
       {tournaments.length === 0 ? (

@@ -17,10 +17,17 @@ const u = (table: string) => untypedFrom(getDb(), table);
 
 // ── Teams ─────────────────────────────────────────────────────────────────────
 
-export async function getTmsTeams(): Promise<TmsTeam[]> {
-  const { data, error } = await u("tms_teams").select("*").order("total_points", { ascending: false });
+export async function getTmsTeams(adminView = false): Promise<TmsTeam[]> {
+  let q = u("tms_teams").select("*").order("total_points", { ascending: false });
+  if (!adminView) q = q.eq("is_public", true);
+  const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as TmsTeam[];
+}
+
+export async function joinTeam(teamId: string, userId: string): Promise<void> {
+  const { error } = await u("tms_team_members").insert({ team_id: teamId, user_id: userId });
+  if (error) throw error;
 }
 
 export async function getTmsTeam(id: string): Promise<TmsTeam | null> {
