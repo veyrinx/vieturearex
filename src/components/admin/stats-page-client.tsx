@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell,
 } from "recharts";
-import { BarChart3, Trophy, Newspaper, RefreshCw } from "lucide-react";
+import { BarChart3, Trophy, Newspaper, RefreshCw, CalendarDays, Calendar } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { getRank } from "@/lib/constants/ranks";
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 
 type StatsData = {
   chart: { date: string; views: number }[];
+  byYear: { key: string; views: number }[];
+  byMonth: { key: string; views: number }[];
   topNews: { id: string; title: string; slug: string; comments: number }[];
   leaderboard: { id: string; display_name: string | null; points: number; rank: string }[];
 };
@@ -84,6 +86,63 @@ export function StatsPageClient() {
                 />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Year / Month breakdown */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* By year */}
+            <div className="glass-card rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="size-4 text-primary dark:text-amber-400" />
+                <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Lượt xem theo năm</h2>
+              </div>
+              {data.byYear.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chưa có dữ liệu.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {data.byYear.map(({ key, views }) => (
+                    <li key={key} className="flex items-center gap-3">
+                      <span className="w-12 shrink-0 text-sm font-bold font-mono text-foreground">{key}</span>
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary dark:bg-amber-400 transition-all"
+                          style={{ width: `${Math.round((views / Math.max(...data.byYear.map(y => y.views))) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-primary dark:text-amber-400">
+                        {views.toLocaleString("vi-VN")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* By month */}
+            <div className="glass-card rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="size-4 text-primary dark:text-amber-400" />
+                <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Lượt xem theo tháng</h2>
+              </div>
+              {data.byMonth.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chưa có dữ liệu.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={Math.max(160, data.byMonth.length * 28)}>
+                  <BarChart data={data.byMonth} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
+                    <XAxis type="number" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis type="category" dataKey="key" width={56} tick={{ fontSize: 10 }}
+                      stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip
+                      formatter={(v) => [Number(v).toLocaleString("vi-VN"), "Lượt xem"]}
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                    />
+                    <Bar dataKey="views" radius={[0, 4, 4, 0]}>
+                      {data.byMonth.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">

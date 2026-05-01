@@ -22,6 +22,18 @@ export async function GET() {
     chart.push({ date: k, views: daily[k] ?? 0 });
   }
 
+  // Aggregate all stored daily data by year and month
+  const yearMap: Record<string, number> = {};
+  const monthMap: Record<string, number> = {};
+  for (const [date, count] of Object.entries(daily)) {
+    const year = date.slice(0, 4);
+    const month = date.slice(0, 7);
+    yearMap[year] = (yearMap[year] ?? 0) + count;
+    monthMap[month] = (monthMap[month] ?? 0) + count;
+  }
+  const byYear = Object.entries(yearMap).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => ({ key: k, views: v }));
+  const byMonth = Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => ({ key: k, views: v }));
+
   // Top news by comment count
   type CommentRow = { news_id: string; count: number };
   const topNews: { id: string; title: string; slug: string; comments: number }[] = [];
@@ -54,5 +66,5 @@ export async function GET() {
     if (!error && data) leaderboard = data;
   }
 
-  return NextResponse.json({ chart, topNews, leaderboard });
+  return NextResponse.json({ chart, byYear, byMonth, topNews, leaderboard });
 }

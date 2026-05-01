@@ -23,7 +23,6 @@ const schema = z.object({
   contact_email: z.union([z.string().email().max(120), z.literal("")]).optional(),
   ff_id: z.union([z.string().regex(/^\d{6,12}$/, "FF ID phải là 6–12 chữ số"), z.literal("")]).optional(),
   game_profiles: z.array(gameProfileSchema).max(20).optional(),
-  avatar_url: urlOrEmpty,
   facebook_url: urlOrEmpty,
   tiktok_url: urlOrEmpty,
   instagram_url: urlOrEmpty,
@@ -145,7 +144,6 @@ export async function PATCH(request: NextRequest) {
       }))
       .filter((g) => g.game && g.uid);
   }
-  if (d.avatar_url !== undefined) updates.avatar_url = d.avatar_url;
   if (d.facebook_url !== undefined) updates.facebook_url = d.facebook_url;
   if (d.tiktok_url !== undefined) updates.tiktok_url = d.tiktok_url;
   if (d.instagram_url !== undefined) updates.instagram_url = d.instagram_url;
