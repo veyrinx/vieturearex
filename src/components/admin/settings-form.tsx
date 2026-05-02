@@ -288,10 +288,10 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
     setMigrating(true);
     try {
       const r = await fetch("/api/admin/settings/migrate-encrypt", { method: "POST" });
-      const body = (await r.json().catch(() => null)) as { migrated?: number; message?: string; error?: string } | null;
+      const body = (await r.json().catch(() => null)) as { migrated?: number; total?: number; message?: string; error?: string } | null;
       if (!r.ok) { toast.error(body?.error ?? "Lỗi không xác định."); return; }
-      if (body?.migrated === 0) { toast.success(body.message ?? "Tất cả đã được mã hoá."); return; }
-      toast.success(`Đã mã hoá ${body?.migrated ?? 0} setting.`);
+      if (body?.migrated === 0) { toast.success(body.message ?? "Không có dữ liệu cần mã hoá."); return; }
+      toast.success(`Đã mã hoá ${body?.migrated}/${body?.total} setting thành công.`);
     } catch {
       toast.error("Lỗi mạng.");
     } finally {
@@ -1185,15 +1185,15 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
 
         <Card>
           <div className="py-4">
-            <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="Mã hoá các setting nhạy cảm còn lưu dạng plaintext trong database" />
+            <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="AES-256-GCM toàn bộ setting nhạy cảm — chạy lại bất cứ lúc nào để xoay khoá" />
           </div>
           <div className="py-4 space-y-3">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Chạy một lần để mã hoá AES-256-GCM tất cả giá trị nhạy cảm (SMTP, webhook, số tài khoản...) đang còn plaintext trong DB. Sau khi chạy, dump DB sẽ không lộ thông tin thật.
+              Mã hoá lại toàn bộ SMTP, webhook, số tài khoản ngân hàng... trong DB. Mỗi lần chạy sinh IV mới — dump DB không bao giờ lộ giá trị thật.
             </p>
-            <Button type="button" size="sm" variant="outline" disabled={migrating} onClick={migrateEncrypt} className="gap-1.5 rounded-xl border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400">
+            <Button type="button" size="sm" disabled={migrating} onClick={migrateEncrypt} className="gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
               <ShieldCheck className="size-3.5" />
-              {migrating ? "Đang mã hoá..." : "Mã hoá dữ liệu cũ"}
+              {migrating ? "Đang mã hoá..." : "Mã hoá tất cả dữ liệu"}
             </Button>
           </div>
         </Card>
