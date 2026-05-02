@@ -74,6 +74,8 @@ const nextConfig = {
       "https://region1.google-analytics.com",
       "https://vitals.vercel-insights.com",
       "https://va.vercel-scripts.com",
+      "wss://*.twitch.tv",
+      "https://*.twitch.tv",
     ].join(" ");
 
     const contentSecurityPolicy = [
@@ -87,7 +89,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       `script-src ${scriptSrc}`,
       `connect-src ${connectSrc}`,
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://www.twitch.tv https://www.facebook.com https://web.facebook.com",
       "form-action 'self' https://mail.google.com https://accounts.google.com",
       "upgrade-insecure-requests",
     ].join("; ");
