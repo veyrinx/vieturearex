@@ -216,23 +216,29 @@ alter table public.tms_match_results enable row level security;
 
 -- Public read
 drop policy if exists "tms public read teams"         on public.tms_teams;
-create policy "tms public read teams"         on public.tms_teams for select using (true);
+drop policy if exists "tms auth read teams"           on public.tms_teams;
+create policy "tms auth read teams" on public.tms_teams for select using (auth.uid() is not null);
 
 drop policy if exists "tms public read members"       on public.tms_team_members;
-create policy "tms public read members"       on public.tms_team_members for select using (true);
+drop policy if exists "tms auth read members"         on public.tms_team_members;
+create policy "tms auth read members" on public.tms_team_members for select using (auth.uid() is not null);
 
 drop policy if exists "tms public read tournaments"   on public.tms_tournaments;
-create policy "tms public read tournaments"   on public.tms_tournaments for select
-  using (status <> 'draft' or public.is_admin());
+drop policy if exists "tms auth read tournaments"     on public.tms_tournaments;
+create policy "tms auth read tournaments" on public.tms_tournaments for select
+  using (auth.uid() is not null and (status <> 'draft' or public.is_admin()));
 
 drop policy if exists "tms public read registrations" on public.tms_registrations;
-create policy "tms public read registrations" on public.tms_registrations for select using (true);
+drop policy if exists "tms auth read registrations"   on public.tms_registrations;
+create policy "tms auth read registrations" on public.tms_registrations for select using (auth.uid() is not null);
 
 drop policy if exists "tms public read matches"       on public.tms_matches;
-create policy "tms public read matches"       on public.tms_matches for select using (true);
+drop policy if exists "tms auth read matches"         on public.tms_matches;
+create policy "tms auth read matches" on public.tms_matches for select using (auth.uid() is not null);
 
 drop policy if exists "tms public read results"       on public.tms_match_results;
-create policy "tms public read results"       on public.tms_match_results for select using (true);
+drop policy if exists "tms auth read results"         on public.tms_match_results;
+create policy "tms auth read results" on public.tms_match_results for select using (auth.uid() is not null);
 
 -- Authenticated users can create / manage their own team
 drop policy if exists "tms user create team"         on public.tms_teams;

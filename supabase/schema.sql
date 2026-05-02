@@ -311,7 +311,8 @@ grant  execute on function public.promote_to_super_admin(text) to authenticated;
 -- ============================================================
 
 drop policy if exists "Public can view events" on public.events;
-create policy "Public can view events" on public.events for select using (true);
+drop policy if exists "Auth can view events" on public.events;
+create policy "Auth can view events" on public.events for select using (auth.uid() is not null);
 
 drop policy if exists "Admin/editor manage events" on public.events;
 create policy "Admin/editor manage events" on public.events for all
@@ -322,8 +323,9 @@ using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
 -- ============================================================
 
 drop policy if exists "Public can view published news" on public.news;
-create policy "Public can view published news" on public.news for select
-using (status = 'published' or public.is_admin_or_editor());
+drop policy if exists "Auth can view published news" on public.news;
+create policy "Auth can view published news" on public.news for select
+using (auth.uid() is not null and (status = 'published' or public.is_admin_or_editor()));
 
 drop policy if exists "Admin/editor manage news" on public.news;
 create policy "Admin/editor manage news" on public.news for all
@@ -334,7 +336,8 @@ using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
 -- ============================================================
 
 drop policy if exists "Public can view gallery" on public.gallery;
-create policy "Public can view gallery" on public.gallery for select using (true);
+drop policy if exists "Auth can view gallery" on public.gallery;
+create policy "Auth can view gallery" on public.gallery for select using (auth.uid() is not null);
 
 drop policy if exists "Admin/editor manage gallery" on public.gallery;
 create policy "Admin/editor manage gallery" on public.gallery for all
@@ -368,11 +371,12 @@ returns boolean language sql immutable security definer set search_path = public
 $$;
 revoke execute on function public.is_sensitive_setting_key(text) from anon, authenticated;
 
--- Public can read only non-sensitive settings
+-- Authenticated can read only non-sensitive settings
 drop policy if exists "Public can read settings" on public.settings;
 drop policy if exists "Public read non-sensitive settings" on public.settings;
-create policy "Public read non-sensitive settings" on public.settings
-  for select using (not public.is_sensitive_setting_key(key));
+drop policy if exists "Auth read non-sensitive settings" on public.settings;
+create policy "Auth read non-sensitive settings" on public.settings
+  for select using (auth.uid() is not null and not public.is_sensitive_setting_key(key));
 
 -- Admins can read ALL settings
 drop policy if exists "Admin read settings" on public.settings;
@@ -416,12 +420,14 @@ using (public.is_admin()) with check (public.is_admin());
 -- ============================================================
 
 drop policy if exists "Public can view approved comments" on public.news_comments;
-create policy "Public can view approved comments" on public.news_comments for select
-using (status = 'approved' or public.is_admin_or_editor());
+drop policy if exists "Auth can view approved comments" on public.news_comments;
+create policy "Auth can view approved comments" on public.news_comments for select
+using (auth.uid() is not null and (status = 'approved' or public.is_admin_or_editor()));
 
 drop policy if exists "Anyone can insert pending comment" on public.news_comments;
-create policy "Anyone can insert pending comment" on public.news_comments for insert
-with check (status = 'pending');
+drop policy if exists "Auth can insert pending comment" on public.news_comments;
+create policy "Auth can insert pending comment" on public.news_comments for insert
+with check (auth.uid() is not null and status = 'pending');
 
 drop policy if exists "Admin manage comments" on public.news_comments;
 create policy "Admin manage comments" on public.news_comments for all
@@ -432,10 +438,12 @@ using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
 -- ============================================================
 
 drop policy if exists "Public can view ratings" on public.news_ratings;
-create policy "Public can view ratings" on public.news_ratings for select using (true);
+drop policy if exists "Auth can view ratings" on public.news_ratings;
+create policy "Auth can view ratings" on public.news_ratings for select using (auth.uid() is not null);
 
 drop policy if exists "Anyone can submit rating" on public.news_ratings;
-create policy "Anyone can submit rating" on public.news_ratings for insert with check (true);
+drop policy if exists "Auth can submit rating" on public.news_ratings;
+create policy "Auth can submit rating" on public.news_ratings for insert with check (auth.uid() is not null);
 
 drop policy if exists "Admin manage ratings" on public.news_ratings;
 create policy "Admin manage ratings" on public.news_ratings for all
@@ -446,20 +454,24 @@ using (public.is_admin()) with check (public.is_admin());
 -- ============================================================
 
 drop policy if exists "Public can view likes" on public.rating_likes;
-create policy "Public can view likes" on public.rating_likes for select using (true);
+drop policy if exists "Auth can view likes" on public.rating_likes;
+create policy "Auth can view likes" on public.rating_likes for select using (auth.uid() is not null);
 
 drop policy if exists "Anyone can like" on public.rating_likes;
-create policy "Anyone can like" on public.rating_likes for insert with check (true);
+drop policy if exists "Auth can like" on public.rating_likes;
+create policy "Auth can like" on public.rating_likes for insert with check (auth.uid() is not null);
 
 drop policy if exists "Anyone can remove own like" on public.rating_likes;
-create policy "Anyone can remove own like" on public.rating_likes for delete using (true);
+drop policy if exists "Auth can remove own like" on public.rating_likes;
+create policy "Auth can remove own like" on public.rating_likes for delete using (auth.uid() is not null);
 
 -- ============================================================
 -- POLICIES – RATING REPLIES
 -- ============================================================
 
 drop policy if exists "Public can view replies" on public.rating_replies;
-create policy "Public can view replies" on public.rating_replies for select using (true);
+drop policy if exists "Auth can view replies" on public.rating_replies;
+create policy "Auth can view replies" on public.rating_replies for select using (auth.uid() is not null);
 
 drop policy if exists "Admin can reply" on public.rating_replies;
 create policy "Admin can reply" on public.rating_replies for insert
