@@ -118,28 +118,47 @@ export function getRoleLevel(
 
 export const CAPABILITIES = [
   // Events
-  { key: "events.create",      group: "Sự kiện",   label: "Tạo sự kiện" },
-  { key: "events.edit",        group: "Sự kiện",   label: "Chỉnh sửa sự kiện" },
-  { key: "events.delete",      group: "Sự kiện",   label: "Xóa sự kiện" },
+  { key: "events.create",      group: "Sự kiện",    label: "Tạo sự kiện" },
+  { key: "events.edit",        group: "Sự kiện",    label: "Chỉnh sửa sự kiện" },
+  { key: "events.delete",      group: "Sự kiện",    label: "Xóa sự kiện" },
+  { key: "events.publish",     group: "Sự kiện",    label: "Đăng / ẩn sự kiện" },
   // News
-  { key: "news.create",        group: "Tin tức",   label: "Đăng tin" },
-  { key: "news.edit",          group: "Tin tức",   label: "Sửa tin" },
-  { key: "news.delete",        group: "Tin tức",   label: "Xóa tin" },
+  { key: "news.create",        group: "Tin tức",    label: "Viết bài" },
+  { key: "news.edit",          group: "Tin tức",    label: "Sửa bài" },
+  { key: "news.delete",        group: "Tin tức",    label: "Xóa bài" },
+  { key: "news.publish",       group: "Tin tức",    label: "Đăng / ẩn bài" },
   // Comments
-  { key: "comments.moderate",  group: "Bình luận", label: "Duyệt / xóa bình luận" },
-  // Team
+  { key: "comments.moderate",  group: "Bình luận",  label: "Duyệt / xóa bình luận" },
+  // Gallery
+  { key: "gallery.upload",     group: "Gallery",    label: "Upload ảnh gallery" },
+  { key: "gallery.approve",    group: "Gallery",    label: "Duyệt ảnh chờ duyệt" },
+  { key: "gallery.delete",     group: "Gallery",    label: "Xóa ảnh gallery" },
+  // Esports
+  { key: "esports.create",     group: "Esports",    label: "Thêm stream / tin esports" },
+  { key: "esports.edit",       group: "Esports",    label: "Sửa stream / tin esports" },
+  { key: "esports.delete",     group: "Esports",    label: "Xóa stream / tin esports" },
+  // TMS
+  { key: "tms.create",         group: "Giải đấu",   label: "Tạo giải đấu" },
+  { key: "tms.manage",         group: "Giải đấu",   label: "Quản lý giải đấu / đội" },
+  { key: "tms.scores",         group: "Giải đấu",   label: "Cập nhật / duyệt kết quả" },
+  // Ratings
+  { key: "ratings.manage",     group: "Đánh giá",   label: "Quản lý đánh giá / phản hồi" },
+  // Team / Recruitment
   { key: "team.approve_it",    group: "Tuyển dụng", label: "Duyệt vòng IT" },
   { key: "team.approve_admin", group: "Tuyển dụng", label: "Duyệt cuối (Admin)" },
   { key: "team.invite",        group: "Tuyển dụng", label: "Tạo / thu hồi link mời" },
   // Users
+  { key: "users.view",         group: "Người dùng", label: "Xem danh sách thành viên" },
   { key: "users.edit",         group: "Người dùng", label: "Sửa user / đổi role" },
-  { key: "users.ban",          group: "Người dùng", label: "Khoá / mở khoá" },
-  { key: "users.delete",       group: "Người dùng", label: "Xoá user" },
-  // Site
-  { key: "settings.edit",      group: "Hệ thống",  label: "Sửa cấu hình site" },
-  { key: "permissions.edit",   group: "Hệ thống",  label: "Sửa ma trận phân quyền" },
-  { key: "logs.view",          group: "Hệ thống",  label: "Xem activity log" },
-  { key: "sql.run",            group: "Hệ thống",  label: "Chạy SQL editor" },
+  { key: "users.ban",          group: "Người dùng", label: "Khoá / mở khoá tài khoản" },
+  { key: "users.delete",       group: "Người dùng", label: "Xoá tài khoản" },
+  // Analytics
+  { key: "analytics.view",     group: "Thống kê",   label: "Xem thống kê & lượt xem" },
+  // System
+  { key: "settings.edit",      group: "Hệ thống",   label: "Sửa cấu hình site" },
+  { key: "permissions.edit",   group: "Hệ thống",   label: "Sửa ma trận phân quyền" },
+  { key: "logs.view",          group: "Hệ thống",   label: "Xem activity log" },
+  { key: "sql.run",            group: "Hệ thống",   label: "Chạy SQL editor" },
 ] as const;
 
 export type CapabilityKey = (typeof CAPABILITIES)[number]["key"];
@@ -148,26 +167,44 @@ export type CapabilityKey = (typeof CAPABILITIES)[number]["key"];
 export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
   super_admin: CAPABILITIES.map((c) => c.key),
   admin: [
-    "events.create", "events.edit", "events.delete",
-    "news.create", "news.edit", "news.delete",
+    "events.create", "events.edit", "events.delete", "events.publish",
+    "news.create", "news.edit", "news.delete", "news.publish",
     "comments.moderate",
+    "gallery.upload", "gallery.approve", "gallery.delete",
+    "esports.create", "esports.edit", "esports.delete",
+    "tms.create", "tms.manage", "tms.scores",
+    "ratings.manage",
     "team.approve_it", "team.approve_admin", "team.invite",
-    "users.edit", "users.ban",
+    "users.view", "users.edit", "users.ban",
+    "analytics.view",
     "settings.edit", "logs.view",
   ],
   it: [
-    "events.create", "events.edit",
-    "news.create", "news.edit",
-    "team.approve_it",
+    "events.create", "events.edit", "events.publish",
+    "news.create", "news.edit", "news.publish",
+    "gallery.upload", "gallery.approve",
+    "esports.create", "esports.edit",
+    "tms.create", "tms.manage", "tms.scores",
+    "team.approve_it", "team.invite",
+    "users.view",
+    "analytics.view",
     "logs.view",
   ],
   manager: [
-    "events.create", "events.edit",
-    "news.create", "news.edit",
+    "events.create", "events.edit", "events.publish",
+    "news.create", "news.edit", "news.publish",
     "comments.moderate",
+    "gallery.upload", "gallery.approve",
+    "esports.create", "esports.edit",
+    "tms.manage", "tms.scores",
+    "ratings.manage",
+    "users.view",
+    "analytics.view",
   ],
   support: [
     "comments.moderate",
+    "ratings.manage",
+    "users.view",
   ],
   user: [],
 };
