@@ -24,10 +24,36 @@ export async function GET(request: NextRequest) {
   }
 
   const code = requestUrl.searchParams.get("code");
+  const tokenHash = requestUrl.searchParams.get("token_hash");
+  const type = requestUrl.searchParams.get("type");
   const redirectUrl = new URL(nextPath, requestUrl.origin);
   const loginRedirectUrl = new URL("/auth/login", requestUrl.origin);
 
-  if (!code || !hasSupabaseEnv || !supabaseAnonKey || !supabaseUrl) {
+  if (!hasSupabaseEnv || !supabaseAnonKey || !supabaseUrl) {
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Password reset link flow: token_hash + type=recovery
+  if (tokenHash && (type === "recovery" || type === "email")) {
+    const recoveryResponse = NextResponse.redirect(new URL("/auth/update-password", requestUrl.origin));
+    const supabaseRecovery = createServerClient<Database, "public">(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name: string) { return request.cookies.get(name)?.value; },
+        set(name: string, value: string, options) { recoveryResponse.cookies.set({ name, value, ...options }); },
+        remove(name: string, options) { recoveryResponse.cookies.set({ name, value: "", ...options }); },
+      },
+    });
+    const { error } = await supabaseRecovery.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: type === "recovery" ? "recovery" : "email",
+    });
+    if (error) {
+      return NextResponse.redirect(new URL("/auth/forgot-password?error=expired", requestUrl.origin));
+    }
+    return recoveryResponse;
+  }
+
+  if (!code) {
     return NextResponse.redirect(redirectUrl);
   }
 

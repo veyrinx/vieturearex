@@ -72,7 +72,7 @@ export default function UpdatePasswordPage() {
       return;
     }
 
-    // Restore recovery session từ sessionStorage
+    // Restore recovery session: OTP flow → sessionStorage; link flow → hash handled by SDK
     const accessToken = sessionStorage.getItem("recovery_access_token");
     const refreshToken = sessionStorage.getItem("recovery_refresh_token");
     if (accessToken && refreshToken) {
@@ -81,9 +81,14 @@ export default function UpdatePasswordPage() {
       sessionStorage.removeItem("recovery_refresh_token");
     }
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("PHIÊN ĐÃ HẾT HẠN. VUI LÒNG YÊU CẦU ĐẶT LẠI MẬT KHẨU MỚI.");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
 
     setLoading(false);
 
