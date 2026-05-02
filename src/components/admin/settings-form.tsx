@@ -1030,6 +1030,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           <Field label="Webhook chính" hint="Báo team join, duyệt, báo cáo ngày" icon={Plug}>
             <div className="space-y-2">
               <Input value={v("integrations.lark_webhook_url")} onChange={(e) => set("integrations.lark_webhook_url", e.target.value)} placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..." className="font-mono text-xs" />
+              <SensitiveHint hint={sensitiveHint("integrations.lark_webhook_url")} />
               {v("integrations.lark_webhook_url") && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="size-3.5" /> Đã cấu hình.
@@ -1039,6 +1040,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </Field>
           <Field label="Webhook cảnh báo (tuỳ chọn)" hint="Riêng cho IP bị chặn, đăng nhập sai bất thường — để trống sẽ dùng webhook chính" icon={Plug}>
             <Input value={v("integrations.lark_alerts_webhook_url")} onChange={(e) => set("integrations.lark_alerts_webhook_url", e.target.value)} placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..." className="font-mono text-xs" />
+            <SensitiveHint hint={sensitiveHint("integrations.lark_alerts_webhook_url")} />
           </Field>
           <Field label="Bật báo cáo lượt xem hằng ngày" hint="Cron 08:00 sáng giờ VN" icon={Plug}>
             <label className="flex items-center gap-2">
@@ -1282,6 +1284,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               rows={4}
               className="font-mono text-sm"
             />
+            <SensitiveHint hint={sensitiveHint("tms.payment_info")} />
           </Field>
           <Field label="URL ảnh QR thanh toán" hint="Link ảnh QR chuyển khoản" icon={ImageIcon}>
             <Input

@@ -15,6 +15,9 @@ export const SENSITIVE_FORM_KEYS = new Set([
   "ads.slot_header",
   "ads.slot_sidebar",
   "ads.slot_article",
+  "integrations.lark_webhook_url",
+  "integrations.lark_alerts_webhook_url",
+  "tms.payment_info",
 ]);
 
 export function getConfiguredSensitiveKeys(settings: SiteSetting[]): Set<string> {
@@ -62,6 +65,10 @@ export const settingsFormFieldOrder = [
   "site.maintenance_message",
   "site.maintenance_end_time",
   "site.discord_webhook",
+  "integrations.lark_webhook_url",
+  "integrations.lark_alerts_webhook_url",
+  "integrations.lark_bot_name",
+  "integrations.lark_daily_report",
   "mail.smtp_host",
   "mail.smtp_port",
   "mail.smtp_user",

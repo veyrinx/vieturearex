@@ -21,6 +21,9 @@ export const SENSITIVE_KEYS = new Set([
   "ads.slot_header",
   "ads.slot_sidebar",
   "ads.slot_article",
+  "integrations.lark_webhook_url",
+  "integrations.lark_alerts_webhook_url",
+  "tms.payment_info",
 ]);
 
 function getSecret(): Uint8Array {
