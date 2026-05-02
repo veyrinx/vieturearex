@@ -1,5 +1,6 @@
 import "server-only";
 
+import { decryptSetting, encryptSetting, isSensitiveKey } from "@/lib/server/setting-crypto";
 import { createClient } from "@supabase/supabase-js";
 import { compareDesc } from "date-fns";
 import { getDemoStore } from "@/lib/server/demo-store";
@@ -845,7 +846,14 @@ export async function getSettings(): Promise<SiteSetting[]> {
       if (error) {
         throw new Error(error.message);
       }
-      return data ?? [];
+      const rows = (data ?? []) as SiteSetting[];
+      return Promise.all(
+        rows.map(async (row) =>
+          isSensitiveKey(row.key)
+            ? { ...row, value: await decryptSetting(row.value) }
+            : row,
+        ),
+      );
     },
   );
 }
@@ -1094,11 +1102,12 @@ export async function updateSetting(key: string, value: string) {
   }
 
   const supabase = getSupabaseAdminOrThrow();
+  const storedValue = isSensitiveKey(key) && value ? await encryptSetting(value) : value;
   // Dùng upsert không có .single() để tránh lỗi "Cannot coerce result to single JSON object"
   const { error } = await supabase
     .from("settings")
     .upsert(
-      ({ key, value, updated_at: new Date().toISOString() } as never),
+      ({ key, value: storedValue, updated_at: new Date().toISOString() } as never),
       { onConflict: "key" },
     );
   if (error) {

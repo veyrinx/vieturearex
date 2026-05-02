@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { defaultSiteSettingValues, getSettingsFormInitialState } from "@/lib/utils/site-settings";
+import { defaultSiteSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS } from "@/lib/utils/site-settings";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -137,6 +137,15 @@ function PasswordInput({ value, onChange, placeholder, show, onToggle }: {
   );
 }
 
+function SensitiveHint({ hint }: { hint: string | null }) {
+  if (!hint) return null;
+  return (
+    <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
+      <ShieldCheck className="size-3" /> {hint}
+    </p>
+  );
+}
+
 function TikTokIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -174,6 +183,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
   const [active, setActive] = useState<SectionId>("account");
   const [state, setState] = useState<Record<string, string>>(() => getSettingsFormInitialState(settings));
   const [saving, setSaving] = useState<string | null>(null);
+  const [configuredKeys] = useState<Set<string>>(() => getConfiguredSensitiveKeys(settings));
 
   // Account state
   const [profile, setProfile] = useState<{ email: string; display_name: string; role: string } | null>(null);
@@ -208,10 +218,16 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
     return { ...p, [key]: slots.join("\n") };
   });
 
+  const sensitiveHint = (key: string) =>
+    SENSITIVE_FORM_KEYS.has(key) && configuredKeys.has(key) && !v(key)
+      ? "đã lưu — để trống để giữ nguyên"
+      : null;
+
   const save = async (keys: string[], section: string) => {
     setSaving(section);
     try {
       const results = await Promise.all(keys.map(async (k) => {
+        if (SENSITIVE_FORM_KEYS.has(k) && !v(k)) return true;
         try {
           const r = await fetch("/api/admin/settings", {
             method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -777,6 +793,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           <Field label="Publisher ID" hint="ca-pub-XXXXXXXXXX" icon={BarChart3}>
             <div className="space-y-2">
               <Input value={v("ads.google_adsense_id")} onChange={(e) => set("ads.google_adsense_id", e.target.value)} placeholder="ca-pub-0000000000000000" className="font-mono" />
+              <SensitiveHint hint={sensitiveHint("ads.google_adsense_id")} />
               {v("ads.google_adsense_id") && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="size-3.5" /> Script AdSense sẽ được inject tự động vào toàn bộ trang.
@@ -786,12 +803,15 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </Field>
           <Field label="Slot Header" hint="Banner đầu trang (970×90)" icon={MonitorPlay}>
             <Input value={v("ads.slot_header")} onChange={(e) => set("ads.slot_header", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_header")} />
           </Field>
           <Field label="Slot Sidebar" hint="Banner cột bên (300×250)" icon={LayoutGrid}>
             <Input value={v("ads.slot_sidebar")} onChange={(e) => set("ads.slot_sidebar", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_sidebar")} />
           </Field>
           <Field label="Slot In-Article" hint="Quảng cáo trong bài viết" icon={Newspaper}>
             <Input value={v("ads.slot_article")} onChange={(e) => set("ads.slot_article", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_article")} />
           </Field>
 
           <div className="py-3">
@@ -977,9 +997,11 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </div>
           <Field label="Zalo Webhook" hint="Gửi thông báo bài mới">
             <Input value={v("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://..." />
+            <SensitiveHint hint={sensitiveHint("zalo.webhook_url")} />
           </Field>
           <Field label="Zalo Group ID" hint="ID nhóm nhận thông báo">
             <Input value={v("zalo.group_id")} onChange={(e) => set("zalo.group_id", e.target.value)} placeholder="0123456789" />
+            <SensitiveHint hint={sensitiveHint("zalo.group_id")} />
           </Field>
         </Card>
 
@@ -990,6 +1012,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           <Field label="Webhook URL" hint="Tạo trong Server Settings → Integrations">
             <div className="space-y-2">
               <Input value={v("site.discord_webhook")} onChange={(e) => set("site.discord_webhook", e.target.value)} placeholder="https://discord.com/api/webhooks/..." />
+              <SensitiveHint hint={sensitiveHint("site.discord_webhook")} />
               {v("site.discord_webhook") && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="size-3.5" /> Thông báo sẽ được gửi khi có bài viết mới.
@@ -1164,15 +1187,18 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </div>
           <Field label="SMTP Host" hint="VD: smtp.gmail.com" icon={Globe}>
             <Input value={v("mail.smtp_host")} onChange={(e) => set("mail.smtp_host", e.target.value)} placeholder="smtp.gmail.com" className="font-mono text-sm" />
+            <SensitiveHint hint={sensitiveHint("mail.smtp_host")} />
           </Field>
           <Field label="SMTP Port" hint="Thường là 587 (TLS) hoặc 465 (SSL)" icon={Plug}>
             <Input value={v("mail.smtp_port")} onChange={(e) => set("mail.smtp_port", e.target.value)} placeholder="587" className="font-mono text-sm max-w-32" />
           </Field>
           <Field label="SMTP Username" hint="Thường là địa chỉ email" icon={User}>
             <Input value={v("mail.smtp_user")} onChange={(e) => set("mail.smtp_user", e.target.value)} placeholder="no-reply@arex.tech" className="font-mono text-sm" />
+            <SensitiveHint hint={sensitiveHint("mail.smtp_user")} />
           </Field>
           <Field label="SMTP Password" hint="Mật khẩu ứng dụng (App Password)" icon={ShieldCheck}>
             <Input type="password" value={v("mail.smtp_pass")} onChange={(e) => set("mail.smtp_pass", e.target.value)} placeholder="••••••••••••••••" className="font-mono text-sm" />
+            <SensitiveHint hint={sensitiveHint("mail.smtp_pass")} />
           </Field>
         </Card>
 
@@ -1185,6 +1211,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </Field>
           <Field label="Email người gửi" hint="Phải khớp với SMTP Username" icon={Mail}>
             <Input type="email" value={v("mail.from_email")} onChange={(e) => set("mail.from_email", e.target.value)} placeholder="no-reply@arex.tech" className="font-mono text-sm" />
+            <SensitiveHint hint={sensitiveHint("mail.from_email")} />
           </Field>
         </Card>
 

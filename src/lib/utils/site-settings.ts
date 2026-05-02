@@ -1,6 +1,30 @@
 import type { SiteSetting } from "@/lib/types/content";
 import { siteConfig } from "@/lib/constants/site";
 
+export const SENSITIVE_CONFIGURED_MASK = "__configured__";
+
+export const SENSITIVE_FORM_KEYS = new Set([
+  "mail.smtp_pass",
+  "mail.smtp_user",
+  "mail.smtp_host",
+  "mail.from_email",
+  "site.discord_webhook",
+  "zalo.webhook_url",
+  "zalo.group_id",
+  "ads.google_adsense_id",
+  "ads.slot_header",
+  "ads.slot_sidebar",
+  "ads.slot_article",
+]);
+
+export function getConfiguredSensitiveKeys(settings: SiteSetting[]): Set<string> {
+  return new Set(
+    settings
+      .filter((s) => SENSITIVE_FORM_KEYS.has(s.key) && s.value === SENSITIVE_CONFIGURED_MASK)
+      .map((s) => s.key),
+  );
+}
+
 export type HeroSliderEffect = "fade" | "zoom" | "slide" | "drift" | "cinematic";
 export const settingsFormFieldOrder = [
   "branding.site_name",
@@ -124,7 +148,8 @@ export function getSettingsFormInitialState(settings: SiteSetting[]) {
   const settingsMap = new Map(settings.map((item) => [item.key, item.value]));
 
   return settingsFormFieldOrder.reduce<Record<SettingsFormFieldKey, string>>((acc, key) => {
-    acc[key] = settingsMap.get(key) ?? defaultSiteSettingValues[key] ?? "";
+    const raw = settingsMap.get(key) ?? defaultSiteSettingValues[key] ?? "";
+    acc[key] = raw === SENSITIVE_CONFIGURED_MASK ? "" : raw;
     return acc;
   }, {} as Record<SettingsFormFieldKey, string>);
 }
