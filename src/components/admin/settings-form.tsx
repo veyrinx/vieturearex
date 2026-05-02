@@ -194,6 +194,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
+  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => { setState(getSettingsFormInitialState(settings)); }, [settings]);
 
@@ -283,6 +284,21 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
     setNewPw(""); setConfirmPw("");
   };
 
+  const migrateEncrypt = async () => {
+    setMigrating(true);
+    try {
+      const r = await fetch("/api/admin/settings/migrate-encrypt", { method: "POST" });
+      const body = (await r.json().catch(() => null)) as { migrated?: number; message?: string; error?: string } | null;
+      if (!r.ok) { toast.error(body?.error ?? "Lỗi không xác định."); return; }
+      if (body?.migrated === 0) { toast.success(body.message ?? "Tất cả đã được mã hoá."); return; }
+      toast.success(`Đã mã hoá ${body?.migrated ?? 0} setting.`);
+    } catch {
+      toast.error("Lỗi mạng.");
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   const roleInfo = profile?.role ? ROLE_LABELS[profile.role] : null;
   const seoTitleLen = v("seo.default_title").length;
   const seoDescLen = v("seo.default_description").length;
@@ -370,6 +386,21 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
             <Button type="button" size="sm" disabled={savingPw || !newPw || !confirmPw || newPw !== confirmPw || newPw.length < 8} onClick={savePw} className="shrink-0 gap-1.5 rounded-xl px-5">
               <ShieldCheck className="size-3.5" />
               {savingPw ? "Đang đổi..." : "Đổi mật khẩu"}
+            </Button>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="Mã hoá các setting nhạy cảm đang lưu dạng plaintext trong database" />
+          </div>
+          <div className="py-4 space-y-3">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Chạy một lần để mã hoá AES-256-GCM tất cả giá trị nhạy cảm (SMTP, webhook, tài khoản ngân hàng...) đang còn dạng plaintext trong DB. Sau khi chạy, dump DB sẽ không còn lộ thông tin thật.
+            </p>
+            <Button type="button" size="sm" variant="outline" disabled={migrating} onClick={migrateEncrypt} className="gap-1.5 rounded-xl border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400">
+              <ShieldCheck className="size-3.5" />
+              {migrating ? "Đang mã hoá..." : "Mã hoá dữ liệu cũ"}
             </Button>
           </div>
         </Card>
