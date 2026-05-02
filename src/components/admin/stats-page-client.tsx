@@ -16,6 +16,7 @@ type StatsData = {
   chart: { date: string; views: number }[];
   byYear: { key: string; views: number }[];
   byMonth: { key: string; views: number }[];
+  totalViews: number;
   topNews: { id: string; title: string; slug: string; comments: number }[];
   leaderboard: { id: string; display_name: string | null; points: number; rank: string }[];
 };
@@ -86,6 +87,19 @@ export function StatsPageClient() {
                 />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Total views banner */}
+          <div className="glass-card rounded-2xl p-5 flex items-center gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-amber-400/10">
+              <BarChart3 className="size-6 text-primary dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tổng lượt xem tích lũy</p>
+              <p className="font-heading text-3xl font-black text-foreground">
+                {(data.totalViews ?? 0).toLocaleString("vi-VN")}
+              </p>
+            </div>
           </div>
 
           {/* Year / Month breakdown */}

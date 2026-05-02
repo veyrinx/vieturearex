@@ -13,8 +13,13 @@ export async function GET() {
   // Daily views (last 30 days)
   const settings = await getSettings();
   const dailyRaw = settings.find((s) => s.key === "analytics.daily_views")?.value ?? "{}";
+  const archived = Number(settings.find((s) => s.key === "analytics.views")?.value ?? 0) || 0;
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }
+
+  const dailyTotal = Object.values(daily).reduce((s, v) => s + (Number(v) || 0), 0);
+  const totalViews = archived + dailyTotal;
+
   const chart: { date: string; views: number }[] = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
@@ -66,5 +71,5 @@ export async function GET() {
     if (!error && data) leaderboard = data;
   }
 
-  return NextResponse.json({ chart, byYear, byMonth, topNews, leaderboard });
+  return NextResponse.json({ chart, byYear, byMonth, totalViews, topNews, leaderboard });
 }
