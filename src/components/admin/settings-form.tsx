@@ -390,20 +390,6 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           </div>
         </Card>
 
-        <Card>
-          <div className="py-4">
-            <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="Mã hoá các setting nhạy cảm đang lưu dạng plaintext trong database" />
-          </div>
-          <div className="py-4 space-y-3">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Chạy một lần để mã hoá AES-256-GCM tất cả giá trị nhạy cảm (SMTP, webhook, tài khoản ngân hàng...) đang còn dạng plaintext trong DB. Sau khi chạy, dump DB sẽ không còn lộ thông tin thật.
-            </p>
-            <Button type="button" size="sm" variant="outline" disabled={migrating} onClick={migrateEncrypt} className="gap-1.5 rounded-xl border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400">
-              <ShieldCheck className="size-3.5" />
-              {migrating ? "Đang mã hoá..." : "Mã hoá dữ liệu cũ"}
-            </Button>
-          </div>
-        </Card>
       </div>
     ),
 
@@ -1196,6 +1182,21 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
           onSave={() => save(["site.maintenance_mode", "site.maintenance_message", "site.maintenance_end_time"], "maintenance")}
           saving={saving === "maintenance"}
         />
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="Mã hoá các setting nhạy cảm còn lưu dạng plaintext trong database" />
+          </div>
+          <div className="py-4 space-y-3">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Chạy một lần để mã hoá AES-256-GCM tất cả giá trị nhạy cảm (SMTP, webhook, số tài khoản...) đang còn plaintext trong DB. Sau khi chạy, dump DB sẽ không lộ thông tin thật.
+            </p>
+            <Button type="button" size="sm" variant="outline" disabled={migrating} onClick={migrateEncrypt} className="gap-1.5 rounded-xl border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400">
+              <ShieldCheck className="size-3.5" />
+              {migrating ? "Đang mã hoá..." : "Mã hoá dữ liệu cũ"}
+            </Button>
+          </div>
+        </Card>
       </div>
     ),
 
