@@ -36,6 +36,7 @@ export type TmsTournament = {
   prize_pool: string | null;
   rules: string | null;
   banner_url: string | null;
+  stream_url: string | null;
   status: TmsTournamentStatus;
   registration_open_at: string | null;
   registration_close_at: string | null;

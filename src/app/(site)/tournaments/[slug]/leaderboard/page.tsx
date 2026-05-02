@@ -105,7 +105,11 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                     <td className="px-3 py-2 font-mono font-bold text-muted-foreground">
                       {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                     </td>
-                    <td className="px-3 py-2 font-semibold">{p.display_name ?? "Ẩn danh"}</td>
+                    <td className="px-3 py-2 font-semibold">
+                      <Link href={`/players/${p.user_id}`} className="hover:text-primary dark:hover:text-amber-400 transition-colors">
+                        {p.display_name ?? "Ẩn danh"}
+                      </Link>
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs text-amber-400/80">{p.ff_id ?? "—"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">[{p.team_tag}]</td>
                     <td className="px-3 py-2 text-muted-foreground">{p.matches_played}</td>

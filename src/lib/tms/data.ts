@@ -208,6 +208,21 @@ export async function getTmsTeamLeaderboard(tournamentId: string): Promise<TmsTe
   return (data ?? []) as TmsTeamLeaderboard[];
 }
 
+// ── Player career stats ───────────────────────────────────────────────────────
+
+export type PlayerCareerRow = TmsPlayerLeaderboard & {
+  tournament?: { id: string; name: string; slug: string; status: string };
+};
+
+export async function getTmsPlayerCareer(userId: string): Promise<PlayerCareerRow[]> {
+  const { data, error } = await u("tms_player_leaderboard")
+    .select("*, tournament:tms_tournaments(id,name,slug,status)")
+    .eq("user_id", userId)
+    .order("total_points", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PlayerCareerRow[];
+}
+
 // ── Score Submissions ─────────────────────────────────────────────────────────
 
 export async function createScoreSubmission(

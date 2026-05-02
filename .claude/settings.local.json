@@ -35,7 +35,15 @@
       "Bash(git log *)",
       "Bash(git checkout *)",
       "Bash(python -)",
-      "Bash(xargs sed *)"
+      "Bash(xargs sed *)",
+      "Bash(gh api *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in {**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}.items\\(\\)]\")",
+      "Bash(npm audit *)",
+      "Bash(python3 -c ' *)",
+      "Bash(npm show *)",
+      "Bash(python3 -c \"import json,sys; vs=[v for v in json.load\\(sys.stdin\\) if v.startswith\\('14.'\\) and 'canary' not in v and 'rc' not in v and 'beta' not in v]; print\\(vs[-5:]\\)\")",
+      "Bash(npm cache *)",
+      "Bash(Remove-Item -Recurse -Force node_modules/next)"
     ]
   }
 }

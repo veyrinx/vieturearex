@@ -33,6 +33,7 @@ export function TournamentForm({ tournament }: Props) {
     prize_pool: tournament?.prize_pool ?? "",
     rules: tournament?.rules ?? "",
     banner_url: tournament?.banner_url ?? "",
+    stream_url: (tournament as unknown as { stream_url?: string })?.stream_url ?? "",
     status: tournament?.status ?? "draft",
     registration_open_at: tournament?.registration_open_at?.slice(0, 16) ?? "",
     registration_close_at: tournament?.registration_close_at?.slice(0, 16) ?? "",
@@ -66,6 +67,7 @@ export function TournamentForm({ tournament }: Props) {
           registration_close_at: form.registration_close_at || null,
           start_at: form.start_at || null,
           end_at: form.end_at || null,
+          stream_url: form.stream_url || null,
         }),
       });
       if (!res.ok) {
@@ -145,6 +147,10 @@ export function TournamentForm({ tournament }: Props) {
               />
             </div>
           )}
+        </div>
+        <div className="sm:col-span-2">
+          <label className={LABEL}>URL Livestream (YouTube / Twitch / Facebook)</label>
+          <input className={FIELD} value={form.stream_url} onChange={(e) => set("stream_url", e.target.value)} placeholder="https://youtube.com/live/..." />
         </div>
         <div>
           <label className={LABEL}>Đăng ký từ</label>
