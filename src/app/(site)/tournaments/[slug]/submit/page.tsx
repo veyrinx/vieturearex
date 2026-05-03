@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Trophy, AlertTriangle, Clock, Zap, CreditCard, CheckCircle2 } from "lucide-react";
+import { Trophy, AlertTriangle, Zap, CreditCard, CheckCircle2, ScanLine, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { TmsScoreSubmission } from "@/lib/tms/types";
+import type { OcrPlayer } from "@/lib/server/ff-ocr";
 
 type Profile = { id: string; display_name: string | null; ff_id: string | null };
 type Tournament = { id: string; name: string; slug: string; banner_url: string | null };
@@ -45,6 +46,11 @@ export default function SubmitPage({ params }: { params: Promise<{ slug: string 
   const [proofUrl, setProofUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [ocrUrl, setOcrUrl] = useState("");
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrPlayers, setOcrPlayers] = useState<OcrPlayer[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/user/profile", { credentials: "same-origin" })
@@ -86,6 +92,56 @@ export default function SubmitPage({ params }: { params: Promise<{ slug: string 
         .catch(() => {}),
     ]);
   }, [profile, tournament]);
+
+  const applyOcrPlayer = (p: OcrPlayer) => {
+    setKills(p.kills);
+    setAssists(p.assists);
+    setDeaths(p.deaths);
+    setOcrPlayers(null);
+    toast.success(`Đã điền K/A/D của ${p.name}`);
+  };
+
+  const runOcr = async (payload: { url?: string; base64?: string; media_type?: string }) => {
+    setOcrLoading(true);
+    setOcrPlayers(null);
+    try {
+      const res = await fetch("/api/tms/parse-result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
+      });
+      const data = (await res.json()) as { players?: OcrPlayer[]; error?: string };
+      if (!res.ok || data.error) { toast.error(data.error ?? "OCR thất bại"); return; }
+      if (!data.players || data.players.length === 0) { toast.warning("Không tìm thấy dữ liệu trong ảnh"); return; }
+      if (data.players.length === 1) {
+        applyOcrPlayer(data.players[0]);
+      } else {
+        setOcrPlayers(data.players);
+      }
+    } catch {
+      toast.error("Lỗi khi nhận dạng ảnh");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleOcrUrl = () => {
+    if (!ocrUrl.trim()) return;
+    void runOcr({ url: ocrUrl.trim() });
+    if (!proofUrl) setProofUrl(ocrUrl.trim());
+  };
+
+  const handleFileUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const [header, base64] = dataUrl.split(",");
+      const media_type = header.replace("data:", "").replace(";base64", "");
+      void runOcr({ base64, media_type });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,6 +308,46 @@ export default function SubmitPage({ params }: { params: Promise<{ slug: string 
               <span>Đã nộp thành công — Đang chờ admin duyệt</span>
             </div>
           )}
+          {/* OCR auto-fill */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-primary dark:text-amber-400 flex items-center gap-1.5">
+              <ScanLine className="size-3.5" /> Tự động nhận dạng từ ảnh
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={ocrUrl}
+                onChange={(e) => setOcrUrl(e.target.value)}
+                placeholder="Dán link ảnh kết quả / share link..."
+                className="h-9 rounded-xl text-xs flex-1"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleOcrUrl(); } }}
+              />
+              <Button type="button" size="sm" variant="outline" disabled={ocrLoading || !ocrUrl.trim()} onClick={handleOcrUrl} className="h-9 rounded-xl shrink-0 text-xs">
+                {ocrLoading ? "..." : "OCR"}
+              </Button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} />
+              <Button type="button" size="sm" variant="outline" disabled={ocrLoading} onClick={() => fileRef.current?.click()} className="h-9 rounded-xl shrink-0 text-xs gap-1">
+                <Upload className="size-3" /> Upload
+              </Button>
+            </div>
+            {ocrPlayers && ocrPlayers.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] text-muted-foreground">Chọn tên của bạn để điền K/A/D:</p>
+                <div className="space-y-1">
+                  {ocrPlayers.map((p, i) => (
+                    <button key={i} type="button" onClick={() => applyOcrPlayer(p)}
+                      className="w-full flex items-center justify-between rounded-lg border border-border bg-background hover:border-primary/40 hover:bg-primary/5 px-3 py-1.5 text-xs transition-colors text-left">
+                      <span className="font-semibold">{p.name}</span>
+                      <span className="text-muted-foreground font-mono">K{p.kills} A{p.assists} D{p.deaths}</span>
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => setOcrPlayers(null)} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground mt-1">
+                    <X className="size-3" /> Đóng
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
             {matches.length > 0 && (
               <div className="space-y-1.5">

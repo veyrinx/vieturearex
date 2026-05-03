@@ -1,0 +1,20 @@
+{
+  "name": "arex-discord-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arex TMS Discord Bot — Free Fire OCR result parser",
+  "main": "dist/bot.js",
+  "scripts": {
+    "start": "node dist/bot.js",
+    "dev": "npx ts-node bot.ts",
+    "build": "npx tsc"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  }
+}
