@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 
 export async function GET(request: NextRequest) {
@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 
-  const supabase = createServerSupabaseClient();
-  if (!supabase) return NextResponse.json({ sessions: [] });
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ sessions: [] });
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("support_sessions")
     .select("id, display_name, status, last_message_at, created_at, anonymous_id, user_id")
     .order("last_message_at", { ascending: false })
@@ -25,13 +25,13 @@ export async function PATCH(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 
-  const supabase = createServerSupabaseClient();
-  if (!supabase) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
 
   const body = (await request.json().catch(() => null)) as { id?: string; status?: "open" | "closed" } | null;
   if (!body?.id) return NextResponse.json({ error: "Thiếu id." }, { status: 400 });
 
-  await supabase
+  await db
     .from("support_sessions")
     .update({ status: body.status ?? "closed" } as never)
     .eq("id", body.id);

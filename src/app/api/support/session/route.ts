@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 
 const schema = z.object({
@@ -12,8 +13,9 @@ export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "support-session", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
-  const supabase = createServerSupabaseClient();
-  if (!supabase) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
+  const authClient = createServerSupabaseClient();
+  if (!authClient) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
+  const db = createAdminSupabaseClient() ?? authClient;
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
@@ -22,14 +24,14 @@ export async function POST(request: NextRequest) {
   const { display_name, anonymous_id } = parsed.data;
 
   // Resolve logged-in user if any
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await authClient.auth.getUser();
   const userId = user?.id ?? null;
 
   // Try to find existing open session for this anonymous_id or user_id
   const matchColumn = userId ? "user_id" : "anonymous_id";
   const matchValue = userId ?? anonymous_id;
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("support_sessions")
     .select("id, status")
     .eq(matchColumn, matchValue as string)
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Create new session
-  const { data: session, error } = await supabase
+  const { data: session, error } = await db
     .from("support_sessions")
     .insert({
       display_name,

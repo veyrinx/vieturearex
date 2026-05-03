@@ -15,7 +15,7 @@ const postSchema = z.object({
 type RouteContext = { params: { newsId: string } };
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ comments: [] });
 
   const { data, error } = await supabase

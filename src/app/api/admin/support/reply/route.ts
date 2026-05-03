@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { resolveCurrentAdminEmail } from "@/lib/server/admin-activity";
 import { sanitizePlainText } from "@/lib/server/sanitize";
@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 
-  const supabase = createServerSupabaseClient();
-  if (!supabase) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const adminEmail = await resolveCurrentAdminEmail();
   const senderName = adminEmail.split("@")[0] ?? "Admin";
 
-  const { error } = await supabase
+  const { error } = await db
     .from("support_messages")
     .insert({
       session_id: parsed.data.session_id,
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: "Không thể gửi phản hồi." }, { status: 500 });
 
-  await supabase
+  await db
     .from("support_sessions")
     .update({ last_message_at: new Date().toISOString() } as never)
     .eq("id", parsed.data.session_id);
