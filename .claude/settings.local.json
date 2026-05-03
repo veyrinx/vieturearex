@@ -43,7 +43,12 @@
       "Bash(npm show *)",
       "Bash(python3 -c \"import json,sys; vs=[v for v in json.load\\(sys.stdin\\) if v.startswith\\('14.'\\) and 'canary' not in v and 'rc' not in v and 'beta' not in v]; print\\(vs[-5:]\\)\")",
       "Bash(npm cache *)",
-      "Bash(Remove-Item -Recurse -Force node_modules/next)"
+      "Bash(Remove-Item -Recurse -Force node_modules/next)",
+      "Bash(git rm *)",
+      "Bash(sed -n '255,265p' d:/vieture-arex/src/lib/data/content-service.ts)",
+      "Bash(sed -n '383,392p' d:/vieture-arex/src/lib/data/content-service.ts)",
+      "Bash(sed -n '401,412p' d:/vieture-arex/src/lib/data/content-service.ts)",
+      "Bash(sed -n '506,515p' d:/vieture-arex/src/lib/data/content-service.ts)"
     ]
   }
 }

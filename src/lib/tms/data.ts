@@ -322,3 +322,46 @@ export async function reviewSubmission(
     if (upsertErr) throw upsertErr;
   }
 }
+
+// ── Team history ──────────────────────────────────────────────────────────────
+
+export async function getTmsTeamMatchHistory(teamId: string): Promise<TmsMatch[]> {
+  const { data, error } = await u("tms_matches")
+    .select("*, team_a:tms_teams!tms_matches_team_a_id_fkey(id,name,tag,logo_url), team_b:tms_teams!tms_matches_team_b_id_fkey(id,name,tag,logo_url), tournament:tms_tournaments(id,name,slug,status)")
+    .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`)
+    .order("round_num")
+    .order("created_at");
+  if (error) throw error;
+  return (data ?? []) as TmsMatch[];
+}
+
+export async function getTmsTeamResultsByTournament(teamId: string): Promise<TmsTeamLeaderboard[]> {
+  const { data, error } = await u("tms_team_leaderboard")
+    .select("*, tournament:tms_tournaments(id,name,slug,status)")
+    .eq("team_id", teamId)
+    .order("total_points", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsTeamLeaderboard[];
+}
+
+export type TeamLeaderboardWithTournament = TmsTeamLeaderboard & {
+  tournament?: { id: string; name: string; slug: string; status: string };
+};
+
+// ── Bulk match create (bracket generation) ───────────────────────────────────
+
+export async function bulkCreateMatches(
+  rows: Omit<CreateMatchInput, never>[],
+  createdBy: string,
+): Promise<TmsMatch[]> {
+  const { data, error } = await u("tms_matches")
+    .insert(rows.map((r) => ({ ...r, created_by: createdBy })))
+    .select("*, team_a:tms_teams!tms_matches_team_a_id_fkey(id,name,tag,logo_url), team_b:tms_teams!tms_matches_team_b_id_fkey(id,name,tag,logo_url)");
+  if (error) throw error;
+  return (data ?? []) as TmsMatch[];
+}
+
+export async function deleteTournamentMatches(tournamentId: string): Promise<void> {
+  const { error } = await u("tms_matches").delete().eq("tournament_id", tournamentId).eq("status", "pending");
+  if (error) throw error;
+}
