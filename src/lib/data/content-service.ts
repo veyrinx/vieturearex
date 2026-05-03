@@ -232,7 +232,7 @@ export async function getEvents(query?: EventQuery): Promise<EventItem[]> {
     "getEvents",
     () => applyEventQuery(getDemoStore().events, query),
     async () => {
-      const supabase = getSupabaseReadClientOrThrow();
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
       const { data, error } = await supabase
         .from("events")
         .select("*")
@@ -256,7 +256,7 @@ export async function getEventById(id: string): Promise<EventItem | null> {
       return event ? { ...event, status: normalizeEventStatus(event) } : null;
     },
     async () => {
-      const supabase = getSupabaseReadClientOrThrow();
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
       const { data, error } = await supabase.from("events").select("*").eq("id", id).maybeSingle();
       if (error) {
         throw new Error(error.message);
@@ -383,7 +383,7 @@ export async function getNews(status: "all" | "published" | "draft" = "published
         compareDesc(new Date(a.created_at), new Date(b.created_at)),
       ),
     async () => {
-      const supabase = getSupabaseReadClientOrThrow();
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
       const query = supabase.from("news").select("*").order("created_at", { ascending: false });
       const { data, error } =
         status === "all" ? await query : await query.eq("status", status as "draft" | "published");
@@ -401,7 +401,7 @@ export async function getNewsBySlug(slug: string) {
     "getNewsBySlug",
     () => getDemoStore().news.find((item) => item.slug === slug && item.status === "published"),
     async () => {
-      const supabase = getSupabaseReadClientOrThrow();
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
       const { data, error } = await supabase
         .from("news")
         .select("*")
@@ -506,7 +506,7 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
         compareDesc(new Date(a.created_at), new Date(b.created_at)),
       ),
     async () => {
-      const supabase = getSupabaseReadClientOrThrow();
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
       const { data, error } = await supabase
         .from("gallery")
         .select("*")
