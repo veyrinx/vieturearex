@@ -348,6 +348,125 @@ export type TeamLeaderboardWithTournament = TmsTeamLeaderboard & {
   tournament?: { id: string; name: string; slug: string; status: string };
 };
 
+// ── Global leaderboards (all tournaments aggregated) ─────────────────────────
+
+export type GlobalPlayerRow = {
+  user_id: string;
+  display_name: string | null;
+  ff_id: string | null;
+  team_id: string;
+  team_name: string;
+  team_tag: string;
+  total_kills: number;
+  total_assists: number;
+  total_deaths: number;
+  total_points: number;
+  matches_played: number;
+  wins: number;
+  kd_ratio: number;
+  tournaments_played: number;
+};
+
+export async function getGlobalPlayerLeaderboard(limit = 50): Promise<GlobalPlayerRow[]> {
+  const { data, error } = await u("tms_player_leaderboard")
+    .select("user_id,display_name,ff_id,team_id,team_name,team_tag,total_kills,total_assists,total_deaths,total_points,matches_played,wins");
+  if (error) throw error;
+
+  const byUser = new Map<string, GlobalPlayerRow>();
+  for (const row of (data ?? []) as TmsPlayerLeaderboard[]) {
+    const e = byUser.get(row.user_id);
+    if (e) {
+      e.total_kills += row.total_kills;
+      e.total_assists += row.total_assists;
+      e.total_deaths += row.total_deaths;
+      e.total_points += row.total_points;
+      e.matches_played += row.matches_played;
+      e.wins += row.wins;
+      e.tournaments_played++;
+    } else {
+      byUser.set(row.user_id, {
+        user_id: row.user_id, display_name: row.display_name, ff_id: row.ff_id,
+        team_id: row.team_id, team_name: row.team_name, team_tag: row.team_tag,
+        total_kills: row.total_kills, total_assists: row.total_assists,
+        total_deaths: row.total_deaths, total_points: row.total_points,
+        matches_played: row.matches_played, wins: row.wins,
+        kd_ratio: 0, tournaments_played: 1,
+      });
+    }
+  }
+  return Array.from(byUser.values())
+    .map((r) => ({ ...r, kd_ratio: r.total_deaths > 0 ? +(r.total_kills / r.total_deaths).toFixed(2) : r.total_kills }))
+    .sort((a, b) => b.total_points - a.total_points)
+    .slice(0, limit);
+}
+
+export type GlobalTeamRow = TmsTeamLeaderboard & { tournaments_played: number };
+
+export async function getGlobalTeamLeaderboard(limit = 50): Promise<GlobalTeamRow[]> {
+  const { data, error } = await u("tms_team_leaderboard").select("*");
+  if (error) throw error;
+
+  const byTeam = new Map<string, GlobalTeamRow>();
+  for (const row of (data ?? []) as TmsTeamLeaderboard[]) {
+    const e = byTeam.get(row.team_id);
+    if (e) {
+      e.matches_played += row.matches_played;
+      e.wins += row.wins;
+      e.losses += row.losses;
+      e.total_kills += row.total_kills;
+      e.total_assists += row.total_assists;
+      e.total_points += row.total_points;
+      e.tournaments_played++;
+    } else {
+      byTeam.set(row.team_id, { ...row, tournaments_played: 1 });
+    }
+  }
+  return Array.from(byTeam.values())
+    .sort((a, b) => b.total_points - a.total_points)
+    .slice(0, limit);
+}
+
+// ── Team tournament registrations ─────────────────────────────────────────────
+
+export async function getTeamRegistrations(teamId: string): Promise<TmsRegistration[]> {
+  const { data, error } = await u("tms_registrations")
+    .select("*, tournament:tms_tournaments(id,name,slug,status,start_at,banner_url)")
+    .eq("team_id", teamId)
+    .order("registered_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TmsRegistration[];
+}
+
+export async function updateTeamInfo(
+  teamId: string,
+  captainId: string,
+  input: { name?: string; logo_url?: string | null },
+): Promise<TmsTeam> {
+  const { data, error } = await u("tms_teams")
+    .update(input)
+    .eq("id", teamId)
+    .eq("captain_id", captainId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TmsTeam;
+}
+
+export async function leaveTeam(teamId: string, userId: string): Promise<void> {
+  const team = await getTmsTeam(teamId);
+  if (team?.captain_id === userId) throw new Error("Captain không thể rời team. Hãy chuyển quyền trước.");
+  const { error } = await u("tms_team_members").delete().eq("team_id", teamId).eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function kickMember(teamId: string, captainId: string, targetUserId: string): Promise<void> {
+  const team = await getTmsTeam(teamId);
+  if (!team || team.captain_id !== captainId) throw new Error("Chỉ captain mới kick được.");
+  if (targetUserId === captainId) throw new Error("Không thể tự kick.");
+  const { error } = await u("tms_team_members").delete().eq("team_id", teamId).eq("user_id", targetUserId);
+  if (error) throw error;
+}
+
 // ── Bulk match create (bracket generation) ───────────────────────────────────
 
 export async function bulkCreateMatches(
