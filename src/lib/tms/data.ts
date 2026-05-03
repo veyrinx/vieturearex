@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import type {
   TmsTeam, TmsTeamMember, TmsTournament, TmsRegistration,
@@ -8,6 +9,8 @@ import type {
 } from "./types";
 
 function getDb() {
+  const admin = createAdminSupabaseClient();
+  if (admin) return admin;
   const sb = createServerSupabaseClient();
   if (!sb) throw new Error("DB unavailable");
   return sb;
