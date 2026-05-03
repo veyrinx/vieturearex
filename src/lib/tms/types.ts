@@ -44,6 +44,7 @@ export type TmsTournament = {
   end_at: string | null;
   created_by: string | null;
   created_at: string;
+  auto_approve_registrations: boolean;
 };
 
 export type TmsRegistration = {

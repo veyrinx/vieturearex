@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { PushNotificationButton } from "@/components/common/push-notification-button";
 import { UserNavButton } from "@/components/common/user-nav-button";
+import { NotificationBell } from "@/components/common/notification-bell";
 import {
   Sheet,
   SheetContent,
@@ -133,6 +134,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
             <Search className="size-[17px]" />
           </Link>
           <UserNavButton className={isHomePage ? ctrlClass : undefined} />
+          <NotificationBell className={isHomePage ? ctrlClass : undefined} />
           <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
           <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
 

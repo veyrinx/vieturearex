@@ -39,6 +39,7 @@ export function TournamentForm({ tournament }: Props) {
     registration_close_at: tournament?.registration_close_at?.slice(0, 16) ?? "",
     start_at: tournament?.start_at?.slice(0, 16) ?? "",
     end_at: tournament?.end_at?.slice(0, 16) ?? "",
+    auto_approve_registrations: tournament?.auto_approve_registrations ?? false,
   });
   const [saving, setSaving] = useState(false);
 
@@ -171,6 +172,20 @@ export function TournamentForm({ tournament }: Props) {
         <div className="sm:col-span-2">
           <label className={LABEL}>Luật thi đấu</label>
           <textarea className={FIELD + " h-28 py-2 resize-y"} value={form.rules} onChange={(e) => set("rules", e.target.value)} placeholder="Nhập luật thi đấu..." />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.auto_approve_registrations}
+              onChange={(e) => setForm((p) => ({ ...p, auto_approve_registrations: e.target.checked }))}
+              className="size-4 rounded"
+            />
+            <div>
+              <p className="text-sm font-semibold">Tự động duyệt đăng ký</p>
+              <p className="text-[11px] text-muted-foreground">Đội đăng ký sẽ được duyệt tự động, không cần admin xét duyệt</p>
+            </div>
+          </label>
         </div>
       </div>
 
