@@ -73,6 +73,10 @@ export default async function TournamentDetailPage({ params }: { params: Promise
             className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:border-primary/40 transition-colors">
             <BarChart2 className="size-3.5" /> Bảng xếp hạng
           </Link>
+          <a href={`/api/tms/tournaments/${tournament.id}/image/standings`} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:border-primary/40 transition-colors">
+            <BarChart2 className="size-3.5" /> 🖼 Ảnh BXH
+          </a>
           <Link href={`/tournaments/${slug}/submit`}
             className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/8 px-3 py-2 text-xs font-semibold text-primary hover:border-primary/60 transition-colors dark:border-amber-400/40 dark:bg-amber-400/8 dark:text-amber-400">
             <Trophy className="size-3.5" /> Nộp kết quả
