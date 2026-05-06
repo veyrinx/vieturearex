@@ -20,10 +20,10 @@ export async function resolveCurrentAdminEmail() {
   return user?.email?.trim().toLowerCase() || "unknown-admin@arex.tech";
 }
 
-function resolveIp(request?: NextRequest): string | null {
+async function resolveIp(request?: NextRequest): Promise<string | null> {
   if (request) return getClientIp(request) === "unknown" ? null : getClientIp(request);
   try {
-    const h = headers();
+    const h = await headers();
     const cf = h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim();
     return cf || null;
   } catch { return null; }
@@ -32,7 +32,7 @@ function resolveIp(request?: NextRequest): string | null {
 export async function logAdminActivity(input: AdminActivityInput) {
   try {
     const actorEmail = input.actorEmail ?? (await resolveCurrentAdminEmail());
-    const ip = resolveIp(input.request);
+    const ip = await resolveIp(input.request);
     await createAdminActivityLog({
       actor_email: actorEmail,
       action: input.action,
