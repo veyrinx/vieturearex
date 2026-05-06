@@ -13,7 +13,7 @@ import { GAME_META_BY_KEY } from "@/lib/constants/game-list";
 import type { GameProfile } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 const ROLE_META: Record<string, { label: string; color: string; gradient: string }> = {
   super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30", gradient: "from-red-500/30 via-rose-500/20 to-pink-500/15" },
@@ -42,7 +42,8 @@ const ONLINE_MS = 90_000;
 export const revalidate = 120;
 
 export default async function PublicProfilePage({ params }: Props) {
-  const profile = await getUserPublicProfile(params.id);
+  const { id } = await params;
+  const profile = await getUserPublicProfile(id);
   if (!profile) notFound();
 
   const name = profile.display_name || "Ẩn danh";

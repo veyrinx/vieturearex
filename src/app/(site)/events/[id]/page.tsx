@@ -10,10 +10,11 @@ import { EventViewTracker } from "@/components/events/event-view-tracker";
 import { siteConfig } from "@/lib/constants/site";
 import { cn } from "@/lib/utils";
 
-type EventDetailPageProps = { params: { id: string } };
+type EventDetailPageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
-  const event = await getEventById(params.id);
+  const { id } = await params;
+  const event = await getEventById(id);
   if (!event) return { title: "Không tìm thấy sự kiện" };
   const url = `${siteConfig.url}/events/${event.id}`;
   const desc = event.description || `Sự kiện ${event.title} – theo dõi tại Arex.`;
@@ -46,7 +47,8 @@ function formatEventDate(dateStr: string) {
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
-  const event = await getEventById(params.id);
+  const { id } = await params;
+  const event = await getEventById(id);
   if (!event) notFound();
 
   const authorName = event.updated_by_name || event.created_by_name;

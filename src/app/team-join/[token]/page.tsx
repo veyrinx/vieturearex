@@ -4,8 +4,9 @@ import { buildSettingsMap, resolveTeamJoinSettings } from "@/lib/utils/site-sett
 
 export const revalidate = 60;
 
-export default async function TeamJoinPage({ params }: { params: { token: string } }) {
+export default async function TeamJoinPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   const settings = await getSettings();
   const config = resolveTeamJoinSettings(buildSettingsMap(settings));
-  return <TeamJoinForm token={params.token} config={config} />;
+  return <TeamJoinForm token={token} config={config} />;
 }

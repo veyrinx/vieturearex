@@ -7,8 +7,9 @@ export const alt = "Arex — Tin Tức Free Fire";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function OgImage({ params }: { params: { slug: string } }) {
-  const article = await getNewsBySlug(params.slug);
+export default async function OgImage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const article = await getNewsBySlug(slug);
   const title = article?.title ?? siteConfig.name;
   const category = article?.category ?? "TIN TỨC";
   const cover = article?.cover ?? "";

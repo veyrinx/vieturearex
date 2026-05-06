@@ -11,10 +11,11 @@ import { AwardViewPoints } from "@/components/news/award-view-points";
 import { siteConfig } from "@/lib/constants/site";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 
-type NewsDetailPageProps = { params: { slug: string } };
+type NewsDetailPageProps = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: NewsDetailPageProps): Promise<Metadata> {
-  const article = await getNewsBySlug(params.slug);
+  const { slug } = await params;
+  const article = await getNewsBySlug(slug);
   if (!article) return { title: "Không tìm thấy bài viết" };
   const url = `${siteConfig.url}/news/${article.slug}`;
   return {
@@ -47,7 +48,8 @@ export async function generateMetadata({ params }: NewsDetailPageProps): Promise
 export const revalidate = 60;
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
-  const article = await getNewsBySlug(params.slug);
+  const { slug } = await params;
+  const article = await getNewsBySlug(slug);
   if (!article) notFound();
 
   const processedHtml = injectHeadingIds(article.content);

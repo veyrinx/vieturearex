@@ -13,8 +13,9 @@ const STATUS_LABEL: Record<string, string> = {
   expired: "ĐÃ KẾT THÚC",
 };
 
-export default async function OgImage({ params }: { params: { id: string } }) {
-  const event = await getEventById(params.id);
+export default async function OgImage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const event = await getEventById(id);
   const title = event?.title ?? siteConfig.name;
   const status = event?.status ?? "upcoming";
   const cover = event?.image_url ?? "";
