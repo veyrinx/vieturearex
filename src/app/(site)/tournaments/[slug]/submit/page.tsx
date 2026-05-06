@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { TmsScoreSubmission } from "@/lib/tms/types";
 import type { OcrPlayer } from "@/lib/server/ff-ocr";
+import { getPlacementPoints, getTotalScore, PLACEMENT_TABLE } from "@/lib/tms/scoring";
 
 type Profile = { id: string; display_name: string | null; ff_id: string | null };
 type Tournament = { id: string; name: string; slug: string; banner_url: string | null };
@@ -18,6 +19,8 @@ type Team = { id: string; name: string; tag: string };
 type TeamMember = { id: string; user_id: string; user?: { display_name: string | null; ff_id?: string | null } };
 type Quota = { used: number; limit: number; payment_price: string; payment_info: string; payment_qr_url: string };
 type PlayerRow = { ff_id: string; display_name: string; kills: number; assists: number; deaths: number; damage: number };
+
+const PLACEMENTS = Array.from({ length: 12 }, (_, i) => i + 1).concat([13]);
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "border-amber-500/40 bg-amber-500/10 text-amber-400",
@@ -57,6 +60,7 @@ export default function SubmitPage() {
 
   const [matchId, setMatchId] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [placement, setPlacement] = useState<number | null>(null);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [proofUrl, setProofUrl] = useState("");
   const [notes, setNotes] = useState("");
@@ -198,6 +202,7 @@ export default function SubmitPage() {
             match_id: matchId || null,
             team_id: teamId || null,
             ff_id: validPlayers[0].ff_id,
+            placement: placement ?? null,
             kills: validPlayers[0].kills,
             assists: validPlayers[0].assists,
             deaths: validPlayers[0].deaths,
@@ -209,6 +214,7 @@ export default function SubmitPage() {
             tournament_id: tournament.id,
             match_id: matchId || null,
             team_id: teamId || null,
+            placement: placement ?? null,
             players: validPlayers,
             proof_url: proofUrl || null,
             notes: notes || null,
@@ -231,7 +237,7 @@ export default function SubmitPage() {
       const newSubs = Array.isArray(data) ? data : [data];
       setPastSubs((prev) => [...newSubs, ...prev]);
       setQuota((q) => q ? { ...q, used: q.used + 1 } : q);
-      setMatchId(""); setTeamId(""); setProofUrl(""); setNotes("");
+      setMatchId(""); setTeamId(""); setPlacement(null); setProofUrl(""); setNotes("");
       setPlayers(players.map((p) => ({ ...p, kills: 0, assists: 0, deaths: 0, damage: 0 })));
     } catch { toast.error("Lỗi mạng, vui lòng thử lại."); }
     finally { setSaving(false); }
@@ -376,6 +382,55 @@ export default function SubmitPage() {
               )}
             </div>
 
+            {/* Placement + Score preview */}
+            <div className="grid sm:grid-cols-2 gap-3 items-end">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Vị trí kết thúc (Top)</label>
+                <select
+                  value={placement ?? ""}
+                  onChange={(e) => setPlacement(e.target.value ? parseInt(e.target.value) : null)}
+                  className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">— Chưa chọn —</option>
+                  {PLACEMENTS.map((r) => {
+                    const pts = getPlacementPoints(r);
+                    return <option key={r} value={r}>#{r === 13 ? "13+" : r} — {pts > 0 ? `+${pts} điểm` : "0 điểm"}</option>;
+                  })}
+                </select>
+              </div>
+
+              {/* Score preview */}
+              <div className="rounded-xl border border-primary/20 dark:border-amber-400/20 bg-primary/5 dark:bg-amber-400/5 p-3 flex items-center justify-between gap-2">
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p>Điểm vị trí: <span className="font-mono font-bold text-foreground">{getPlacementPoints(placement)}</span></p>
+                  <p>Điểm kill: <span className="font-mono font-bold text-foreground">+{players.reduce((s, p) => s + p.kills, 0)}</span></p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Tổng điểm</p>
+                  <p className="text-2xl font-black text-primary dark:text-amber-400 leading-none">
+                    {getTotalScore(placement, players.reduce((s, p) => s + p.kills, 0))}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Scoring table reference */}
+            <details className="group">
+              <summary className="text-[10px] uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-foreground select-none">
+                Bảng điểm Garena ▾
+              </summary>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {PLACEMENT_TABLE.map(({ rank, pts }) => (
+                  <span key={rank} className="rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-mono">
+                    {rank}: <span className="font-bold text-amber-400">{pts}đ</span>
+                  </span>
+                ))}
+                <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-mono text-primary dark:text-amber-400">
+                  Kill: +1đ/kill
+                </span>
+              </div>
+            </details>
+
             {/* Players table */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -475,7 +530,14 @@ export default function SubmitPage() {
             {pastSubs.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm">
                 <div className="space-y-0.5">
-                  <p className="font-semibold text-xs">{s.match?.round ?? "—"} · K{s.kills} A{s.assists} D{s.deaths}{s.damage ? ` Dame${s.damage}` : ""}</p>
+                  <p className="font-semibold text-xs">
+                    {s.match?.round ?? "—"}
+                    {s.placement ? ` · #${s.placement}` : ""}
+                    {` · K${s.kills} A${s.assists} D${s.deaths}`}
+                    {s.damage ? ` Dame${s.damage}` : ""}
+                    {" · "}
+                    <span className="text-amber-400 font-bold">{getTotalScore(s.placement, s.kills)}đ</span>
+                  </p>
                   <p className="text-[10px] text-muted-foreground">{new Date(s.created_at).toLocaleDateString("vi")}</p>
                 </div>
                 <span className={cn("text-[10px] font-bold uppercase border rounded px-1.5 py-0.5", STATUS_COLOR[s.status])}>{STATUS_LABEL[s.status]}</span>

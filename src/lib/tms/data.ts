@@ -234,6 +234,7 @@ export async function createScoreSubmission(
     match_id?: string | null;
     team_id?: string | null;
     ff_id: string;
+    placement?: number | null;
     kills: number;
     assists: number;
     deaths: number;

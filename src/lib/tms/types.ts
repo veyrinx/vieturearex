@@ -150,6 +150,7 @@ export type TmsScoreSubmission = {
   user_id: string;
   team_id: string | null;
   ff_id: string;
+  placement: number | null;
   kills: number;
   assists: number;
   deaths: number;

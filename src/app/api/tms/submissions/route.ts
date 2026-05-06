@@ -40,7 +40,7 @@ export async function GET(req: Request) {
   return NextResponse.json(filtered);
 }
 
-type PlayerInput = { ff_id: string; display_name?: string; kills: number; assists: number; deaths: number; damage: number };
+type PlayerInput = { ff_id: string; display_name?: string; placement?: number | null; kills: number; assists: number; deaths: number; damage: number };
 
 export async function POST(req: Request) {
   const auth = await getAuthContext();
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
     match_id?: string | null;
     team_id?: string | null;
     ff_id?: string;
+    placement?: number | null;
     kills?: number;
     assists?: number;
     deaths?: number;
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
               match_id: body.match_id ?? null,
               team_id: body.team_id ?? null,
               ff_id: p.ff_id,
+              placement: body.placement ?? p.placement ?? null,
               kills: p.kills ?? 0,
               assists: p.assists ?? 0,
               deaths: p.deaths ?? 0,
@@ -123,6 +125,7 @@ export async function POST(req: Request) {
         match_id: body.match_id ?? null,
         team_id: body.team_id ?? null,
         ff_id: body.ff_id!,
+        placement: body.placement ?? null,
         kills: body.kills ?? 0,
         assists: body.assists ?? 0,
         deaths: body.deaths ?? 0,
