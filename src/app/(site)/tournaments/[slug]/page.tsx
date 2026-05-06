@@ -11,6 +11,7 @@ import { RegisterButton } from "@/components/tms/register-button";
 import { TournamentBracket } from "@/components/tms/bracket";
 import { StreamEmbed } from "@/components/tms/stream-embed";
 import { SERVER_LABELS } from "@/lib/tms/types";
+import { TeamLogo, TournamentBanner } from "@/components/common/safe-image";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,7 +51,7 @@ export default async function TournamentDetailPage({ params }: { params: Promise
       {/* Banner */}
       {tournament.banner_url && (
         <div className="rounded-2xl overflow-hidden aspect-[21/6] bg-muted">
-          <img src={tournament.banner_url} alt={tournament.name} className="w-full h-full object-cover" />
+          <TournamentBanner src={tournament.banner_url} alt={tournament.name} />
         </div>
       )}
 
@@ -117,10 +118,7 @@ export default async function TournamentDetailPage({ params }: { params: Promise
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {approvedTeams.map((r) => (
               <div key={r.id} className="flex items-center gap-2 rounded-xl border border-border bg-card p-2">
-                {r.team?.logo_url
-                  ? <img src={r.team.logo_url} alt={r.team?.name} className="size-8 rounded-lg object-cover" />
-                  : <div className="size-8 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">{r.team?.tag?.slice(0, 2)}</div>
-                }
+                <TeamLogo src={r.team?.logo_url} tag={r.team?.tag ?? "?"} className="size-8 rounded-lg" />
                 <div>
                   <p className="text-sm font-semibold leading-none">{r.team?.name}</p>
                   <p className="text-[10px] text-muted-foreground">[{r.team?.tag}]{r.group_label ? ` • Bảng ${r.group_label}` : ""}</p>

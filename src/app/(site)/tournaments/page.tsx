@@ -6,6 +6,7 @@ import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/
 import type { TmsServer } from "@/lib/tms/types";
 import { cn } from "@/lib/utils";
 import { getAuthContext } from "@/lib/server/auth";
+import { TournamentBanner } from "@/components/common/safe-image";
 
 export const metadata: Metadata = {
   title: "Giải Đấu | Arex",
@@ -120,15 +121,9 @@ export default async function TournamentsPage({
           {filtered.map((t) => (
             <Link key={t.id} href={`/tournaments/${t.slug}`}
               className="group rounded-2xl border border-border bg-card hover:border-primary/40 transition-colors overflow-hidden flex flex-col">
-              {t.banner_url ? (
-                <div className="aspect-[16/7] overflow-hidden bg-muted">
-                  <img src={t.banner_url} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                </div>
-              ) : (
-                <div className="aspect-[16/7] bg-gradient-to-br from-amber-500/20 to-primary/10 flex items-center justify-center">
-                  <Trophy className="size-10 text-amber-400/40" />
-                </div>
-              )}
+              <div className="aspect-[16/7] overflow-hidden bg-muted">
+                <TournamentBanner src={t.banner_url} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              </div>
               <div className="p-4 flex flex-col gap-2 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="font-heading font-bold text-base leading-tight group-hover:text-primary transition-colors">{t.name}</h2>

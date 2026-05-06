@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ImageUploadButton } from "@/components/common/image-upload-button";
+import { TeamLogo } from "@/components/common/safe-image";
 import { cn } from "@/lib/utils";
 
 type Profile = { id: string; display_name: string | null; ff_id: string | null; email: string };
@@ -219,10 +220,7 @@ export default function MyTeamPage() {
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
             {!editing ? (
               <div className="flex items-center gap-3">
-                {t.logo_url
-                  ? <img src={t.logo_url} alt={t.name} className="size-14 rounded-xl object-cover shrink-0" />
-                  : <div className="size-14 rounded-xl bg-muted flex items-center justify-center text-sm font-black text-muted-foreground shrink-0">{t.tag.slice(0, 2)}</div>
-                }
+                <TeamLogo src={t.logo_url} tag={t.tag} className="size-14 rounded-xl shrink-0" fallbackClass="bg-muted flex items-center justify-center text-sm font-black text-muted-foreground" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h2 className="font-heading font-bold text-lg leading-tight">{t.name}</h2>

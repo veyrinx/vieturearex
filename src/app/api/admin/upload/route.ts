@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 
@@ -51,7 +52,8 @@ export async function POST(request: NextRequest) {
   const safeName = file.name.replace(/[^\w.-]/g, "_");
   const path = `${user.id}/${Date.now()}-${safeName}`;
 
-  const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
+  const storageClient = createAdminSupabaseClient() ?? supabase;
+  const { error: uploadError } = await storageClient.storage.from(bucket).upload(path, file, {
     upsert: true,
     contentType: file.type,
   });
@@ -60,6 +62,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
-  const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path);
+  const { data: publicData } = storageClient.storage.from(bucket).getPublicUrl(path);
   return NextResponse.json({ publicUrl: publicData.publicUrl }, { status: 201 });
 }
