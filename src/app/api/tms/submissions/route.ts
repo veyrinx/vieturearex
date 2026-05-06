@@ -40,6 +40,8 @@ export async function GET(req: Request) {
   return NextResponse.json(filtered);
 }
 
+type PlayerInput = { ff_id: string; display_name?: string; kills: number; assists: number; deaths: number; damage: number };
+
 export async function POST(req: Request) {
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -52,12 +54,19 @@ export async function POST(req: Request) {
     kills?: number;
     assists?: number;
     deaths?: number;
+    damage?: number;
     proof_url?: string | null;
     notes?: string | null;
+    players?: PlayerInput[];
   };
 
-  if (!body.tournament_id || !body.ff_id) {
-    return NextResponse.json({ error: "tournament_id and ff_id required" }, { status: 400 });
+  if (!body.tournament_id) {
+    return NextResponse.json({ error: "tournament_id required" }, { status: 400 });
+  }
+
+  const isBatch = Array.isArray(body.players) && body.players.length > 0;
+  if (!isBatch && !body.ff_id) {
+    return NextResponse.json({ error: "ff_id required" }, { status: 400 });
   }
 
   // Quota check — skip for admins
@@ -85,15 +94,39 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (isBatch) {
+      const results = await Promise.all(
+        (body.players as PlayerInput[]).map((p) =>
+          createScoreSubmission(
+            {
+              tournament_id: body.tournament_id!,
+              match_id: body.match_id ?? null,
+              team_id: body.team_id ?? null,
+              ff_id: p.ff_id,
+              kills: p.kills ?? 0,
+              assists: p.assists ?? 0,
+              deaths: p.deaths ?? 0,
+              damage: p.damage ?? 0,
+              proof_url: body.proof_url ?? null,
+              notes: body.notes ?? null,
+            },
+            auth.userId!,
+          )
+        )
+      );
+      return NextResponse.json(results, { status: 201 });
+    }
+
     const sub = await createScoreSubmission(
       {
         tournament_id: body.tournament_id,
         match_id: body.match_id ?? null,
         team_id: body.team_id ?? null,
-        ff_id: body.ff_id,
+        ff_id: body.ff_id!,
         kills: body.kills ?? 0,
         assists: body.assists ?? 0,
         deaths: body.deaths ?? 0,
+        damage: body.damage ?? 0,
         proof_url: body.proof_url ?? null,
         notes: body.notes ?? null,
       },

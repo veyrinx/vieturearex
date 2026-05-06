@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Trophy, AlertTriangle, Zap, CreditCard, CheckCircle2, ScanLine, Upload, X } from "lucide-react";
+import { Trophy, AlertTriangle, Zap, CreditCard, CheckCircle2, ScanLine, Upload, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,9 @@ type Profile = { id: string; display_name: string | null; ff_id: string | null }
 type Tournament = { id: string; name: string; slug: string; banner_url: string | null };
 type Match = { id: string; round: string; team_a?: { name: string } | null; team_b?: { name: string } | null };
 type Team = { id: string; name: string; tag: string };
+type TeamMember = { id: string; user_id: string; user?: { display_name: string | null; ff_id?: string | null } };
 type Quota = { used: number; limit: number; payment_price: string; payment_info: string; payment_qr_url: string };
+type PlayerRow = { ff_id: string; display_name: string; kills: number; assists: number; deaths: number; damage: number };
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "border-amber-500/40 bg-amber-500/10 text-amber-400",
@@ -28,6 +30,19 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Từ chối",
 };
 
+function NumInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <input
+      type="number"
+      min={0}
+      max={99999}
+      value={value}
+      onChange={(e) => onChange(Math.max(0, parseInt(e.target.value) || 0))}
+      className="w-full h-8 rounded-lg border border-border bg-background px-2 text-center text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+    />
+  );
+}
+
 export default function SubmitPage() {
   const { slug } = useParams<{ slug: string }>();
 
@@ -35,15 +50,14 @@ export default function SubmitPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pastSubs, setPastSubs] = useState<TmsScoreSubmission[]>([]);
   const [quota, setQuota] = useState<Quota | null>(null);
-  const [submitted, setSubmitted] = useState<TmsScoreSubmission | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const [matchId, setMatchId] = useState("");
   const [teamId, setTeamId] = useState("");
-  const [kills, setKills] = useState(0);
-  const [assists, setAssists] = useState(0);
-  const [deaths, setDeaths] = useState(0);
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [proofUrl, setProofUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -68,13 +82,9 @@ export default function SubmitPage() {
         setTournament(t);
         if (t) {
           fetch(`/api/tms/matches?tournament_id=${t.id}`)
-            .then((r) => r.json())
-            .then((ms: Match[]) => setMatches(ms ?? []))
-            .catch(() => {});
+            .then((r) => r.json()).then((ms: Match[]) => setMatches(ms ?? [])).catch(() => {});
           fetch(`/api/tms/teams?tournament_id=${t.id}`)
-            .then((r) => r.json())
-            .then((ts: Team[]) => setTeams(ts ?? []))
-            .catch(() => {});
+            .then((r) => r.json()).then((ts: Team[]) => setTeams(ts ?? [])).catch(() => {});
         }
       })
       .catch(() => {});
@@ -84,62 +94,92 @@ export default function SubmitPage() {
     if (!profile || profile === "loading" || !tournament) return;
     Promise.all([
       fetch(`/api/tms/submissions?tournament_id=${tournament.id}`, { credentials: "same-origin" })
-        .then((r) => (r.ok ? r.json() : []))
-        .then((subs: TmsScoreSubmission[]) => setPastSubs(subs ?? []))
-        .catch(() => {}),
+        .then((r) => (r.ok ? r.json() : [])).then((subs: TmsScoreSubmission[]) => setPastSubs(subs ?? [])).catch(() => {}),
       fetch("/api/tms/submissions?quota=true", { credentials: "same-origin" })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((q: Quota | null) => setQuota(q))
-        .catch(() => {}),
+        .then((r) => (r.ok ? r.json() : null)).then((q: Quota | null) => setQuota(q)).catch(() => {}),
     ]);
   }, [profile, tournament]);
 
-  const applyOcrPlayer = (p: OcrPlayer) => {
-    setKills(p.kills);
-    setAssists(p.assists);
-    setDeaths(p.deaths);
+  // Fetch members when team changes
+  useEffect(() => {
+    if (!teamId) { setTeamMembers([]); setPlayers([]); return; }
+    fetch(`/api/tms/teams/${teamId}/members`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((ms: TeamMember[]) => {
+        setTeamMembers(ms ?? []);
+        setPlayers((ms ?? []).map((m) => ({
+          ff_id: m.user?.ff_id ?? "",
+          display_name: m.user?.display_name ?? "Thành viên",
+          kills: 0, assists: 0, deaths: 0, damage: 0,
+        })));
+      })
+      .catch(() => { setTeamMembers([]); setPlayers([]); });
+  }, [teamId]);
+
+  // If no team selected, single-player mode
+  useEffect(() => {
+    if (!teamId && profile && profile !== "loading") {
+      const p = profile as Profile;
+      setPlayers([{ ff_id: p.ff_id ?? "", display_name: p.display_name ?? "", kills: 0, assists: 0, deaths: 0, damage: 0 }]);
+    }
+  }, [teamId, profile]);
+
+  const updatePlayer = (idx: number, field: keyof PlayerRow, val: string | number) => {
+    setPlayers((prev) => prev.map((p, i) => i === idx ? { ...p, [field]: val } : p));
+  };
+
+  const applyOcrPlayer = (ocr: OcrPlayer, idx?: number) => {
+    if (idx !== undefined) {
+      setPlayers((prev) => prev.map((p, i) => i === idx ? { ...p, kills: ocr.kills, assists: ocr.assists, deaths: ocr.deaths } : p));
+    } else if (players.length === 1) {
+      setPlayers((prev) => [{ ...prev[0], kills: ocr.kills, assists: ocr.assists, deaths: ocr.deaths }]);
+    }
     setOcrPlayers(null);
-    toast.success(`Đã điền K/A/D của ${p.name}`);
+    toast.success(`Đã điền K/A/D cho ${ocr.name}`);
   };
 
   const runOcr = async (payload: { url?: string; base64?: string; media_type?: string }) => {
-    setOcrLoading(true);
-    setOcrPlayers(null);
+    setOcrLoading(true); setOcrPlayers(null);
     try {
       const res = await fetch("/api/tms/parse-result", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify(payload),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "same-origin", body: JSON.stringify(payload),
       });
       const data = (await res.json()) as { players?: OcrPlayer[]; error?: string };
       if (!res.ok || data.error) { toast.error(data.error ?? "OCR thất bại"); return; }
-      if (!data.players || data.players.length === 0) { toast.warning("Không tìm thấy dữ liệu trong ảnh"); return; }
-      if (data.players.length === 1) {
+      if (!data.players?.length) { toast.warning("Không tìm thấy dữ liệu trong ảnh"); return; }
+
+      // Auto-match OCR results to player rows by name similarity
+      if (players.length > 1 && data.players.length > 0) {
+        setPlayers((prev) => {
+          const updated = [...prev];
+          data.players!.forEach((ocr) => {
+            const idx = updated.findIndex(
+              (p) => p.display_name.toLowerCase().includes(ocr.name.toLowerCase()) ||
+                     ocr.name.toLowerCase().includes(p.display_name.toLowerCase())
+            );
+            if (idx !== -1) {
+              updated[idx] = { ...updated[idx], kills: ocr.kills, assists: ocr.assists, deaths: ocr.deaths };
+            }
+          });
+          return updated;
+        });
+        toast.success(`OCR: điền tự động cho ${data.players.length} người chơi`);
+      } else if (data.players.length === 1) {
         applyOcrPlayer(data.players[0]);
       } else {
         setOcrPlayers(data.players);
       }
-    } catch {
-      toast.error("Lỗi khi nhận dạng ảnh");
-    } finally {
-      setOcrLoading(false);
-    }
+    } catch { toast.error("Lỗi khi nhận dạng ảnh"); }
+    finally { setOcrLoading(false); }
   };
 
-  const handleOcrUrl = () => {
-    if (!ocrUrl.trim()) return;
-    void runOcr({ url: ocrUrl.trim() });
-    if (!proofUrl) setProofUrl(ocrUrl.trim());
-  };
-
+  const handleOcrUrl = () => { if (!ocrUrl.trim()) return; void runOcr({ url: ocrUrl.trim() }); if (!proofUrl) setProofUrl(ocrUrl.trim()); };
   const handleFileUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const [header, base64] = dataUrl.split(",");
-      const media_type = header.replace("data:", "").replace(";base64", "");
-      void runOcr({ base64, media_type });
+      const [header, base64] = (reader.result as string).split(",");
+      void runOcr({ base64, media_type: header.replace("data:", "").replace(";base64", "") });
     };
     reader.readAsDataURL(file);
   };
@@ -147,51 +187,58 @@ export default function SubmitPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tournament || !profile || profile === "loading") return;
-    if (!(profile as Profile).ff_id) return;
+    const validPlayers = players.filter((p) => p.ff_id);
+    if (!validPlayers.length) { toast.error("Cần ít nhất 1 thành viên có FF ID."); return; }
 
     setSaving(true);
     try {
+      const payload = validPlayers.length === 1
+        ? {
+            tournament_id: tournament.id,
+            match_id: matchId || null,
+            team_id: teamId || null,
+            ff_id: validPlayers[0].ff_id,
+            kills: validPlayers[0].kills,
+            assists: validPlayers[0].assists,
+            deaths: validPlayers[0].deaths,
+            damage: validPlayers[0].damage,
+            proof_url: proofUrl || null,
+            notes: notes || null,
+          }
+        : {
+            tournament_id: tournament.id,
+            match_id: matchId || null,
+            team_id: teamId || null,
+            players: validPlayers,
+            proof_url: proofUrl || null,
+            notes: notes || null,
+          };
+
       const res = await fetch("/api/tms/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({
-          tournament_id: tournament.id,
-          match_id: matchId || null,
-          team_id: teamId || null,
-          ff_id: (profile as Profile).ff_id,
-          kills,
-          assists,
-          deaths,
-          proof_url: proofUrl || null,
-          notes: notes || null,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json() as TmsScoreSubmission & { error?: string; used?: number; limit?: number; payment_info?: string; payment_qr_url?: string; payment_price?: string };
       if (res.status === 402) {
-        // Update quota state with returned values
         setQuota({ used: data.used ?? 0, limit: data.limit ?? 4, payment_info: data.payment_info ?? "", payment_qr_url: data.payment_qr_url ?? "", payment_price: data.payment_price ?? "" });
         return;
       }
       if (!res.ok) { toast.error(data.error ?? "Nộp thất bại."); return; }
       toast.success("Đã nộp kết quả!");
-      setSubmitted(data);
-      setPastSubs((prev) => [data, ...prev]);
+      setSubmitted(true);
+      const newSubs = Array.isArray(data) ? data : [data];
+      setPastSubs((prev) => [...newSubs, ...prev]);
       setQuota((q) => q ? { ...q, used: q.used + 1 } : q);
-      setMatchId(""); setTeamId(""); setKills(0); setAssists(0); setDeaths(0); setProofUrl(""); setNotes("");
-    } catch {
-      toast.error("Lỗi mạng, vui lòng thử lại.");
-    } finally {
-      setSaving(false);
-    }
+      setMatchId(""); setTeamId(""); setProofUrl(""); setNotes("");
+      setPlayers(players.map((p) => ({ ...p, kills: 0, assists: 0, deaths: 0, damage: 0 })));
+    } catch { toast.error("Lỗi mạng, vui lòng thử lại."); }
+    finally { setSaving(false); }
   };
 
   if (profile === "loading") {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary" />
-      </div>
-    );
+    return <div className="flex min-h-[60vh] items-center justify-center"><div className="h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary" /></div>;
   }
 
   if (!profile) {
@@ -199,9 +246,7 @@ export default function SubmitPage() {
       <div className="py-16 text-center space-y-4">
         <Trophy className="mx-auto size-10 text-muted-foreground" />
         <p className="text-muted-foreground">Đăng nhập để nộp kết quả</p>
-        <Link href={`/login?next=/tournaments/${slug}/submit`}>
-          <Button className="rounded-xl">Đăng nhập</Button>
-        </Link>
+        <Link href={`/login?next=/tournaments/${slug}/submit`}><Button className="rounded-xl">Đăng nhập</Button></Link>
       </div>
     );
   }
@@ -210,58 +255,35 @@ export default function SubmitPage() {
   const quotaExceeded = quota !== null && quota.used >= quota.limit;
 
   return (
-    <div className="py-8 space-y-6">
+    <div className="py-8 max-w-2xl mx-auto space-y-6">
       {tournament?.banner_url && (
         <div className="rounded-2xl overflow-hidden aspect-[21/5] bg-muted">
-          <img src={tournament.banner_url} alt={tournament.name} className="w-full h-full object-cover" />
+          <img src={tournament.banner_url} alt={tournament.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
         </div>
       )}
 
-      <div>
-        <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">
-          {tournament ? tournament.name : "Giải đấu"} — Nộp kết quả thi đấu
-        </h1>
-      </div>
+      <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">
+        {tournament ? tournament.name : "Giải đấu"} — Nộp kết quả
+      </h1>
 
       {!p.ff_id && (
         <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-400">
           <AlertTriangle className="size-4 shrink-0" />
-          <span>
-            Bạn chưa có FF ID.{" "}
-            <Link href={`/setup?next=/tournaments/${slug}/submit`} className="font-semibold underline">
-              Thiết lập ngay
-            </Link>
-          </span>
+          <span>Bạn chưa có FF ID. <Link href={`/setup?next=/tournaments/${slug}/submit`} className="font-semibold underline">Thiết lập ngay</Link></span>
         </div>
       )}
 
-      {/* Quota indicator */}
+      {/* Quota */}
       {p.ff_id && quota && (
-        <div className={cn(
-          "rounded-xl border p-3 flex items-center gap-3",
-          quotaExceeded
-            ? "border-red-500/30 bg-red-500/8"
-            : quota.used >= quota.limit - 1
-              ? "border-amber-500/30 bg-amber-500/8"
-              : "border-border bg-muted/30",
-        )}>
+        <div className={cn("rounded-xl border p-3 flex items-center gap-3", quotaExceeded ? "border-red-500/30 bg-red-500/8" : quota.used >= quota.limit - 1 ? "border-amber-500/30 bg-amber-500/8" : "border-border bg-muted/30")}>
           <Zap className={cn("size-4 shrink-0", quotaExceeded ? "text-red-400" : quota.used >= quota.limit - 1 ? "text-amber-400" : "text-primary")} />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold">
-              {quotaExceeded
-                ? "Đã dùng hết lượt miễn phí tuần này"
-                : `Còn ${quota.limit - quota.used} lượt miễn phí`}
-            </p>
+            <p className="text-xs font-semibold">{quotaExceeded ? "Đã dùng hết lượt miễn phí tuần này" : `Còn ${quota.limit - quota.used} lượt miễn phí`}</p>
             <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className={cn("h-full rounded-full transition-all", quotaExceeded ? "bg-red-400" : "bg-primary dark:bg-amber-400")}
-                style={{ width: `${Math.min(100, (quota.used / quota.limit) * 100)}%` }}
-              />
+              <div className={cn("h-full rounded-full transition-all", quotaExceeded ? "bg-red-400" : "bg-primary dark:bg-amber-400")} style={{ width: `${Math.min(100, (quota.used / quota.limit) * 100)}%` }} />
             </div>
           </div>
-          <span className={cn("text-xs font-mono font-bold shrink-0", quotaExceeded ? "text-red-400" : "text-muted-foreground")}>
-            {quota.used}/{quota.limit}
-          </span>
+          <span className={cn("text-xs font-mono font-bold shrink-0", quotaExceeded ? "text-red-400" : "text-muted-foreground")}>{quota.used}/{quota.limit}</span>
         </div>
       )}
 
@@ -271,60 +293,37 @@ export default function SubmitPage() {
           <div className="flex items-center gap-2">
             <CreditCard className="size-5 text-primary dark:text-amber-400" />
             <h2 className="font-heading text-sm font-bold uppercase tracking-widest">Nộp có phí</h2>
-            {quota.payment_price && (
-              <span className="ml-auto text-sm font-bold text-amber-400">{quota.payment_price} / lần</span>
-            )}
+            {quota.payment_price && <span className="ml-auto text-sm font-bold text-amber-400">{quota.payment_price} / lần</span>}
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Bạn đã dùng hết <strong>{quota.limit} lần miễn phí</strong> trong tuần này. Để tiếp tục nộp kết quả, hãy thanh toán và gửi bằng chứng vào phần ghi chú bên dưới.
-          </p>
-
+          <p className="text-xs text-muted-foreground leading-relaxed">Bạn đã dùng hết <strong>{quota.limit} lần miễn phí</strong> trong tuần này.</p>
           {(quota.payment_info || quota.payment_qr_url) && (
             <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
-              {quota.payment_qr_url && (
-                <div className="flex justify-center">
-                  <img src={quota.payment_qr_url} alt="QR thanh toán" className="max-w-[180px] rounded-xl border border-border" />
-                </div>
-              )}
-              {quota.payment_info && (
-                <p className="text-xs text-center text-muted-foreground whitespace-pre-line leading-relaxed">{quota.payment_info}</p>
-              )}
+              {quota.payment_qr_url && <div className="flex justify-center"><img src={quota.payment_qr_url} alt="QR thanh toán" className="max-w-[180px] rounded-xl border border-border" /></div>}
+              {quota.payment_info && <p className="text-xs text-center text-muted-foreground whitespace-pre-line">{quota.payment_info}</p>}
             </div>
-          )}
-
-          {!quota.payment_info && !quota.payment_qr_url && (
-            <p className="text-xs text-muted-foreground italic">Liên hệ admin để biết thông tin thanh toán.</p>
           )}
         </div>
       )}
 
       {p.ff_id && (!quotaExceeded || quota === null) && (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">
-            Nộp kết quả
-          </h2>
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
+          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">Nộp kết quả</h2>
+
           {submitted && (
             <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-400">
-              <CheckCircle2 className="size-4 shrink-0" />
-              <span>Đã nộp thành công — Đang chờ admin duyệt</span>
+              <CheckCircle2 className="size-4 shrink-0" /><span>Đã nộp thành công — Đang chờ admin duyệt</span>
             </div>
           )}
-          {/* OCR auto-fill */}
+
+          {/* OCR */}
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
             <p className="text-xs font-bold uppercase tracking-widest text-primary dark:text-amber-400 flex items-center gap-1.5">
               <ScanLine className="size-3.5" /> Tự động nhận dạng từ ảnh
             </p>
             <div className="flex gap-2">
-              <Input
-                value={ocrUrl}
-                onChange={(e) => setOcrUrl(e.target.value)}
-                placeholder="Dán link ảnh kết quả / share link..."
-                className="h-9 rounded-xl text-xs flex-1"
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleOcrUrl(); } }}
-              />
-              <Button type="button" size="sm" variant="outline" disabled={ocrLoading || !ocrUrl.trim()} onClick={handleOcrUrl} className="h-9 rounded-xl shrink-0 text-xs">
-                {ocrLoading ? "..." : "OCR"}
-              </Button>
+              <Input value={ocrUrl} onChange={(e) => setOcrUrl(e.target.value)} placeholder="Dán link ảnh kết quả..." className="h-9 rounded-xl text-xs flex-1"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleOcrUrl(); } }} />
+              <Button type="button" size="sm" variant="outline" disabled={ocrLoading || !ocrUrl.trim()} onClick={handleOcrUrl} className="h-9 rounded-xl shrink-0 text-xs">{ocrLoading ? "..." : "OCR"}</Button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} />
               <Button type="button" size="sm" variant="outline" disabled={ocrLoading} onClick={() => fileRef.current?.click()} className="h-9 rounded-xl shrink-0 text-xs gap-1">
                 <Upload className="size-3" /> Upload
@@ -332,14 +331,19 @@ export default function SubmitPage() {
             </div>
             {ocrPlayers && ocrPlayers.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] text-muted-foreground">Chọn tên của bạn để điền K/A/D:</p>
+                <p className="text-[10px] text-muted-foreground">Chọn thành viên để điền K/A/D:</p>
                 <div className="space-y-1">
-                  {ocrPlayers.map((p, i) => (
-                    <button key={i} type="button" onClick={() => applyOcrPlayer(p)}
-                      className="w-full flex items-center justify-between rounded-lg border border-border bg-background hover:border-primary/40 hover:bg-primary/5 px-3 py-1.5 text-xs transition-colors text-left">
-                      <span className="font-semibold">{p.name}</span>
-                      <span className="text-muted-foreground font-mono">K{p.kills} A{p.assists} D{p.deaths}</span>
-                    </button>
+                  {ocrPlayers.map((ocr, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="flex-1 text-xs font-semibold">{ocr.name}</span>
+                      <span className="text-xs text-muted-foreground font-mono">K{ocr.kills} A{ocr.assists} D{ocr.deaths}</span>
+                      {players.map((pl, pi) => (
+                        <button key={pi} type="button" onClick={() => applyOcrPlayer(ocr, pi)}
+                          className="text-[10px] rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-primary hover:bg-primary/20">
+                          → {pl.display_name.split(" ").pop()}
+                        </button>
+                      ))}
+                    </div>
                   ))}
                   <button type="button" onClick={() => setOcrPlayers(null)} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground mt-1">
                     <X className="size-3" /> Đóng
@@ -350,135 +354,113 @@ export default function SubmitPage() {
           </div>
 
           <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
-            {matches.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Chọn trận</label>
-                <select
-                  value={matchId}
-                  onChange={(e) => setMatchId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">— Không chọn —</option>
-                  {matches.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.round}{m.team_a && m.team_b ? ` — ${m.team_a.name} vs ${m.team_b.name}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* Match & Team selectors */}
+            <div className="grid sm:grid-cols-2 gap-3">
+              {matches.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Chọn trận</label>
+                  <select value={matchId} onChange={(e) => setMatchId(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    <option value="">— Không chọn —</option>
+                    {matches.map((m) => <option key={m.id} value={m.id}>{m.round}{m.team_a && m.team_b ? ` — ${m.team_a.name} vs ${m.team_b.name}` : ""}</option>)}
+                  </select>
+                </div>
+              )}
+              {teams.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Chọn team</label>
+                  <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    <option value="">— Không chọn —</option>
+                    {teams.map((t) => <option key={t.id} value={t.id}>[{t.tag}] {t.name}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
 
-            {teams.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Chọn team</label>
-                <select
-                  value={teamId}
-                  onChange={(e) => setTeamId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">— Không chọn —</option>
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>[{t.tag}] {t.name}</option>
-                  ))}
-                </select>
+            {/* Players table */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Users className="size-3.5 text-muted-foreground" />
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  {teamId && teamMembers.length > 0 ? `Thành viên (${players.length})` : "Kết quả của bạn"}
+                </label>
               </div>
-            )}
 
-            <div className="grid grid-cols-3 gap-3">
-              {([["Kills", kills, setKills], ["Assists", assists, setAssists], ["Deaths", deaths, setDeaths]] as [string, number, (v: number) => void][]).map(([label, val, setter]) => (
-                <div key={label} className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={99}
-                    value={val}
-                    onChange={(e) => setter(Math.min(99, Math.max(0, parseInt(e.target.value) || 0)))}
-                    className="h-10 rounded-xl text-center font-mono"
-                  />
+              {/* Header */}
+              <div className="grid gap-1" style={{ gridTemplateColumns: teamId && players.length > 1 ? "minmax(0,1.5fr) 1fr 1fr 1fr 1fr" : "minmax(0,1.5fr) 1fr 1fr 1fr 1fr" }}>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Tên / FF ID</span>
+                {["Kills", "Damage", "Assists", "Deaths"].map((h) => (
+                  <span key={h} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">{h}</span>
+                ))}
+              </div>
+
+              {players.map((pl, idx) => (
+                <div key={idx} className="grid gap-1 items-center rounded-xl border border-border bg-muted/20 px-2 py-2"
+                  style={{ gridTemplateColumns: "minmax(0,1.5fr) 1fr 1fr 1fr 1fr" }}>
+                  <div className="px-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{pl.display_name || "—"}</p>
+                    {pl.ff_id
+                      ? <p className="text-[10px] font-mono text-amber-400 truncate">{pl.ff_id}</p>
+                      : <input value={pl.ff_id} onChange={(e) => updatePlayer(idx, "ff_id", e.target.value)}
+                          placeholder="FF ID" className="w-full h-7 rounded-md border border-border bg-background px-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary" />
+                    }
+                  </div>
+                  <NumInput value={pl.kills} onChange={(v) => updatePlayer(idx, "kills", v)} />
+                  <NumInput value={pl.damage} onChange={(v) => updatePlayer(idx, "damage", v)} />
+                  <NumInput value={pl.assists} onChange={(v) => updatePlayer(idx, "assists", v)} />
+                  <NumInput value={pl.deaths} onChange={(v) => updatePlayer(idx, "deaths", v)} />
                 </div>
               ))}
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Link ảnh proof</label>
-              <Input
-                value={proofUrl}
-                onChange={(e) => setProofUrl(e.target.value)}
-                placeholder="https://..."
-                className="h-10 rounded-xl"
-              />
+              <Input value={proofUrl} onChange={(e) => setProofUrl(e.target.value)} placeholder="https://..." className="h-10 rounded-xl" />
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ghi chú</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              />
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
             </div>
 
             <Button type="submit" disabled={saving || !tournament} className="h-10 w-full rounded-xl font-bold">
-              {saving ? "Đang nộp..." : "Nộp kết quả"}
+              {saving ? "Đang nộp..." : players.length > 1 ? `Nộp kết quả (${players.length} thành viên)` : "Nộp kết quả"}
             </Button>
           </form>
         </div>
       )}
 
-      {/* Paid submission form when quota exceeded */}
+      {/* Paid form */}
       {p.ff_id && quotaExceeded && quota && (
         <div className="rounded-2xl border border-primary/20 dark:border-amber-400/20 bg-card p-5 space-y-4">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-primary dark:text-amber-400">
-            Nộp kèm chứng từ thanh toán
-          </h2>
+          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-primary dark:text-amber-400">Nộp kèm chứng từ thanh toán</h2>
           <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
             {matches.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Chọn trận</label>
-                <select value={matchId} onChange={(e) => setMatchId(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option value="">— Không chọn —</option>
-                  {matches.map((m) => <option key={m.id} value={m.id}>{m.round}{m.team_a && m.team_b ? ` — ${m.team_a.name} vs ${m.team_b.name}` : ""}</option>)}
-                </select>
-              </div>
+              <select value={matchId} onChange={(e) => setMatchId(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="">— Không chọn trận —</option>
+                {matches.map((m) => <option key={m.id} value={m.id}>{m.round}</option>)}
+              </select>
             )}
             {teams.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Chọn team</label>
-                <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option value="">— Không chọn —</option>
-                  {teams.map((t) => <option key={t.id} value={t.id}>[{t.tag}] {t.name}</option>)}
-                </select>
-              </div>
+              <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="">— Không chọn team —</option>
+                {teams.map((t) => <option key={t.id} value={t.id}>[{t.tag}] {t.name}</option>)}
+              </select>
             )}
-            <div className="grid grid-cols-3 gap-3">
-              {([["Kills", kills, setKills], ["Assists", assists, setAssists], ["Deaths", deaths, setDeaths]] as [string, number, (v: number) => void][]).map(([label, val, setter]) => (
-                <div key={label} className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
-                  <Input type="number" min={0} max={99} value={val} onChange={(e) => setter(Math.min(99, Math.max(0, parseInt(e.target.value) || 0)))} className="h-10 rounded-xl text-center font-mono" />
+            <div className="space-y-2">
+              {players.map((pl, idx) => (
+                <div key={idx} className="grid gap-1 items-center rounded-xl border border-border bg-muted/20 px-2 py-2"
+                  style={{ gridTemplateColumns: "minmax(0,1.5fr) 1fr 1fr 1fr 1fr" }}>
+                  <div className="px-1"><p className="text-xs font-semibold truncate">{pl.display_name}</p><p className="text-[10px] font-mono text-amber-400">{pl.ff_id}</p></div>
+                  <NumInput value={pl.kills} onChange={(v) => updatePlayer(idx, "kills", v)} />
+                  <NumInput value={pl.damage} onChange={(v) => updatePlayer(idx, "damage", v)} />
+                  <NumInput value={pl.assists} onChange={(v) => updatePlayer(idx, "assists", v)} />
+                  <NumInput value={pl.deaths} onChange={(v) => updatePlayer(idx, "deaths", v)} />
                 </div>
               ))}
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Link proof kết quả <span className="text-red-400">*</span>
-              </label>
-              <Input value={proofUrl} onChange={(e) => setProofUrl(e.target.value)} placeholder="https://..." required className="h-10 rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Mã giao dịch / Chứng từ thanh toán <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                required
-                placeholder="Nhập mã giao dịch hoặc link ảnh chuyển khoản..."
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              />
-            </div>
+            <Input value={proofUrl} onChange={(e) => setProofUrl(e.target.value)} placeholder="Link proof *" required className="h-10 rounded-xl" />
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} required placeholder="Mã giao dịch / chứng từ thanh toán..."
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
             <Button type="submit" disabled={saving || !tournament || !notes.trim()} className="h-10 w-full rounded-xl font-bold bg-primary dark:bg-amber-400 dark:text-black">
               {saving ? "Đang nộp..." : `Nộp có phí${quota.payment_price ? ` (${quota.payment_price})` : ""}`}
             </Button>
@@ -488,23 +470,15 @@ export default function SubmitPage() {
 
       {pastSubs.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">
-            Kết quả đã nộp
-          </h2>
+          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">Kết quả đã nộp</h2>
           <div className="space-y-2">
             {pastSubs.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm">
                 <div className="space-y-0.5">
-                  <p className="font-semibold text-xs">
-                    {s.match?.round ?? "—"} · K{s.kills}/A{s.assists}/D{s.deaths}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {new Date(s.created_at).toLocaleDateString("vi")}
-                  </p>
+                  <p className="font-semibold text-xs">{s.match?.round ?? "—"} · K{s.kills} A{s.assists} D{s.deaths}{s.damage ? ` Dame${s.damage}` : ""}</p>
+                  <p className="text-[10px] text-muted-foreground">{new Date(s.created_at).toLocaleDateString("vi")}</p>
                 </div>
-                <span className={cn("text-[10px] font-bold uppercase border rounded px-1.5 py-0.5", STATUS_COLOR[s.status])}>
-                  {STATUS_LABEL[s.status]}
-                </span>
+                <span className={cn("text-[10px] font-bold uppercase border rounded px-1.5 py-0.5", STATUS_COLOR[s.status])}>{STATUS_LABEL[s.status]}</span>
               </div>
             ))}
           </div>

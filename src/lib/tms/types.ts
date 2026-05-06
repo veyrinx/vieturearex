@@ -153,6 +153,7 @@ export type TmsScoreSubmission = {
   kills: number;
   assists: number;
   deaths: number;
+  damage: number;
   proof_url: string | null;
   notes: string | null;
   status: "pending" | "approved" | "rejected";

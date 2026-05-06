@@ -237,6 +237,7 @@ export async function createScoreSubmission(
     kills: number;
     assists: number;
     deaths: number;
+    damage: number;
     proof_url?: string | null;
     notes?: string | null;
   },
