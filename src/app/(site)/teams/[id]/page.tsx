@@ -37,7 +37,7 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
 
   const [team, members, matches, tournamentStats] = await Promise.all([
-    getTmsTeam(id),
+    getTmsTeam(id).catch(() => null),
     getTmsTeamMembers(id).catch(() => []),
     getTmsTeamMatchHistory(id).catch(() => []),
     getTmsTeamResultsByTournament(id).catch(() => [] as TeamLeaderboardWithTournament[]),
