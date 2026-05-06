@@ -24,7 +24,7 @@ export async function getAuthContext(): Promise<AuthContext> {
     return { userId: null, email: null, role: "user", bypass: false };
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
 
   if (!user) {
     return { userId: null, email: null, role: "user", bypass: false };

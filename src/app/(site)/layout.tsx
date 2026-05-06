@@ -26,7 +26,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
     const adminRoles = ["super_admin", "admin", "manager", "support"];
     let isAdmin = false;
     if (supabase) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
       if (user) {
         const { data: profile } = await supabase
           .from("users")
