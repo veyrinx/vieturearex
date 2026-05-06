@@ -1,11 +1,6 @@
 import { redirect } from "next/navigation";
 
-type LegacyNewsDetailRedirectPageProps = {
-  params: {
-    slug: string;
-  };
-};
-
-export default function LegacyNewsDetailRedirectPage({ params }: LegacyNewsDetailRedirectPageProps) {
-  redirect(`/news/${params.slug}`);
+export default async function LegacyNewsDetailRedirectPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  redirect(`/news/${slug}`);
 }
