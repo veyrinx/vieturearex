@@ -35,26 +35,16 @@ export function createServerSupabaseClient(): SupabaseServerClient | null {
     return null;
   }
 
-  const cookieStore = cookies();
-
   return createServerClient<Database, "public">(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      async get(name: string) {
+        return (await cookies()).get(name)?.value;
       },
-      set(name: string, value: string, options) {
-        try {
-          cookieStore.set({ name, value, ...options });
-        } catch (error) {
-          // Ignore error when called from Server Components
-        }
+      async set(name: string, value: string, options) {
+        try { (await cookies()).set({ name, value, ...options }); } catch {}
       },
-      remove(name: string, options) {
-        try {
-          cookieStore.set({ name, value: "", ...options });
-        } catch (error) {
-          // Ignore error when called from Server Components
-        }
+      async remove(name: string, options) {
+        try { (await cookies()).set({ name, value: "", ...options }); } catch {}
       },
     },
     global: {
