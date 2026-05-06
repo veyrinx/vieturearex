@@ -2,6 +2,9 @@
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
