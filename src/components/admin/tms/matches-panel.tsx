@@ -404,7 +404,7 @@ export function MatchesPanel({ tournamentId, initialMatches, approvedTeams }: Pr
 
       {matches.length === 0 ? (
         <p className="text-xs text-muted-foreground py-4 text-center">
-          Chưa có trận nào. Dùng "Tạo lịch tự động" để tạo nhanh.
+          Chưa có trận nào. Dùng &ldquo;Tạo lịch tự động&rdquo; để tạo nhanh.
         </p>
       ) : (
         <div className="space-y-3">
