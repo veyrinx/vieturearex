@@ -1,6 +1,7 @@
 export type TmsMode = "1v1" | "2v2" | "4v4" | "squad";
 export type TmsFormat = "round_robin" | "knockout" | "hybrid";
 export type TmsTournamentStatus = "draft" | "registering" | "ongoing" | "finished" | "cancelled";
+export type TmsServer = "vn" | "sg" | "global";
 export type TmsMatchStatus = "pending" | "playing" | "done" | "cancelled";
 export type TmsRegStatus = "pending" | "approved" | "rejected";
 
@@ -13,6 +14,7 @@ export type TmsTeam = {
   total_points: number;
   total_kills: number;
   is_public: boolean;
+  server: TmsServer;
   created_at: string;
 };
 
@@ -38,6 +40,7 @@ export type TmsTournament = {
   banner_url: string | null;
   stream_url: string | null;
   status: TmsTournamentStatus;
+  server: TmsServer;
   registration_open_at: string | null;
   registration_close_at: string | null;
   start_at: string | null;
@@ -159,6 +162,12 @@ export type TmsScoreSubmission = {
   user?: { display_name: string | null; ff_id?: string | null };
   team?: { name: string; tag: string } | null;
   match?: { round: string } | null;
+};
+
+export const SERVER_LABELS: Record<TmsServer, string> = {
+  vn:     "🇻🇳 VN Server",
+  sg:     "🌏 SG/SEA Server",
+  global: "🌐 Global",
 };
 
 export const MODE_LABELS: Record<TmsMode, string> = {

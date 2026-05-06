@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Trophy, AlertTriangle, Zap, CreditCard, CheckCircle2, ScanLine, Upload, X } from "lucide-react";
@@ -27,8 +28,8 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Từ chối",
 };
 
-export default function SubmitPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+export default function SubmitPage() {
+  const { slug } = useParams<{ slug: string }>();
 
   const [profile, setProfile] = useState<Profile | null | "loading">("loading");
   const [tournament, setTournament] = useState<Tournament | null>(null);

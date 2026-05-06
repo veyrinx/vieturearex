@@ -4,7 +4,19 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Notification } from "@/lib/server/notifications";
+
+type Notification = {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  entity_url: string | null;
+  read_at: string | null;
+  created_at: string;
+};
 
 const TYPE_META: Record<string, { icon: React.ElementType; color: string }> = {
   registration_approved:  { icon: Trophy,   color: "text-emerald-400" },
@@ -128,17 +140,12 @@ export function NotificationBell({ className }: { className?: string }) {
               notifications.map((n) => {
                 const meta = TYPE_META[n.type] ?? { icon: Bell, color: "text-muted-foreground" };
                 const Icon = meta.icon;
-                const Wrapper = n.entity_url ? Link : "div";
-                return (
-                  <Wrapper
-                    key={n.id}
-                    href={n.entity_url ?? "#"}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-t border-border/50 first:border-0",
-                      !n.read_at && "bg-primary/5 dark:bg-amber-400/5",
-                    )}
-                  >
+                const rowClass = cn(
+                  "flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-t border-border/50 first:border-0",
+                  !n.read_at && "bg-primary/5 dark:bg-amber-400/5",
+                );
+                const inner = (
+                  <>
                     <div className={cn("mt-0.5 shrink-0 rounded-lg border border-border bg-muted p-1.5", meta.color)}>
                       <Icon className="size-3" />
                     </div>
@@ -147,7 +154,16 @@ export function NotificationBell({ className }: { className?: string }) {
                       {n.body && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>}
                     </div>
                     <span className="text-[9px] text-muted-foreground shrink-0 mt-0.5">{timeAgo(n.created_at)}</span>
-                  </Wrapper>
+                  </>
+                );
+                return n.entity_url ? (
+                  <Link key={n.id} href={n.entity_url} onClick={() => setOpen(false)} className={rowClass}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={n.id} onClick={() => setOpen(false)} className={rowClass}>
+                    {inner}
+                  </div>
                 );
               })
             )}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { Users, Shield, AlertTriangle, CheckCircle2, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ type Team = { id: string; name: string; tag: string; logo_url: string | null; to
 type Profile = { id: string; display_name: string | null; ff_id: string | null };
 type Member = { id: string; user_id: string; joined_at: string; user?: { display_name: string | null } };
 
-export default function TeamJoinPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function TeamJoinPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [team, setTeam] = useState<Team | null | "loading">("loading");

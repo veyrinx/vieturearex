@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap } from "lucide-react";
 import { getTmsTournaments } from "@/lib/tms/data";
-import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS } from "@/lib/tms/types";
+import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/tms/types";
+import type { TmsServer } from "@/lib/tms/types";
 import { cn } from "@/lib/utils";
 import { getAuthContext } from "@/lib/server/auth";
 
@@ -22,13 +23,30 @@ const statusColor: Record<string, string> = {
   draft:       "border-border bg-muted text-muted-foreground",
 };
 
+const SERVER_TABS: Array<{ key: TmsServer | "all"; label: string }> = [
+  { key: "all", label: "Tất cả" },
+  { key: "vn",     label: "🇻🇳 VN" },
+  { key: "sg",     label: "🌏 SG/SEA" },
+  { key: "global", label: "🌐 Global" },
+];
+
 const ADMIN_ROLES = ["super_admin", "admin", "it", "manager"];
 
-export default async function TournamentsPage() {
-  const [tournaments, auth] = await Promise.all([
+export default async function TournamentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ server?: string }>;
+}) {
+  const [tournaments, auth, sp] = await Promise.all([
     getTmsTournaments(false).catch(() => []),
     getAuthContext().catch(() => ({ userId: null, role: "user" })),
+    searchParams,
   ]);
+
+  const serverFilter = (sp.server ?? "all") as TmsServer | "all";
+  const filtered = serverFilter === "all"
+    ? tournaments
+    : tournaments.filter((t) => t.server === serverFilter);
 
   const isAdmin = ADMIN_ROLES.includes(auth.role ?? "");
   const isLoggedIn = !!auth.userId;
@@ -70,13 +88,36 @@ export default async function TournamentsPage() {
         </div>
       </div>
 
-      {tournaments.length === 0 ? (
+      {/* Server filter tabs */}
+      <div className="flex gap-1.5 flex-wrap">
+        {SERVER_TABS.map(({ key, label }) => (
+          <Link
+            key={key}
+            href={key === "all" ? "/tournaments" : `/tournaments?server=${key}`}
+            className={cn(
+              "rounded-xl border px-4 py-2 text-xs font-semibold transition-colors",
+              serverFilter === key
+                ? "border-amber-500/60 bg-amber-500/15 text-amber-400"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+            )}
+          >
+            {label}
+            {key !== "all" && (
+              <span className="ml-1.5 text-[10px] opacity-60">
+                {tournaments.filter((t) => t.server === key).length}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-16 text-center text-muted-foreground">
-          Chưa có giải đấu nào.
+          {serverFilter === "all" ? "Chưa có giải đấu nào." : `Chưa có giải đấu ${SERVER_LABELS[serverFilter as TmsServer] ?? ""} nào.`}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tournaments.map((t) => (
+          {filtered.map((t) => (
             <Link key={t.id} href={`/tournaments/${t.slug}`}
               className="group rounded-2xl border border-border bg-card hover:border-primary/40 transition-colors overflow-hidden flex flex-col">
               {t.banner_url ? (
@@ -104,8 +145,9 @@ export default async function TournamentsPage() {
                 </div>
                 {t.description && <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>}
                 <div className="mt-auto pt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                  <span className="text-[10px] font-bold">{SERVER_LABELS[t.server]}</span>
                   <span className="flex items-center gap-1"><Swords className="size-3" />{MODE_LABELS[t.mode]}</span>
-                  <span className="flex items-center gap-1"><Users className="size-3" />Max {t.max_teams} teams</span>
+                  <span className="flex items-center gap-1"><Users className="size-3" />Max {t.max_teams}</span>
                   <span className="flex items-center gap-1"><CalendarDays className="size-3" />{FORMAT_LABELS[t.format]}</span>
                 </div>
                 {t.prize_pool && <p className="text-xs font-bold text-amber-400">🏆 {t.prize_pool}</p>}

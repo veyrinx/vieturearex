@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImageUploadButton } from "@/components/common/image-upload-button";
 import { cn } from "@/lib/utils";
 
 type Profile = { id: string; display_name: string | null; ff_id: string | null; email: string };
@@ -43,6 +44,7 @@ export default function MyTeamPage() {
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [server, setServer] = useState("vn");
   const [saving, setSaving] = useState(false);
 
   // Edit mode
@@ -99,7 +101,7 @@ export default function MyTeamPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ name: name.trim(), tag: tag.trim().toUpperCase(), logo_url: logoUrl.trim() || null }),
+        body: JSON.stringify({ name: name.trim(), tag: tag.trim().toUpperCase(), logo_url: logoUrl.trim() || null, server }),
       });
       const data = await res.json() as Team & { error?: string };
       if (!res.ok) { toast.error(data.error ?? "Tạo thất bại."); return; }
@@ -249,10 +251,11 @@ export default function MyTeamPage() {
                   <Input value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={40} required className="h-9 rounded-xl" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">URL Logo</label>
-                  <div className="flex gap-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Logo</label>
+                  <div className="flex gap-2 items-center">
                     {editLogo && <img src={editLogo} alt="" className="size-9 rounded-lg object-cover border border-border shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                     <Input value={editLogo} onChange={(e) => setEditLogo(e.target.value)} placeholder="https://..." className="h-9 rounded-xl flex-1" />
+                    <ImageUploadButton onUploaded={setEditLogo} bucket="logos" label="Tải" />
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -389,10 +392,23 @@ export default function MyTeamPage() {
               <Input value={tag} onChange={(e) => setTag(e.target.value.toUpperCase())} placeholder="vd: AREX" required minLength={2} maxLength={8} className="h-10 rounded-xl font-mono tracking-widest" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">URL logo team</label>
-              <div className="flex items-center gap-3">
-                {logoUrl && <img src={logoUrl} alt="" className="size-12 rounded-xl object-cover border border-border shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." className="h-10 rounded-xl" />
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Server</label>
+              <select
+                value={server}
+                onChange={(e) => setServer(e.target.value)}
+                className="h-10 w-full rounded-xl border border-border bg-muted px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="vn">🇻🇳 VN Server</option>
+                <option value="sg">🌏 SG/SEA Server</option>
+                <option value="global">🌐 Global</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Logo team</label>
+              <div className="flex items-center gap-2">
+                {logoUrl && <img src={logoUrl} alt="" className="size-10 rounded-xl object-cover border border-border shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." className="h-10 rounded-xl flex-1" />
+                <ImageUploadButton onUploaded={setLogoUrl} bucket="logos" label="Tải lên" />
               </div>
             </div>
             <Button type="submit" disabled={saving} className="h-10 w-full rounded-xl font-bold">

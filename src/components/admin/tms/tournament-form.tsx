@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS } from "@/lib/tms/types";
+import { ImageUploadButton } from "@/components/common/image-upload-button";
+import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/tms/types";
 import type { TmsTournament } from "@/lib/tms/types";
 
 type Props = { tournament?: TmsTournament };
@@ -26,6 +27,7 @@ export function TournamentForm({ tournament }: Props) {
     name: tournament?.name ?? "",
     slug: tournament?.slug ?? "",
     description: tournament?.description ?? "",
+    server: tournament?.server ?? "vn",
     mode: tournament?.mode ?? "4v4",
     format: tournament?.format ?? "hybrid",
     max_teams: tournament?.max_teams ?? 16,
@@ -106,6 +108,12 @@ export function TournamentForm({ tournament }: Props) {
           <textarea className={FIELD + " h-20 py-2 resize-none"} value={form.description} onChange={(e) => set("description", e.target.value)} />
         </div>
         <div>
+          <label className={LABEL}>Server</label>
+          <select className={FIELD} value={form.server} onChange={(e) => set("server", e.target.value)}>
+            {Object.entries(SERVER_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </div>
+        <div>
           <label className={LABEL}>Mode</label>
           <select className={FIELD} value={form.mode} onChange={(e) => set("mode", e.target.value)}>
             {Object.entries(MODE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -136,8 +144,16 @@ export function TournamentForm({ tournament }: Props) {
           <input className={FIELD} value={form.prize_pool} onChange={(e) => set("prize_pool", e.target.value)} placeholder="500.000đ + Rank Booster" />
         </div>
         <div className="sm:col-span-2">
-          <label className={LABEL}>Banner URL</label>
-          <input className={FIELD} value={form.banner_url} onChange={(e) => set("banner_url", e.target.value)} placeholder="https://..." />
+          <label className={LABEL}>Banner</label>
+          <div className="flex gap-2">
+            <input className={FIELD} value={form.banner_url} onChange={(e) => set("banner_url", e.target.value)} placeholder="https://... hoặc tải ảnh lên" />
+            <ImageUploadButton
+              endpoint="/api/admin/upload"
+              bucket="events"
+              onUploaded={(url) => set("banner_url", url)}
+              label="Tải lên"
+            />
+          </div>
           {form.banner_url && (
             <div className="mt-2 rounded-xl overflow-hidden aspect-[21/6] bg-muted border border-border">
               <img
