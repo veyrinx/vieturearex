@@ -12,16 +12,17 @@ const postSchema = z.object({
   parent_id: z.string().uuid().nullable().optional(),
 });
 
-type RouteContext = { params: { newsId: string } };
+type RouteContext = { params: Promise<{ newsId: string }> };
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
+  const { newsId } = await params;
   const supabase = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ comments: [] });
 
   const { data, error } = await supabase
     .from("news_comments")
     .select("id, user_id, display_name, content, status, created_at, parent_id")
-    .eq("news_id", params.newsId)
+    .eq("news_id", newsId)
     .eq("status", "approved")
     .order("created_at", { ascending: true })
     .limit(200) as { data: Array<{ id: string; user_id: string | null; display_name: string; content: string; status: string; created_at: string; parent_id: string | null }> | null; error: { code?: string } | null };
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const limited = enforceRateLimit(request, { name: "news-comment", limit: 5, windowMs: 60_000 });
   if (limited) return limited;
 
+  const { newsId } = await params;
   const supabase = createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ error: "Hệ thống bình luận tạm thời không khả dụng." }, { status: 503 });
 
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const { error } = await (supabase.from("news_comments") as ReturnType<typeof supabase.from>).insert({
-    news_id: params.newsId,
+    news_id: newsId,
     user_id: user.id,
     display_name: displayName,
     content: parsed.data.content,
@@ -78,8 +80,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   await logAdminActivity({
     action: "USER_COMMENTED",
     targetType: "NEWS",
-    targetId: params.newsId,
-    summary: `${displayName} (${user.email}) bình luận bài viết ${params.newsId}`,
+    targetId: newsId,
+    summary: `${displayName} (${user.email}) bình luận bài viết ${newsId}`,
   }).catch(() => {});
 
   // Award points for approved comment

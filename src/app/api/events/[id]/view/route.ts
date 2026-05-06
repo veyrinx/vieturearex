@@ -3,13 +3,13 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl } from "@/lib/supabase/env";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const limited = enforceRateLimit(request, { name: "event-view", limit: 5, windowMs: 60_000 });
   if (limited) return limited;
 
-  const { id } = params;
+  const { id } = await params;
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
 
   const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;

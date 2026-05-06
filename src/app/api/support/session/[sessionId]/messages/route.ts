@@ -11,16 +11,17 @@ const postSchema = z.object({
   anonymous_id: z.string().trim().min(1).max(60),
 });
 
-type RouteContext = { params: { sessionId: string } };
+type RouteContext = { params: Promise<{ sessionId: string }> };
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
+  const { sessionId } = await params;
   const supabase = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ messages: [] });
 
   const { data, error } = await supabase
     .from("support_messages")
     .select("id, sender_type, sender_name, content, created_at")
-    .eq("session_id", params.sessionId)
+    .eq("session_id", sessionId)
     .order("created_at", { ascending: true })
     .limit(200) as { data: Array<{ id: string; sender_type: string; sender_name: string; content: string; created_at: string }> | null; error: unknown };
 
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const limited = enforceRateLimit(request, { name: "support-msg", limit: 15, windowMs: 60_000 });
   if (limited) return limited;
 
+  const { sessionId } = await params;
   const db = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!db) return NextResponse.json({ error: "Không khả dụng." }, { status: 503 });
 
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const { error: insertErr } = await db
     .from("support_messages")
     .insert({
-      session_id: params.sessionId,
+      session_id: sessionId,
       sender_type: "user",
       sender_name,
       content: sanitizePlainText(content),
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   await db
     .from("support_sessions")
     .update({ last_message_at: new Date().toISOString() } as never)
-    .eq("id", params.sessionId);
+    .eq("id", sessionId);
 
   return NextResponse.json({ ok: true });
 }
