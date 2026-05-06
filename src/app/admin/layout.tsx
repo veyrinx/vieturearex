@@ -7,6 +7,8 @@ import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { siteConfig } from "@/lib/constants/site";
 
+export const dynamic = "force-dynamic";
+
 type AdminLayoutProps = {
   children: ReactNode;
 };
