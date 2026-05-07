@@ -1,3 +1,6 @@
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
 /** @type {import('next').NextConfig} */
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -10,6 +13,14 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   compiler: {
     removeConsole: isDevelopment ? false : { exclude: ["error"] },
+  },
+  webpack(config) {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      react: require.resolve("react"),
+      "react-dom": require.resolve("react-dom"),
+    };
+    return config;
   },
   images: {
     remotePatterns: [
