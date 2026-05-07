@@ -1,5 +1,7 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const isDevelopment = process.env.NODE_ENV !== "production";
@@ -17,8 +19,8 @@ const nextConfig = {
   webpack(config) {
     config.resolve.alias = {
       ...config.resolve.alias,
-      react: require.resolve("react"),
-      "react-dom": require.resolve("react-dom"),
+      react: path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     };
     return config;
   },
