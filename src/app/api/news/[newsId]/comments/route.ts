@@ -21,15 +21,25 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
   const { data, error } = await supabase
     .from("news_comments")
-    .select("id, user_id, display_name, content, status, created_at, parent_id, users(avatar_url)")
+    .select("id, user_id, display_name, content, status, created_at, parent_id")
     .eq("news_id", newsId)
     .eq("status", "approved")
     .order("created_at", { ascending: true })
-    .limit(200) as { data: Array<{ id: string; user_id: string | null; display_name: string; content: string; status: string; created_at: string; parent_id: string | null; users: { avatar_url: string | null } | null }> | null; error: { code?: string } | null };
+    .limit(200) as { data: Array<{ id: string; user_id: string | null; display_name: string; content: string; status: string; created_at: string; parent_id: string | null }> | null; error: { code?: string } | null };
 
   if (error) return NextResponse.json({ comments: [] });
-  const comments = (data ?? []).map(({ users, ...c }) => ({ ...c, avatar_url: users?.avatar_url ?? null }));
-  return NextResponse.json({ comments });
+
+  const comments = data ?? [];
+  const userIds = Array.from(new Set(comments.map((c) => c.user_id).filter(Boolean))) as string[];
+  const avatarMap: Record<string, string | null> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("users").select("id, avatar_url").in("id", userIds) as
+      { data: Array<{ id: string; avatar_url: string | null }> | null };
+    (profiles ?? []).forEach((p) => { avatarMap[p.id] = p.avatar_url; });
+  }
+
+  return NextResponse.json({ comments: comments.map((c) => ({ ...c, avatar_url: c.user_id ? (avatarMap[c.user_id] ?? null) : null })) });
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
