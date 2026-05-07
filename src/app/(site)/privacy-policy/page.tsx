@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactElement } from "react";
 import Link from "next/link";
 import { CopyableLegalLink } from "../../../components/CopyableLegalLink";
 import { Reveal } from "@/components/common/reveal";
@@ -144,7 +145,7 @@ const TOC = [
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function Card({ id, num, title, Icon, tag, children }: {
   id: string; num: string; title: string;
-  Icon: () => JSX.Element; tag?: string; children: React.ReactNode;
+  Icon: () => ReactElement; tag?: string; children: React.ReactNode;
 }) {
   const revealDelay = Math.min((Number(num) - 1) * 0.025, 0.16);
 

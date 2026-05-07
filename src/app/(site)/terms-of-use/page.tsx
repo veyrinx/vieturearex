@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactElement } from "react";
 import Link from "next/link";
 import { CopyableLegalLink } from "../../../components/CopyableLegalLink";
 import { Reveal } from "@/components/common/reveal";
@@ -131,7 +132,7 @@ const TOC = [
 ];
 
 function Card({ id, num, title, Icon, tag, tagColor = "blue", children }: {
-  id: string; num: string; title: string; Icon: () => JSX.Element;
+  id: string; num: string; title: string; Icon: () => ReactElement;
   tag?: string; tagColor?: "blue" | "amber" | "red" | "green";
   children: React.ReactNode;
 }) {
