@@ -10,7 +10,7 @@ import { vi } from "date-fns/locale";
 import { RegisterButton } from "@/components/tms/register-button";
 import { TournamentBracket } from "@/components/tms/bracket";
 import { StreamEmbed } from "@/components/tms/stream-embed";
-import { SERVER_LABELS } from "@/lib/tms/types";
+import { TmsServerBadge } from "@/components/tms/server-badge";
 import { TeamLogo, TournamentBanner } from "@/components/common/safe-image";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +60,7 @@ export default async function TournamentDetailPage({ params }: { params: Promise
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">{tournament.name}</h1>
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span className="font-semibold">{SERVER_LABELS[tournament.server] ?? tournament.server}</span>
+            <TmsServerBadge server={tournament.server} variant="full" />
             <span className="flex items-center gap-1"><Swords className="size-3" />{MODE_LABELS[tournament.mode]}</span>
             <span className="flex items-center gap-1"><ClipboardList className="size-3" />{FORMAT_LABELS[tournament.format]}</span>
             <span className="flex items-center gap-1"><Users className="size-3" />{approvedTeams.length} / {tournament.max_teams} teams</span>

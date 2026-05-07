@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap, Globe } from "lucide-react";
+import { TmsServerBadge } from "@/components/tms/server-badge";
 import { getTmsTournaments } from "@/lib/tms/data";
 import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/tms/types";
 import type { TmsServer } from "@/lib/tms/types";
@@ -159,7 +160,7 @@ export default async function TournamentsPage({
                 </div>
                 {t.description && <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>}
                 <div className="mt-auto pt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                  <span className="text-[10px] font-bold">{SERVER_LABELS[t.server]}</span>
+                  <TmsServerBadge server={t.server} variant="full" />
                   <span className="flex items-center gap-1"><Swords className="size-3" />{MODE_LABELS[t.mode]}</span>
                   <span className="flex items-center gap-1"><Users className="size-3" />Max {t.max_teams}</span>
                   <span className="flex items-center gap-1"><CalendarDays className="size-3" />{FORMAT_LABELS[t.format]}</span>
