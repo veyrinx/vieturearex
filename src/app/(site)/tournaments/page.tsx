@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap, Globe } from "lucide-react";
 import { TmsServerBadge } from "@/components/tms/server-badge";
 import { getTmsTournaments } from "@/lib/tms/data";
@@ -33,10 +32,13 @@ type ServerTab = {
   icon?: "globe";
 };
 
+const VN_FLAG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'%3E%3Crect width='30' height='20' fill='%23DA251D'/%3E%3Cpolygon points='15,3.5 16.9,9.3 23,9.3 18.1,13 20,18.8 15,15.1 10,18.8 11.9,13 7,9.3 13.1,9.3' fill='%23FFCD00'/%3E%3C/svg%3E`;
+const SG_FLAG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'%3E%3Crect width='30' height='20' fill='white'/%3E%3Crect width='30' height='10' fill='%23EF3340'/%3E%3Ccircle cx='7' cy='5' r='3' fill='white'/%3E%3Ccircle cx='8.3' cy='5' r='2.4' fill='%23EF3340'/%3E%3Cpolygon points='12,3.5 12.5,5 14,5 12.8,5.9 13.3,7.4 12,6.5 10.7,7.4 11.2,5.9 10,5 11.5,5' fill='white'/%3E%3C/svg%3E`;
+
 const SERVER_TABS: ServerTab[] = [
   { key: "all",    label: "Tất cả" },
-  { key: "vn",     label: "VN",     flag: "https://flagcdn.com/w20/vn.png" },
-  { key: "sg",     label: "SG/SEA", flag: "https://flagcdn.com/w20/sg.png" },
+  { key: "vn",     label: "VN",     flag: VN_FLAG },
+  { key: "sg",     label: "SG/SEA", flag: SG_FLAG },
   { key: "global", label: "Global", icon: "globe" },
 ];
 
@@ -112,14 +114,8 @@ export default async function TournamentsPage({
             )}
           >
             {flag && (
-              <Image
-                src={flag}
-                alt={label}
-                width={20}
-                height={14}
-                className="rounded-sm object-cover"
-                unoptimized
-              />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={flag} alt={label} width={20} height={14} className="rounded-sm" />
             )}
             {icon === "globe" && <Globe className="size-3.5" />}
             {label}
