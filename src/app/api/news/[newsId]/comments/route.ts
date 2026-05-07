@@ -21,15 +21,15 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
   const { data, error } = await supabase
     .from("news_comments")
-    .select("id, user_id, display_name, content, status, created_at, parent_id")
+    .select("id, user_id, display_name, content, status, created_at, parent_id, users(avatar_url)")
     .eq("news_id", newsId)
     .eq("status", "approved")
     .order("created_at", { ascending: true })
-    .limit(200) as { data: Array<{ id: string; user_id: string | null; display_name: string; content: string; status: string; created_at: string; parent_id: string | null }> | null; error: { code?: string } | null };
+    .limit(200) as { data: Array<{ id: string; user_id: string | null; display_name: string; content: string; status: string; created_at: string; parent_id: string | null; users: { avatar_url: string | null } | null }> | null; error: { code?: string } | null };
 
-  // Table missing or any DB error → return empty silently
   if (error) return NextResponse.json({ comments: [] });
-  return NextResponse.json({ comments: data ?? [] });
+  const comments = (data ?? []).map(({ users, ...c }) => ({ ...c, avatar_url: users?.avatar_url ?? null }));
+  return NextResponse.json({ comments });
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {

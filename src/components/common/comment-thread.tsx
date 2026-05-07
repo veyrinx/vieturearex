@@ -14,6 +14,7 @@ export type Comment = {
   id: string;
   user_id: string | null;
   display_name: string;
+  avatar_url: string | null;
   content: string;
   created_at: string;
   status: "pending" | "approved" | "rejected";
@@ -68,11 +69,11 @@ function ReplyItem({ reply }: { reply: Comment }) {
     <div className="flex gap-2.5">
       {reply.user_id ? (
         <Link href={`/u/${reply.user_id}`} className="shrink-0 mt-0.5">
-          <Avatar name={reply.display_name} size="sm" />
+          <Avatar name={reply.display_name} src={reply.avatar_url} size="sm" />
         </Link>
       ) : (
         <div className="mt-0.5">
-          <Avatar name={reply.display_name} size="sm" />
+          <Avatar name={reply.display_name} src={reply.avatar_url} size="sm" />
         </div>
       )}
       <div className="min-w-0 flex-1 rounded-xl bg-muted/40 px-3 py-2">
@@ -121,10 +122,10 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
       <div className="flex flex-col items-center gap-1 shrink-0">
         {comment.user_id ? (
           <Link href={`/u/${comment.user_id}`}>
-            <Avatar name={comment.display_name} />
+            <Avatar name={comment.display_name} src={comment.avatar_url} />
           </Link>
         ) : (
-          <Avatar name={comment.display_name} />
+          <Avatar name={comment.display_name} src={comment.avatar_url} />
         )}
         {(repliesOpen && replies.length > 0) && (
           <div className="w-0.5 flex-1 bg-border/60 rounded-full" />
