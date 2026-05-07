@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap } from "lucide-react";
+import Image from "next/image";
+import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap, Globe } from "lucide-react";
 import { getTmsTournaments } from "@/lib/tms/data";
 import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/tms/types";
 import type { TmsServer } from "@/lib/tms/types";
@@ -24,11 +25,18 @@ const statusColor: Record<string, string> = {
   draft:       "border-border bg-muted text-muted-foreground",
 };
 
-const SERVER_TABS: Array<{ key: TmsServer | "all"; label: string }> = [
-  { key: "all", label: "Tất cả" },
-  { key: "vn",     label: "🇻🇳 VN" },
-  { key: "sg",     label: "🌏 SG/SEA" },
-  { key: "global", label: "🌐 Global" },
+type ServerTab = {
+  key: TmsServer | "all";
+  label: string;
+  flag?: string;
+  icon?: "globe";
+};
+
+const SERVER_TABS: ServerTab[] = [
+  { key: "all",    label: "Tất cả" },
+  { key: "vn",     label: "VN",     flag: "https://flagcdn.com/w20/vn.png" },
+  { key: "sg",     label: "SG/SEA", flag: "https://flagcdn.com/w20/sg.png" },
+  { key: "global", label: "Global", icon: "globe" },
 ];
 
 const ADMIN_ROLES = ["super_admin", "admin", "it", "manager"];
@@ -91,20 +99,31 @@ export default async function TournamentsPage({
 
       {/* Server filter tabs */}
       <div className="flex gap-1.5 flex-wrap">
-        {SERVER_TABS.map(({ key, label }) => (
+        {SERVER_TABS.map(({ key, label, flag, icon }) => (
           <Link
             key={key}
             href={key === "all" ? "/tournaments" : `/tournaments?server=${key}`}
             className={cn(
-              "rounded-xl border px-4 py-2 text-xs font-semibold transition-colors",
+              "inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors",
               serverFilter === key
                 ? "border-amber-500/60 bg-amber-500/15 text-amber-400"
                 : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
             )}
           >
+            {flag && (
+              <Image
+                src={flag}
+                alt={label}
+                width={20}
+                height={14}
+                className="rounded-sm object-cover"
+                unoptimized
+              />
+            )}
+            {icon === "globe" && <Globe className="size-3.5" />}
             {label}
             {key !== "all" && (
-              <span className="ml-1.5 text-[10px] opacity-60">
+              <span className="text-[10px] opacity-60">
                 {tournaments.filter((t) => t.server === key).length}
               </span>
             )}
