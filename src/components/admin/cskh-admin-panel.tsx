@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, RefreshCw, CheckCircle, MessageCircle, Bot } from "lucide-react";
+import { Send, RefreshCw, CheckCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -199,7 +199,11 @@ export function CskhAdminPanel() {
                     return (
                       <div key={msg.id} className={cn("flex flex-col gap-0.5", isAdmin ? "items-end" : "items-start")}>
                         <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-                          {isAi && <Bot className="size-3 text-violet-500" />}
+                          {isAi && (
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-violet-500">
+                              <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 14l1.25-2.75L23 19l-2.75-1.25L19 15l-1.25 2.75L15 19l2.75 1.25zM11.5 9.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12z" />
+                            </svg>
+                          )}
                           {displayName}
                           {isAi && (
                             <span className="rounded-full bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400">
