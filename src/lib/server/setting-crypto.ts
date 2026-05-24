@@ -23,6 +23,8 @@ export const SENSITIVE_KEYS = new Set([
   "ads.slot_article",
   "integrations.lark_webhook_url",
   "integrations.lark_alerts_webhook_url",
+  "integrations.telegram_bot_token",
+  "integrations.telegram_chat_id",
   "tms.payment_info",
 ]);
 

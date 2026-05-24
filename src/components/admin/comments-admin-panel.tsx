@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 
 type Comment = {
   id: string;
-  news_id: string;
+  news_id?: string;
+  event_id?: string;
   user_id: string | null;
   display_name: string;
   content: string;
@@ -22,6 +23,7 @@ type Comment = {
 };
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
+type CommentSource = "news_comments" | "event_comments";
 
 const STATUS_META: Record<StatusFilter, { label: string; color: string; bg: string }> = {
   pending:  { label: "Chờ duyệt",  color: "text-amber-500",  bg: "bg-amber-500/10 border-amber-500/30" },
@@ -49,8 +51,8 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(diff / 86400)} ngày trước`;
 }
 
-async function fetchComments(status: StatusFilter): Promise<Comment[]> {
-  const res = await fetch(`/api/admin/comments?status=${status}`, { cache: "no-store" });
+async function fetchComments(status: StatusFilter, source: CommentSource): Promise<Comment[]> {
+  const res = await fetch(`/api/admin/comments?status=${status}&table=${source}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed");
   const data = await res.json() as { comments: Comment[] };
   return data.comments ?? [];
@@ -59,12 +61,13 @@ async function fetchComments(status: StatusFilter): Promise<Comment[]> {
 export function CommentsAdminPanel() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+  const [source, setSource] = useState<CommentSource>("news_comments");
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const { data: comments = [], isLoading, isFetching, dataUpdatedAt } = useQuery({
-    queryKey: ["admin-comments", statusFilter],
-    queryFn: () => fetchComments(statusFilter),
+    queryKey: ["admin-comments", statusFilter, source],
+    queryFn: () => fetchComments(statusFilter, source),
     staleTime: 0,
     refetchOnMount: true,
     refetchInterval: 30_000,
@@ -75,7 +78,7 @@ export function CommentsAdminPanel() {
     const res = await fetch("/api/admin/comments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({ id, status, table: source }),
     });
     setLoadingId(null);
     if (!res.ok) { toast.error("Không thể cập nhật."); return; }
@@ -87,7 +90,7 @@ export function CommentsAdminPanel() {
     const res = await fetch("/api/admin/comments", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id, table: source }),
     });
     if (!res.ok) { toast.error("Không thể xóa."); return; }
     toast.success("Đã xóa bình luận.");
@@ -103,6 +106,22 @@ export function CommentsAdminPanel() {
 
   return (
     <div className="space-y-4">
+      {/* Source tabs */}
+      <div className="flex items-center gap-2">
+        {(["news_comments", "event_comments"] as CommentSource[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => { setSource(s); setStatusFilter("pending"); }}
+            className={cn(
+              "rounded-xl border px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors",
+              source === s ? "border-primary/30 bg-primary/10 text-primary dark:text-amber-300" : "border-border bg-card text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {s === "news_comments" ? "Tin tức" : "Sự kiện"}
+          </button>
+        ))}
+      </div>
+
       {/* Status tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {(["pending", "approved", "rejected", "all"] as StatusFilter[]).map((s) => {
@@ -199,7 +218,7 @@ export function CommentsAdminPanel() {
                       </span>
                       <span className="text-[11px] text-muted-foreground">{timeAgo(c.created_at)}</span>
                       <span className="ml-auto text-[10px] text-muted-foreground font-mono">
-                        news/{c.news_id.slice(0, 8)}
+                        {c.event_id ? `event/${c.event_id.slice(0, 8)}` : c.news_id ? `news/${c.news_id.slice(0, 8)}` : "—"}
                       </span>
                     </div>
                     <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">{c.content}</p>

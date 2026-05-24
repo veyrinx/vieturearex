@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
+import { sendTelegramNotification } from "@/lib/server/telegram-notify";
 import { getSettings } from "@/lib/data/content-service";
 import { hasCapability, parseRoleCapabilities } from "@/lib/permissions";
 
@@ -101,14 +102,16 @@ export async function POST(request: NextRequest) {
       targetId: parsed.data.userId,
       summary: `Từ chối yêu cầu gia nhập team ${target.email}`,
     }).catch(() => {});
-    void sendLarkNotification({
+    const rejectPayload = {
       title: "❌ Từ chối yêu cầu gia nhập team",
       lines: [
         { label: "Tên", value: target.display_name || "—" },
         { label: "Email", value: target.email },
         { label: "Người từ chối", value: actorRole },
       ],
-    }).catch(() => null);
+    };
+    void sendLarkNotification(rejectPayload).catch(() => null);
+    void sendTelegramNotification(rejectPayload).catch(() => null);
     return NextResponse.json({ ok: true });
   }
 
@@ -136,13 +139,15 @@ export async function POST(request: NextRequest) {
       targetId: parsed.data.userId,
       summary: `IT duyệt vòng 1: ${target.email} — chờ admin duyệt cuối`,
     }).catch(() => {});
-    void sendLarkNotification({
+    const itApprovePayload = {
       title: "🟡 IT đã duyệt — chờ admin duyệt cuối",
       lines: [
         { label: "Tên", value: target.display_name || "—" },
         { label: "Email", value: target.email },
       ],
-    }).catch(() => null);
+    };
+    void sendLarkNotification(itApprovePayload).catch(() => null);
+    void sendTelegramNotification(itApprovePayload).catch(() => null);
     return NextResponse.json({ ok: true, next: "pending_admin" });
   }
 
@@ -177,14 +182,16 @@ export async function POST(request: NextRequest) {
       targetId: parsed.data.userId,
       summary: `Admin duyệt vòng cuối: ${target.email}${resetSent ? " — đã gửi email đặt mật khẩu" : ""}`,
     }).catch(() => {});
-    void sendLarkNotification({
+    const adminApprovePayload = {
       title: "✅ Admin đã duyệt — đã gửi email đặt mật khẩu",
       lines: [
         { label: "Tên", value: target.display_name || "—" },
         { label: "Email", value: target.email },
         { label: "Email reset password", value: resetSent ? "đã gửi" : "thất bại" },
       ],
-    }).catch(() => null);
+    };
+    void sendLarkNotification(adminApprovePayload).catch(() => null);
+    void sendTelegramNotification(adminApprovePayload).catch(() => null);
     return NextResponse.json({ ok: true, resetSent });
   }
 

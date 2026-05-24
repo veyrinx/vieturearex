@@ -7,12 +7,19 @@ import { useSettingsQuery } from "@/hooks/use-settings-query";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const SITES = [
+  { id: "arex" as const, label: "AREX", domain: "arexnetwork.site", color: "text-blue-500", ring: "ring-blue-500/30 bg-blue-500/5" },
+  { id: "isc" as const,  label: "ISC NETWORK", domain: "iscnetwork.site", color: "text-violet-500", ring: "ring-violet-500/30 bg-violet-500/5" },
+];
 
 export function SettingsAdminPanel() {
   const queryClient = useQueryClient();
   const { data: settings = [], isLoading } = useSettingsQuery();
   const [jsonOpen, setJsonOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeSiteId, setActiveSiteId] = useState<"arex" | "isc">("arex");
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["settings"] });
@@ -57,6 +64,28 @@ export function SettingsAdminPanel() {
         </Button>
       </div>
 
+      {/* Site switcher */}
+      <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1 w-fit">
+        {SITES.map(({ id, label, domain, color, ring }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveSiteId(id)}
+            className={cn(
+              "flex flex-col items-center gap-0.5 rounded-lg px-5 py-2 transition-all",
+              activeSiteId === id
+                ? `bg-background shadow-sm ring-1 ${ring}`
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className={cn("text-[11px] font-bold uppercase tracking-wider", activeSiteId === id && color)}>
+              {label}
+            </span>
+            <span className="text-[10px] text-muted-foreground">{domain}</span>
+          </button>
+        ))}
+      </div>
+
       {jsonOpen && (
         <div className="rounded-xl border border-border bg-muted/50 overflow-hidden">
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
@@ -81,7 +110,7 @@ export function SettingsAdminPanel() {
         </div>
       )}
 
-      <SettingsForm settings={settings} onSaved={refresh} />
+      <SettingsForm settings={settings} onSaved={refresh} siteId={activeSiteId} />
     </div>
   );
 }

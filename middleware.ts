@@ -49,6 +49,8 @@ function notFound(): NextResponse {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const siteHostname = request.headers.get("host") ?? "";
+  const siteHeaders = { "x-site-hostname": siteHostname };
 
   // ── Sitemap / robots — Googlebot or internal token only ──────────────
   if (CRAWLER_ONLY_PATHS.includes(pathname)) {
@@ -66,10 +68,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/sw.js") ||
     pathname.startsWith("/fonts")
   ) {
-    return await updateSession(request);
+    return await updateSession(request, siteHeaders);
   }
 
-  const response = await updateSession(request);
+  const response = await updateSession(request, siteHeaders);
 
   const isAdminPath = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   const isApiPath = pathname.startsWith("/api/");

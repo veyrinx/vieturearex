@@ -4,12 +4,22 @@
       "NODE_OPTIONS": "--max-old-space-size=4096"
     }
   },
+  "regions": ["sin1"],
   "crons": [
     {
       "path": "/api/cron/daily-report",
       "schedule": "0 1 * * *"
     }
   ],
+  "functions": {
+    "src/app/api/admin/sql/route.ts": { "maxDuration": 30 },
+    "src/app/api/admin/settings/migrate-encrypt/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/daily-report/route.ts": { "maxDuration": 30 },
+    "src/app/api/streams/sync/route.ts": { "maxDuration": 30 },
+    "src/app/api/tms/tournaments/[id]/generate-matches/route.ts": { "maxDuration": 30 },
+    "src/app/api/upload/route.ts": { "maxDuration": 30 },
+    "src/app/api/admin/upload/route.ts": { "maxDuration": 30 }
+  },
   "headers": [
     {
       "source": "/dmca-validation.html",
@@ -21,6 +31,24 @@
         {
           "key": "Cache-Control",
           "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }

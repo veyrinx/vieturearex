@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants/site";
 
+const DEFAULT_SITE_NAME = siteConfig.shortName;
+
 const ICON_LIGHT_DEFAULT =
   "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
 const ICON_DARK_DEFAULT =
@@ -29,9 +31,10 @@ const ICON_DARK_DEFAULT =
 type SiteNavbarProps = {
   logoLight?: string;
   logoDark?: string;
+  siteName?: string;
 };
 
-export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
+export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }: SiteNavbarProps) {
   const iconLight = logoLight || ICON_LIGHT_DEFAULT;
   const iconDark = logoDark || ICON_DARK_DEFAULT;
   const pathname = usePathname();
@@ -55,7 +58,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
         {/* ── Logo ── */}
         <Link
           href="/"
-          aria-label={siteConfig.shortName}
+          aria-label={siteName}
           className="flex shrink-0 items-center gap-2.5"
         >
           <motion.div
@@ -65,7 +68,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
           >
             <Image
               src={iconLight}
-              alt={siteConfig.shortName}
+              alt={siteName}
               width={36}
               height={36}
               priority
@@ -73,7 +76,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
             />
             <Image
               src={iconDark}
-              alt={siteConfig.shortName}
+              alt={siteName}
               width={36}
               height={36}
               priority
@@ -82,7 +85,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
           </motion.div>
           <div className="hidden flex-col leading-none sm:flex">
             <span className="font-heading text-[0.72rem] font-black uppercase tracking-[0.14em] text-foreground">
-              {siteConfig.shortName}
+              {siteName}
             </span>
             <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
               Community Hub
@@ -152,7 +155,7 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
             <SheetContent side="right" className="w-72 border-border bg-card text-foreground">
               <SheetHeader className="pb-2">
                 <SheetTitle className="font-heading text-sm uppercase tracking-[0.1em] text-foreground">
-                  {siteConfig.name}
+                  {siteName}
                 </SheetTitle>
                 <SheetDescription className="text-xs text-muted-foreground">
                   Điều hướng nhanh tới các khu vực cộng đồng.
@@ -163,21 +166,21 @@ export function SiteNavbar({ logoLight, logoDark }: SiteNavbarProps) {
               <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
                 <Image
                   src={iconLight}
-                  alt={siteConfig.shortName}
+                  alt={siteName}
                   width={40}
                   height={40}
                   className="block size-10 rounded-xl object-contain dark:hidden"
                 />
                 <Image
                   src={iconDark}
-                  alt={siteConfig.shortName}
+                  alt={siteName}
                   width={40}
                   height={40}
                   className="hidden size-10 rounded-xl object-contain dark:block"
                 />
                 <div className="leading-none">
                   <p className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
-                    {siteConfig.shortName}
+                    {siteName}
                   </p>
                   <p className="text-[0.62rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Community Hub

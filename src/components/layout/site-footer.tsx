@@ -9,6 +9,7 @@ import {
 import { getSettings } from "@/lib/data/content-service";
 import { siteConfig } from "@/lib/constants/site";
 import { buildSettingsMap, resolveSocialLinks } from "@/lib/utils/site-settings";
+import { getSiteConfig } from "@/lib/server/get-site-config";
 
 const DEFAULT_LOGO_LIGHT = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035";
 const DEFAULT_LOGO_DARK = "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/w21232026.png?updatedAt=1774797861441";
@@ -41,12 +42,13 @@ const footerLegal = [
 ];
 
 export async function SiteFooter() {
-  const settingsMap = buildSettingsMap(await getSettings());
-  const resolvedSocialLinks = resolveSocialLinks(settingsMap);
+  const [settings, activeSite] = await Promise.all([getSettings(), getSiteConfig()]);
+  const settingsMap = buildSettingsMap(settings, activeSite.id);
+  const resolvedSocialLinks = resolveSocialLinks(settingsMap, activeSite.id);
 
   const logoLight = settingsMap["branding.logo_light_url"] || DEFAULT_LOGO_LIGHT;
   const logoDark = settingsMap["branding.logo_dark_url"] || DEFAULT_LOGO_DARK;
-  const siteName = settingsMap["branding.site_name"] || siteConfig.shortName;
+  const siteName = settingsMap["branding.site_name"] || activeSite.shortName;
 
   const socialLinks = [
     { label: "Facebook", href: resolvedSocialLinks.facebook, icon: FacebookBrandIcon },
@@ -100,7 +102,7 @@ export async function SiteFooter() {
             </Link>
 
             <p className="text-sm leading-6 text-muted-foreground max-w-[300px]">
-              {settingsMap["site.description"] ?? siteConfig.description}
+              {settingsMap["site.description"] ?? activeSite.description}
             </p>
 
             {/* Social icons */}
@@ -185,7 +187,7 @@ export async function SiteFooter() {
                   Website
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {siteConfig.url.replace("https://", "")}
+                  {activeSite.url.replace("https://", "")}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-background/50 px-3 py-2.5">

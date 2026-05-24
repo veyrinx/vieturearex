@@ -1,4 +1,5 @@
 export const siteConfig = {
+  id: "arex",
   name: "Arex - Trang Tin Tức Cộng Đồng Free Fire",
   shortName: "Arex",
   description:
@@ -16,6 +17,42 @@ export const siteConfig = {
   },
   contactEmail: "admin@vieture.tech",
 } as const;
+
+// ── ISC Network config ─────────────────────────────────────────────────────
+// TODO: cập nhật favicon, logo, links của ISC bên dưới
+export const iscConfig = {
+  id: "isc",
+  name: "ISC Network - Trang Tin Tức Cộng Đồng Free Fire",
+  shortName: "ISC Network",
+  description:
+    "ISC Network – Cổng thông tin cộng đồng Free Fire. Cập nhật nhanh nhất các sự kiện in-game, tin tức Esports chuyên sâu và các hoạt động cộng đồng nổi bật.",
+  url: "https://iscnetwork.site",
+  productionUrl: "https://iscnetwork.site",
+  ogImage: "/og-image.png",
+  favicon: "https://ik.imagekit.io/VieTureImg/d4c92801-d332-448f-8b28-460fa3ded272.jfif",
+  sidebarIcon: "https://ik.imagekit.io/VieTureImg/d4c92801-d332-448f-8b28-460fa3ded272.jfif",
+  links: {
+    community: "https://zalo.me/g/ngjnze275",
+    facebook: "https://facebook.com",
+    tiktok: "https://tiktok.com",
+    youtube: "https://youtube.com",
+  },
+  contactEmail: "admin@iscnetwork.site",
+} as const;
+
+type SiteConfig = typeof siteConfig;
+
+const SITE_CONFIGS: Record<string, SiteConfig> = {
+  "arexnetwork.site": siteConfig,
+  "www.arexnetwork.site": siteConfig,
+  "iscnetwork.site": iscConfig,
+  "www.iscnetwork.site": iscConfig,
+};
+
+export function getSiteConfigByHostname(hostname: string): SiteConfig {
+  const clean = hostname.split(":")[0].toLowerCase();
+  return SITE_CONFIGS[clean] ?? siteConfig;
+}
 
 export const navItems = [
   { title: "TRANG CHỦ", href: "/" },
@@ -37,6 +74,7 @@ export const adminNavItems = [
   { title: "NGƯỜI DÙNG", href: "/admin/users" },
   { title: "CSKH", href: "/admin/cskh" },
   { title: "BÌNH LUẬN", href: "/admin/comments" },
+  { title: "BÌNH CHỌN", href: "/admin/polls" },
   { title: "ĐÁNH GIÁ", href: "/admin/ratings" },
   { title: "POP-UP", href: "/admin/popup" },
   { title: "NHẬT KÝ", href: "/admin/logs" },

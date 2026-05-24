@@ -8,6 +8,44 @@ import {
   getTmsTournamentById, getTmsTeam,
 } from "@/lib/tms/data";
 import { createNotification } from "@/lib/server/notifications";
+import { siteConfig } from "@/lib/constants/site";
+
+async function sendRegistrationEmail(to: string, teamTag: string, teamName: string, tournamentName: string, tournamentSlug: string) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailPass) return;
+  try {
+    const nodemailer = await import("nodemailer");
+    const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailPass } });
+    const tournamentUrl = `${siteConfig.url}/tournaments/${tournamentSlug}`;
+    await transporter.sendMail({
+      from: `"Arex TMS" <${gmailUser}>`,
+      to,
+      subject: `[Arex] Đăng ký giải đấu ${tournamentName} — Chờ duyệt`,
+      html: `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0f;padding:40px 16px;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#111118;border:1px solid #1e1e2e;border-radius:16px;overflow:hidden;max-width:560px;width:100%;">
+<tr><td style="background:linear-gradient(135deg,#0052ff 0%,#003acc 100%);padding:32px 36px;">
+<p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.2em;color:rgba(255,255,255,0.6);text-transform:uppercase;">AREX TMS</p>
+<h1 style="margin:8px 0 0;font-size:22px;font-weight:800;color:#fff;letter-spacing:0.04em;text-transform:uppercase;">Đăng Ký Thành Công</h1>
+</td></tr>
+<tr><td style="padding:32px 36px;">
+<p style="margin:0 0 16px;font-size:15px;color:#e8e8f0;">Team <strong>[${teamTag}] ${teamName}</strong> đã đăng ký tham dự giải đấu <strong>${tournamentName}</strong>.</p>
+<p style="margin:0 0 24px;font-size:14px;color:#9999b0;line-height:1.6;">Đăng ký đang chờ admin xét duyệt. Bạn sẽ nhận được thông báo qua ứng dụng khi được duyệt hoặc từ chối.</p>
+<a href="${tournamentUrl}" style="display:inline-block;background:#0052ff;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:10px;letter-spacing:0.06em;">XEM GIẢI ĐẤU</a>
+</td></tr>
+<tr><td style="background:#0d0d16;border-top:1px solid #1e1e2e;padding:20px 36px;">
+<p style="margin:0;font-size:11px;color:#4a4a6a;text-align:center;">© ${new Date().getFullYear()} AREX · <a href="${siteConfig.url}" style="color:#0052ff;text-decoration:none;">${siteConfig.url}</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+  } catch { /* non-fatal */ }
+}
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,6 +84,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const reg = await registerTeam(tournamentId, team_id);
 
+    // Fetch captain email for confirmation
+    const { data: captainUser } = await untypedFrom(db, "users")
+      .select("email")
+      .eq("id", auth.userId)
+      .single() as { data: { email: string } | null };
+
     // Auto-approve if tournament has setting enabled
     if (tournamentRow.auto_approve_registrations) {
       await updateRegistrationStatus(reg.id, "approved");
@@ -58,9 +102,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         entity_id: tournamentId,
         entity_url: `/tournaments/${tournamentRow.slug}`,
       });
+      if (captainUser?.email) {
+        void sendRegistrationEmail(captainUser.email, teamRow.tag, teamRow.name, tournamentRow.name, tournamentRow.slug);
+      }
       return NextResponse.json({ ...reg, status: "approved" }, { status: 201 });
     }
 
+    if (captainUser?.email) {
+      void sendRegistrationEmail(captainUser.email, teamRow.tag, teamRow.name, tournamentRow.name, tournamentRow.slug);
+    }
     return NextResponse.json(reg, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });

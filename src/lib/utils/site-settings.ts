@@ -1,7 +1,24 @@
 import type { SiteSetting } from "@/lib/types/content";
-import { siteConfig } from "@/lib/constants/site";
+import { siteConfig, iscConfig } from "@/lib/constants/site";
 
 export const SENSITIVE_CONFIGURED_MASK = "__configured__";
+
+// Keys that are per-site (each domain has its own value stored with "isc:" prefix)
+export const SITE_SPECIFIC_SETTING_KEYS = new Set([
+  "branding.site_name", "branding.favicon_url", "branding.logo_light_url", "branding.logo_dark_url",
+  "seo.default_title", "seo.default_description",
+  "home.hero.title",
+  "home.background.desktop_urls", "home.background.mobile_urls",
+  "home.background.desktop_url", "home.background.mobile_url",
+  "home.background.transition_effect", "home.background.interval_seconds", "home.background.transition_seconds",
+  "home.events_bg.image_url", "home.events_bg.video_url", "home.events_bg.caption",
+  "home.ads.left.image_url", "home.ads.left.link_url",
+  "home.ads.right.image_url", "home.ads.right.link_url",
+  "social.facebook_url", "social.tiktok_url", "social.youtube_url", "social.email",
+  "community.launch_date", "community.facebook_members", "community.youtube_subscribers",
+  "community.tiktok_followers", "community.zalo_members",
+  "site.description",
+]);
 
 export const SENSITIVE_FORM_KEYS = new Set([
   "mail.smtp_pass",
@@ -17,6 +34,8 @@ export const SENSITIVE_FORM_KEYS = new Set([
   "ads.slot_article",
   "integrations.lark_webhook_url",
   "integrations.lark_alerts_webhook_url",
+  "integrations.telegram_bot_token",
+  "integrations.telegram_chat_id",
   "tms.payment_info",
 ]);
 
@@ -69,6 +88,9 @@ export const settingsFormFieldOrder = [
   "integrations.lark_alerts_webhook_url",
   "integrations.lark_bot_name",
   "integrations.lark_daily_report",
+  "integrations.telegram_bot_token",
+  "integrations.telegram_chat_id",
+  "integrations.telegram_daily_report",
   "mail.smtp_host",
   "mail.smtp_port",
   "mail.smtp_user",
@@ -136,11 +158,35 @@ export const defaultSiteSettingValues: Record<string, string> = {
   "site.maintenance_message": "Website đang được bảo trì. Vui lòng quay lại sau.",
   "site.maintenance_end_time": "",
   "site.discord_webhook": "",
+  "integrations.telegram_bot_token": "",
+  "integrations.telegram_chat_id": "",
+  "integrations.telegram_daily_report": "true",
   "community.launch_date": "",
   "community.facebook_members": "",
   "community.youtube_subscribers": "",
   "community.tiktok_followers": "",
   "community.zalo_members": "",
+};
+
+// Default values for ISC Network (site-specific keys only)
+export const defaultIscSettingValues: Record<string, string> = {
+  "branding.site_name": iscConfig.shortName,
+  "branding.favicon_url": iscConfig.favicon,
+  "branding.logo_light_url": iscConfig.sidebarIcon,
+  "branding.logo_dark_url": iscConfig.favicon,
+  "seo.default_title": iscConfig.name,
+  "seo.default_description": iscConfig.description,
+  "home.hero.title": iscConfig.shortName,
+  "home.background.desktop_urls": defaultSiteSettingValues["home.background.desktop_urls"],
+  "home.background.mobile_urls": defaultSiteSettingValues["home.background.mobile_urls"],
+  "home.background.interval_seconds": "5",
+  "home.background.transition_seconds": "1",
+  "home.background.transition_effect": "fade",
+  "social.facebook_url": iscConfig.links.facebook,
+  "social.tiktok_url": iscConfig.links.tiktok,
+  "social.youtube_url": iscConfig.links.youtube,
+  "social.email": iscConfig.contactEmail,
+  "site.description": iscConfig.description,
 };
 
 export function isSettingsFormFieldKey(key: string): key is SettingsFormFieldKey {
@@ -153,27 +199,53 @@ export function isAdminSettingsApiKey(key: string): key is AdminSettingsApiKey {
 
 export function getSettingsFormInitialState(settings: SiteSetting[]) {
   const settingsMap = new Map(settings.map((item) => [item.key, item.value]));
+  const state: Record<string, string> = {};
 
-  return settingsFormFieldOrder.reduce<Record<SettingsFormFieldKey, string>>((acc, key) => {
+  for (const key of settingsFormFieldOrder) {
     const raw = settingsMap.get(key) ?? defaultSiteSettingValues[key] ?? "";
-    acc[key] = raw === SENSITIVE_CONFIGURED_MASK ? "" : raw;
-    return acc;
-  }, {} as Record<SettingsFormFieldKey, string>);
+    state[key] = raw === SENSITIVE_CONFIGURED_MASK ? "" : raw;
+  }
+
+  // ISC-prefixed versions of site-specific keys
+  for (const key of settingsFormFieldOrder) {
+    if (!SITE_SPECIFIC_SETTING_KEYS.has(key)) continue;
+    const iscKey = `isc:${key}`;
+    const raw = settingsMap.get(iscKey) ?? defaultIscSettingValues[key] ?? defaultSiteSettingValues[key] ?? "";
+    state[iscKey] = raw === SENSITIVE_CONFIGURED_MASK ? "" : raw;
+  }
+
+  return state;
 }
 
-export function buildSettingsMap(settings: SiteSetting[]) {
-  return settings.reduce<Record<string, string>>((acc, item) => {
-    acc[item.key] = item.value;
-    return acc;
-  }, { ...defaultSiteSettingValues });
+export function buildSettingsMap(settings: SiteSetting[], siteId?: string) {
+  const base: Record<string, string> = siteId === "isc"
+    ? { ...defaultSiteSettingValues, ...defaultIscSettingValues }
+    : { ...defaultSiteSettingValues };
+
+  for (const item of settings) {
+    if (item.key.includes(":")) continue;
+    if (siteId === "isc" && SITE_SPECIFIC_SETTING_KEYS.has(item.key)) continue;
+    base[item.key] = item.value;
+  }
+
+  if (siteId === "isc") {
+    for (const item of settings) {
+      if (item.key.startsWith("isc:")) {
+        base[item.key.slice(4)] = item.value;
+      }
+    }
+  }
+
+  return base;
 }
 
-export function resolveSocialLinks(settingsMap: Record<string, string>) {
+export function resolveSocialLinks(settingsMap: Record<string, string>, siteId?: string) {
+  const fallback = siteId === "isc" ? iscConfig : siteConfig;
   return {
-    facebook: settingsMap["social.facebook_url"] || siteConfig.links.facebook,
-    tiktok: settingsMap["social.tiktok_url"] || siteConfig.links.tiktok,
-    youtube: settingsMap["social.youtube_url"] || siteConfig.links.youtube,
-    email: settingsMap["social.email"] || siteConfig.contactEmail,
+    facebook: settingsMap["social.facebook_url"] || fallback.links.facebook,
+    tiktok: settingsMap["social.tiktok_url"] || fallback.links.tiktok,
+    youtube: settingsMap["social.youtube_url"] || fallback.links.youtube,
+    email: settingsMap["social.email"] || fallback.contactEmail,
   };
 }
 

@@ -5,7 +5,8 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 
 type Comment = {
   id: string;
-  news_id: string;
+  news_id?: string;
+  event_id?: string;
   user_id: string | null;
   display_name: string;
   content: string;
@@ -21,16 +22,22 @@ export async function GET(request: NextRequest) {
   if (!admin) return NextResponse.json({ comments: [] });
 
   const status = request.nextUrl.searchParams.get("status") ?? "pending";
+  const table = request.nextUrl.searchParams.get("table") === "event_comments"
+    ? "event_comments"
+    : "news_comments";
 
-  const query = admin
-    .from("news_comments")
-    .select("id, news_id, user_id, display_name, content, status, created_at")
+  const selectFields = table === "event_comments"
+    ? "id, event_id, user_id, display_name, content, status, created_at"
+    : "id, news_id, user_id, display_name, content, status, created_at";
+
+  const query = (admin.from(table) as ReturnType<typeof admin.from>)
+    .select(selectFields)
     .order("created_at", { ascending: false })
     .limit(200);
 
   const { data, error } = status === "all"
     ? await query as { data: Comment[] | null; error: unknown }
-    : await query.eq("status", status) as { data: Comment[] | null; error: unknown };
+    : await (query as ReturnType<typeof query.eq>).eq("status", status) as { data: Comment[] | null; error: unknown };
 
   if (error) return NextResponse.json({ comments: [] });
   return NextResponse.json({ comments: data ?? [] });
@@ -40,7 +47,7 @@ export async function PATCH(request: NextRequest) {
   const guard = await enforceAdminApiAuth({ capability: "comments.moderate" });
   if (guard) return guard;
 
-  const body = await request.json().catch(() => null) as { id?: string; status?: string } | null;
+  const body = await request.json().catch(() => null) as { id?: string; status?: string; table?: string } | null;
   if (!body?.id || !body?.status || !["approved", "rejected", "pending"].includes(body.status)) {
     return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
   }
@@ -48,7 +55,8 @@ export async function PATCH(request: NextRequest) {
   const admin = createAdminSupabaseClient();
   if (!admin) return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
 
-  const { error } = await (admin.from("news_comments") as ReturnType<typeof admin.from>)
+  const table = body.table === "event_comments" ? "event_comments" : "news_comments";
+  const { error } = await (admin.from(table) as ReturnType<typeof admin.from>)
     .update({ status: body.status } as never)
     .eq("id", body.id);
 
@@ -69,13 +77,14 @@ export async function DELETE(request: NextRequest) {
   const guard = await enforceAdminApiAuth({ capability: "comments.moderate" });
   if (guard) return guard;
 
-  const body = await request.json().catch(() => null) as { id?: string } | null;
+  const body = await request.json().catch(() => null) as { id?: string; table?: string } | null;
   if (!body?.id) return NextResponse.json({ error: "Thiếu ID." }, { status: 400 });
 
   const admin = createAdminSupabaseClient();
   if (!admin) return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
 
-  const { error } = await admin.from("news_comments").delete().eq("id", body.id);
+  const table = body.table === "event_comments" ? "event_comments" : "news_comments";
+  const { error } = await (admin.from(table) as ReturnType<typeof admin.from>).delete().eq("id", body.id);
   if (error) return NextResponse.json({ error: "Không thể xóa." }, { status: 500 });
 
   await logAdminActivity({

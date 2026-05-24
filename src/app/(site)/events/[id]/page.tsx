@@ -7,8 +7,30 @@ import { vi } from "date-fns/locale";
 import { getEventById } from "@/lib/data/content-service";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventViewTracker } from "@/components/events/event-view-tracker";
+import { EventComments } from "@/components/events/event-comments";
+import { PollWidget } from "@/components/common/poll-widget";
 import { siteConfig } from "@/lib/constants/site";
 import { cn } from "@/lib/utils";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+async function getEventPoll(eventId: string) {
+  try {
+    const sb = createAdminSupabaseClient() ?? createServerSupabaseClient();
+    if (!sb) return null;
+    const { data } = await (sb.from("polls") as ReturnType<typeof sb.from>)
+      .select("id, question, status, ends_at, poll_options(id, label, display_order)")
+      .eq("entity_type", "event")
+      .eq("entity_id", eventId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle() as { data: { id: string; question: string; status: string; ends_at: string | null; poll_options: { id: string; label: string; display_order: number }[] } | null };
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type EventDetailPageProps = { params: Promise<{ id: string }> };
 
@@ -48,7 +70,10 @@ function formatEventDate(dateStr: string) {
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { id } = await params;
-  const event = await getEventById(id);
+  const [event, poll] = await Promise.all([
+    getEventById(id),
+    getEventPoll(id),
+  ]);
   if (!event) notFound();
 
   const authorName = event.updated_by_name || event.created_by_name;
@@ -170,6 +195,17 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           </a>
         </div>
       )}
+
+      {poll && (
+        <PollWidget
+          pollId={poll.id}
+          question={poll.question}
+          options={poll.poll_options.sort((a, b) => a.display_order - b.display_order)}
+          endsAt={poll.ends_at}
+        />
+      )}
+
+      <EventComments eventId={event.id} />
     </div>
   );
 }

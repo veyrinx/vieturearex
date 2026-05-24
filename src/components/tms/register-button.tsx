@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { UserPlus, Clock, CheckCircle2, XCircle, LogIn, Users, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,11 +18,9 @@ export function RegisterButton({
   tournamentStatus: string;
   slug: string;
 }) {
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null | "loading">("loading");
   const [team, setTeam] = useState<Team | null | "loading">("loading");
   const [reg, setReg] = useState<Reg | null | "loading">("loading");
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const profileP = fetch("/api/user/profile", { credentials: "same-origin" })
@@ -41,25 +37,6 @@ export function RegisterButton({
       setReg(found);
     });
   }, [tournamentId]);
-
-  const doRegister = async () => {
-    const t = team as Team;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/tms/tournaments/${tournamentId}/registrations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ team_id: t.id }),
-      });
-      const data = await res.json() as Reg & { error?: string };
-      if (!res.ok) { toast.error(data.error ?? "Đăng ký thất bại."); return; }
-      toast.success("Đã gửi đăng ký! Chờ admin duyệt.");
-      setReg(data);
-      router.refresh();
-    } catch { toast.error("Lỗi mạng."); }
-    finally { setSubmitting(false); }
-  };
 
   if (tournamentStatus !== "registering") return null;
   if (profile === "loading" || team === "loading" || reg === "loading") return null;
@@ -114,9 +91,11 @@ export function RegisterButton({
   }
 
   return (
-    <Button size="sm" onClick={() => void doRegister()} disabled={submitting} className="gap-1.5 rounded-lg">
-      <UserPlus className="size-3.5" />
-      {submitting ? "Đang đăng ký..." : `Đăng ký [${t.tag}]`}
-    </Button>
+    <Link href={`/tournaments/${slug}/register`}>
+      <Button size="sm" className="gap-1.5 rounded-lg">
+        <UserPlus className="size-3.5" />
+        Đăng ký tham dự
+      </Button>
+    </Link>
   );
 }

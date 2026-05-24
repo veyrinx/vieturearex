@@ -10,30 +10,31 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
+import { getSiteConfig } from "@/lib/server/get-site-config";
 
 // GFF Fonts are loaded from fonts.css
 // Heading: --font-heading (GFF Latin ExtraBold)
 // Body: --font-body (GFF Latin Regular)
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings();
-  const settingsMap = buildSettingsMap(settings);
+  const [settings, activeSite] = await Promise.all([getSettings(), getSiteConfig()]);
+  const settingsMap = buildSettingsMap(settings, activeSite.id);
 
-  const siteName = settingsMap["branding.site_name"] || siteConfig.name;
-  const siteTitle = settingsMap["seo.default_title"] || siteConfig.name;
-  const siteDescription = settingsMap["seo.default_description"] || siteConfig.description;
-  const logoLight = settingsMap["branding.logo_light_url"] || siteConfig.favicon;
+  const siteName = settingsMap["branding.site_name"] || activeSite.name;
+  const siteTitle = settingsMap["seo.default_title"] || activeSite.name;
+  const siteDescription = settingsMap["seo.default_description"] || activeSite.description;
+  const logoLight = settingsMap["branding.logo_light_url"] || activeSite.favicon;
   const favicon = settingsMap["branding.favicon_url"] || logoLight;
 
   return {
-    metadataBase: new URL(siteConfig.url),
+    metadataBase: new URL(activeSite.url),
     title: {
       default: siteTitle,
       template: `%s | ${siteName}`,
     },
     description: siteDescription,
     alternates: {
-      canonical: siteConfig.url,
+      canonical: activeSite.url,
     },
     keywords: [
       siteName,
@@ -70,11 +71,11 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: siteTitle,
       description: siteDescription,
-      url: siteConfig.url,
+      url: activeSite.url,
       siteName: siteName,
       images: [
         {
-          url: siteConfig.ogImage,
+          url: activeSite.ogImage,
           width: 1200,
           height: 630,
           alt: siteName,
@@ -87,7 +88,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: siteTitle,
       description: siteDescription,
-      images: [siteConfig.ogImage],
+      images: [activeSite.ogImage],
     },
     icons: {
       icon: favicon,
@@ -100,11 +101,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const activeSite = await getSiteConfig();
+
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
@@ -137,12 +140,12 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: siteConfig.name,
-              url: siteConfig.url,
-              description: siteConfig.description,
+              name: activeSite.name,
+              url: activeSite.url,
+              description: activeSite.description,
               potentialAction: {
                 "@type": "SearchAction",
-                target: `${siteConfig.url}/news?q={search_term_string}`,
+                target: `${activeSite.url}/news?q={search_term_string}`,
                 "query-input": "required name=search_term_string",
               },
             }),

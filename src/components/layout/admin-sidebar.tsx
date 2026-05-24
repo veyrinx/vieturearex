@@ -9,6 +9,8 @@ import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { cn } from "@/lib/utils";
 import { adminNavItems, siteConfig } from "@/lib/constants/site";
+
+const DEFAULT_SITE_NAME = siteConfig.shortName;
 import {
   Sheet,
   SheetContent,
@@ -18,7 +20,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-function AdminSidebarContent({ onNavigate, logoUrl }: { onNavigate?: () => void; logoUrl?: string }) {
+function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME }: { onNavigate?: () => void; logoUrl?: string; siteIcon?: string; siteName?: string }) {
   const pathname = usePathname();
 
   return (
@@ -27,14 +29,14 @@ function AdminSidebarContent({ onNavigate, logoUrl }: { onNavigate?: () => void;
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Image
-              src={logoUrl || siteConfig.sidebarIcon}
-              alt={siteConfig.shortName}
+              src={logoUrl || siteIcon || siteConfig.sidebarIcon}
+              alt={siteName}
               width={28}
               height={28}
               className="rounded-md border border-border"
             />
             <h2 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-foreground">
-              {siteConfig.shortName} QUẢN TRỊ
+              {siteName} QUẢN TRỊ
             </h2>
           </div>
           <ThemeToggle />
@@ -67,15 +69,17 @@ function AdminSidebarContent({ onNavigate, logoUrl }: { onNavigate?: () => void;
 
 type AdminSidebarProps = {
   logoUrl?: string;
+  siteIcon?: string;
+  siteName?: string;
 };
 
-export function AdminSidebar({ logoUrl }: AdminSidebarProps) {
+export function AdminSidebar({ logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME }: AdminSidebarProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <div className="hidden w-72 shrink-0 self-start md:sticky md:top-6 md:block">
-        <AdminSidebarContent logoUrl={logoUrl} />
+        <AdminSidebarContent logoUrl={logoUrl} siteIcon={siteIcon} siteName={siteName} />
       </div>
 
       <div className="md:hidden">
@@ -89,13 +93,13 @@ export function AdminSidebar({ logoUrl }: AdminSidebarProps) {
           <SheetContent side="left" className="w-72 border-border bg-card p-2">
             <SheetHeader className="px-3 py-2">
               <SheetTitle className="text-left font-heading uppercase tracking-[0.08em] text-foreground">
-                {siteConfig.shortName} QUẢN TRỊ
+                {siteName} QUẢN TRỊ
               </SheetTitle>
               <SheetDescription className="text-left text-muted-foreground">
                 ĐIỀU HƯỚNG NHANH TỚI CÁC KHU VỰC QUẢN TRỊ.
               </SheetDescription>
             </SheetHeader>
-            <AdminSidebarContent logoUrl={logoUrl} onNavigate={() => setOpen(false)} />
+            <AdminSidebarContent logoUrl={logoUrl} siteIcon={siteIcon} siteName={siteName} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>

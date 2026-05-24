@@ -13,8 +13,12 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
+  compress: true,
   compiler: {
     removeConsole: isDevelopment ? false : { exclude: ["error"] },
+  },
+  experimental: {
+    serverMinification: true,
   },
   webpack(config, { isServer }) {
     if (!isServer) {

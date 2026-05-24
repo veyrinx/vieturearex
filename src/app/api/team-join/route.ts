@@ -6,6 +6,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
+import { sendTelegramNotification } from "@/lib/server/telegram-notify";
 
 const optionalUrl = z.string().max(300).optional().default("").transform((v) => v.trim());
 const optionalText = (max: number) =>
@@ -197,8 +198,8 @@ export async function POST(request: NextRequest) {
     summary: `Yêu cầu gia nhập team từ ${email} (${displayName}) — chờ IT duyệt`,
   }).catch(() => {});
 
-  // Lark notification (fire and forget)
-  void sendLarkNotification({
+  // Notifications (fire and forget)
+  const joinPayload = {
     title: `🆕 Yêu cầu gia nhập team — chờ IT duyệt${invite.label ? ` (${invite.label})` : ""}`,
     lines: [
       { label: "Tên", value: displayName },
@@ -222,7 +223,9 @@ export async function POST(request: NextRequest) {
       },
       { label: "IP", value: getClientIp(request) },
     ],
-  }).catch(() => null);
+  };
+  void sendLarkNotification(joinPayload).catch(() => null);
+  void sendTelegramNotification(joinPayload).catch(() => null);
 
   return NextResponse.json({ ok: true, status: "pending" });
 }

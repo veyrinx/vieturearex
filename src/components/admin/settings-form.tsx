@@ -16,11 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { defaultSiteSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS } from "@/lib/utils/site-settings";
+import { defaultSiteSettingValues, defaultIscSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS, SITE_SPECIFIC_SETTING_KEYS } from "@/lib/utils/site-settings";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type SettingsFormProps = { settings: SiteSetting[]; onSaved: () => Promise<void> };
+type SettingsFormProps = { settings: SiteSetting[]; onSaved: () => Promise<void>; siteId?: "arex" | "isc" };
 
 // ─── Nav config ─────────────────────────────────────────────────────────────
 
@@ -179,11 +179,15 @@ function getSlots(value: string) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
+export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFormProps) {
   const [active, setActive] = useState<SectionId>("account");
   const [state, setState] = useState<Record<string, string>>(() => getSettingsFormInitialState(settings));
   const [saving, setSaving] = useState<string | null>(null);
   const [configuredKeys] = useState<Set<string>>(() => getConfiguredSensitiveKeys(settings));
+
+  // Returns the storage key for a setting — ISC site-specific keys get "isc:" prefix
+  const pk = (key: string) =>
+    siteId === "isc" && SITE_SPECIFIC_SETTING_KEYS.has(key) ? `isc:${key}` : key;
 
   // Account state
   const [profile, setProfile] = useState<{ email: string; display_name: string; role: string } | null>(null);
@@ -211,12 +215,13 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
     });
   }, []);
 
-  const v = (key: string) => state[key] ?? defaultSiteSettingValues[key] ?? "";
-  const set = (key: string, value: string) => setState((p) => ({ ...p, [key]: value }));
+  const defaults = siteId === "isc" ? { ...defaultSiteSettingValues, ...defaultIscSettingValues } : defaultSiteSettingValues;
+  const v = (key: string) => state[pk(key)] ?? defaults[key] ?? "";
+  const set = (key: string, value: string) => setState((p) => ({ ...p, [pk(key)]: value }));
   const setSlot = (key: string, i: number, value: string) => setState((p) => {
-    const slots = getSlots(p[key] ?? "");
+    const slots = getSlots(p[pk(key)] ?? "");
     slots[i] = value;
-    return { ...p, [key]: slots.join("\n") };
+    return { ...p, [pk(key)]: slots.join("\n") };
   });
 
   const sensitiveHint = (key: string) =>
@@ -232,7 +237,7 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
         try {
           const r = await fetch("/api/admin/settings", {
             method: "PATCH", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: k, value: v(k) }),
+            body: JSON.stringify({ key: pk(k), value: v(k) }),
           });
           if (!r.ok) {
             const body = (await r.json().catch(() => null)) as { error?: string } | null;
@@ -1070,6 +1075,49 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
             </label>
           </Field>
+
+          <div className="py-3 border-t border-border mt-3">
+            <SectionHeader icon={BellRing} title="Telegram" desc="Gửi thông báo vào kênh / nhóm Telegram" />
+          </div>
+          <Field label="Bot Token" hint="Lấy từ @BotFather — nhạy cảm" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.telegram_bot_token")}
+                onChange={(e) => set("integrations.telegram_bot_token", e.target.value)}
+                placeholder="123456:ABC-DEF..."
+                className="font-mono text-xs"
+                type="password"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.telegram_bot_token")} />
+            </div>
+          </Field>
+          <Field label="Chat ID / Channel" hint="@username kênh hoặc ID số âm của group/channel" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.telegram_chat_id")}
+                onChange={(e) => set("integrations.telegram_chat_id", e.target.value)}
+                placeholder="@arex_channel hoặc -1001234567890"
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.telegram_chat_id")} />
+              {v("integrations.telegram_chat_id") && v("integrations.telegram_bot_token") && (
+                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — thông báo sẽ được gửi vào kênh.
+                </p>
+              )}
+            </div>
+          </Field>
+          <Field label="Bật báo cáo hằng ngày qua Telegram" hint="Cùng schedule với Lark — 08:00 sáng giờ VN" icon={Plug}>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={v("integrations.telegram_daily_report") !== "false"}
+                onChange={(e) => set("integrations.telegram_daily_report", e.target.checked ? "true" : "false")}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
+            </label>
+          </Field>
         </Card>
         <SaveRow
           onSave={() => save(
@@ -1079,6 +1127,9 @@ export function SettingsForm({ settings, onSaved }: SettingsFormProps) {
               "integrations.lark_alerts_webhook_url",
               "integrations.lark_bot_name",
               "integrations.lark_daily_report",
+              "integrations.telegram_bot_token",
+              "integrations.telegram_chat_id",
+              "integrations.telegram_daily_report",
             ],
             "integrations",
           )}

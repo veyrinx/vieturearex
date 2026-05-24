@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, getDashboardStats } from "@/lib/data/content-service";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
+import { sendTelegramNotification } from "@/lib/server/telegram-notify";
 
 const DAILY_KEY = "analytics.daily_views";
 
@@ -20,10 +21,12 @@ export async function GET(request: NextRequest) {
   }
 
   const [stats, settings] = await Promise.all([getDashboardStats(), getSettings()]);
-  const enabled = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false";
-  if (!enabled) {
+  const larkEnabled = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false";
+  const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false";
+  if (!larkEnabled && !telegramEnabled) {
     return NextResponse.json({ ok: true, sent: false, reason: "disabled" });
   }
+
   const dailyRaw = settings.find((s) => s.key === DAILY_KEY)?.value ?? "{}";
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }
@@ -33,7 +36,7 @@ export async function GET(request: NextRequest) {
   const last7 = Array.from({ length: 7 }, (_, i) => daily[vnDateKey(i)] ?? 0).reduce((a, b) => a + b, 0);
   const trend = today > yesterday ? "📈 tăng" : today < yesterday ? "📉 giảm" : "➖ bằng";
 
-  const result = await sendLarkNotification({
+  const reportPayload = {
     title: `📊 Báo cáo ngày — ${vnDateKey(0)}`,
     lines: [
       { label: "Lượt xem hôm nay", value: today.toLocaleString("vi-VN") },
@@ -44,7 +47,20 @@ export async function GET(request: NextRequest) {
       { label: "Sự kiện", value: stats.events.toLocaleString("vi-VN") },
       { label: "Bài viết", value: stats.news.toLocaleString("vi-VN") },
     ],
-  });
+  };
 
-  return NextResponse.json({ ok: true, sent: result.sent, today, yesterday, last7 });
+  const [larkResult, telegramResult] = await Promise.all([
+    larkEnabled ? sendLarkNotification(reportPayload) : Promise.resolve({ sent: false }),
+    telegramEnabled ? sendTelegramNotification(reportPayload) : Promise.resolve({ sent: false }),
+  ]);
+
+  return NextResponse.json({
+    ok: true,
+    sent: larkResult.sent || telegramResult.sent,
+    lark: larkResult.sent,
+    telegram: telegramResult.sent,
+    today,
+    yesterday,
+    last7,
+  });
 }
