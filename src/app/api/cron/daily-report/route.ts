@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, getDashboardStats } from "@/lib/data/content-service";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
-import { sendTelegramNotification } from "@/lib/server/telegram-notify";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const DAILY_KEY = "analytics.daily_views";
 
 function vnDateKey(daysAgo = 0) {
   const d = new Date();
-  d.setUTCHours(d.getUTCHours() + 7); // VN time
+  d.setUTCHours(d.getUTCHours() + 7);
   d.setUTCDate(d.getUTCDate() - daysAgo);
   return d.toISOString().slice(0, 10);
 }
 
 export async function GET(request: NextRequest) {
-  // Authenticate cron caller. Vercel sets CRON_SECRET in Authorization header.
   const auth = request.headers.get("authorization") ?? "";
   const expected = process.env.CRON_SECRET;
   if (expected && auth !== `Bearer ${expected}`) {
@@ -34,24 +33,40 @@ export async function GET(request: NextRequest) {
   const today = daily[vnDateKey(0)] ?? 0;
   const yesterday = daily[vnDateKey(1)] ?? 0;
   const last7 = Array.from({ length: 7 }, (_, i) => daily[vnDateKey(i)] ?? 0).reduce((a, b) => a + b, 0);
-  const trend = today > yesterday ? "📈 tăng" : today < yesterday ? "📉 giảm" : "➖ bằng";
+  const diff = today - yesterday;
+  const trend = diff > 0 ? `📈 +${diff.toLocaleString("vi-VN")}` : diff < 0 ? `📉 ${diff.toLocaleString("vi-VN")}` : "➖ Không đổi";
 
-  const reportPayload = {
-    title: `📊 Báo cáo ngày — ${vnDateKey(0)}`,
-    lines: [
-      { label: "Lượt xem hôm nay", value: today.toLocaleString("vi-VN") },
-      { label: "Hôm qua", value: `${yesterday.toLocaleString("vi-VN")} (${trend})` },
-      { label: "7 ngày gần nhất", value: last7.toLocaleString("vi-VN") },
-      { label: "Tổng lượt xem (tích luỹ)", value: stats.views.toLocaleString("vi-VN") },
-      { label: "Tổng người dùng", value: stats.users.toLocaleString("vi-VN") },
-      { label: "Sự kiện", value: stats.events.toLocaleString("vi-VN") },
-      { label: "Bài viết", value: stats.news.toLocaleString("vi-VN") },
+  const payload = {
+    title: `📊 BÁO CÁO NGÀY — ${vnDateKey(0)}`,
+    subtitle: `Tổng hợp tự động lúc ${vnNow()} (ICT)`,
+    sections: [
+      {
+        icon: "👁️",
+        heading: "Lượt xem",
+        rows: [
+          { label: "Hôm nay", value: today.toLocaleString("vi-VN"), bold: true },
+          { label: "So hôm qua", value: trend },
+          { label: "Hôm qua", value: yesterday.toLocaleString("vi-VN") },
+          { label: "7 ngày gần nhất", value: last7.toLocaleString("vi-VN") },
+        ],
+      },
+      {
+        icon: "📈",
+        heading: "Tổng quan hệ thống",
+        rows: [
+          { label: "Tổng lượt xem", value: stats.views.toLocaleString("vi-VN") },
+          { label: "Người dùng", value: stats.users.toLocaleString("vi-VN") },
+          { label: "Sự kiện", value: stats.events.toLocaleString("vi-VN") },
+          { label: "Bài viết", value: stats.news.toLocaleString("vi-VN") },
+        ],
+      },
     ],
+    footer: "🤖 Arex Auto-Report",
   };
 
   const [larkResult, telegramResult] = await Promise.all([
-    larkEnabled ? sendLarkNotification(reportPayload) : Promise.resolve({ sent: false }),
-    telegramEnabled ? sendTelegramNotification(reportPayload) : Promise.resolve({ sent: false }),
+    larkEnabled ? sendLarkNotification(payload) : Promise.resolve({ sent: false }),
+    telegramEnabled ? sendTelegramNotification(payload) : Promise.resolve({ sent: false }),
   ]);
 
   return NextResponse.json({

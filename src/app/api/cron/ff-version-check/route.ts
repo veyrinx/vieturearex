@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { fetchFFVersion, checkCdnUrls, DEFAULT_CDN_PATTERNS } from "@/lib/server/ff-version";
-import { sendTelegramNotification } from "@/lib/server/telegram-notify";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
+import type { NotifySection } from "@/lib/server/telegram-notify";
 
 const VERSION_KEY = "ff.last_known_version";
 const PATTERNS_KEY = "ff.cdn_url_patterns";
@@ -18,7 +19,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch current version from Play Store
   const info = await fetchFFVersion();
   if (!info) {
     return NextResponse.json({ ok: false, error: "Failed to fetch version from Play Store" });
@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
   const sb = createAdminSupabaseClient();
   if (!sb) return NextResponse.json({ ok: false, error: "No DB" });
 
-  // Get last known version + custom URL patterns from settings
   const { data: rows } = await sb
     .from("settings")
     .select("key, value")
@@ -41,7 +40,6 @@ export async function GET(request: NextRequest) {
   let accessibleLinks: string[] = [];
 
   if (isNew) {
-    // Resolve URL patterns: use admin-configured patterns if set, else defaults
     let patterns = DEFAULT_CDN_PATTERNS;
     if (rowMap[PATTERNS_KEY]) {
       try { patterns = JSON.parse(rowMap[PATTERNS_KEY]); } catch { /* keep defaults */ }
@@ -50,31 +48,49 @@ export async function GET(request: NextRequest) {
     cdnLinks = await checkCdnUrls(info.version, patterns);
     accessibleLinks = cdnLinks.filter((l) => l.accessible).map((l) => l.url);
 
-    // Persist new version
     await untypedFrom(sb, "settings").upsert(
       { key: VERSION_KEY, value: info.version } as never,
       { onConflict: "key" } as never,
     );
 
-    // Build notification
-    const lines: { label: string; value: string }[] = [
-      { label: "Phiên bản", value: info.version },
-      { label: "Trước đó", value: lastVersion || "Chưa có" },
-      { label: "Nguồn", value: "Google Play Store (VN)" },
-    ];
-
-    if (accessibleLinks.length > 0) {
-      accessibleLinks.forEach((url, i) => {
-        lines.push({ label: `Link tải ${i + 1}`, value: url });
-      });
-    } else {
-      lines.push({ label: "Link CDN", value: "Chưa tìm được — kiểm tra thủ công" });
-    }
+    const cdnSection: NotifySection = {
+      icon: "🔗",
+      heading: `Link tải CDN (${accessibleLinks.length}/${cdnLinks.length} khả dụng)`,
+      rows: cdnLinks.length > 0
+        ? cdnLinks.map((l) => ({
+            label: l.accessible
+              ? `${formatSize(l.size)}`
+              : "Không có",
+            value: l.url.replace("https://dl.dir.freefiremobile.com/", "…/"),
+            mono: true,
+            status: (l.accessible ? "ok" : "err") as "ok" | "err",
+          }))
+        : [{ label: "Trạng thái", value: "Chưa tìm được — cần cấu hình pattern", status: "warn" as const }],
+    };
 
     const payload = {
-      title: `🎮 Free Fire cập nhật phiên bản ${info.version}`,
-      lines,
-      url: "https://play.google.com/store/apps/details?id=com.dts.freefireth&hl=vi",
+      title: "🎮 FREE FIRE — PHIÊN BẢN MỚI",
+      subtitle: `Phát hiện lúc ${vnNow()} (ICT)`,
+      sections: [
+        {
+          icon: "📦",
+          heading: "Thông tin cập nhật",
+          rows: [
+            { label: "Phiên bản cũ", value: lastVersion || "Chưa có", mono: true },
+            { label: "Phiên bản mới", value: info.version, mono: true, bold: true },
+            { label: "Nguồn", value: "Google Play Store (VN)" },
+            { label: "Package", value: info.packageId, mono: true },
+          ],
+        },
+        cdnSection,
+      ],
+      actions: [
+        {
+          label: "▶️ Google Play Store",
+          url: "https://play.google.com/store/apps/details?id=com.dts.freefireth&hl=vi",
+        },
+      ],
+      footer: "🤖 Arex FF Monitor",
     };
 
     await Promise.all([
@@ -91,4 +107,11 @@ export async function GET(request: NextRequest) {
     cdnLinks,
     accessibleLinks,
   });
+}
+
+function formatSize(bytes?: number): string {
+  if (!bytes) return "Link";
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024).toFixed(0)} KB`;
 }

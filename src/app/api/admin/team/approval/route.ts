@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
-import { sendTelegramNotification } from "@/lib/server/telegram-notify";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { getSettings } from "@/lib/data/content-service";
 import { hasCapability, parseRoleCapabilities } from "@/lib/permissions";
 
@@ -103,12 +103,26 @@ export async function POST(request: NextRequest) {
       summary: `Từ chối yêu cầu gia nhập team ${target.email}`,
     }).catch(() => {});
     const rejectPayload = {
-      title: "❌ Từ chối yêu cầu gia nhập team",
-      lines: [
-        { label: "Tên", value: target.display_name || "—" },
-        { label: "Email", value: target.email },
-        { label: "Người từ chối", value: actorRole },
+      title: "❌ TỪ CHỐI YÊU CẦU GIA NHẬP TEAM",
+      subtitle: `Thực hiện lúc ${vnNow()} (ICT)`,
+      sections: [
+        {
+          icon: "👤",
+          heading: "Thành viên bị từ chối",
+          rows: [
+            { label: "Tên", value: target.display_name || "—", bold: true },
+            { label: "Email", value: target.email, mono: true },
+          ],
+        },
+        {
+          icon: "👮",
+          heading: "Người thực hiện",
+          rows: [
+            { label: "Vai trò", value: actorRole },
+          ],
+        },
       ],
+      footer: "🤖 Arex Team Monitor",
     };
     void sendLarkNotification(rejectPayload).catch(() => null);
     void sendTelegramNotification(rejectPayload).catch(() => null);
@@ -140,11 +154,20 @@ export async function POST(request: NextRequest) {
       summary: `IT duyệt vòng 1: ${target.email} — chờ admin duyệt cuối`,
     }).catch(() => {});
     const itApprovePayload = {
-      title: "🟡 IT đã duyệt — chờ admin duyệt cuối",
-      lines: [
-        { label: "Tên", value: target.display_name || "—" },
-        { label: "Email", value: target.email },
+      title: "🟡 IT ĐÃ DUYỆT VÒNG 1 — CHỜ ADMIN",
+      subtitle: `Duyệt lúc ${vnNow()} (ICT)`,
+      sections: [
+        {
+          icon: "👤",
+          heading: "Thành viên",
+          rows: [
+            { label: "Tên", value: target.display_name || "—", bold: true },
+            { label: "Email", value: target.email, mono: true },
+            { label: "Trạng thái mới", value: "Chờ admin duyệt cuối", status: "warn" as const },
+          ],
+        },
       ],
+      footer: "🤖 Arex Team Monitor",
     };
     void sendLarkNotification(itApprovePayload).catch(() => null);
     void sendTelegramNotification(itApprovePayload).catch(() => null);
@@ -183,12 +206,31 @@ export async function POST(request: NextRequest) {
       summary: `Admin duyệt vòng cuối: ${target.email}${resetSent ? " — đã gửi email đặt mật khẩu" : ""}`,
     }).catch(() => {});
     const adminApprovePayload = {
-      title: "✅ Admin đã duyệt — đã gửi email đặt mật khẩu",
-      lines: [
-        { label: "Tên", value: target.display_name || "—" },
-        { label: "Email", value: target.email },
-        { label: "Email reset password", value: resetSent ? "đã gửi" : "thất bại" },
+      title: "✅ THÀNH VIÊN ĐÃ ĐƯỢC DUYỆT CHÍNH THỨC",
+      subtitle: `Duyệt lúc ${vnNow()} (ICT)`,
+      sections: [
+        {
+          icon: "🎉",
+          heading: "Thành viên mới",
+          rows: [
+            { label: "Tên", value: target.display_name || "—", bold: true },
+            { label: "Email", value: target.email, mono: true },
+            { label: "Trạng thái", value: "Đã vào team", status: "ok" as const },
+          ],
+        },
+        {
+          icon: "📧",
+          heading: "Email thông báo",
+          rows: [
+            {
+              label: "Email đặt mật khẩu",
+              value: resetSent ? "Đã gửi thành công" : "Gửi thất bại",
+              status: (resetSent ? "ok" : "err") as "ok" | "err",
+            },
+          ],
+        },
       ],
+      footer: "🤖 Arex Team Monitor",
     };
     void sendLarkNotification(adminApprovePayload).catch(() => null);
     void sendTelegramNotification(adminApprovePayload).catch(() => null);

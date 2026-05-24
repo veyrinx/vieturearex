@@ -6,7 +6,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
-import { sendTelegramNotification } from "@/lib/server/telegram-notify";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const optionalUrl = z.string().max(300).optional().default("").transform((v) => v.trim());
 const optionalText = (max: number) =>
@@ -199,30 +199,56 @@ export async function POST(request: NextRequest) {
   }).catch(() => {});
 
   // Notifications (fire and forget)
+  const gameStr = parsed.data.game_profiles.length === 0
+    ? "—"
+    : parsed.data.game_profiles
+        .map((g) => `${g.custom_label || g.game}: ${g.uid}${g.nickname ? ` (${g.nickname})` : ""}`)
+        .join(" | ");
+
+  const socialRows = [
+    { key: "Facebook", val: parsed.data.facebook_url },
+    { key: "Instagram", val: parsed.data.instagram_url },
+    { key: "TikTok", val: parsed.data.tiktok_url },
+    { key: "Discord", val: parsed.data.discord_url },
+    { key: "Zalo", val: parsed.data.zalo_url },
+  ].filter((s) => s.val).map((s) => ({ label: s.key, value: s.val as string }));
+
   const joinPayload = {
-    title: `🆕 Yêu cầu gia nhập team — chờ IT duyệt${invite.label ? ` (${invite.label})` : ""}`,
-    lines: [
-      { label: "Tên", value: displayName },
-      { label: "Email", value: email },
-      { label: "SĐT", value: parsed.data.phone || "—" },
-      { label: "Vị trí muốn ứng tuyển", value: parsed.data.applied_role || "—" },
-      { label: "Lời nhắn", value: parsed.data.application_note || "—" },
-      { label: "Facebook", value: parsed.data.facebook_url || "—" },
-      { label: "Instagram", value: parsed.data.instagram_url || "—" },
-      { label: "TikTok", value: parsed.data.tiktok_url || "—" },
-      { label: "Discord", value: parsed.data.discord_url || "—" },
-      { label: "Zalo", value: parsed.data.zalo_url || "—" },
+    title: "🆕 YÊU CẦU GIA NHẬP TEAM",
+    subtitle: `${invite.label ? `[${invite.label}] ` : ""}Nộp lúc ${vnNow()} (ICT) — chờ IT duyệt`,
+    sections: [
       {
-        label: "Game đang chơi",
-        value:
-          parsed.data.game_profiles.length === 0
-            ? "—"
-            : parsed.data.game_profiles
-                .map((g) => `${g.custom_label || g.game}: ${g.uid}${g.nickname ? ` (${g.nickname})` : ""}`)
-                .join(" | "),
+        icon: "👤",
+        heading: "Thông tin cá nhân",
+        rows: [
+          { label: "Họ tên", value: displayName, bold: true },
+          { label: "Email", value: email, mono: true },
+          { label: "SĐT", value: parsed.data.phone || "—" },
+          { label: "Vị trí ứng tuyển", value: parsed.data.applied_role || "—" },
+        ],
       },
-      { label: "IP", value: getClientIp(request) },
+      ...(parsed.data.application_note ? [{
+        icon: "💬",
+        heading: "Lời nhắn",
+        rows: [{ label: "Nội dung", value: parsed.data.application_note }],
+      }] : []),
+      ...(parsed.data.game_profiles.length > 0 ? [{
+        icon: "🎮",
+        heading: "Thông tin game",
+        rows: [{ label: "Tài khoản", value: gameStr, mono: true }],
+      }] : []),
+      ...(socialRows.length > 0 ? [{
+        icon: "🌐",
+        heading: "Mạng xã hội",
+        rows: socialRows,
+      }] : []),
+      {
+        icon: "🔍",
+        heading: "Kỹ thuật",
+        rows: [{ label: "IP", value: getClientIp(request), mono: true }],
+      },
     ],
+    footer: "🤖 Arex Team Monitor",
   };
   void sendLarkNotification(joinPayload).catch(() => null);
   void sendTelegramNotification(joinPayload).catch(() => null);

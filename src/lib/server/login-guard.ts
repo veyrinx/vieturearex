@@ -88,27 +88,35 @@ export async function recordFailedLogin(ip: string): Promise<LoginCheckResult> {
 
     if (bannedUntil) {
       void sendLarkNotification({
-        title: "🚨 Phát hiện tấn công đăng nhập — đã chặn IP 30 ngày",
-        lines: [
-          { label: "IP", value: ip },
-          { label: "Số lần thử", value: String(newCount) },
-          { label: "Hết hạn chặn", value: new Date(now + BAN_DURATION_MS).toLocaleString("vi-VN") },
-        ],
-        channel: "alerts",
-      }).catch(() => null);
+        title: "🚨 TẤN CÔNG ĐĂNG NHẬP — ĐÃ CHẶN IP 30 NGÀY",
+        sections: [{
+          icon: "🔒",
+          heading: "Chi tiết",
+          rows: [
+            { label: "IP bị chặn", value: ip, mono: true, status: "err" as const },
+            { label: "Số lần thử", value: String(newCount), bold: true },
+            { label: "Hết hạn chặn", value: new Date(now + BAN_DURATION_MS).toLocaleString("vi-VN") },
+          ],
+        }],
+        footer: "🤖 Arex Security",
+      }, "alerts").catch(() => null);
       return { status: "banned", bannedUntil: now + BAN_DURATION_MS };
     }
 
     if (newCount === WARN_THRESHOLD) {
       void sendLarkNotification({
-        title: "⚠️ Cảnh báo: thử đăng nhập sai nhiều lần",
-        lines: [
-          { label: "IP", value: ip },
-          { label: "Số lần thử", value: String(newCount) },
-          { label: "Còn lại trước khi ban", value: String(BAN_THRESHOLD - newCount) },
-        ],
-        channel: "alerts",
-      }).catch(() => null);
+        title: "⚠️ CẢNH BÁO: THỬ ĐĂNG NHẬP SAI NHIỀU LẦN",
+        sections: [{
+          icon: "⚠️",
+          heading: "Chi tiết",
+          rows: [
+            { label: "IP", value: ip, mono: true, status: "warn" as const },
+            { label: "Số lần thử", value: String(newCount), bold: true },
+            { label: "Còn lại trước khi ban", value: String(BAN_THRESHOLD - newCount) },
+          ],
+        }],
+        footer: "🤖 Arex Security",
+      }, "alerts").catch(() => null);
     }
 
     if (newCount >= WARN_THRESHOLD) {
