@@ -25,6 +25,8 @@ export const SENSITIVE_KEYS = new Set([
   "integrations.lark_alerts_webhook_url",
   "integrations.telegram_bot_token",
   "integrations.telegram_chat_id",
+  "integrations.telegram_user_bot_token",
+  "integrations.telegram_user_chat_id",
   "tms.payment_info",
 ]);
 

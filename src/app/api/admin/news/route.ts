@@ -99,8 +99,11 @@ export async function POST(request: NextRequest) {
       summary: `Tạo bài viết ${article.title}`,
     });
 
-    // Gửi push notification cho subscribers
+    // Gửi push notification + Telegram user cho subscribers
     void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
+    import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
+      notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
+    });
     revalidatePath("/news", "layout");
     revalidatePath("/", "layout");
 

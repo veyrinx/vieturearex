@@ -36,6 +36,8 @@ export const SENSITIVE_FORM_KEYS = new Set([
   "integrations.lark_alerts_webhook_url",
   "integrations.telegram_bot_token",
   "integrations.telegram_chat_id",
+  "integrations.telegram_user_bot_token",
+  "integrations.telegram_user_chat_id",
   "tms.payment_info",
 ]);
 
@@ -91,6 +93,8 @@ export const settingsFormFieldOrder = [
   "integrations.telegram_bot_token",
   "integrations.telegram_chat_id",
   "integrations.telegram_daily_report",
+  "integrations.telegram_user_bot_token",
+  "integrations.telegram_user_chat_id",
   "mail.smtp_host",
   "mail.smtp_port",
   "mail.smtp_user",

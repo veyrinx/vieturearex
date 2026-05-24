@@ -1077,9 +1077,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
 
           <div className="py-3 border-t border-border mt-3">
-            <SectionHeader icon={BellRing} title="Telegram" desc="Gửi thông báo vào kênh / nhóm Telegram" />
+            <SectionHeader icon={BellRing} title="Telegram Bot Admin" desc="Gửi thông báo nội bộ: team join, bảo mật, báo cáo ngày" />
           </div>
-          <Field label="Bot Token" hint="Lấy từ @BotFather — nhạy cảm" icon={Plug}>
+          <Field label="Bot Token (Admin)" hint="Lấy từ @BotFather — nhạy cảm" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.telegram_bot_token")}
@@ -1091,18 +1091,18 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               <SensitiveHint hint={sensitiveHint("integrations.telegram_bot_token")} />
             </div>
           </Field>
-          <Field label="Chat ID / Channel" hint="@username kênh hoặc ID số âm của group/channel" icon={Plug}>
+          <Field label="Chat ID Admin" hint="@username hoặc ID số âm của group/channel nội bộ" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.telegram_chat_id")}
                 onChange={(e) => set("integrations.telegram_chat_id", e.target.value)}
-                placeholder="@arex_channel hoặc -1001234567890"
+                placeholder="@arex_admin hoặc -1001234567890"
                 className="font-mono text-xs"
               />
               <SensitiveHint hint={sensitiveHint("integrations.telegram_chat_id")} />
               {v("integrations.telegram_chat_id") && v("integrations.telegram_bot_token") && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — thông báo sẽ được gửi vào kênh.
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — thông báo admin sẽ được gửi vào kênh.
                 </p>
               )}
             </div>
@@ -1118,6 +1118,38 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
             </label>
           </Field>
+
+          <div className="py-3 border-t border-border mt-3">
+            <SectionHeader icon={BellRing} title="Telegram Bot User" desc="Gửi thông báo công khai: sự kiện mới, bài viết mới, FF update" />
+          </div>
+          <Field label="Bot Token (User)" hint="Bot riêng để đăng vào kênh public — nhạy cảm" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.telegram_user_bot_token")}
+                onChange={(e) => set("integrations.telegram_user_bot_token", e.target.value)}
+                placeholder="123456:ABC-DEF..."
+                className="font-mono text-xs"
+                type="password"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.telegram_user_bot_token")} />
+            </div>
+          </Field>
+          <Field label="Chat ID User" hint="@username hoặc ID kênh/nhóm public cho người dùng theo dõi" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.telegram_user_chat_id")}
+                onChange={(e) => set("integrations.telegram_user_chat_id", e.target.value)}
+                placeholder="@arex_news hoặc -1001234567890"
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.telegram_user_chat_id")} />
+              {v("integrations.telegram_user_chat_id") && v("integrations.telegram_user_bot_token") && (
+                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — sự kiện &amp; bài viết mới sẽ tự động đăng lên kênh.
+                </p>
+              )}
+            </div>
+          </Field>
         </Card>
         <SaveRow
           onSave={() => save(
@@ -1130,6 +1162,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.telegram_bot_token",
               "integrations.telegram_chat_id",
               "integrations.telegram_daily_report",
+              "integrations.telegram_user_bot_token",
+              "integrations.telegram_user_chat_id",
             ],
             "integrations",
           )}

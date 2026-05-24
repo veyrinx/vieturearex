@@ -102,12 +102,15 @@ export async function POST(request: NextRequest) {
       summary: `Tạo sự kiện ${event.title}`,
     });
 
-    // Gửi thông báo Zalo + Push khi tạo sự kiện mới
+    // Gửi thông báo Zalo + Push + Telegram user khi tạo sự kiện mới
     import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
       notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
     });
     import("@/lib/server/push-notify").then(({ sendPushNotification }) => {
       sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
+    });
+    import("@/lib/server/user-notify").then(({ notifyUserNewEvent }) => {
+      notifyUserNewEvent(event, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
     });
     revalidatePath("/events", "layout");
     revalidatePath("/calendar", "layout");

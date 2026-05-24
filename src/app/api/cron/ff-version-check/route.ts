@@ -5,6 +5,7 @@ import { fetchFFVersion, checkCdnUrls, DEFAULT_CDN_PATTERNS } from "@/lib/server
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
 import type { NotifySection } from "@/lib/server/telegram-notify";
+import { notifyUserFFVersion } from "@/lib/server/user-notify";
 
 const VERSION_KEY = "ff.last_known_version";
 const PATTERNS_KEY = "ff.cdn_url_patterns";
@@ -96,6 +97,11 @@ export async function GET(request: NextRequest) {
     await Promise.all([
       sendTelegramNotification(payload).catch(() => null),
       sendLarkNotification(payload).catch(() => null),
+      notifyUserFFVersion(
+        info.version,
+        accessibleLinks,
+        process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site",
+      ),
     ]);
   }
 
