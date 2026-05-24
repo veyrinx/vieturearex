@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/daily-report",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/ff-version-check",
+      "schedule": "0 */4 * * *"
     }
   ],
   "functions": {
@@ -18,7 +22,8 @@
     "src/app/api/streams/sync/route.ts": { "maxDuration": 30 },
     "src/app/api/tms/tournaments/[id]/generate-matches/route.ts": { "maxDuration": 30 },
     "src/app/api/upload/route.ts": { "maxDuration": 30 },
-    "src/app/api/admin/upload/route.ts": { "maxDuration": 30 }
+    "src/app/api/admin/upload/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/ff-version-check/route.ts": { "maxDuration": 30 }
   },
   "headers": [
     {
