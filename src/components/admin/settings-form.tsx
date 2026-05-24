@@ -1065,7 +1065,10 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
 
-          <div className="py-3 border-t border-border mt-3">
+        </Card>
+
+        <Card>
+          <div className="py-4">
             <SectionHeader icon={Plug} title="Lark / Feishu" desc="Webhook bot Lark — báo gia nhập team, báo cáo ngày, cảnh báo bảo mật" />
           </div>
           <Field label="Tên bot (hiển thị nội bộ)" hint="VD: Arex-Notifier" icon={Plug}>
@@ -1098,10 +1101,13 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </label>
           </Field>
 
-          <div className="py-3 border-t border-border mt-3">
-            <SectionHeader icon={BellRing} title="Telegram Bot Admin" desc="Gửi thông báo nội bộ: team join, bảo mật, báo cáo ngày" />
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BellRing} title="Telegram Bot Admin" desc="Gửi nội bộ: CSKH mới, team join, bảo mật, báo cáo hằng ngày" />
           </div>
-          <Field label="Bot Token (Admin)" hint="Lấy từ @BotFather — nhạy cảm" icon={Plug}>
+          <Field label="Bot Token" hint="Lấy từ @BotFather — nhạy cảm" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.telegram_bot_token")}
@@ -1113,7 +1119,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               <SensitiveHint hint={sensitiveHint("integrations.telegram_bot_token")} />
             </div>
           </Field>
-          <Field label="Chat ID Admin" hint="@username hoặc ID số âm của group/channel nội bộ" icon={Plug}>
+          <Field label="Chat ID / Group" hint="@username hoặc ID số âm của group/channel nội bộ" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.telegram_chat_id")}
@@ -1152,10 +1158,13 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </label>
           </Field>
 
-          <div className="py-3 border-t border-border mt-3">
-            <SectionHeader icon={BellRing} title="Telegram Bot User" desc="Gửi thông báo công khai: sự kiện mới, bài viết mới, FF update" />
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BellRing} title="Telegram Bot Public" desc="Gửi công khai cho người dùng: sự kiện mới, bài viết mới, cập nhật FF" />
           </div>
-          <Field label="Bot Token (User)" hint="Bot riêng để đăng vào kênh public — nhạy cảm" icon={Plug}>
+          <Field label="Bot Token" hint="Bot riêng để đăng vào kênh/group public — nhạy cảm" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.telegram_user_bot_token")}
@@ -1167,7 +1176,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               <SensitiveHint hint={sensitiveHint("integrations.telegram_user_bot_token")} />
             </div>
           </Field>
-          <Field label="Chat ID User" hint="@username hoặc ID kênh/nhóm public cho người dùng theo dõi" icon={Plug}>
+          <Field label="Chat ID / Group Public" hint="@username hoặc ID kênh/nhóm public cho người dùng theo dõi" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.telegram_user_chat_id")}

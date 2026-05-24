@@ -24,8 +24,8 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
   const pathname = usePathname();
 
   return (
-    <aside className="glass-card h-fit rounded-none p-4 md:rounded-2xl">
-      <div className="mb-6 border-b border-border pb-4">
+    <aside className="glass-card flex max-h-[calc(100vh-3rem)] flex-col rounded-none p-4 md:rounded-2xl">
+      <div className="mb-4 shrink-0 border-b border-border pb-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Image
@@ -43,7 +43,7 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
         </div>
       </div>
 
-      <nav className="space-y-1.5">
+      <nav className="scrollbar-none flex-1 space-y-1.5 overflow-y-auto">
         {adminNavItems.map((item) => (
           <Link
             key={item.href}
@@ -60,7 +60,7 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
         ))}
       </nav>
 
-      <div className="mt-6 border-t border-border pt-4">
+      <div className="mt-4 shrink-0 border-t border-border pt-4">
         <AdminLogoutButton />
       </div>
     </aside>
