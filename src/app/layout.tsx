@@ -137,18 +137,48 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: activeSite.name,
-              url: activeSite.url,
-              description: activeSite.description,
-              potentialAction: {
-                "@type": "SearchAction",
-                target: `${activeSite.url}/news?q={search_term_string}`,
-                "query-input": "required name=search_term_string",
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: activeSite.name,
+                url: activeSite.url,
+                description: activeSite.description,
+                inLanguage: "vi-VN",
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: `${activeSite.url}/news?q={search_term_string}`,
+                  "query-input": "required name=search_term_string",
+                },
               },
-            }),
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: activeSite.name,
+                url: activeSite.url,
+                logo: {
+                  "@type": "ImageObject",
+                  url: activeSite.sidebarIcon,
+                  width: 512,
+                  height: 512,
+                },
+                description: activeSite.description,
+                email: "admin@arex.tech",
+                foundingDate: "2024",
+                knowsAbout: ["Free Fire", "Garena Free Fire", "Esports Việt Nam", "Game Mobile"],
+                sameAs: [
+                  activeSite.links.facebook,
+                  activeSite.links.tiktok,
+                  activeSite.links.youtube,
+                ].filter((u) => Boolean(u) && !["https://youtube.com","https://facebook.com","https://tiktok.com"].includes(u as string)),
+                contactPoint: {
+                  "@type": "ContactPoint",
+                  email: "admin@arex.tech",
+                  contactType: "customer support",
+                  availableLanguage: ["Vietnamese"],
+                },
+              },
+            ]),
           }}
         />
       </head>

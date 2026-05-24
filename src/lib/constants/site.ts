@@ -40,7 +40,7 @@ export const iscConfig = {
   contactEmail: "admin@iscnetwork.site",
 } as const;
 
-type SiteConfig = typeof siteConfig;
+export type SiteConfig = typeof siteConfig | typeof iscConfig;
 
 const SITE_CONFIGS: Record<string, SiteConfig> = {
   "arexnetwork.site": siteConfig,
@@ -49,7 +49,7 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
   "www.iscnetwork.site": iscConfig,
 };
 
-export function getSiteConfigByHostname(hostname: string): SiteConfig {
+export function getSiteConfigByHostname(hostname: string): typeof siteConfig | typeof iscConfig {
   const clean = hostname.split(":")[0].toLowerCase();
   return SITE_CONFIGS[clean] ?? siteConfig;
 }

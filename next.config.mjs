@@ -143,6 +143,40 @@ const nextConfig = {
           { key: "Cache-Control", value: "no-store" },
         ],
       },
+      // Thin content / utility pages: noindex to improve AdSense content quality score
+      {
+        source: "/(login|register|setup|join|profile|yeu-thich|search|maintenance)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/players/compare",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/u/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
+      {
+        source: "/teams/:id/join",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/tournaments/:slug/(submit|register)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/tournaments/my-team",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
+      // Legacy redirect aliases: noindex to avoid duplicate content
+      {
+        source: "/(tin-tuc|su-kien|lich)/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
+      {
+        source: "/(tin-tuc|su-kien|lich|chinh-sach-bao-mat|dieu-khoan-su-dung)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
       {
         source: "/:path*",
         headers: [
