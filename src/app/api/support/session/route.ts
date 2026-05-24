@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const schema = z.object({
   display_name: z.string().trim().min(1).max(30),
@@ -59,6 +60,23 @@ export async function POST(request: NextRequest) {
   if (error || !session) {
     return NextResponse.json({ error: "Không thể tạo phiên hỗ trợ." }, { status: 500 });
   }
+
+  // Notify admin bot — new support session
+  void sendTelegramNotification({
+    title: "🆘 CSKH — Khách hàng mới cần hỗ trợ",
+    subtitle: `Phiên mới mở lúc ${vnNow()} (ICT)`,
+    sections: [{
+      icon: "👤",
+      heading: "Thông tin",
+      rows: [
+        { label: "Tên", value: display_name, bold: true },
+        { label: "Loại", value: userId ? "Thành viên đăng nhập" : "Khách vãng lai" },
+        { label: "Session ID", value: session.id, mono: true },
+      ],
+    }],
+    actions: [{ label: "🔧 Vào trang CSKH", url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site"}/admin/cskh` }],
+    footer: "🤖 Arex CSKH",
+  }).catch(() => null);
 
   return NextResponse.json({ session_id: session.id }, { status: 201 });
 }

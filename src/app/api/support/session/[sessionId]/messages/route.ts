@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { sanitizePlainText } from "@/lib/server/sanitize";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const postSchema = z.object({
   content: z.string().trim().min(1).max(2000),
@@ -54,11 +55,28 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   if (insertErr) return NextResponse.json({ error: "Không thể gửi tin nhắn." }, { status: 500 });
 
-  // Update last_message_at on session
-  await db
-    .from("support_sessions")
-    .update({ last_message_at: new Date().toISOString() } as never)
-    .eq("id", sessionId);
+  // Update last_message_at on session + count messages for context
+  const [, { count }] = await Promise.all([
+    db.from("support_sessions").update({ last_message_at: new Date().toISOString() } as never).eq("id", sessionId),
+    db.from("support_messages").select("id", { count: "exact", head: true }).eq("session_id", sessionId).eq("sender_type", "user") as unknown as Promise<{ count: number | null }>,
+  ]);
+
+  const preview = sanitizePlainText(content).slice(0, 120) + (content.length > 120 ? "…" : "");
+  const isFirst = (count ?? 1) <= 1;
+
+  void sendTelegramNotification({
+    title: isFirst ? "💬 CSKH — Tin nhắn đầu tiên" : "💬 CSKH — Tin nhắn mới",
+    subtitle: `${sender_name} • ${vnNow()} (ICT)`,
+    sections: [{
+      rows: [
+        { label: "Tên", value: sender_name, bold: true },
+        { label: "Nội dung", value: preview },
+        { label: "Session", value: sessionId, mono: true },
+      ],
+    }],
+    actions: [{ label: "💬 Trả lời ngay", url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site"}/admin/cskh` }],
+    footer: "🤖 Arex CSKH",
+  }).catch(() => null);
 
   return NextResponse.json({ ok: true });
 }

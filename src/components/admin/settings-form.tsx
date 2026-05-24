@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, ShieldCheck, Palette, Search, Home, Share2, Plug,
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
-  AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard,
+  AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
@@ -199,6 +199,28 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [tgTest, setTgTest] = useState<Record<string, "idle" | "loading" | "ok" | "err">>({});
+
+  async function testTelegramBot(bot: "admin" | "user") {
+    setTgTest((p) => ({ ...p, [bot]: "loading" }));
+    try {
+      const res = await fetch("/api/admin/telegram/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bot }),
+      });
+      setTgTest((p) => ({ ...p, [bot]: res.ok ? "ok" : "err" }));
+      if (res.ok) toast.success(`Bot ${bot === "admin" ? "Admin" : "User"} hoạt động — kiểm tra Telegram!`);
+      else {
+        const d = await res.json().catch(() => ({})) as { reason?: string };
+        toast.error(`Gửi thất bại: ${d.reason ?? "Kiểm tra token & chat ID"}`);
+      }
+    } catch {
+      setTgTest((p) => ({ ...p, [bot]: "err" }));
+      toast.error("Lỗi kết nối");
+    }
+    setTimeout(() => setTgTest((p) => ({ ...p, [bot]: "idle" })), 4000);
+  }
 
   useEffect(() => { setState(getSettingsFormInitialState(settings)); }, [settings]);
 
@@ -1101,9 +1123,20 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               />
               <SensitiveHint hint={sensitiveHint("integrations.telegram_chat_id")} />
               {v("integrations.telegram_chat_id") && v("integrations.telegram_bot_token") && (
-                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — thông báo admin sẽ được gửi vào kênh.
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="size-3.5" /> Đã cấu hình
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => testTelegramBot("admin")}
+                    disabled={tgTest["admin"] === "loading"}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-1 text-xs font-medium transition hover:bg-muted disabled:opacity-50"
+                  >
+                    {tgTest["admin"] === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <SendHorizonal className="size-3.5" />}
+                    {tgTest["admin"] === "loading" ? "Đang gửi…" : tgTest["admin"] === "ok" ? "✅ Đã gửi!" : tgTest["admin"] === "err" ? "❌ Thất bại" : "Gửi tin thử"}
+                  </button>
+                </div>
               )}
             </div>
           </Field>
@@ -1144,9 +1177,20 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               />
               <SensitiveHint hint={sensitiveHint("integrations.telegram_user_chat_id")} />
               {v("integrations.telegram_user_chat_id") && v("integrations.telegram_user_bot_token") && (
-                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — sự kiện &amp; bài viết mới sẽ tự động đăng lên kênh.
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="size-3.5" /> Đã cấu hình
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => testTelegramBot("user")}
+                    disabled={tgTest["user"] === "loading"}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-1 text-xs font-medium transition hover:bg-muted disabled:opacity-50"
+                  >
+                    {tgTest["user"] === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <SendHorizonal className="size-3.5" />}
+                    {tgTest["user"] === "loading" ? "Đang gửi…" : tgTest["user"] === "ok" ? "✅ Đã gửi!" : tgTest["user"] === "err" ? "❌ Thất bại" : "Gửi tin thử"}
+                  </button>
+                </div>
               )}
             </div>
           </Field>
