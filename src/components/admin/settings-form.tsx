@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
   { id: "event_servers", icon: Globe,       label: "Server",      desc: "Server sự kiện tuỳ chỉnh" },
   { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
-  { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark" },
+  { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark, Telegram, AI" },
   { id: "tms",          icon: Trophy,       label: "Giải Đấu",    desc: "Quota & thanh toán TMS" },
   { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
   { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
