@@ -78,5 +78,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     footer: "🤖 Arex CSKH",
   }).catch(() => null);
 
+  // Trigger AI auto-reply in background (fire and forget)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+  const secret = process.env.CRON_SECRET || process.env.APP_SECRET || "";
+  void fetch(`${baseUrl}/api/support/session/${sessionId}/ai-reply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-internal-secret": secret },
+  }).catch(() => null);
+
   return NextResponse.json({ ok: true });
 }

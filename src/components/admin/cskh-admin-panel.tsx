@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, RefreshCw, CheckCircle, MessageCircle } from "lucide-react";
+import { Send, RefreshCw, CheckCircle, MessageCircle, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -194,14 +194,26 @@ export function CskhAdminPanel() {
                 ) : (
                   messages.map((msg) => {
                     const isAdmin = msg.sender_type === "admin";
+                    const isAi = isAdmin && msg.sender_name.startsWith("[AI]");
+                    const displayName = isAi ? msg.sender_name.replace(/^\[AI\]\s*/, "") : msg.sender_name;
                     return (
                       <div key={msg.id} className={cn("flex flex-col gap-0.5", isAdmin ? "items-end" : "items-start")}>
-                        <span className="text-[10px] font-semibold text-muted-foreground">{msg.sender_name}</span>
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                          {isAi && <Bot className="size-3 text-violet-500" />}
+                          {displayName}
+                          {isAi && (
+                            <span className="rounded-full bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                              AI
+                            </span>
+                          )}
+                        </span>
                         <div className={cn(
                           "max-w-[75%] rounded-2xl px-3 py-2 text-sm",
-                          isAdmin
-                            ? "bg-primary text-white dark:bg-amber-500 rounded-tr-sm"
-                            : "bg-muted text-foreground rounded-tl-sm",
+                          isAi
+                            ? "bg-violet-500/15 text-violet-900 dark:text-violet-100 rounded-tr-sm border border-violet-500/20"
+                            : isAdmin
+                              ? "bg-primary text-white dark:bg-amber-500 rounded-tr-sm"
+                              : "bg-muted text-foreground rounded-tl-sm",
                         )}>
                           {msg.content}
                         </div>

@@ -1195,6 +1195,45 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
+        {/* ── AI CSKH ──────────────────────────────────────────────────────── */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Plug} title="AI Trả Lời CSKH" desc="Tự động trả lời tin nhắn hỗ trợ bằng Claude AI" />
+          </div>
+
+          <Field label="Bật AI tự động trả lời" hint="AI sẽ phản hồi ngay khi khách gửi tin nhắn mới">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("integrations.ai_auto_reply") !== "false"}
+                onChange={(val) => set("integrations.ai_auto_reply", val ? "true" : "false")}
+                label="Bật/tắt AI tự động trả lời"
+              />
+              <span className={cn("text-sm font-semibold", v("integrations.ai_auto_reply") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("integrations.ai_auto_reply") !== "false" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+
+          <Field label="Tên bot AI" hint="Tên hiển thị trong khung chat CSKH" icon={Plug}>
+            <Input
+              value={v("integrations.ai_bot_name")}
+              onChange={(e) => set("integrations.ai_bot_name", e.target.value)}
+              placeholder="Trợ Lý AI"
+              className="text-sm"
+            />
+          </Field>
+
+          <Field label="System Prompt (tuỳ chỉnh)" hint="Để trống để dùng prompt mặc định. Hỗ trợ {siteName}." icon={Plug}>
+            <Textarea
+              value={v("integrations.ai_system_prompt")}
+              onChange={(e) => set("integrations.ai_system_prompt", e.target.value)}
+              placeholder={"Để trống → dùng prompt mặc định:\n\"Bạn là trợ lý CSKH của {siteName}...\""}
+              rows={6}
+              className="font-mono text-xs"
+            />
+          </Field>
+        </Card>
+
         <SaveRow
           onSave={() => save(
             [
@@ -1208,6 +1247,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.telegram_daily_report",
               "integrations.telegram_user_bot_token",
               "integrations.telegram_user_chat_id",
+              "integrations.ai_auto_reply",
+              "integrations.ai_bot_name",
+              "integrations.ai_system_prompt",
             ],
             "integrations",
           )}
