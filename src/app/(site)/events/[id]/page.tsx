@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink, Eye, UserCircle2 } from "lucide-react";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 import { getEventById } from "@/lib/data/content-service";
+import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventViewTracker } from "@/components/events/event-view-tracker";
 import { EventComments } from "@/components/events/event-comments";
@@ -65,7 +64,7 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
 export const revalidate = 60;
 
 function formatEventDate(dateStr: string) {
-  return format(new Date(dateStr), "dd/MM/yyyy HH:mm", { locale: vi });
+  return formatVietnamDateTime(dateStr);
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
