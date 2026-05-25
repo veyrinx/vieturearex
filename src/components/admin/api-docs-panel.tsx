@@ -5,6 +5,7 @@ import {
   Copy, Check, Globe, Clock, Webhook, Bot, Lock, Terminal,
   ChevronDown, ChevronRight, ExternalLink, Key, Zap, MessageSquare,
   RefreshCw, Plug, Unplug, AlertCircle, CheckCircle2, Loader2,
+  FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -894,6 +895,188 @@ function TelegramTestCard() {
   );
 }
 
+// ── DiscordTestCard ─────────────────────────────────────────────────────────────
+function DiscordTestCard() {
+  const [statusInternal, setStatusInternal] = useState<SetupStatus>("idle");
+  const [statusPublic, setStatusPublic]     = useState<SetupStatus>("idle");
+  const [msgInternal, setMsgInternal]       = useState("");
+  const [msgPublic, setMsgPublic]           = useState("");
+
+  const test = async (channel: "internal" | "public") => {
+    const setStatus = channel === "internal" ? setStatusInternal : setStatusPublic;
+    const setMsg    = channel === "internal" ? setMsgInternal    : setMsgPublic;
+    setStatus("loading");
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/discord/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel }),
+      });
+      const data = (await res.json()) as { ok: boolean; reason?: string };
+      if (data.ok) {
+        setStatus("success");
+        setMsg(channel === "internal" ? "Discord nội bộ nhận tin thành công!" : "Discord public nhận tin thành công!");
+      } else {
+        setStatus("error");
+        setMsg(data.reason ?? "Gửi thất bại — kiểm tra Webhook URL trong Settings.");
+      }
+    } catch {
+      setStatus("error");
+      setMsg("Lỗi kết nối.");
+    }
+    setTimeout(() => { setStatus("idle"); setMsg(""); }, 4000);
+  };
+
+  const Row = ({
+    channel, label, desc, status, msg,
+  }: { channel: "internal" | "public"; label: string; desc: string; status: SetupStatus; msg: string }) => (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-background/60 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className={`text-xs font-bold ${channel === "internal" ? "text-indigo-600 dark:text-indigo-400" : "text-cyan-600 dark:text-cyan-400"}`}>{label}</p>
+          <p className="text-[10px] text-muted-foreground">{desc}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => test(channel)}
+          disabled={status === "loading"}
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition disabled:opacity-50",
+            channel === "internal"
+              ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 dark:text-indigo-400"
+              : "border-cyan-500/30 bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20 dark:text-cyan-400",
+          )}
+        >
+          {status === "loading" ? <Loader2 className="size-3 animate-spin" /> : <Webhook className="size-3" />}
+          Test
+        </button>
+      </div>
+      {msg && (
+        <div className={cn(
+          "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium",
+          status === "success"
+            ? "border-green-500/25 bg-green-500/10 text-green-600 dark:text-green-400"
+            : "border-red-500/25 bg-red-500/10 text-red-500",
+        )}>
+          {status === "success" ? <CheckCircle2 className="size-3 shrink-0" /> : <AlertCircle className="size-3 shrink-0" />}
+          {msg}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-indigo-500/20 bg-indigo-500/5 dark:border-indigo-500/15">
+      <div className="flex items-center gap-2 border-b border-indigo-500/15 px-4 py-3">
+        <Webhook className="size-4 text-indigo-500" />
+        <span className="text-sm font-bold uppercase tracking-wider text-foreground">Test Discord Webhook</span>
+        <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+          2 channels
+        </span>
+      </div>
+      <div className="space-y-2 p-4">
+        <Row
+          channel="internal"
+          label="Nội Bộ (Internal)"
+          desc="Gửi vào channel riêng — CSKH alerts, bảo mật, báo cáo ngày"
+          status={statusInternal}
+          msg={msgInternal}
+        />
+        <Row
+          channel="public"
+          label="Public"
+          desc="Gửi vào channel public — bài mới, sự kiện, FF update"
+          status={statusPublic}
+          msg={msgPublic}
+        />
+        <p className="text-[10px] text-muted-foreground">
+          Webhook URL cấu hình trong Settings → Tích Hợp → Discord.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── LarkSheetTestCard ───────────────────────────────────────────────────────────
+function LarkSheetTestCard() {
+  const [status, setStatus] = useState<SetupStatus>("idle");
+  const [msg, setMsg]       = useState("");
+
+  const test = async () => {
+    setStatus("loading");
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/lark/test-sheet", { method: "POST" });
+      const data = (await res.json()) as { ok: boolean; reason?: string };
+      if (data.ok) {
+        setStatus("success");
+        setMsg("Đã ghi 1 dòng test vào Lark Spreadsheet — kiểm tra bảng tính của bạn!");
+      } else {
+        setStatus("error");
+        setMsg(data.reason ?? "Thất bại — kiểm tra App ID, Secret, Sheet Token trong Settings.");
+      }
+    } catch {
+      setStatus("error");
+      setMsg("Lỗi kết nối.");
+    }
+    setTimeout(() => { setStatus("idle"); setMsg(""); }, 5000);
+  };
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:border-emerald-500/15">
+      <div className="flex items-center gap-2 border-b border-emerald-500/15 px-4 py-3">
+        <FileSpreadsheet className="size-4 text-emerald-500" />
+        <span className="text-sm font-bold uppercase tracking-wider text-foreground">Test Lark Spreadsheet</span>
+        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+          auto-sync
+        </span>
+      </div>
+      <div className="space-y-3 p-4">
+        <p className="text-xs text-muted-foreground">
+          Ghi 1 dòng test (<code className="font-mono text-[10px]">test@arexnetwork.site</code>) vào Lark Spreadsheet.
+          Nếu thành công, user mới đăng ký sẽ tự động được thêm vào mà không cần xuất thủ công.
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          {[["A", "Thời gian"], ["B", "Email"], ["C", "Tên"], ["D", "Role"], ["E", "FF ID"]].map(([col, label]) => (
+            <div key={col} className="flex items-center gap-1 rounded-md border border-border bg-background/70 px-2 py-1">
+              <span className="font-mono text-[10px] font-black text-emerald-600 dark:text-emerald-400">{col}</span>
+              <span className="text-[10px] text-muted-foreground">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={test}
+          disabled={status === "loading"}
+          className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-emerald-600 transition hover:bg-emerald-500/20 dark:text-emerald-400 disabled:opacity-50"
+        >
+          {status === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <FileSpreadsheet className="size-3.5" />}
+          {status === "loading" ? "Đang ghi..." : "Ghi dòng test"}
+        </button>
+
+        {msg && (
+          <div className={cn(
+            "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium",
+            status === "success"
+              ? "border-green-500/25 bg-green-500/10 text-green-600 dark:text-green-400"
+              : "border-red-500/25 bg-red-500/10 text-red-500",
+          )}>
+            {status === "success" ? <CheckCircle2 className="size-3.5 shrink-0" /> : <AlertCircle className="size-3.5 shrink-0" />}
+            {msg}
+          </div>
+        )}
+
+        <p className="text-[10px] text-muted-foreground">
+          Cần cấu hình Lark App ID + Secret + Spreadsheet Token trong Settings → Tích Hợp.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main panel ──────────────────────────────────────────────────────────────────
 export function ApiDocsPanel() {
   const [activeSection, setActiveSection] = useState<string>("webhook");
@@ -970,6 +1153,8 @@ export function ApiDocsPanel() {
           <div className="space-y-2">
             {current.id === "webhook" && <WebhookSetupCard />}
             {current.id === "webhook" && <TelegramTestCard />}
+            {current.id === "webhook" && <DiscordTestCard />}
+            {current.id === "cskh" && <LarkSheetTestCard />}
             {current.endpoints.map((ep) => (
               <EndpointCard key={`${ep.method}-${ep.path}`} ep={ep} />
             ))}
