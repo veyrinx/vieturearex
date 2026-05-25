@@ -499,7 +499,7 @@ function MethodBadge({ method }: { method: Method }) {
 // ── EndpointCard ────────────────────────────────────────────────────────────────
 function EndpointCard({ ep }: { ep: Endpoint }) {
   const [open, setOpen] = useState(false);
-  const fullPath = `${BASE_URL}${ep.path}`;
+  const fullPath = ep.path.startsWith("http") ? ep.path : `${BASE_URL}${ep.path}`;
   const hasDetails = ep.auth || ep.rateLimit || ep.params?.length || ep.body || ep.response || ep.note;
 
   return (
