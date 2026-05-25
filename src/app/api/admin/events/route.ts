@@ -12,6 +12,9 @@ import { sanitizePlainText } from "@/lib/server/sanitize";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -26,6 +29,43 @@ function normalizeUrlField(raw: unknown): string {
   const str = String(raw ?? "").trim();
   if (!str) return "";
   try { new URL(str); return str; } catch { return ""; }
+}
+
+function notifyEventChange(
+  event: { title: string; start_date: string; end_date: string; server_region?: string | null; link?: string | null; id: string },
+  action: "created" | "updated",
+  adminName: string,
+) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  const eventUrl = event.link || `${siteUrl}/events`;
+
+  const payload = {
+    title: action === "created" ? "🗓️ Sự kiện mới được đăng" : "✏️ Sự kiện đã được cập nhật",
+    subtitle: vnNow(),
+    sections: [
+      {
+        icon: action === "created" ? "🎉" : "🔄",
+        heading: event.title,
+        rows: [
+          { label: "Bắt đầu", value: fmtDate(event.start_date) },
+          { label: "Kết thúc", value: fmtDate(event.end_date) },
+          ...(event.server_region ? [{ label: "Khu vực", value: event.server_region }] : []),
+          { label: action === "created" ? "Đăng bởi" : "Cập nhật bởi", value: adminName },
+        ],
+      },
+    ],
+    actions: [{ label: "Xem sự kiện", url: eventUrl }],
+    footer: "🤖 Arex Admin",
+  };
+
+  const color = action === "created" ? DISCORD_COLORS.info : DISCORD_COLORS.warn;
+
+  void Promise.allSettled([
+    sendTelegramNotification(payload),
+    sendDiscordInternalNotification(payload, color),
+    sendLarkNotification(payload, "main"),
+  ]);
 }
 
 export async function GET(request: NextRequest) {
@@ -102,6 +142,8 @@ export async function POST(request: NextRequest) {
       summary: `Tạo sự kiện ${event.title}`,
     });
 
+    notifyEventChange(event, "created", adminName);
+
     // Gửi thông báo Zalo + Push + Telegram user khi tạo sự kiện mới
     import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
       notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
@@ -177,6 +219,9 @@ export async function PATCH(request: NextRequest) {
       targetId: event.id,
       summary: `Cập nhật sự kiện ${event.title}`,
     });
+
+    notifyEventChange(event, "updated", adminName);
+
     revalidatePath("/events", "layout");
     revalidatePath("/calendar", "layout");
     revalidatePath("/", "layout");
