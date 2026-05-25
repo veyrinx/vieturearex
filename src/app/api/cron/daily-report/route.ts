@@ -1,27 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, getDashboardStats } from "@/lib/data/content-service";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification } from "@/lib/server/discord-notify";
 
-const DAILY_KEY = "analytics.daily_views";
+const DAILY_KEY             = "analytics.daily_views";
 const SCHEDULE_HOUR_KEY     = "integrations.report_schedule_hour";
 const SCHEDULE_INTERVAL_KEY = "integrations.report_schedule_interval";
+const SCHEDULE_DAYS_KEY     = "integrations.report_schedule_days";
 
 function vnHourNow(): number {
   const s = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    hour: "numeric",
-    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh", hour: "numeric", hour12: false,
   }).format(new Date());
   const n = parseInt(s);
   return n === 24 ? 0 : n;
 }
 
-function shouldSendNow(settings: { key: string; value: string }[]): boolean {
+function vnWeekdayNow(): number {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })).getDay();
+}
+
+function shouldSendNow(settings: { key: string; value: string }[], force = false): boolean {
+  if (force) return true;
   const hour     = parseInt(settings.find((s) => s.key === SCHEDULE_HOUR_KEY)?.value ?? "8");
   const interval = parseInt(settings.find((s) => s.key === SCHEDULE_INTERVAL_KEY)?.value ?? "24");
+  const daysRaw  = settings.find((s) => s.key === SCHEDULE_DAYS_KEY)?.value ?? "";
   const current  = vnHourNow();
+  const weekday  = vnWeekdayNow();
+
+  if (daysRaw) {
+    const allowed = daysRaw.split(",").map((d) => parseInt(d.trim())).filter((d) => !isNaN(d));
+    if (allowed.length > 0 && !allowed.includes(weekday)) return false;
+  }
+
   if (interval <= 1) return true;
   if (interval >= 24) return current === hour;
   return current % interval === hour % interval;
@@ -34,6 +47,31 @@ function vnDateKey(daysAgo = 0) {
   return d.toISOString().slice(0, 10);
 }
 
+async function getTodayStats() {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) return { newUsers: 0, newNews: 0, newEvents: 0, pendingComments: 0 };
+
+  const todayStart = `${vnDateKey(0)}T00:00:00+07:00`;
+
+  const [usersRes, newsRes, eventsRes, commentsRes] = await Promise.allSettled([
+    (supabase.from("users") as ReturnType<typeof supabase.from>)
+      .select("id", { count: "exact", head: true }).gte("created_at", todayStart),
+    (supabase.from("news") as ReturnType<typeof supabase.from>)
+      .select("id", { count: "exact", head: true }).gte("created_at", todayStart),
+    (supabase.from("events") as ReturnType<typeof supabase.from>)
+      .select("id", { count: "exact", head: true }).gte("created_at", todayStart),
+    (supabase.from("news_comments") as ReturnType<typeof supabase.from>)
+      .select("id", { count: "exact", head: true }).eq("status", "pending"),
+  ]);
+
+  return {
+    newUsers:        usersRes.status === "fulfilled"    ? ((usersRes.value as { count: number | null }).count ?? 0)    : 0,
+    newNews:         newsRes.status === "fulfilled"     ? ((newsRes.value as { count: number | null }).count ?? 0)     : 0,
+    newEvents:       eventsRes.status === "fulfilled"   ? ((eventsRes.value as { count: number | null }).count ?? 0)   : 0,
+    pendingComments: commentsRes.status === "fulfilled" ? ((commentsRes.value as { count: number | null }).count ?? 0) : 0,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization") ?? "";
   const expected = process.env.CRON_SECRET;
@@ -41,9 +79,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [stats, settings] = await Promise.all([getDashboardStats(), getSettings()]);
+  const force = request.headers.get("x-force-report") === "1";
 
-  if (!shouldSendNow(settings)) {
+  const [stats, settings, todayStats] = await Promise.all([
+    getDashboardStats(),
+    getSettings(),
+    getTodayStats(),
+  ]);
+
+  if (!shouldSendNow(settings, force)) {
     return NextResponse.json({ ok: true, sent: false, reason: "not_scheduled_hour", hour: vnHourNow() });
   }
 
@@ -58,11 +102,11 @@ export async function GET(request: NextRequest) {
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }
 
-  const today = daily[vnDateKey(0)] ?? 0;
+  const today     = daily[vnDateKey(0)] ?? 0;
   const yesterday = daily[vnDateKey(1)] ?? 0;
-  const last7 = Array.from({ length: 7 }, (_, i) => daily[vnDateKey(i)] ?? 0).reduce((a, b) => a + b, 0);
-  const diff = today - yesterday;
-  const trend = diff > 0 ? `📈 +${diff.toLocaleString("vi-VN")}` : diff < 0 ? `📉 ${diff.toLocaleString("vi-VN")}` : "➖ Không đổi";
+  const last7     = Array.from({ length: 7 }, (_, i) => daily[vnDateKey(i)] ?? 0).reduce((a, b) => a + b, 0);
+  const diff      = today - yesterday;
+  const trend     = diff > 0 ? `📈 +${diff.toLocaleString("vi-VN")}` : diff < 0 ? `📉 ${diff.toLocaleString("vi-VN")}` : "➖ Không đổi";
 
   const payload = {
     title: `📊 BÁO CÁO NGÀY — ${vnDateKey(0)}`,
@@ -70,12 +114,24 @@ export async function GET(request: NextRequest) {
     sections: [
       {
         icon: "👁️",
-        heading: "Lượt xem",
+        heading: "Lượt xem hôm nay",
         rows: [
           { label: "Hôm nay", value: today.toLocaleString("vi-VN"), bold: true },
           { label: "So hôm qua", value: trend },
           { label: "Hôm qua", value: yesterday.toLocaleString("vi-VN") },
           { label: "7 ngày gần nhất", value: last7.toLocaleString("vi-VN") },
+        ],
+      },
+      {
+        icon: "🆕",
+        heading: "Hoạt động hôm nay",
+        rows: [
+          { label: "User mới", value: todayStats.newUsers.toLocaleString("vi-VN"), bold: todayStats.newUsers > 0 },
+          { label: "Bài viết mới", value: todayStats.newNews.toLocaleString("vi-VN"), bold: todayStats.newNews > 0 },
+          { label: "Sự kiện mới", value: todayStats.newEvents.toLocaleString("vi-VN"), bold: todayStats.newEvents > 0 },
+          ...(todayStats.pendingComments > 0
+            ? [{ label: "Bình luận chờ duyệt", value: todayStats.pendingComments.toLocaleString("vi-VN"), status: "warn" as const }]
+            : []),
         ],
       },
       {
@@ -93,9 +149,9 @@ export async function GET(request: NextRequest) {
   };
 
   const [larkResult, telegramResult, discordResult] = await Promise.all([
-    larkEnabled ? sendLarkNotification(payload) : Promise.resolve({ sent: false }),
-    telegramEnabled ? sendTelegramNotification(payload) : Promise.resolve({ sent: false }),
-    discordEnabled ? sendDiscordInternalNotification(payload) : Promise.resolve({ sent: false }),
+    larkEnabled     ? sendLarkNotification(payload)             : Promise.resolve({ sent: false }),
+    telegramEnabled ? sendTelegramNotification(payload)         : Promise.resolve({ sent: false }),
+    discordEnabled  ? sendDiscordInternalNotification(payload)  : Promise.resolve({ sent: false }),
   ]);
 
   return NextResponse.json({
@@ -107,5 +163,6 @@ export async function GET(request: NextRequest) {
     today,
     yesterday,
     last7,
+    todayStats,
   });
 }

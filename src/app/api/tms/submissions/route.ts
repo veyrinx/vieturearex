@@ -3,6 +3,9 @@ import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createScoreSubmission, getScoreSubmissions, getUserSubmissions, getUserWeeklySubmissionCount } from "@/lib/tms/data";
 import { getSettings } from "@/lib/data/content-service";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 export async function GET(req: Request) {
   const auth = await getAuthContext();
@@ -135,6 +138,24 @@ export async function POST(req: Request) {
       },
       auth.userId,
     );
+
+    const notifyPayload = {
+      title: "🏆 Kết quả thi đấu được nộp",
+      subtitle: vnNow(),
+      sections: [{ icon: "🎮", heading: `FF ID: ${body.ff_id}`, rows: [
+        { label: "Giải đấu", value: body.tournament_id ?? "—", mono: true },
+        { label: "K / A / D", value: `${body.kills ?? 0} / ${body.assists ?? 0} / ${body.deaths ?? 0}` },
+        ...(body.placement ? [{ label: "Hạng", value: String(body.placement) }] : []),
+        { label: "Damage", value: String(body.damage ?? 0) },
+      ]}],
+      footer: "🤖 Arex TMS",
+    };
+    void Promise.allSettled([
+      sendTelegramNotification(notifyPayload),
+      sendDiscordInternalNotification(notifyPayload, DISCORD_COLORS.info),
+      sendLarkNotification(notifyPayload, "main"),
+    ]);
+
     return NextResponse.json(sub, { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });

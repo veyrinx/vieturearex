@@ -12,8 +12,8 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
 import { sendPushNotification } from "@/lib/server/push-notify";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
-import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 async function getAdminName(): Promise<string> {
@@ -76,6 +76,11 @@ function notifyNewsChange(
     sendTelegramNotification(payload),
     sendDiscordInternalNotification(payload, color),
     sendLarkNotification(payload, "main"),
+    // Public channels — chỉ khi tạo mới
+    ...(action === "created" ? [
+      sendUserTelegramNotification(payload),
+      sendDiscordPublicNotification(payload, DISCORD_COLORS.info),
+    ] : []),
   ]);
 }
 

@@ -200,6 +200,21 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [savingPw, setSavingPw] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [tgTest, setTgTest] = useState<Record<string, "idle" | "loading" | "ok" | "err">>({});
+  const [reportSending, setReportSending] = useState(false);
+
+  async function sendReportNow() {
+    setReportSending(true);
+    try {
+      const res = await fetch("/api/admin/report/trigger", { method: "POST" });
+      const d = await res.json().catch(() => ({})) as { sent?: boolean; reason?: string };
+      if (res.ok && d.sent) toast.success("Đã gửi báo cáo thành công tới các kênh!");
+      else toast.error(`Gửi thất bại: ${d.reason ?? "kiểm tra cấu hình channel"}`);
+    } catch {
+      toast.error("Lỗi kết nối");
+    } finally {
+      setReportSending(false);
+    }
+  }
 
   async function testTelegramBot(bot: "admin" | "user") {
     setTgTest((p) => ({ ...p, [bot]: "loading" }));
@@ -1375,24 +1390,70 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </Select>
           </Field>
 
+          <Field label="Ngày trong tuần" hint="Chỉ gửi vào các ngày được chọn — bỏ chọn hết = gửi mọi ngày" icon={Calendar}>
+            {(() => {
+              const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+              const selected = new Set((v("integrations.report_schedule_days") || "0,1,2,3,4,5,6").split(",").map(Number));
+              return (
+                <div className="flex flex-wrap gap-2">
+                  {days.map((label, idx) => {
+                    const active = selected.has(idx);
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const next = new Set(selected);
+                          if (active) next.delete(idx); else next.add(idx);
+                          set("integrations.report_schedule_days", [...next].sort().join(","));
+                        }}
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors",
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-muted/30 text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </Field>
+
           {(() => {
             const hour = parseInt(v("integrations.report_schedule_hour") || "8");
             const interval = parseInt(v("integrations.report_schedule_interval") || "24");
+            const daysRaw = v("integrations.report_schedule_days") || "0,1,2,3,4,5,6";
+            const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+            const activeDays = daysRaw.split(",").map(Number).filter((d) => !isNaN(d)).map((d) => dayNames[d]).join(", ");
             const fmtH = (h: number) => `${String(h % 24).padStart(2, "0")}:00`;
-            let preview = "";
-            if (interval >= 24) {
-              preview = `Gửi lúc ${fmtH(hour)} ICT mỗi ngày`;
-            } else if (interval <= 1) {
-              preview = "Gửi mỗi giờ";
-            } else {
+            let timePreview = "";
+            if (interval >= 24) timePreview = `lúc ${fmtH(hour)} ICT`;
+            else if (interval <= 1) timePreview = "mỗi giờ";
+            else {
               const times = Array.from({ length: Math.floor(24 / interval) }, (_, i) => fmtH((hour % interval) + i * interval));
-              preview = `Gửi lúc ${times.join(", ")} ICT`;
+              timePreview = `lúc ${times.join(", ")} ICT`;
             }
+            const preview = `Gửi ${timePreview}${activeDays ? ` — ${activeDays}` : " — mọi ngày"}`;
             return (
-              <div className="py-3">
+              <div className="py-3 space-y-3">
                 <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
                   <Clock className="size-4 text-primary shrink-0" />
                   <p className="text-xs font-medium text-primary">{preview}</p>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={reportSending}
+                    onClick={sendReportNow}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+                  >
+                    {reportSending ? <Loader2 className="size-3.5 animate-spin" /> : <SendHorizonal className="size-3.5" />}
+                    {reportSending ? "Đang gửi…" : "Gửi báo cáo ngay"}
+                  </button>
                 </div>
               </div>
             );
@@ -1472,6 +1533,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.discord_daily_report",
               "integrations.report_schedule_hour",
               "integrations.report_schedule_interval",
+              "integrations.report_schedule_days",
               "integrations.telegram_bot_token",
               "integrations.telegram_chat_id",
               "integrations.telegram_daily_report",
