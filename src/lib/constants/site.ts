@@ -84,5 +84,6 @@ export const adminNavItems = [
   { title: "GIẢI ĐẤU", href: "/admin/tournaments" },
   { title: "PHÂN QUYỀN", href: "/admin/permissions" },
   { title: "CÀI ĐẶT", href: "/admin/settings" },
+  { title: "API DOCS", href: "/admin/api-docs" },
   { title: "HỒ SƠ", href: "/admin/profile" },
 ] as const;

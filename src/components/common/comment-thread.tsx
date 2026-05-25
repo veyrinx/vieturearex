@@ -271,6 +271,8 @@ export function CommentThread({ apiPath, realtimeTable, realtimeFilter, realtime
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
+    // Skip WebSocket realtime on insecure contexts — prevents "operation is insecure" on mobile HTTP
+    if (typeof window !== "undefined" && !window.isSecureContext) return;
     const channel = supabase
       .channel(realtimeChannel)
       .on("postgres_changes", {
@@ -287,7 +289,9 @@ export function CommentThread({ apiPath, realtimeTable, realtimeFilter, realtime
           return [...prev, incoming];
         });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) console.warn("[realtime]", err);
+      });
     return () => { void supabase.removeChannel(channel); };
   }, [realtimeChannel, realtimeTable, realtimeFilter]);
 
