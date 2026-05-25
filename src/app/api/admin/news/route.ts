@@ -12,6 +12,9 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
 import { sendPushNotification } from "@/lib/server/push-notify";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -40,6 +43,40 @@ function buildExcerpt(title: string, excerpt?: string) {
 function buildContent(title: string, content?: string) {
   const normalizedContent = sanitizeRichText(content ?? "");
   return normalizedContent || `<p>${title}</p>`;
+}
+
+function notifyNewsChange(
+  article: { title: string; slug: string; category?: string | null; excerpt?: string | null },
+  action: "created" | "updated",
+  adminName: string,
+) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const articleUrl = `${siteUrl}/news/${article.slug}`;
+
+  const payload = {
+    title: action === "created" ? "📰 Bài viết mới được đăng" : "✏️ Bài viết đã được cập nhật",
+    subtitle: vnNow(),
+    sections: [
+      {
+        icon: action === "created" ? "🆕" : "🔄",
+        heading: article.title,
+        rows: [
+          ...(article.category ? [{ label: "Danh mục", value: article.category }] : []),
+          { label: action === "created" ? "Đăng bởi" : "Cập nhật bởi", value: adminName },
+        ],
+      },
+    ],
+    actions: [{ label: "Xem bài viết", url: articleUrl }],
+    footer: "🤖 Arex Admin",
+  };
+
+  const color = action === "created" ? DISCORD_COLORS.info : DISCORD_COLORS.warn;
+
+  void Promise.allSettled([
+    sendTelegramNotification(payload),
+    sendDiscordInternalNotification(payload, color),
+    sendLarkNotification(payload, "main"),
+  ]);
 }
 
 export async function GET(request: NextRequest) {
@@ -99,6 +136,8 @@ export async function POST(request: NextRequest) {
       summary: `Tạo bài viết ${article.title}`,
     });
 
+    notifyNewsChange(article, "created", adminName);
+
     // Gửi push notification + Telegram user cho subscribers
     void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
     import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
@@ -134,6 +173,7 @@ export async function PATCH(request: NextRequest) {
     const title = sanitizePlainText(parsed.data.title);
     const slug = parsed.data.slug?.trim() ? parsed.data.slug : createSlug(title);
 
+    const adminName = await getAdminName();
     const article = await updateNews(parsed.data.id, {
       ...parsed.data,
       title,
@@ -150,6 +190,9 @@ export async function PATCH(request: NextRequest) {
       targetId: article.id,
       summary: `Cập nhật bài viết ${article.title}`,
     });
+
+    notifyNewsChange(article, "updated", adminName);
+
     revalidatePath("/news", "layout");
     revalidatePath(`/news/${article.slug}`, "page");
     revalidatePath("/", "layout");
