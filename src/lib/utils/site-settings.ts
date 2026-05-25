@@ -38,6 +38,7 @@ export const SENSITIVE_FORM_KEYS = new Set([
   "integrations.telegram_chat_id",
   "integrations.telegram_user_bot_token",
   "integrations.telegram_user_chat_id",
+  "integrations.ai_api_key",
   "tms.payment_info",
 ]);
 
@@ -98,6 +99,7 @@ export const settingsFormFieldOrder = [
   "integrations.ai_auto_reply",
   "integrations.ai_bot_name",
   "integrations.ai_system_prompt",
+  "integrations.ai_api_key",
   "mail.smtp_host",
   "mail.smtp_port",
   "mail.smtp_user",

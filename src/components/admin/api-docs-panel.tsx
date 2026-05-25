@@ -162,6 +162,39 @@ const SECTIONS: Section[] = [
         desc: "Verification endpoint khi đăng ký Zalo OA webhook — trả về challenge code.",
         response: "challenge_code (plain text)",
       },
+      {
+        method: "POST",
+        path: "https://discord.com/api/webhooks/{id}/{token}",
+        desc: "Outgoing — hệ thống GỬI thông báo ra Discord. Không phải route của server này.",
+        auth: "Không cần — URL webhook đã chứa token (cấu hình trong Settings → Tích Hợp → Discord)",
+        note: "Trigger: bài viết mới được duyệt. Cấu hình Webhook URL trong Server Settings → Integrations → Webhooks của Discord.",
+        body: JSON.stringify({
+          content: null,
+          embeds: [{
+            title: "📰 Bài mới: Tên bài viết",
+            url: `${BASE_URL}/news/ten-bai-viet`,
+            color: 0xfbbf24,
+            description: "Mô tả bài viết...",
+            footer: { text: "Arex Network" },
+          }],
+        }, null, 2),
+        response: "HTTP 204 No Content (Discord)",
+      },
+      {
+        method: "POST",
+        path: "https://open.larksuite.com/open-apis/bot/v2/hook/{token}",
+        desc: "Outgoing — hệ thống GỬI thông báo ra Lark/Feishu. Không phải route của server này.",
+        auth: "Không cần — URL webhook đã chứa token (cấu hình trong Settings → Tích Hợp → Lark)",
+        note: "Trigger: team join mới, báo cáo ngày (cron 07:00 ICT), cảnh báo bảo mật. Cấu hình webhook trong Lark → Bot → Webhook Bot.",
+        body: JSON.stringify({
+          msg_type: "interactive",
+          card: {
+            header: { title: { tag: "plain_text", content: "📊 Báo cáo ngày — Arex" } },
+            elements: [{ tag: "div", text: { tag: "lark_md", content: "**Hôm nay:** 1,234 lượt xem" } }],
+          },
+        }, null, 2),
+        response: JSON.stringify({ code: 0, msg: "success" }, null, 2),
+      },
     ],
   },
 

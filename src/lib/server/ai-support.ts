@@ -23,6 +23,7 @@ export interface AiReplyResult {
 const AI_ENABLED_KEY = "integrations.ai_auto_reply";
 const AI_PROMPT_KEY  = "integrations.ai_system_prompt";
 const AI_NAME_KEY    = "integrations.ai_bot_name";
+const AI_KEY_KEY     = "integrations.ai_api_key";
 
 // ── Default system prompt ─────────────────────────────────────────────────────
 
@@ -75,10 +76,12 @@ export async function generateAiReply(
   history: SupportMessage[],
   siteName: string,
 ): Promise<AiReplyResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const settings = await getSettings();
+  const apiKey =
+    settings.find((s) => s.key === AI_KEY_KEY)?.value?.trim() ||
+    process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { reply: "", refused: false, category: "no_api_key" };
 
-  const settings = await getSettings();
   const customPrompt = settings.find((s) => s.key === AI_PROMPT_KEY)?.value?.trim();
   const systemPrompt = (customPrompt || DEFAULT_SYSTEM).replace(/\{siteName\}/g, siteName);
 

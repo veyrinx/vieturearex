@@ -1241,6 +1241,23 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               className="font-mono text-xs"
             />
           </Field>
+
+          <Field label="Anthropic API Key" hint="Dùng key riêng thay vì biến môi trường ANTHROPIC_API_KEY — nhạy cảm" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.ai_api_key")}
+                onChange={(e) => set("integrations.ai_api_key", e.target.value)}
+                placeholder="sk-ant-api03-..."
+                className="font-mono text-xs"
+                type="password"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.ai_api_key")} />
+              <p className="text-[11px] text-muted-foreground">
+                Để trống → dùng <code className="font-mono">ANTHROPIC_API_KEY</code> từ môi trường Vercel/server. Lấy key tại{" "}
+                <span className="font-mono text-primary">console.anthropic.com</span>.
+              </p>
+            </div>
+          </Field>
         </Card>
 
         <SaveRow
@@ -1259,6 +1276,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.ai_auto_reply",
               "integrations.ai_bot_name",
               "integrations.ai_system_prompt",
+              "integrations.ai_api_key",
             ],
             "integrations",
           )}
