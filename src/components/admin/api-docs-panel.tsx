@@ -209,10 +209,10 @@ const SECTIONS: Section[] = [
       {
         method: "GET",
         path: "/api/cron/daily-report",
-        desc: "Tổng hợp và gửi báo cáo hàng ngày qua Telegram + Lark. Chạy mỗi ngày lúc 7:00 ICT.",
+        desc: "Tổng hợp và gửi báo cáo hàng ngày qua Telegram + Lark + Discord. Chạy mỗi ngày lúc 7:00 ICT.",
         auth: "Authorization: Bearer CRON_SECRET",
-        note: "Vercel cron: `0 0 * * *` (UTC = 7:00 ICT). Cần settings: integrations.lark_daily_report / integrations.telegram_daily_report.",
-        response: JSON.stringify({ ok: true, sent: true, lark: true, telegram: true, today: 1234, yesterday: 890 }, null, 2),
+        note: "Vercel cron: `0 0 * * *` (UTC = 7:00 ICT). Bật/tắt từng kênh: integrations.telegram_daily_report / integrations.lark_daily_report / integrations.discord_daily_report.",
+        response: JSON.stringify({ ok: true, sent: true, lark: true, telegram: true, discord: false, today: 1234, yesterday: 890 }, null, 2),
       },
       {
         method: "GET",

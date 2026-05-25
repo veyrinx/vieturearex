@@ -1051,20 +1051,57 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
 
         <Card>
           <div className="py-4">
-            <SectionHeader icon={BellRing} title="Discord" desc="Gửi thông báo vào kênh Discord" />
+            <SectionHeader icon={BellRing} title="Discord — Nội Bộ" desc="Gửi vào channel riêng: CSKH mới, team join, bảo mật, báo cáo ngày" />
           </div>
-          <Field label="Webhook URL" hint="Tạo trong Server Settings → Integrations">
+          <Field label="Webhook URL Nội Bộ" hint="Tạo trong Server Settings → Integrations → Webhooks">
             <div className="space-y-2">
-              <Input value={v("site.discord_webhook")} onChange={(e) => set("site.discord_webhook", e.target.value)} placeholder="https://discord.com/api/webhooks/..." />
-              <SensitiveHint hint={sensitiveHint("site.discord_webhook")} />
-              {v("site.discord_webhook") && (
+              <Input
+                value={v("integrations.discord_internal_webhook")}
+                onChange={(e) => set("integrations.discord_internal_webhook", e.target.value)}
+                placeholder="https://discord.com/api/webhooks/..."
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.discord_internal_webhook")} />
+              {v("integrations.discord_internal_webhook") && (
                 <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="size-3.5" /> Thông báo sẽ được gửi khi có bài viết mới.
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — nội bộ.
                 </p>
               )}
             </div>
           </Field>
+          <Field label="Bật báo cáo ngày qua Discord" hint="Gửi cùng lúc Telegram + Lark lúc 07:00 ICT">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={v("integrations.discord_daily_report") === "true"}
+                onChange={(e) => set("integrations.discord_daily_report", e.target.checked ? "true" : "false")}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span className="text-xs text-muted-foreground">Mặc định tắt. Bật để nhận báo cáo ngày trên Discord.</span>
+            </label>
+          </Field>
+        </Card>
 
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BellRing} title="Discord — Public" desc="Gửi ra channel public: bài mới, sự kiện, cập nhật Free Fire" />
+          </div>
+          <Field label="Webhook URL Public" hint="Tạo trong Server Settings → Integrations → Webhooks (channel public)">
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.discord_public_webhook")}
+                onChange={(e) => set("integrations.discord_public_webhook", e.target.value)}
+                placeholder="https://discord.com/api/webhooks/..."
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.discord_public_webhook")} />
+              {v("integrations.discord_public_webhook") && (
+                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình — public.
+                </p>
+              )}
+            </div>
+          </Field>
         </Card>
 
         <Card>
@@ -1101,6 +1138,87 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </label>
           </Field>
 
+        </Card>
+
+        {/* ── LARK SPREADSHEET ──────────────────────────────────────────────────── */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Plug} title="Lark Spreadsheet — Tự Động Ghi User Mới" desc="Mỗi khi có tài khoản mới đăng ký, tự động thêm 1 dòng vào bảng tính Lark. Không cần xuất thủ công." />
+          </div>
+
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 mb-1">
+            <p className="text-[11px] text-blue-600 dark:text-blue-400 leading-relaxed">
+              <span className="font-bold">Cách lấy thông tin:</span> Mở Lark → tạo App tại{" "}
+              <span className="font-mono">open.larksuite.com/app</span> → vào Credentials → copy App ID + Secret.
+              Mở Spreadsheet → lấy token trong URL:{" "}
+              <span className="font-mono">larksuite.com/sheets/<b>&#123;token&#125;</b></span>.
+              Cấp quyền App: <span className="font-mono">sheets:spreadsheet</span>.
+            </p>
+          </div>
+
+          <Field label="Lark App ID" hint="Từ trang Credentials của Lark App" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.lark_app_id")}
+                onChange={(e) => set("integrations.lark_app_id", e.target.value)}
+                placeholder="cli_xxxxxxxxxxxxxx"
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.lark_app_id")} />
+            </div>
+          </Field>
+
+          <Field label="Lark App Secret" hint="Nhạy cảm — không chia sẻ" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.lark_app_secret")}
+                onChange={(e) => set("integrations.lark_app_secret", e.target.value)}
+                placeholder="xxxxxxxxxxxxxxxxxxxx"
+                className="font-mono text-xs"
+                type="password"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.lark_app_secret")} />
+            </div>
+          </Field>
+
+          <Field label="Spreadsheet Token" hint="Token trong URL bảng tính Lark" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.lark_sheet_token")}
+                onChange={(e) => set("integrations.lark_sheet_token", e.target.value)}
+                placeholder="shtxxxxxxxxxxxxxxxxxx"
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.lark_sheet_token")} />
+            </div>
+          </Field>
+
+          <Field label="Tên Sheet" hint='Tên tab trong bảng tính (mặc định: "Sheet1")' icon={Plug}>
+            <Input
+              value={v("integrations.lark_sheet_name")}
+              onChange={(e) => set("integrations.lark_sheet_name", e.target.value)}
+              placeholder="Sheet1"
+              className="font-mono text-xs max-w-48"
+            />
+          </Field>
+
+          <div className="py-3">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cột dữ liệu sẽ được ghi</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { col: "A", label: "Thời gian đăng ký" },
+                { col: "B", label: "Email" },
+                { col: "C", label: "Tên hiển thị" },
+                { col: "D", label: "Vai trò (role)" },
+                { col: "E", label: "FF ID" },
+              ].map(({ col, label }) => (
+                <div key={col} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5">
+                  <span className="font-mono text-[11px] font-black text-primary">{col}</span>
+                  <span className="text-[10px] text-muted-foreground">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </Card>
 
         <Card>
@@ -1263,11 +1381,18 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         <SaveRow
           onSave={() => save(
             [
-              "zalo.webhook_url", "zalo.group_id", "site.discord_webhook",
+              "zalo.webhook_url", "zalo.group_id",
               "integrations.lark_webhook_url",
               "integrations.lark_alerts_webhook_url",
               "integrations.lark_bot_name",
               "integrations.lark_daily_report",
+              "integrations.lark_app_id",
+              "integrations.lark_app_secret",
+              "integrations.lark_sheet_token",
+              "integrations.lark_sheet_name",
+              "integrations.discord_internal_webhook",
+              "integrations.discord_public_webhook",
+              "integrations.discord_daily_report",
               "integrations.telegram_bot_token",
               "integrations.telegram_chat_id",
               "integrations.telegram_daily_report",

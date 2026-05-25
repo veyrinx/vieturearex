@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSettings, getDashboardStats } from "@/lib/data/content-service";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification } from "@/lib/server/discord-notify";
 
 const DAILY_KEY = "analytics.daily_views";
 
@@ -20,9 +21,10 @@ export async function GET(request: NextRequest) {
   }
 
   const [stats, settings] = await Promise.all([getDashboardStats(), getSettings()]);
-  const larkEnabled = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false";
+  const larkEnabled     = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false";
   const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false";
-  if (!larkEnabled && !telegramEnabled) {
+  const discordEnabled  = settings.find((s) => s.key === "integrations.discord_daily_report")?.value === "true";
+  if (!larkEnabled && !telegramEnabled && !discordEnabled) {
     return NextResponse.json({ ok: true, sent: false, reason: "disabled" });
   }
 
@@ -64,16 +66,18 @@ export async function GET(request: NextRequest) {
     footer: "🤖 Arex Auto-Report",
   };
 
-  const [larkResult, telegramResult] = await Promise.all([
+  const [larkResult, telegramResult, discordResult] = await Promise.all([
     larkEnabled ? sendLarkNotification(payload) : Promise.resolve({ sent: false }),
     telegramEnabled ? sendTelegramNotification(payload) : Promise.resolve({ sent: false }),
+    discordEnabled ? sendDiscordInternalNotification(payload) : Promise.resolve({ sent: false }),
   ]);
 
   return NextResponse.json({
     ok: true,
-    sent: larkResult.sent || telegramResult.sent,
+    sent: larkResult.sent || telegramResult.sent || discordResult.sent,
     lark: larkResult.sent,
     telegram: telegramResult.sent,
+    discord: discordResult.sent,
     today,
     yesterday,
     last7,

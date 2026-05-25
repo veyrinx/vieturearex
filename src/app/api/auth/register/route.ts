@@ -10,6 +10,7 @@ import {
 } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { appendUserToLarkSheet } from "@/lib/server/lark-sheet";
 
 const schema = z.object({
   email: z.string().email().refine((val) => val.endsWith(`@${ADMIN_EMAIL_DOMAIN}`), {
@@ -68,6 +69,9 @@ export async function POST(request: NextRequest) {
     targetId: user.id,
     summary: `Tạo tài khoản admin qua thư mời cho ${email}`,
   });
+
+  // Fire-and-forget: sync new user to Lark spreadsheet
+  void appendUserToLarkSheet({ email, display_name: user.display_name, role: user.role });
 
   return NextResponse.json({ ok: true });
 }
