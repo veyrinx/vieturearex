@@ -749,6 +749,118 @@ function WebhookSetupCard() {
   );
 }
 
+// ── TelegramTestCard ────────────────────────────────────────────────────────────
+function TelegramTestCard() {
+  const [statusAdmin, setStatusAdmin] = useState<SetupStatus>("idle");
+  const [statusUser, setStatusUser] = useState<SetupStatus>("idle");
+  const [msgAdmin, setMsgAdmin] = useState("");
+  const [msgUser, setMsgUser] = useState("");
+
+  const test = async (bot: "admin" | "user") => {
+    const setStatus = bot === "admin" ? setStatusAdmin : setStatusUser;
+    const setMsg    = bot === "admin" ? setMsgAdmin    : setMsgUser;
+    setStatus("loading");
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/telegram/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bot }),
+      });
+      const data = (await res.json()) as { ok: boolean; reason?: string };
+      if (data.ok) {
+        setStatus("success");
+        setMsg(bot === "admin" ? "Bot Admin đã gửi tin nhắn test!" : "Bot User đã gửi tin nhắn test!");
+      } else {
+        setStatus("error");
+        setMsg(data.reason ?? "Gửi thất bại — kiểm tra token trong Settings.");
+      }
+    } catch {
+      setStatus("error");
+      setMsg("Lỗi kết nối.");
+    }
+    setTimeout(() => { setStatus("idle"); setMsg(""); }, 4000);
+  };
+
+  const BotRow = ({
+    bot, label, desc, color, status, msg,
+  }: {
+    bot: "admin" | "user";
+    label: string;
+    desc: string;
+    color: string;
+    status: SetupStatus;
+    msg: string;
+  }) => (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-background/60 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className={`text-xs font-bold ${color}`}>{label}</p>
+          <p className="text-[10px] text-muted-foreground">{desc}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => test(bot)}
+          disabled={status === "loading"}
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition disabled:opacity-50",
+            bot === "admin"
+              ? "border-violet-500/30 bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 dark:text-violet-400"
+              : "border-blue-500/30 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 dark:text-blue-400",
+          )}
+        >
+          {status === "loading" ? <Loader2 className="size-3 animate-spin" /> : <Bot className="size-3" />}
+          Test
+        </button>
+      </div>
+      {msg && (
+        <div className={cn(
+          "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium",
+          status === "success"
+            ? "border-green-500/25 bg-green-500/10 text-green-600 dark:text-green-400"
+            : "border-red-500/25 bg-red-500/10 text-red-500",
+        )}>
+          {status === "success" ? <CheckCircle2 className="size-3 shrink-0" /> : <AlertCircle className="size-3 shrink-0" />}
+          {msg}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-violet-500/20 bg-violet-500/5 dark:border-violet-500/15">
+      <div className="flex items-center gap-2 border-b border-violet-500/15 px-4 py-3">
+        <Bot className="size-4 text-violet-500" />
+        <span className="text-sm font-bold uppercase tracking-wider text-foreground">Test Bot Telegram</span>
+        <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-violet-600 dark:text-violet-400">
+          2 bots
+        </span>
+      </div>
+      <div className="space-y-2 p-4">
+        <BotRow
+          bot="admin"
+          label="Bot Admin (nội bộ)"
+          desc="Gửi vào group/channel nội bộ — nhận alerts CSKH, bảo mật, báo cáo ngày"
+          color="text-violet-600 dark:text-violet-400"
+          status={statusAdmin}
+          msg={msgAdmin}
+        />
+        <BotRow
+          bot="user"
+          label="Bot User (public)"
+          desc="Gửi vào channel public — thông báo sự kiện mới, bài viết, FF update"
+          color="text-blue-600 dark:text-blue-400"
+          status={statusUser}
+          msg={msgUser}
+        />
+        <p className="text-[10px] text-muted-foreground">
+          Bot token cấu hình trong Settings → Integrations → Telegram.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main panel ──────────────────────────────────────────────────────────────────
 export function ApiDocsPanel() {
   const [activeSection, setActiveSection] = useState<string>("webhook");
@@ -824,6 +936,7 @@ export function ApiDocsPanel() {
 
           <div className="space-y-2">
             {current.id === "webhook" && <WebhookSetupCard />}
+            {current.id === "webhook" && <TelegramTestCard />}
             {current.endpoints.map((ep) => (
               <EndpointCard key={`${ep.method}-${ep.path}`} ep={ep} />
             ))}

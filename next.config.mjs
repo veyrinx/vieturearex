@@ -17,9 +17,6 @@ const nextConfig = {
   compiler: {
     removeConsole: isDevelopment ? false : { exclude: ["error"] },
   },
-  experimental: {
-    serverMinification: true,
-  },
   webpack(config, { isServer }) {
     if (!isServer) {
       config.resolve.alias = {
@@ -93,6 +90,7 @@ const nextConfig = {
     const connectSrc = [
       "'self'",
       "https://*.supabase.co",
+      "wss://*.supabase.co",
       "https://www.googleapis.com",
       "https://i.ytimg.com",
       "https://www.youtube-nocookie.com",

@@ -3,6 +3,7 @@ import { getEventById } from "@/lib/data/content-service";
 import { siteConfig } from "@/lib/constants/site";
 
 export const runtime = "nodejs";
+export const maxDuration = 10;
 export const alt = "Arex — Sự kiện Free Fire";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
