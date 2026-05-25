@@ -1365,6 +1365,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               <SelectContent>
                 <SelectItem value="1">Mỗi 1 giờ</SelectItem>
                 <SelectItem value="2">Mỗi 2 giờ</SelectItem>
+                <SelectItem value="3">Mỗi 3 giờ</SelectItem>
                 <SelectItem value="4">Mỗi 4 giờ</SelectItem>
                 <SelectItem value="6">Mỗi 6 giờ</SelectItem>
                 <SelectItem value="8">Mỗi 8 giờ</SelectItem>
