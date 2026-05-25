@@ -5,6 +5,27 @@ import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification } from "@/lib/server/discord-notify";
 
 const DAILY_KEY = "analytics.daily_views";
+const SCHEDULE_HOUR_KEY     = "integrations.report_schedule_hour";
+const SCHEDULE_INTERVAL_KEY = "integrations.report_schedule_interval";
+
+function vnHourNow(): number {
+  const s = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    hour: "numeric",
+    hour12: false,
+  }).format(new Date());
+  const n = parseInt(s);
+  return n === 24 ? 0 : n;
+}
+
+function shouldSendNow(settings: { key: string; value: string }[]): boolean {
+  const hour     = parseInt(settings.find((s) => s.key === SCHEDULE_HOUR_KEY)?.value ?? "8");
+  const interval = parseInt(settings.find((s) => s.key === SCHEDULE_INTERVAL_KEY)?.value ?? "24");
+  const current  = vnHourNow();
+  if (interval <= 1) return true;
+  if (interval >= 24) return current === hour;
+  return current % interval === hour % interval;
+}
 
 function vnDateKey(daysAgo = 0) {
   const d = new Date();
@@ -21,6 +42,11 @@ export async function GET(request: NextRequest) {
   }
 
   const [stats, settings] = await Promise.all([getDashboardStats(), getSettings()]);
+
+  if (!shouldSendNow(settings)) {
+    return NextResponse.json({ ok: true, sent: false, reason: "not_scheduled_hour", hour: vnHourNow() });
+  }
+
   const larkEnabled     = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false";
   const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false";
   const discordEnabled  = settings.find((s) => s.key === "integrations.discord_daily_report")?.value === "true";

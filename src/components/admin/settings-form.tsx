@@ -1322,6 +1322,82 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
+        {/* ── LỊCH GỬI BÁO CÁO ────────────────────────────────────────────── */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Clock} title="Lịch Gửi Báo Cáo Tự Động" desc="Cấu hình giờ và tần suất gửi báo cáo qua Telegram + Discord + Lark" />
+          </div>
+
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 mb-1">
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+              <span className="font-bold">⚡ Lưu ý:</span> Cron chạy mỗi giờ — cần{" "}
+              <span className="font-semibold">Vercel Pro</span> để gửi theo interval (mỗi 2–12 giờ).
+              Hobby plan chỉ hỗ trợ <span className="font-semibold">hằng ngày</span> (chọn interval = Hằng ngày).
+            </p>
+          </div>
+
+          <Field label="Giờ gửi (ICT)" hint="Giờ Việt Nam (UTC+7) để gửi báo cáo — áp dụng cho hằng ngày hoặc làm gốc tính interval" icon={Clock}>
+            <Select
+              value={v("integrations.report_schedule_hour")}
+              onValueChange={(val) => set("integrations.report_schedule_hour", val ?? "8")}
+            >
+              <SelectTrigger className="max-w-40">
+                <SelectValue placeholder="Chọn giờ" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 24 }, (_, h) => (
+                  <SelectItem key={h} value={String(h)}>
+                    {String(h).padStart(2, "0")}:00 ICT
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field label="Tần suất" hint="Mỗi bao nhiêu giờ gửi 1 lần" icon={Zap}>
+            <Select
+              value={v("integrations.report_schedule_interval")}
+              onValueChange={(val) => set("integrations.report_schedule_interval", val ?? "24")}
+            >
+              <SelectTrigger className="max-w-52">
+                <SelectValue placeholder="Chọn tần suất" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Mỗi 1 giờ</SelectItem>
+                <SelectItem value="2">Mỗi 2 giờ</SelectItem>
+                <SelectItem value="4">Mỗi 4 giờ</SelectItem>
+                <SelectItem value="6">Mỗi 6 giờ</SelectItem>
+                <SelectItem value="8">Mỗi 8 giờ</SelectItem>
+                <SelectItem value="12">Mỗi 12 giờ</SelectItem>
+                <SelectItem value="24">Hằng ngày (vào giờ đã chọn)</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
+          {(() => {
+            const hour = parseInt(v("integrations.report_schedule_hour") || "8");
+            const interval = parseInt(v("integrations.report_schedule_interval") || "24");
+            const fmtH = (h: number) => `${String(h % 24).padStart(2, "0")}:00`;
+            let preview = "";
+            if (interval >= 24) {
+              preview = `Gửi lúc ${fmtH(hour)} ICT mỗi ngày`;
+            } else if (interval <= 1) {
+              preview = "Gửi mỗi giờ";
+            } else {
+              const times = Array.from({ length: Math.floor(24 / interval) }, (_, i) => fmtH((hour % interval) + i * interval));
+              preview = `Gửi lúc ${times.join(", ")} ICT`;
+            }
+            return (
+              <div className="py-3">
+                <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
+                  <Clock className="size-4 text-primary shrink-0" />
+                  <p className="text-xs font-medium text-primary">{preview}</p>
+                </div>
+              </div>
+            );
+          })()}
+        </Card>
+
         {/* ── AI CSKH ──────────────────────────────────────────────────────── */}
         <Card>
           <div className="py-4">
@@ -1393,6 +1469,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.discord_internal_webhook",
               "integrations.discord_public_webhook",
               "integrations.discord_daily_report",
+              "integrations.report_schedule_hour",
+              "integrations.report_schedule_interval",
               "integrations.telegram_bot_token",
               "integrations.telegram_chat_id",
               "integrations.telegram_daily_report",
