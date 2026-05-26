@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal } from "lucide-react";
@@ -17,6 +17,7 @@ type SearchResult = {
   href: string;
   status?: string;
   category?: string;
+  slug?: string;
 };
 
 export default function SearchPage() {
@@ -30,53 +31,43 @@ export default function SearchPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [category, setCategory] = useState<string>("all");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const doSearch = async (q: string) => {
-    if (!q.trim()) { setResults([]); return; }
+  const doSearch = async (q: string, type: "all" | "event" | "news" = filter) => {
+    if (q.trim().length < 2) { setResults([]); return; }
     setLoading(true);
-
     try {
-      const [eventsRes, newsRes] = await Promise.all([
-        fetch("/api/events").then((r) => r.json()).catch(() => ({ events: [] })),
-        fetch("/api/news").then((r) => r.json()).catch(() => ({ news: [] })),
-      ]);
-
-      const lower = q.toLowerCase();
-      const eventResults: SearchResult[] = (eventsRes.events || [])
-        .filter((e: { title: string; description: string }) =>
-          e.title.toLowerCase().includes(lower) || e.description.toLowerCase().includes(lower))
-        .map((e: { id: string; title: string; description: string; start_date: string; status: string }) => ({
-          type: "event" as const,
-          id: e.id,
-          title: e.title,
-          description: e.description.slice(0, 120),
-          date: e.start_date,
-          href: "/events",
-          status: e.status,
-        }));
-
-      const newsResults: SearchResult[] = (newsRes.news || [])
-        .filter((n: { title: string; excerpt: string }) =>
-          n.title.toLowerCase().includes(lower) || n.excerpt.toLowerCase().includes(lower))
-        .map((n: { id: string; title: string; excerpt: string; created_at: string; slug: string; category: string }) => ({
-          type: "news" as const,
-          id: n.id,
-          title: n.title,
-          description: n.excerpt.slice(0, 120),
-          date: n.created_at,
-          href: `/news/${n.slug}`,
-          category: n.category,
-        }));
-
-      setResults([...eventResults, ...newsResults]);
+      const params = new URLSearchParams({ q: q.trim(), type, limit: "40" });
+      const res = await fetch(`/api/search?${params}`);
+      if (res.ok) {
+        const data = await res.json() as { results: SearchResult[] };
+        setResults(data.results ?? []);
+      } else {
+        setResults([]);
+      }
     } catch {
       setResults([]);
     }
     setLoading(false);
   };
 
+  // Debounce real-time search
   useEffect(() => {
-    if (initialQuery) doSearch(initialQuery);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { void doSearch(query); }, 350);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  // Re-search when type filter changes
+  useEffect(() => {
+    if (query.trim().length >= 2) void doSearch(query, filter);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  useEffect(() => {
+    if (initialQuery) void doSearch(initialQuery);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
   const categories = useMemo(() => {
@@ -87,12 +78,8 @@ export default function SearchPage() {
 
   const filtered = useMemo(() => {
     return results.filter((r) => {
-      if (filter !== "all" && r.type !== filter) return false;
       if (category !== "all" && r.category !== category) return false;
-      if (dateFrom) {
-        const from = new Date(dateFrom);
-        if (new Date(r.date) < from) return false;
-      }
+      if (dateFrom && new Date(r.date) < new Date(dateFrom)) return false;
       if (dateTo) {
         const to = new Date(dateTo);
         to.setHours(23, 59, 59);
@@ -100,7 +87,7 @@ export default function SearchPage() {
       }
       return true;
     });
-  }, [results, filter, category, dateFrom, dateTo]);
+  }, [results, category, dateFrom, dateTo]);
 
   const hasActiveAdvanced = Boolean(dateFrom || dateTo || category !== "all");
   const clearAdvanced = () => { setDateFrom(""); setDateTo(""); setCategory("all"); };
@@ -110,10 +97,7 @@ export default function SearchPage() {
       <SectionHeading title="Tìm kiếm" description="Tìm kiếm sự kiện, tin tức trong hệ thống Arex." />
 
       <div className="glass-card rounded-2xl p-5 space-y-4">
-        <form
-          onSubmit={(e) => { e.preventDefault(); doSearch(query); }}
-          className="flex gap-3"
-        >
+        <form onSubmit={(e) => { e.preventDefault(); void doSearch(query); }} className="flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
@@ -121,6 +105,7 @@ export default function SearchPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Nhập từ khóa tìm kiếm..."
               className="h-12 rounded-xl pl-10 text-sm"
+              autoFocus
             />
           </div>
           <Button type="submit" className="h-12 rounded-xl px-6" disabled={loading}>
@@ -129,7 +114,7 @@ export default function SearchPage() {
         </form>
 
         {/* Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
           {(["all", "event", "news"] as const).map((f) => (
             <button
@@ -159,9 +144,7 @@ export default function SearchPage() {
             {hasActiveAdvanced && <span className="ml-1 size-1.5 rounded-full bg-current" />}
           </button>
           {results.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {filtered.length} kết quả
-            </span>
+            <span className="text-xs text-muted-foreground">{filtered.length} kết quả</span>
           )}
         </div>
 
@@ -169,21 +152,11 @@ export default function SearchPage() {
           <div className="grid gap-3 rounded-xl border border-border/40 bg-muted/20 p-3 sm:grid-cols-3">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Từ ngày</label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 rounded-lg text-xs"
-              />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 rounded-lg text-xs" />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đến ngày</label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 rounded-lg text-xs"
-              />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 rounded-lg text-xs" />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Chuyên mục</label>
@@ -193,9 +166,7 @@ export default function SearchPage() {
                 className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs text-foreground"
               >
                 <option value="all">Tất cả</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             {hasActiveAdvanced && (
@@ -216,22 +187,18 @@ export default function SearchPage() {
       {filtered.length > 0 ? (
         <div className="space-y-3">
           {filtered.map((result) => (
-            <Link key={result.id} href={result.href}>
+            <Link key={`${result.type}-${result.id}`} href={result.href}>
               <div className="glass-card rounded-2xl p-4 transition hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg dark:hover:border-amber-400/20">
                 <div className="flex items-start gap-3">
                   <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                    result.type === "event"
-                      ? "bg-blue-500/10 text-blue-500"
-                      : "bg-green-500/10 text-green-500"
+                    result.type === "event" ? "bg-blue-500/10 text-blue-500" : "bg-green-500/10 text-green-500"
                   }`}>
                     {result.type === "event" ? <Calendar className="size-5" /> : <Newspaper className="size-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                        result.type === "event"
-                          ? "bg-blue-500/10 text-blue-500"
-                          : "bg-green-500/10 text-green-500"
+                        result.type === "event" ? "bg-blue-500/10 text-blue-500" : "bg-green-500/10 text-green-500"
                       }`}>
                         {result.type === "event" ? "SỰ KIỆN" : "TIN TỨC"}
                       </span>
@@ -257,7 +224,7 @@ export default function SearchPage() {
             </Link>
           ))}
         </div>
-      ) : query && !loading ? (
+      ) : query.trim().length >= 2 && !loading ? (
         <div className="glass-card rounded-2xl p-10 text-center">
           <X className="mx-auto size-10 text-muted-foreground/30" />
           <p className="mt-3 font-heading text-sm font-bold uppercase text-muted-foreground">KHÔNG TÌM THẤY KẾT QUẢ</p>

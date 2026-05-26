@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { formatDistanceToNowStrict } from "date-fns";
 import { vi } from "date-fns/locale";
-import { ShieldCheck, Download, Search, RefreshCw, Users, Shield } from "lucide-react";
+import { ShieldCheck, Download, Search, RefreshCw, Users, Shield, CalendarDays, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminLogsQuery } from "@/hooks/use-admin-logs-query";
 import { EmptyState } from "@/components/common/empty-state";
@@ -60,9 +60,15 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 export function ActivityLogsPanel() {
-  const { data: logs = [], isLoading, refetch } = useAdminLogsQuery();
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showDateFilter, setShowDateFilter] = useState(false);
+
+  const { data: logs = [], isLoading, refetch } = useAdminLogsQuery(dateFrom || undefined, dateTo || undefined);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+
+  const clearDates = useCallback(() => { setDateFrom(""); setDateTo(""); }, []);
 
   const typeFiltered = typeFilter === "admin"
     ? logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action))
@@ -96,7 +102,24 @@ export function ActivityLogsPanel() {
             LƯU CÁC HOẠT ĐỘNG CHÍNH CỦA TRANG ADMIN TRONG 48 GIỜ GẦN NHẤT, SAU ĐÓ TỰ ĐỘNG XÓA.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className={cn("h-9 gap-1.5 rounded-xl text-sm", (dateFrom || dateTo) && "border-primary/30 bg-primary/10 text-primary")}
+            onClick={() => setShowDateFilter((v) => !v)}
+          >
+            <CalendarDays className="size-3.5" />
+            {dateFrom || dateTo ? "Đã lọc" : "Lọc ngày"}
+            {(dateFrom || dateTo) && (
+              <span
+                className="ml-0.5 flex size-3.5 items-center justify-center rounded-full bg-current/20 hover:bg-destructive/30"
+                onClick={(e) => { e.stopPropagation(); clearDates(); }}
+              >
+                <X className="size-2.5" />
+              </span>
+            )}
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -119,6 +142,25 @@ export function ActivityLogsPanel() {
           </Button>
         </div>
       </div>
+
+      {/* Date range picker */}
+      {showDateFilter && (
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border/40 bg-muted/20 p-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Từ ngày</label>
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-8 w-36 rounded-lg text-xs" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đến ngày</label>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-8 w-36 rounded-lg text-xs" />
+          </div>
+          {(dateFrom || dateTo) && (
+            <Button size="sm" variant="ghost" onClick={clearDates} className="h-8 gap-1 rounded-lg px-2.5 text-xs text-muted-foreground">
+              <X className="size-3" /> Xóa
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Type filter + Search */}
       {logs.length > 0 && (
