@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X, Trash2, RefreshCw, MessageSquare, Clock, Search } from "lucide-react";
+import { Check, X, Trash2, RefreshCw, MessageSquare, Clock, Search, CheckCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,7 @@ export function CommentsAdminPanel() {
   const [source, setSource] = useState<CommentSource>("news_comments");
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: comments = [], isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["admin-comments", statusFilter, source],
@@ -83,6 +84,22 @@ export function CommentsAdminPanel() {
     setLoadingId(null);
     if (!res.ok) { toast.error("Không thể cập nhật."); return; }
     toast.success(status === "approved" ? "Đã duyệt bình luận." : "Đã từ chối bình luận.");
+    void queryClient.invalidateQueries({ queryKey: ["admin-comments"] });
+  };
+
+  const bulkUpdateStatus = async (status: "approved" | "rejected") => {
+    const ids = filtered.map((c) => c.id);
+    if (!ids.length) return;
+    setBulkLoading(true);
+    const res = await fetch("/api/admin/comments", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, status, table: source }),
+    });
+    setBulkLoading(false);
+    if (!res.ok) { toast.error("Không thể thực hiện."); return; }
+    const data = await res.json() as { updated?: number };
+    toast.success(`Đã ${status === "approved" ? "duyệt" : "từ chối"} ${data.updated ?? ids.length} bình luận.`);
     void queryClient.invalidateQueries({ queryKey: ["admin-comments"] });
   };
 
@@ -168,13 +185,35 @@ export function CommentsAdminPanel() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats + bulk actions */}
       {statusFilter === "pending" && pendingCount > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/8 px-4 py-2.5">
-          <Clock className="size-4 text-amber-500" />
-          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/8 px-4 py-2.5">
+          <Clock className="size-4 shrink-0 text-amber-500" />
+          <p className="flex-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
             Có <span className="font-black">{pendingCount}</span> bình luận đang chờ duyệt
           </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={bulkLoading || filtered.length === 0}
+              onClick={() => bulkUpdateStatus("approved")}
+              className="h-7 gap-1.5 rounded-lg border-green-500/30 px-2.5 text-xs text-green-600 hover:bg-green-500/10 dark:text-green-400"
+            >
+              <CheckCheck className="size-3" />
+              Duyệt tất cả ({filtered.length})
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={bulkLoading || filtered.length === 0}
+              onClick={() => bulkUpdateStatus("rejected")}
+              className="h-7 gap-1.5 rounded-lg border-rose-500/30 px-2.5 text-xs text-rose-500 hover:bg-rose-500/10"
+            >
+              <XCircle className="size-3" />
+              Từ chối tất cả
+            </Button>
+          </div>
         </div>
       )}
 

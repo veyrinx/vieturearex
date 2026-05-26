@@ -8,6 +8,7 @@ import {
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
 import { ViewsTrendCard } from "@/components/admin/views-trend-card";
+import { TodayActivityCard } from "@/components/admin/today-activity-card";
 import { getDashboardStats, getUserByEmail } from "@/lib/data/content-service";
 import { getAuthContext } from "@/lib/server/auth";
 
@@ -165,6 +166,9 @@ export default async function AdminDashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* ── Today's activity ── */}
+      <TodayActivityCard />
 
       {/* ── Analytics trend ── */}
       <ViewsTrendCard />

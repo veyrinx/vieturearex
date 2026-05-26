@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X } from "lucide-react";
+import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Notification = {
@@ -19,10 +19,11 @@ type Notification = {
 };
 
 const TYPE_META: Record<string, { icon: React.ElementType; color: string }> = {
-  registration_approved:  { icon: Trophy,   color: "text-emerald-400" },
-  registration_rejected:  { icon: X,        color: "text-red-400" },
-  match_scheduled:        { icon: Calendar, color: "text-primary dark:text-amber-400" },
-  match_result:           { icon: Swords,   color: "text-amber-400" },
+  registration_approved:  { icon: Trophy,              color: "text-emerald-400" },
+  registration_rejected:  { icon: X,                   color: "text-red-400" },
+  match_scheduled:        { icon: Calendar,             color: "text-primary dark:text-amber-400" },
+  match_result:           { icon: Swords,               color: "text-amber-400" },
+  comment_approved:       { icon: MessageCircleCheck,   color: "text-green-400" },
 };
 
 function timeAgo(date: string) {
