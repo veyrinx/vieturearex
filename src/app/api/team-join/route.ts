@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
         rows: [{ label: "IP", value: getClientIp(request), mono: true }],
       },
     ],
-    footer: "🤖 Arex Team Monitor",
+    footer: "👥 Arex Team Monitor",
   };
   void sendLarkNotification(joinPayload).catch(() => null);
   void sendTelegramNotification(joinPayload).catch(() => null);

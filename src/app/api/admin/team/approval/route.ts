@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
           ],
         },
       ],
-      footer: "🤖 Arex Team Monitor",
+      footer: "👥 Arex Team Monitor",
     };
     void sendLarkNotification(rejectPayload).catch(() => null);
     void sendTelegramNotification(rejectPayload).catch(() => null);
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
           ],
         },
       ],
-      footer: "🤖 Arex Team Monitor",
+      footer: "👥 Arex Team Monitor",
     };
     void sendLarkNotification(itApprovePayload).catch(() => null);
     void sendTelegramNotification(itApprovePayload).catch(() => null);
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
           ],
         },
       ],
-      footer: "🤖 Arex Team Monitor",
+      footer: "👥 Arex Team Monitor",
     };
     void sendLarkNotification(adminApprovePayload).catch(() => null);
     void sendTelegramNotification(adminApprovePayload).catch(() => null);

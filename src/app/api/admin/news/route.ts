@@ -67,7 +67,7 @@ function notifyNewsChange(
       },
     ],
     actions: [{ label: "Xem bài viết", url: articleUrl }],
-    footer: "🤖 Arex Admin",
+    footer: "✨ Arex Admin",
   };
 
   const color = action === "created" ? DISCORD_COLORS.info : DISCORD_COLORS.warn;

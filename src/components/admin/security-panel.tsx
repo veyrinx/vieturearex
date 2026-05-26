@@ -38,7 +38,7 @@ function shortenUa(ua: string) {
   const safari = ua.match(/Version\/[\d.]+ Safari/);
   const edge = ua.match(/Edg\/(\d+)/);
   const bot = /bot|crawl|spider|slurp|baidu|bing/i.test(ua);
-  if (bot) return "🤖 Bot";
+  if (bot) return "Bot";
   if (edge) return `Edge ${edge[1]}`;
   if (chrome) return `Chrome ${chrome[1]}`;
   if (firefox) return `Firefox ${firefox[1]}`;

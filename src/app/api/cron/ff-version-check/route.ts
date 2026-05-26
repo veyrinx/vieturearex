@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
           url: "https://play.google.com/store/apps/details?id=com.dts.freefireth&hl=vi",
         },
       ],
-      footer: "🤖 Arex FF Monitor",
+      footer: "🎮 Arex FF Monitor",
     };
 
     await Promise.all([

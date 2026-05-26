@@ -56,7 +56,7 @@ function notifyEventChange(
       },
     ],
     actions: [{ label: "Xem sự kiện", url: eventUrl }],
-    footer: "🤖 Arex Admin",
+    footer: "✨ Arex Admin",
   };
 
   const color = action === "created" ? DISCORD_COLORS.info : DISCORD_COLORS.warn;

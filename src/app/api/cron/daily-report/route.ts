@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
         ],
       },
     ],
-    footer: "🤖 Arex Auto-Report",
+    footer: "📊 Arex Auto-Report",
   };
 
   const [larkResult, telegramResult, discordResult] = await Promise.all([

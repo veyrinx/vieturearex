@@ -148,7 +148,7 @@ export async function POST(req: Request) {
         ...(body.placement ? [{ label: "Hạng", value: String(body.placement) }] : []),
         { label: "Damage", value: String(body.damage ?? 0) },
       ]}],
-      footer: "🤖 Arex TMS",
+      footer: "🏆 Arex TMS",
     };
     void Promise.allSettled([
       sendTelegramNotification(notifyPayload),

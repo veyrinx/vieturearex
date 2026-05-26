@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       ],
     }],
     actions: [{ label: "🔧 Vào trang CSKH", url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site"}/admin/cskh` }],
-    footer: "🤖 Arex CSKH",
+    footer: "💬 Arex CSKH",
   }).catch(() => null);
 
   return NextResponse.json({ session_id: session.id }, { status: 201 });

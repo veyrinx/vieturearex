@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         ],
       },
     ],
-    footer: "🤖 Arex Discord Test",
+    footer: "🧪 Arex Discord Test",
   };
 
   const result = channel === "internal"

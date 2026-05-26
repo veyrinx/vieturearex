@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         ],
       },
     ],
-    footer: "🤖 Arex Test",
+    footer: "🧪 Arex Test",
   };
 
   const result = bot === "admin"

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         { label: "Lý do", value: "5 lần đăng nhập sai liên tiếp" },
         { label: "Thời hạn chặn", value: "1 giờ" },
       ]}],
-      footer: "🤖 Arex Security",
+      footer: "🔒 Arex Security",
     };
     void Promise.allSettled([
       sendTelegramNotification(payload),

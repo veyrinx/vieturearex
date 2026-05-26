@@ -1,5 +1,5 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { getSettings } from "@/lib/data/content-service";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -14,8 +14,8 @@ export interface SupportMessage {
 
 export interface AiReplyResult {
   reply: string;
-  refused: boolean;    // true = từ chối vì lý do không phù hợp (code, hack...)
-  category: string;   // phân loại câu hỏi
+  refused: boolean;
+  category: string;
 }
 
 // ── Settings keys ─────────────────────────────────────────────────────────────
@@ -50,17 +50,14 @@ PHONG CÁCH:
 • Không xưng hô "tôi/bạn" quá nhiều, dùng "mình" cho tự nhiên
 • Giới hạn câu trả lời trong 3–5 câu trừ khi câu hỏi phức tạp`;
 
-// ── Keyword fast-check (tránh gọi API khi không cần) ─────────────────────────
+// ── Keyword fast-check ────────────────────────────────────────────────────────
 
 const CODE_KEYWORDS = [
-  // Vietnamese
   "viết code", "lập trình", "viết hàm", "viết script", "fix bug", "sửa lỗi code",
   "debug", "compile", "chạy code", "source code", "thuật toán", "framework",
   "api endpoint", "database query", "sql query", "regex", "hàm python",
-  // English
   "write code", "write a function", "write a script", "fix the bug",
   "implement", "code snippet", "write me a", "create a bot", "make a script",
-  // Languages
   "python", "javascript", "typescript", "java ", " c++", " c#", "golang", "rust ",
   "html ", " css ", " php ", " ruby", " swift", "kotlin", "bash ", "shell script",
 ];
@@ -70,7 +67,7 @@ export function isLikelyCodeRequest(content: string): boolean {
   return CODE_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-// ── Main AI reply function ─────────────────────────────────────────────────────
+// ── Main AI reply function ────────────────────────────────────────────────────
 
 export async function generateAiReply(
   history: SupportMessage[],
@@ -79,69 +76,66 @@ export async function generateAiReply(
   const settings = await getSettings();
   const apiKey =
     settings.find((s) => s.key === AI_KEY_KEY)?.value?.trim() ||
-    process.env.ANTHROPIC_API_KEY;
+    process.env.OPENAI_API_KEY;
   if (!apiKey) return { reply: "", refused: false, category: "no_api_key" };
 
   const customPrompt = settings.find((s) => s.key === AI_PROMPT_KEY)?.value?.trim();
   const systemPrompt = (customPrompt || DEFAULT_SYSTEM).replace(/\{siteName\}/g, siteName);
 
-  // Build conversation history for Claude (max last 10 messages for context)
   const recent = history.slice(-10);
-  const messages: Anthropic.MessageParam[] = recent.map((m) => ({
+  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = recent.map((m) => ({
     role: m.sender_type === "user" ? "user" : "assistant",
     content: m.content,
   }));
 
-  // Ensure last message is from user
   if (!messages.length || messages[messages.length - 1].role !== "user") {
     return { reply: "", refused: false, category: "no_user_message" };
   }
 
   const lastUserMsg = recent.filter((m) => m.sender_type === "user").at(-1)?.content ?? "";
 
-  // Fast keyword check — if matched, still call Claude but with a hint
   const codeHint = isLikelyCodeRequest(lastUserMsg)
     ? "\n\n[Hệ thống phát hiện: câu hỏi có thể liên quan đến lập trình. Áp dụng quy tắc từ chối nếu phù hợp.]"
     : "";
 
   try {
-    const client = new Anthropic({ apiKey });
-    const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+    const client = new OpenAI({ apiKey });
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
       max_tokens: 512,
-      system: systemPrompt + codeHint,
-      messages,
+      temperature: 0.7,
+      messages: [
+        { role: "system", content: systemPrompt + codeHint },
+        ...messages,
+      ],
     });
 
-    const reply = response.content[0].type === "text" ? response.content[0].text.trim() : "";
-    const stopReason = response.stop_reason;
+    const reply = response.choices[0]?.message?.content?.trim() ?? "";
+    const finishReason = response.choices[0]?.finish_reason;
 
-    // Detect if Claude refused (heuristic: reply contains refusal keywords)
     const refusedKeywords = ["không thể hỗ trợ", "không hỗ trợ", "nằm ngoài phạm vi", "không phải lĩnh vực", "từ chối"];
     const refused = refusedKeywords.some((kw) => reply.toLowerCase().includes(kw));
 
-    // Simple category classification from Claude's response
     const category = refused
       ? "refused"
       : lastUserMsg.toLowerCase().includes("sự kiện") ? "event"
       : lastUserMsg.toLowerCase().includes("giải đấu") || lastUserMsg.toLowerCase().includes("tms") ? "tournament"
       : lastUserMsg.toLowerCase().includes("đăng nhập") || lastUserMsg.toLowerCase().includes("tài khoản") ? "account"
-      : stopReason === "end_turn" ? "general"
+      : finishReason === "stop" ? "general"
       : "unknown";
 
     return { reply, refused, category };
   } catch (err) {
-    console.error("[ai-support] Claude error:", err);
+    console.error("[ai-support] OpenAI error:", err);
     return { reply: "", refused: false, category: "error" };
   }
 }
 
-// ── Check if AI auto-reply is enabled ────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 export async function isAiReplyEnabled(): Promise<boolean> {
   const settings = await getSettings();
-  const val = settings.find((s) => s.key === AI_ENABLED_KEY)?.value;
-  return val !== "false";
+  return settings.find((s) => s.key === AI_ENABLED_KEY)?.value !== "false";
 }
 
 export async function getAiBotName(): Promise<string> {

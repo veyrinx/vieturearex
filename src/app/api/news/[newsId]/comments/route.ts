@@ -117,7 +117,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         { label: "Bài viết ID", value: newsId, mono: true },
       ]}],
       actions: [{ label: "Kiểm duyệt ngay", url: `${siteUrl}/admin/comments` }],
-      footer: "🤖 Arex Admin",
+      footer: "✨ Arex Admin",
     };
     void Promise.allSettled([
       sendTelegramNotification(payload),

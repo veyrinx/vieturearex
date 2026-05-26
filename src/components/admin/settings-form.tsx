@@ -1498,19 +1498,19 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             />
           </Field>
 
-          <Field label="Anthropic API Key" hint="Dùng key riêng thay vì biến môi trường ANTHROPIC_API_KEY — nhạy cảm" icon={Plug}>
+          <Field label="OpenAI API Key" hint="Dùng key riêng thay vì biến môi trường OPENAI_API_KEY — nhạy cảm" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.ai_api_key")}
                 onChange={(e) => set("integrations.ai_api_key", e.target.value)}
-                placeholder="sk-ant-api03-..."
+                placeholder="sk-..."
                 className="font-mono text-xs"
                 type="password"
               />
               <SensitiveHint hint={sensitiveHint("integrations.ai_api_key")} />
               <p className="text-[11px] text-muted-foreground">
-                Để trống → dùng <code className="font-mono">ANTHROPIC_API_KEY</code> từ môi trường Vercel/server. Lấy key tại{" "}
-                <span className="font-mono text-primary">console.anthropic.com</span>.
+                Để trống → dùng <code className="font-mono">OPENAI_API_KEY</code> từ môi trường Vercel/server. Model: <code className="font-mono">gpt-4o-mini</code>. Lấy key tại{" "}
+                <span className="font-mono text-primary">platform.openai.com</span>.
               </p>
             </div>
           </Field>

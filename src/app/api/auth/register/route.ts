@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         { label: "Tên", value: user.display_name || "Chưa đặt" },
         { label: "Vai trò", value: user.role },
       ]}],
-      footer: "🤖 Arex Admin",
+      footer: "✨ Arex Admin",
     }),
     sendDiscordInternalNotification({
       title: "👤 Tài khoản admin mới được tạo",
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         { label: "Tên", value: user.display_name || "Chưa đặt" },
         { label: "Vai trò", value: user.role },
       ]}],
-      footer: "🤖 Arex Admin",
+      footer: "✨ Arex Admin",
     }, DISCORD_COLORS.info),
     sendLarkNotification({
       title: "👤 Tài khoản admin mới được tạo",
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         { label: "Tên", value: user.display_name || "Chưa đặt" },
         { label: "Vai trò", value: user.role },
       ]}],
-      footer: "🤖 Arex Admin",
+      footer: "✨ Arex Admin",
     }),
   ]);
 

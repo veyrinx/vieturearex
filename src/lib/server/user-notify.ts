@@ -44,7 +44,7 @@ export function notifyUserNewEvent(event: EventInfo, siteUrl: string) {
       { label: "👉 Xem chi tiết", url: `${siteUrl}/events/${event.id}` },
       ...(event.link ? [{ label: "🔗 Tham gia ngay", url: event.link }] : []),
     ],
-    footer: `🤖 ${new URL(siteUrl).hostname}`,
+    footer: `✨ ${new URL(siteUrl).hostname}`,
   };
 
   return sendUserTelegramNotification(payload).catch(() => null);
@@ -75,7 +75,7 @@ export function notifyUserNewArticle(article: ArticleInfo, siteUrl: string) {
     actions: [
       { label: "👉 Đọc ngay", url: `${siteUrl}/news/${article.slug}` },
     ],
-    footer: `🤖 ${new URL(siteUrl).hostname}`,
+    footer: `✨ ${new URL(siteUrl).hostname}`,
   };
 
   return sendUserTelegramNotification(payload).catch(() => null);
@@ -120,7 +120,7 @@ export function notifyUserFFVersion(
       { label: "▶️ Tải trên Google Play", url: "https://play.google.com/store/apps/details?id=com.dts.freefireth&hl=vi" },
       { label: "🌐 Xem trên web", url: siteUrl },
     ],
-    footer: `🤖 ${new URL(siteUrl).hostname}`,
+    footer: `🎮 ${new URL(siteUrl).hostname}`,
   };
 
   return sendUserTelegramNotification(payload).catch(() => null);

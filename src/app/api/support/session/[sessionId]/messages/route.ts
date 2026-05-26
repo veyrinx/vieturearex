@@ -75,7 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       ],
     }],
     actions: [{ label: "💬 Trả lời ngay", url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site"}/admin/cskh` }],
-    footer: "🤖 Arex CSKH",
+    footer: "💬 Arex CSKH",
   }).catch(() => null);
 
   // Trigger AI auto-reply in background (fire and forget)

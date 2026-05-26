@@ -98,7 +98,7 @@ export async function recordFailedLogin(ip: string): Promise<LoginCheckResult> {
             { label: "Hết hạn chặn", value: new Date(now + BAN_DURATION_MS).toLocaleString("vi-VN") },
           ],
         }],
-        footer: "🤖 Arex Security",
+        footer: "🔒 Arex Security",
       }, "alerts").catch(() => null);
       return { status: "banned", bannedUntil: now + BAN_DURATION_MS };
     }
@@ -115,7 +115,7 @@ export async function recordFailedLogin(ip: string): Promise<LoginCheckResult> {
             { label: "Còn lại trước khi ban", value: String(BAN_THRESHOLD - newCount) },
           ],
         }],
-        footer: "🤖 Arex Security",
+        footer: "🔒 Arex Security",
       }, "alerts").catch(() => null);
     }
 
