@@ -201,6 +201,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [migrating, setMigrating] = useState(false);
   const [tgTest, setTgTest] = useState<Record<string, "idle" | "loading" | "ok" | "err">>({});
   const [reportSending, setReportSending] = useState(false);
+  const [miniAppStats, setMiniAppStats] = useState<{ active: number; total: number } | null>(null);
+  const [miniAppBroadcast, setMiniAppBroadcast] = useState<"idle" | "loading" | "ok" | "err">("idle");
+  const [webhookStatus, setWebhookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
 
   async function sendReportNow() {
     setReportSending(true);
@@ -214,6 +217,50 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
     } finally {
       setReportSending(false);
     }
+  }
+
+  async function loadMiniAppStats() {
+    const res = await fetch("/api/admin/telegram/miniapp").catch(() => null);
+    if (!res?.ok) return;
+    const d = (await res.json().catch(() => null)) as { active: number; total: number } | null;
+    if (d) setMiniAppStats(d);
+  }
+
+  async function sendBroadcastTest() {
+    setMiniAppBroadcast("loading");
+    try {
+      const res = await fetch("/api/admin/telegram/miniapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "broadcast_test" }),
+      });
+      setMiniAppBroadcast(res.ok ? "ok" : "err");
+      if (res.ok) toast.success("Đã broadcast test tới tất cả subscribers!");
+      else toast.error("Broadcast thất bại — kiểm tra bot token");
+    } catch {
+      setMiniAppBroadcast("err");
+      toast.error("Lỗi kết nối");
+    }
+    setTimeout(() => setMiniAppBroadcast("idle"), 4000);
+  }
+
+  async function setupWebhook() {
+    setWebhookStatus("loading");
+    try {
+      const res = await fetch("/api/admin/telegram/webhook-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set" }),
+      });
+      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; webhook_url?: string; reason?: string };
+      setWebhookStatus(res.ok && d.ok ? "ok" : "err");
+      if (res.ok && d.ok) toast.success(`Webhook đã được set: ${d.webhook_url}`);
+      else toast.error(`Set webhook thất bại: ${d.reason ?? "kiểm tra bot token"}`);
+    } catch {
+      setWebhookStatus("err");
+      toast.error("Lỗi kết nối");
+    }
+    setTimeout(() => setWebhookStatus("idle"), 5000);
   }
 
   async function testTelegramBot(bot: "admin" | "user") {
@@ -1337,6 +1384,102 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
+        {/* ── TELEGRAM MINI APP ────────────────────────────────────────────── */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BellRing} title="Telegram Mini App" desc="Giao diện web trong Telegram + thông báo DM tới người đăng ký" />
+          </div>
+
+          {/* Mini App URL */}
+          <Field label="URL Mini App" hint="Trỏ URL này trong BotFather → /newapp" icon={Globe}>
+            <div className="flex items-center gap-2">
+              <Input
+                value={`${typeof window !== "undefined" ? window.location.origin : "https://arexnetwork.site"}/tg`}
+                readOnly
+                className="font-mono text-xs bg-muted/40 cursor-default"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/tg`;
+                  navigator.clipboard.writeText(url).then(() => toast.success("Đã copy URL!")).catch(() => {});
+                }}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs font-medium transition hover:bg-muted"
+              >
+                Copy
+              </button>
+            </div>
+          </Field>
+
+          {/* Webhook setup */}
+          <Field label="Webhook Bot" hint="Đăng ký để bot nhận lệnh /start, /news, /events từ người dùng" icon={Plug}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={setupWebhook}
+                disabled={webhookStatus === "loading"}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+              >
+                {webhookStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <SendHorizonal className="size-3.5" />}
+                {webhookStatus === "loading" ? "Đang set…" : webhookStatus === "ok" ? "✅ Đã set!" : webhookStatus === "err" ? "❌ Thất bại" : "Set Webhook"}
+              </button>
+              <span className="text-[11px] text-muted-foreground">Cần Bot Token Admin đã cấu hình ở trên</span>
+            </div>
+          </Field>
+
+          {/* Subscriber stats */}
+          <Field label="Subscribers" hint="Người dùng đã bật thông báo qua Mini App hoặc /start" icon={BellRing}>
+            <div className="flex items-center gap-3 flex-wrap">
+              {miniAppStats ? (
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-xl font-extrabold text-primary tabular-nums">{miniAppStats.active.toLocaleString("vi-VN")}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Đang bật</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-extrabold text-muted-foreground tabular-nums">{miniAppStats.total.toLocaleString("vi-VN")}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Tổng</p>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+              <button
+                type="button"
+                onClick={loadMiniAppStats}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs font-medium transition hover:bg-muted"
+              >
+                Tải thống kê
+              </button>
+            </div>
+          </Field>
+
+          {/* Broadcast test */}
+          <Field label="Test Broadcast" hint="Gửi tin thử tới tất cả subscribers đang bật" icon={BellRing}>
+            <button
+              type="button"
+              onClick={sendBroadcastTest}
+              disabled={miniAppBroadcast === "loading"}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-4 py-2 text-xs font-medium transition hover:bg-muted disabled:opacity-50"
+            >
+              {miniAppBroadcast === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <SendHorizonal className="size-3.5" />}
+              {miniAppBroadcast === "loading" ? "Đang gửi…" : miniAppBroadcast === "ok" ? "✅ Đã gửi!" : miniAppBroadcast === "err" ? "❌ Thất bại" : "Gửi test DM"}
+            </button>
+          </Field>
+
+          {/* BotFather steps */}
+          <div className="py-3">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cách kích hoạt Mini App</p>
+            <ol className="space-y-1.5 text-[11px] text-muted-foreground list-decimal list-inside">
+              <li>Mở <span className="font-mono text-foreground">@BotFather</span> trên Telegram</li>
+              <li>Gõ <span className="font-mono text-foreground">/newapp</span> → chọn bot Admin</li>
+              <li>Đặt tên App (VD: <span className="font-mono text-foreground">Arex</span>) và short name</li>
+              <li>Nhập URL: <span className="font-mono text-foreground">.../tg</span> (copy ở trên)</li>
+              <li>Nhấn &quot;Set Webhook&quot; để bot nhận lệnh /start từ người dùng</li>
+            </ol>
+          </div>
+        </Card>
+
         {/* ── LỊCH GỬI BÁO CÁO ────────────────────────────────────────────── */}
         <Card>
           <div className="py-4">
