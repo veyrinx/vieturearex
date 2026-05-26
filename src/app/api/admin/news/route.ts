@@ -147,6 +147,12 @@ export async function POST(request: NextRequest) {
     import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
       notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
     });
+    // Broadcast DM tới subscribers của Mini App
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+    import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
+      const text = `📰 <b>BÀI VIẾT MỚI</b>\n\n<b>${article.title}</b>${article.category ? `\n🏷 ${article.category}` : ""}\n\n<a href="${siteUrl}/tin-tuc/${article.slug}">👉 Đọc ngay</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
+      broadcastToSubscribers(text).catch(() => null);
+    });
     revalidatePath("/news", "layout");
     revalidatePath("/", "layout");
 

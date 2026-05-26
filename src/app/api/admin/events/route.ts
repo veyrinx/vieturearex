@@ -169,6 +169,14 @@ export async function POST(request: NextRequest) {
 
     notifyEventChange(event, "created", adminName);
 
+    // Broadcast DM tới subscribers của Mini App
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+    import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
+      const start = new Date(event.start_date).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+      const text = `📅 <b>SỰ KIỆN MỚI</b>\n\n<b>${event.title}</b>\n🗓 Bắt đầu: ${start}${event.server_region ? `\n🌐 Server: ${event.server_region}` : ""}\n\n<a href="${siteUrl}/su-kien/${event.id}">👉 Xem chi tiết</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
+      broadcastToSubscribers(text).catch(() => null);
+    });
+
     // User channels — Zalo, Push, Telegram user
     import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
       notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
