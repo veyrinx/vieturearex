@@ -3,6 +3,7 @@ import { z } from "zod";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { createNotification } from "@/lib/server/notifications";
 
 const replySchema = z.object({
   rating_id: z.string().uuid(),
@@ -28,6 +29,25 @@ export async function POST(request: NextRequest) {
   } as never).select("*").single() as { data: unknown; error: { message: string } | null };
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Notify the rating author if they have a user account
+  const { data: rating } = await untypedFrom(supabase, "news_ratings")
+    .select("user_id, title")
+    .eq("id", parsed.data.rating_id)
+    .maybeSingle() as { data: { user_id: string | null; title: string | null } | null };
+
+  if (rating?.user_id) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    void createNotification({
+      user_id: rating.user_id,
+      type: "rating_reply",
+      title: "Admin đã phản hồi đánh giá của bạn",
+      body: parsed.data.content.slice(0, 120),
+      entity_type: "news",
+      entity_url: rating.title ? `${siteUrl}/news` : undefined,
+    });
+  }
+
   return NextResponse.json({ reply: data });
 }
 

@@ -8,6 +8,9 @@ import {
   getStreams, createStream, updateStream, deleteStream,
   buildThumbnailUrl, getStreamCategories, saveStreamCategories,
 } from "@/lib/server/stream-service";
+import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 const streamSchema = z.object({
   id: z.string().optional(),
@@ -69,7 +72,27 @@ export async function POST(request: NextRequest) {
   });
 
   await logAdminActivity({ action: "STREAM_CREATED", targetType: "STREAM", targetId: stream.id, summary: `Tạo stream ${stream.title}` });
-  void sendPushNotification("🔴 Phát trực tiếp mới", stream.title, "/esports").catch(() => null);
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const isLive = stream.status === "live";
+  const notifyPayload = {
+    title: isLive ? "🔴 ĐANG PHÁT TRỰC TIẾP!" : "📅 Lịch phát trực tiếp mới",
+    subtitle: vnNow(),
+    sections: [{ icon: isLive ? "🔴" : "📺", heading: stream.title, rows: [
+      { label: "Danh mục", value: stream.category ?? "ESPORTS" },
+      { label: "Thời gian", value: new Date(stream.scheduled_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) },
+    ]}],
+    actions: [{ label: "Xem ngay", url: `${siteUrl}/esports` }],
+    footer: "📺 Arex Esports",
+  };
+  void Promise.allSettled([
+    sendTelegramNotification(notifyPayload),
+    sendDiscordInternalNotification(notifyPayload, DISCORD_COLORS.info),
+    sendLarkNotification(notifyPayload, "main"),
+    sendUserTelegramNotification(notifyPayload),
+    sendDiscordPublicNotification(notifyPayload, DISCORD_COLORS.info),
+    sendPushNotification(isLive ? "🔴 Phát trực tiếp ngay!" : "📺 Lịch stream mới", stream.title, "/esports").catch(() => null),
+  ]);
   return NextResponse.json({ stream }, { status: 201 });
 }
 
@@ -93,6 +116,28 @@ export async function PATCH(request: NextRequest) {
   });
 
   await logAdminActivity({ action: "STREAM_UPDATED", targetType: "STREAM", targetId: stream.id, summary: `Cập nhật stream ${stream.title}` });
+
+  // Notify all channels when stream goes live
+  if (stream.status === "live") {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const livePayload = {
+      title: "🔴 ĐANG PHÁT TRỰC TIẾP!",
+      subtitle: vnNow(),
+      sections: [{ icon: "🔴", heading: stream.title, rows: [
+        { label: "Danh mục", value: stream.category ?? "ESPORTS" },
+      ]}],
+      actions: [{ label: "Xem ngay", url: `${siteUrl}/esports` }],
+      footer: "📺 Arex Esports",
+    };
+    void Promise.allSettled([
+      sendTelegramNotification(livePayload),
+      sendDiscordInternalNotification(livePayload, DISCORD_COLORS.ok),
+      sendLarkNotification(livePayload, "main"),
+      sendUserTelegramNotification(livePayload),
+      sendDiscordPublicNotification(livePayload, DISCORD_COLORS.ok),
+      sendPushNotification("🔴 Phát trực tiếp ngay!", stream.title, "/esports").catch(() => null),
+    ]);
+  }
   return NextResponse.json({ stream });
 }
 

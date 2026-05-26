@@ -35,19 +35,7 @@ export async function POST(request: NextRequest) {
       stars,
     });
 
-    console.log("[rating] Sending to:", webAppUrl);
-    console.log("[rating] Body:", body);
-
-    const res = await fetch(webAppUrl, {
-      method: "POST",
-      redirect: "follow",
-      body,
-    });
-
-    const text = await res.text().catch(() => "");
-    console.log("[rating] Response status:", res.status);
-    console.log("[rating] Response body:", text);
-
+    await fetch(webAppUrl, { method: "POST", redirect: "follow", body });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[rating] Apps Script error:", err);

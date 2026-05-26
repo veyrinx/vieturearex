@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
@@ -109,6 +110,14 @@ export async function PATCH(request: NextRequest) {
           });
         })
     );
+  }
+
+  // Revalidate public pages so approved comments appear immediately
+  if (raw.status === "approved" && updated?.length) {
+    const newsIds = [...new Set(updated.map((c) => c.news_id).filter(Boolean))];
+    const eventIds = [...new Set(updated.map((c) => c.event_id).filter(Boolean))];
+    newsIds.forEach((id) => revalidatePath(`/news/${id}`, "page"));
+    eventIds.forEach((id) => revalidatePath(`/events/${id}`, "page"));
   }
 
   return NextResponse.json({ ok: true, updated: updated?.length ?? ids.length });
