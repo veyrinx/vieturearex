@@ -44,6 +44,7 @@ type ProfileRow = {
   views: number;
   is_verified?: boolean;
   avatar_url?: string | null;
+  banner_url?: string | null;
   bio?: string | null;
   phone?: string | null;
   ff_id?: string | null;
@@ -76,7 +77,7 @@ export async function GET() {
 
   const { data: profile } = await roleClient
     .from("users")
-    .select("display_name, role, created_at, views, is_verified, avatar_url, bio, phone, ff_id, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
+    .select("display_name, role, created_at, views, is_verified, avatar_url, banner_url, bio, phone, ff_id, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
 
@@ -92,6 +93,7 @@ export async function GET() {
     created_at: profile?.created_at ?? user.created_at,
     is_verified: profile?.is_verified ?? false,
     avatar_url: profile?.avatar_url ?? null,
+    banner_url: profile?.banner_url ?? null,
     bio: profile?.bio ?? null,
     phone: profile?.phone ?? null,
     ff_id: profile?.ff_id ?? null,

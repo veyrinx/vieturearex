@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { generateAiReply, isAiReplyEnabled, getAiBotName } from "@/lib/server/ai-support";
 import { sanitizePlainText } from "@/lib/server/sanitize";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 type RouteContext = { params: Promise<{ sessionId: string }> };
 
@@ -42,12 +43,38 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   // Get site name from session's site context (fallback to env)
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Arex";
 
-  const result = await generateAiReply(messages, siteName);
-  if (!result.reply) return NextResponse.json({ ok: false, reason: result.category });
-
   const botName = await getAiBotName();
+  const result = await generateAiReply(messages, siteName);
 
-  // Insert AI response as admin message with special sender_name marker
+  if (!result.reply) {
+    const fallbackCategories = ["refused", "error", "no_user_message", "unknown"];
+    if (fallbackCategories.includes(result.category)) {
+      await db.from("support_messages").insert({
+        session_id: sessionId,
+        sender_type: "admin",
+        sender_name: `[AI] ${botName}`,
+        content: "Cảm ơn bạn đã liên hệ! Câu hỏi của bạn đã được ghi nhận. Hỗ trợ viên sẽ phản hồi trong thời gian sớm nhất có thể 🙏",
+      } as never);
+      await db
+        .from("support_sessions")
+        .update({ last_message_at: new Date().toISOString() } as never)
+        .eq("id", sessionId);
+
+      if (result.category === "error") {
+        void sendTelegramNotification({
+          title: "⚠️ AI SUPPORT LỖI",
+          subtitle: vnNow(),
+          sections: [{ rows: [
+            { label: "Session", value: sessionId, mono: true },
+            { label: "Lý do", value: result.category, status: "warn" },
+          ]}],
+          footer: "🎧 Arex Support",
+        }).catch(() => null);
+      }
+    }
+    return NextResponse.json({ ok: false, reason: result.category });
+  }
+
   const { error } = await db
     .from("support_messages")
     .insert({
@@ -57,7 +84,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       content: sanitizePlainText(result.reply),
     } as never);
 
-  if (error) return NextResponse.json({ ok: false, reason: "insert_failed" });
+  if (error) {
+    void sendTelegramNotification({
+      title: "❌ AI SUPPORT — LỖI LƯU TIN NHẮN",
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "Session", value: sessionId, mono: true },
+        { label: "Chi tiết", value: error.message.slice(0, 300), status: "err" },
+      ]}],
+      footer: "⚠️ Arex Support",
+    }).catch(() => null);
+    return NextResponse.json({ ok: false, reason: "insert_failed" });
+  }
 
   await db
     .from("support_sessions")

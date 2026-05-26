@@ -4,6 +4,7 @@ import { getUsers, resetUserPassword } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const ROLE_HIERARCHY: Record<string, number> = {
   super_admin: 200, it: 150, admin: 100, manager: 60, support: 40, user: 20,
@@ -47,6 +48,17 @@ export async function POST(request: NextRequest) {
     targetId: target.id,
     summary: `Reset mật khẩu tài khoản ${target.email}`,
   });
+
+  void sendTelegramNotification({
+    title: "🔑 RESET MẬT KHẨU",
+    subtitle: vnNow(),
+    sections: [{ rows: [
+      { label: "Tài khoản", value: target.email ?? target.id, bold: true },
+      { label: "Role", value: target.role },
+      { label: "Cảnh báo", value: "Mật khẩu tạm thời đã được tạo", status: "warn" },
+    ]}],
+    footer: "🔒 Arex Security",
+  }).catch(() => null);
 
   return NextResponse.json({ tempPassword });
 }

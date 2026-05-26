@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { getTmsTeam, updateTeamInfo } from "@/lib/tms/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-team-detail", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
   const { id } = await params;
   const team = await getTmsTeam(id).catch(() => null);
   if (!team) return NextResponse.json({ error: "Not found" }, { status: 404 });

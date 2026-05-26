@@ -3,6 +3,7 @@ import { z } from "zod";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const schema = z.object({
   id: z.string().min(1),
@@ -32,6 +33,15 @@ export async function PATCH(request: NextRequest) {
     if (error.code === "42703") {
       return NextResponse.json({ error: "Cột is_verified chưa được tạo trong Supabase. Chạy: ALTER TABLE users ADD COLUMN is_verified boolean DEFAULT false;" }, { status: 503 });
     }
+    void sendTelegramNotification({
+      title: "❌ LỖI CẤP TÍCH XANH",
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "User ID", value: parsed.data.id, mono: true },
+        { label: "Chi tiết", value: error.message.slice(0, 300), status: "err" },
+      ]}],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -41,6 +51,16 @@ export async function PATCH(request: NextRequest) {
     targetId: parsed.data.id,
     summary: `${parsed.data.is_verified ? "Cấp" : "Thu hồi"} tích xanh cho người dùng ${parsed.data.id}`,
   });
+
+  void sendTelegramNotification({
+    title: parsed.data.is_verified ? "✅ CẤP TÍCH XANH" : "❎ THU HỒI TÍCH XANH",
+    subtitle: vnNow(),
+    sections: [{ rows: [
+      { label: "User ID", value: parsed.data.id, mono: true },
+      { label: "Trạng thái", value: parsed.data.is_verified ? "Đã cấp tích xanh" : "Đã thu hồi tích xanh", status: parsed.data.is_verified ? "ok" : "warn" },
+    ]}],
+    footer: "👤 Arex Admin",
+  }).catch(() => null);
 
   return NextResponse.json({ ok: true });
 }

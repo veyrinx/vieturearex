@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getTmsPlayerCareer, getMyTmsTeam } from "@/lib/tms/data";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ userId: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-player", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
   const { userId } = await params;
 
   const sb = createAdminSupabaseClient() ?? createServerSupabaseClient();

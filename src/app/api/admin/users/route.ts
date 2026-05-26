@@ -4,6 +4,7 @@ import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserB
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const ROLE_HIERARCHY: Record<string, number> = {
   super_admin: 200, it: 150, admin: 100, manager: 60, support: 40, user: 20,
@@ -124,6 +125,17 @@ export async function PATCH(request: NextRequest) {
       targetId: user.id,
       summary: `${banParsed.data.is_banned ? "Khóa" : "Mở khóa"} tài khoản ${user.email}`,
     });
+    void sendTelegramNotification({
+      title: banParsed.data.is_banned ? "🔒 TÀI KHOẢN BỊ KHÓA" : "🔓 TÀI KHOẢN ĐƯỢC MỞ KHÓA",
+      subtitle: vnNow(),
+      sections: [{
+        rows: [
+          { label: "User", value: user.email ?? user.id, bold: true },
+          { label: "Trạng thái", value: banParsed.data.is_banned ? "Đã khóa" : "Đã mở khóa", status: banParsed.data.is_banned ? "err" : "ok" },
+        ],
+      }],
+      footer: "👤 Arex Admin",
+    }).catch(() => null);
     return NextResponse.json({ user });
   }
 
@@ -159,6 +171,17 @@ export async function PATCH(request: NextRequest) {
     targetId: user.id,
     summary: `Cập nhật vai trò ${user.email} thành ${user.role}`,
   });
+  void sendTelegramNotification({
+    title: "🛡️ ĐỔI QUYỀN TÀI KHOẢN",
+    subtitle: vnNow(),
+    sections: [{
+      rows: [
+        { label: "User", value: user.email ?? user.id, bold: true },
+        { label: "Quyền mới", value: targetRole, status: "info" },
+      ],
+    }],
+    footer: "👤 Arex Admin",
+  }).catch(() => null);
   return NextResponse.json({ user });
 }
 
@@ -174,12 +197,34 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
 
-  await deleteUser(parsed.data.id);
-  await logAdminActivity({
-    action: "USER_DELETED",
-    targetType: "USER",
-    targetId: parsed.data.id,
-    summary: `Xóa người dùng ID ${parsed.data.id}`,
-  });
-  return NextResponse.json({ ok: true });
+  try {
+    await deleteUser(parsed.data.id);
+    await logAdminActivity({
+      action: "USER_DELETED",
+      targetType: "USER",
+      targetId: parsed.data.id,
+      summary: `Xóa người dùng ID ${parsed.data.id}`,
+    });
+    void sendTelegramNotification({
+      title: "🗑️ TÀI KHOẢN BỊ XÓA",
+      subtitle: vnNow(),
+      sections: [{
+        rows: [{ label: "User ID", value: parsed.data.id, mono: true, status: "warn" }],
+      }],
+      footer: "👤 Arex Admin",
+    }).catch(() => null);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unable to delete user.";
+    void sendTelegramNotification({
+      title: "❌ LỖI XÓA TÀI KHOẢN",
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "User ID", value: parsed.data.id, mono: true },
+        { label: "Chi tiết", value: msg.slice(0, 300), status: "err" },
+      ]}],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

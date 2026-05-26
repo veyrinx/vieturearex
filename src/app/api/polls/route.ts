@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/server/auth";
+import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const createSchema = z.object({
   question: z.string().min(5).max(200),
@@ -13,6 +14,9 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "polls", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ polls: [] }, { status: 401 });
 
@@ -72,6 +76,28 @@ export async function POST(req: NextRequest) {
   const { error: optErr } = await (db.from("poll_options") as ReturnType<typeof db.from>)
     .insert(optionRows as never);
   if (optErr) return NextResponse.json({ error: "Không thể thêm lựa chọn." }, { status: 500 });
+
+  const endStr = parsed.data.ends_at
+    ? new Date(parsed.data.ends_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
+    : "Không giới hạn";
+
+  const pollPayload = {
+    title: "📊 POLL MỚI!",
+    subtitle: `Tạo lúc ${vnNow()} (ICT)`,
+    sections: [{
+      rows: [
+        { label: "❓ Câu hỏi", value: parsed.data.question, bold: true },
+        { label: "🗳 Số lựa chọn", value: String(parsed.data.options.length) },
+        { label: "⏰ Kết thúc", value: endStr },
+      ],
+    }],
+    footer: "📊 Arex Poll",
+  };
+
+  void Promise.allSettled([
+    sendTelegramNotification(pollPayload),
+    sendUserTelegramNotification(pollPayload),
+  ]);
 
   return NextResponse.json({ id: poll.id }, { status: 201 });
 }

@@ -12,8 +12,8 @@ import { sanitizePlainText } from "@/lib/server/sanitize";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
-import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 async function getAdminName(): Promise<string> {
@@ -33,44 +33,64 @@ function normalizeUrlField(raw: unknown): string {
 
 function notifyEventChange(
   event: { title: string; start_date: string; end_date: string; server_region?: string | null; link?: string | null; id: string },
-  action: "created" | "updated",
+  action: "created" | "updated" | "deleted",
   adminName: string,
 ) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
   const fmtDate = (d: string) => new Date(d).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-  const eventUrl = event.link || `${siteUrl}/events`;
+  const eventUrl = event.link || `${siteUrl}/events/${event.id}`;
+
+  const titles: Record<typeof action, string> = {
+    created: "🗓️ Sự kiện mới được đăng",
+    updated: "✏️ Sự kiện đã được cập nhật",
+    deleted: "🗑️ Sự kiện đã bị xóa",
+  };
+  const icons: Record<typeof action, string> = { created: "🎉", updated: "🔄", deleted: "🗑️" };
+  const actionLabel: Record<typeof action, string> = { created: "Đăng bởi", updated: "Cập nhật bởi", deleted: "Xóa bởi" };
 
   const payload = {
-    title: action === "created" ? "🗓️ Sự kiện mới được đăng" : "✏️ Sự kiện đã được cập nhật",
+    title: titles[action],
     subtitle: vnNow(),
     sections: [
       {
-        icon: action === "created" ? "🎉" : "🔄",
+        icon: icons[action],
         heading: event.title,
         rows: [
-          { label: "Bắt đầu", value: fmtDate(event.start_date) },
-          { label: "Kết thúc", value: fmtDate(event.end_date) },
+          ...(action !== "deleted" ? [
+            { label: "Bắt đầu", value: fmtDate(event.start_date) },
+            { label: "Kết thúc", value: fmtDate(event.end_date) },
+          ] : []),
           ...(event.server_region ? [{ label: "Khu vực", value: event.server_region }] : []),
-          { label: action === "created" ? "Đăng bởi" : "Cập nhật bởi", value: adminName },
+          { label: actionLabel[action], value: adminName },
         ],
       },
     ],
-    actions: [{ label: "Xem sự kiện", url: eventUrl }],
+    actions: action !== "deleted" ? [{ label: "Xem sự kiện", url: eventUrl }] : [],
     footer: "✨ Arex Admin",
   };
 
-  const color = action === "created" ? DISCORD_COLORS.info : DISCORD_COLORS.warn;
+  const color = action === "created" ? DISCORD_COLORS.info : action === "deleted" ? DISCORD_COLORS.err : DISCORD_COLORS.warn;
 
+  // Admin channels only — user channel handled separately via notifyUserNewEvent
   void Promise.allSettled([
     sendTelegramNotification(payload),
     sendDiscordInternalNotification(payload, color),
     sendLarkNotification(payload, "main"),
-    // Public channels — chỉ khi tạo mới
-    ...(action === "created" ? [
-      sendUserTelegramNotification(payload),
-      sendDiscordPublicNotification(payload, DISCORD_COLORS.info),
-    ] : []),
   ]);
+}
+
+function notifyEventError(context: string, message: string) {
+  void sendTelegramNotification({
+    title: "❌ LỖI SỰ KIỆN",
+    subtitle: vnNow(),
+    sections: [{
+      rows: [
+        { label: "Nơi xảy ra", value: context, bold: true },
+        { label: "Chi tiết", value: message.slice(0, 300), status: "err" },
+      ],
+    }],
+    footer: "⚠️ Arex Event Error",
+  }).catch(() => null);
 }
 
 export async function GET(request: NextRequest) {
@@ -149,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     notifyEventChange(event, "created", adminName);
 
-    // Gửi thông báo Zalo + Push + Telegram user khi tạo sự kiện mới
+    // User channels — Zalo, Push, Telegram user
     import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
       notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
     });
@@ -166,6 +186,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ event }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create event.";
+    notifyEventError("POST /api/admin/events (tạo sự kiện)", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -234,6 +255,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ event });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update event.";
+    notifyEventError("PATCH /api/admin/events (cập nhật sự kiện)", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -253,15 +275,27 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Missing event id." }, { status: 400 });
   }
 
-  await deleteEvent(payload.id);
-  await logAdminActivity({
-    action: "EVENT_DELETED",
-    targetType: "EVENT",
-    targetId: payload.id,
-    summary: "Xóa sự kiện",
-  });
-  revalidatePath("/events", "layout");
-  revalidatePath("/calendar", "layout");
-  revalidatePath("/", "layout");
-  return NextResponse.json({ ok: true });
+  try {
+    const adminName = await getAdminName();
+    await deleteEvent(payload.id);
+    await logAdminActivity({
+      action: "EVENT_DELETED",
+      targetType: "EVENT",
+      targetId: payload.id,
+      summary: "Xóa sự kiện",
+    });
+    notifyEventChange(
+      { id: payload.id, title: `ID: ${payload.id}`, start_date: "", end_date: "" },
+      "deleted",
+      adminName,
+    );
+    revalidatePath("/events", "layout");
+    revalidatePath("/calendar", "layout");
+    revalidatePath("/", "layout");
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to delete event.";
+    notifyEventError("DELETE /api/admin/events (xóa sự kiện)", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

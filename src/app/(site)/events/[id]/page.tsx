@@ -7,6 +7,8 @@ import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventViewTracker } from "@/components/events/event-view-tracker";
 import { EventComments } from "@/components/events/event-comments";
+import { EventImageEditor } from "@/components/events/event-image-editor";
+import { EventImageDisplay } from "@/components/events/event-image-display";
 import { PollWidget } from "@/components/common/poll-widget";
 import { siteConfig } from "@/lib/constants/site";
 import { cn } from "@/lib/utils";
@@ -39,6 +41,8 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
   if (!event) return { title: "Không tìm thấy sự kiện" };
   const url = `${siteConfig.url}/events/${event.id}`;
   const desc = event.description || `Sự kiện ${event.title} – theo dõi tại Arex.`;
+  // Always use the generated OG image (same domain → Zalo/Telegram can fetch it reliably)
+  const ogImageUrl = `${siteConfig.url}/events/${event.id}/opengraph-image`;
   return {
     title: event.title,
     description: desc,
@@ -49,13 +53,13 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
       url,
       type: "article",
       siteName: siteConfig.name,
-      images: event.image_url ? [{ url: event.image_url, width: 1200, height: 630, alt: event.title }] : [],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: event.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: event.title,
       description: desc,
-      images: event.image_url ? [event.image_url] : [],
+      images: [ogImageUrl],
     },
     robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   };
@@ -155,16 +159,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         </div>
       </div>
 
-      {event.image_url && (
-        <div className="relative w-full overflow-hidden rounded-2xl border border-border" style={{ aspectRatio: "16/9" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={event.image_url}
-            alt={event.title}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        </div>
-      )}
+      <EventImageDisplay src={event.image_url} alt={event.title} />
+      <EventImageEditor event={event} />
 
       {event.description && (
         <div className="glass-card rounded-2xl p-6">

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
-  Smartphone, Camera, Trash2, Phone, Gamepad2, Plus,
+  Smartphone, Camera, Trash2, Phone, Gamepad2, Plus, ImageIcon,
 } from "lucide-react";
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
 import { GAME_LIST } from "@/lib/constants/game-list";
@@ -49,6 +49,7 @@ type ProfileData = {
   created_at: string;
   is_verified?: boolean;
   avatar_url?: string | null;
+  banner_url?: string | null;
   bio?: string | null;
   phone?: string | null;
   ff_id?: string | null;
@@ -66,6 +67,7 @@ type TotpFactor = {
 export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
@@ -82,6 +84,10 @@ export default function ProfilePage() {
   // Avatar upload
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Banner upload
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   // Password change
   const [newPassword, setNewPassword] = useState("");
@@ -116,6 +122,7 @@ export default function ProfilePage() {
         setSocials(next);
         setGames(Array.isArray(data.game_profiles) ? data.game_profiles : []);
         setAvatarPreview(data.avatar_url ?? null);
+        setBannerPreview(data.banner_url ?? null);
         setLoading(false);
       })
       .catch(() => router.replace("/login"));
@@ -187,6 +194,52 @@ export default function ProfilePage() {
     } finally {
       setUploadingAvatar(false);
     }
+  };
+
+  const onBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) { toast.error("Ảnh bìa tối đa 8MB."); return; }
+    const objectUrl = URL.createObjectURL(file);
+    setBannerPreview(objectUrl);
+    setUploadingBanner(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/user/banner", { method: "POST", body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error ?? "Không thể tải ảnh bìa.");
+        setBannerPreview(profile?.banner_url ?? null);
+        return;
+      }
+      const { banner_url } = await res.json() as { banner_url: string };
+      setBannerPreview(banner_url);
+      setProfile((prev) => prev ? { ...prev, banner_url } : prev);
+      toast.success("Đã cập nhật ảnh bìa.");
+    } catch {
+      toast.error("Lỗi mạng.");
+      setBannerPreview(profile?.banner_url ?? null);
+    } finally {
+      setUploadingBanner(false);
+      URL.revokeObjectURL(objectUrl);
+      if (bannerInputRef.current) bannerInputRef.current.value = "";
+    }
+  };
+
+  const onRemoveBanner = async () => {
+    setUploadingBanner(true);
+    try {
+      const res = await fetch("/api/user/banner", { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error ?? "Không thể xóa ảnh bìa."); return;
+      }
+      setBannerPreview(null);
+      setProfile((prev) => prev ? { ...prev, banner_url: null } : prev);
+      toast.success("Đã xóa ảnh bìa.");
+    } catch { toast.error("Lỗi mạng."); }
+    finally { setUploadingBanner(false); }
   };
 
   const onSave = async () => {

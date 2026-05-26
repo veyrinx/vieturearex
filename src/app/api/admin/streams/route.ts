@@ -150,7 +150,24 @@ export async function DELETE(request: NextRequest) {
   const payload = await request.json().catch(() => null) as { id?: string } | null;
   if (!payload?.id) return NextResponse.json({ error: "Missing stream id." }, { status: 400 });
 
-  await deleteStream(payload.id);
-  await logAdminActivity({ action: "STREAM_DELETED", targetType: "STREAM", targetId: payload.id, summary: "Xóa stream" });
-  return NextResponse.json({ ok: true });
+  try {
+    await deleteStream(payload.id);
+    await logAdminActivity({ action: "STREAM_DELETED", targetType: "STREAM", targetId: payload.id, summary: "Xóa stream" });
+    void sendTelegramNotification({
+      title: "🗑️ STREAM BỊ XÓA",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Stream ID", value: payload.id, mono: true, status: "warn" }] }],
+      footer: "📺 Arex Esports",
+    }).catch(() => null);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unable to delete stream.";
+    void sendTelegramNotification({
+      title: "❌ LỖI XÓA STREAM",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Chi tiết", value: msg.slice(0, 300), status: "err" }] }],
+      footer: "⚠️ Arex Esports",
+    }).catch(() => null);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

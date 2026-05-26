@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 
 const ALLOWED_HOSTNAMES = [
   "dl.dir.freefiremobile.com",
@@ -14,6 +15,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "image-proxy", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const { searchParams } = request.nextUrl;
   const url = searchParams.get("url");
 

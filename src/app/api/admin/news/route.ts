@@ -143,7 +143,6 @@ export async function POST(request: NextRequest) {
 
     notifyNewsChange(article, "created", adminName);
 
-    // Gửi push notification + Telegram user cho subscribers
     void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
     import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
       notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
@@ -154,6 +153,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create news.";
+    void sendTelegramNotification({
+      title: "❌ LỖI TẠO BÀI VIẾT",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Chi tiết", value: message.slice(0, 300), status: "err" }] }],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -204,6 +209,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ article });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update news.";
+    void sendTelegramNotification({
+      title: "❌ LỖI CẬP NHẬT BÀI VIẾT",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Chi tiết", value: message.slice(0, 300), status: "err" }] }],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -223,14 +234,35 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Missing news id." }, { status: 400 });
   }
 
-  await deleteNews(payload.id);
-  await logAdminActivity({
-    action: "NEWS_DELETED",
-    targetType: "NEWS",
-    targetId: payload.id,
-    summary: "Xóa bài viết",
-  });
-  revalidatePath("/news", "layout");
-  revalidatePath("/", "layout");
-  return NextResponse.json({ ok: true });
+  try {
+    const adminName = await getAdminName();
+    await deleteNews(payload.id);
+    await logAdminActivity({
+      action: "NEWS_DELETED",
+      targetType: "NEWS",
+      targetId: payload.id,
+      summary: "Xóa bài viết",
+    });
+    void sendTelegramNotification({
+      title: "🗑️ BÀI VIẾT BỊ XÓA",
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "ID", value: payload.id, mono: true },
+        { label: "Xóa bởi", value: adminName },
+      ]}],
+      footer: "✨ Arex Admin",
+    }).catch(() => null);
+    revalidatePath("/news", "layout");
+    revalidatePath("/", "layout");
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to delete news.";
+    void sendTelegramNotification({
+      title: "❌ LỖI XÓA BÀI VIẾT",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Chi tiết", value: message.slice(0, 300), status: "err" }] }],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

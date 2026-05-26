@@ -81,6 +81,63 @@ export function notifyUserNewArticle(article: ArticleInfo, siteUrl: string) {
   return sendUserTelegramNotification(payload).catch(() => null);
 }
 
+// ── Giải đấu bắt đầu ─────────────────────────────────────────────────────────
+
+interface TournamentInfo {
+  id: string;
+  name: string;
+  slug: string;
+  mode: string;
+  prize_pool?: string | null;
+  start_at?: string | null;
+}
+
+export function notifyUserTournamentStart(tournament: TournamentInfo, siteUrl: string) {
+  const payload = {
+    title: "🏆 GIẢI ĐẤU BẮT ĐẦU!",
+    subtitle: `Thông báo lúc ${vnNow()} (ICT)`,
+    sections: [{
+      rows: [
+        { label: "🏆 Tên", value: tournament.name, bold: true },
+        { label: "🎮 Thể thức", value: tournament.mode.toUpperCase() },
+        ...(tournament.prize_pool ? [{ label: "💰 Giải thưởng", value: tournament.prize_pool }] : []),
+        ...(tournament.start_at ? [{ label: "🗓 Thời gian", value: formatVietnamDateTime(tournament.start_at) }] : []),
+      ],
+    }],
+    actions: [{ label: "👉 Xem giải đấu", url: `${siteUrl}/tournaments/${tournament.slug}` }],
+    footer: `🏆 ${new URL(siteUrl).hostname}`,
+  };
+  return sendUserTelegramNotification(payload).catch(() => null);
+}
+
+// ── Kết quả trận đấu ─────────────────────────────────────────────────────────
+
+interface MatchResultInfo {
+  round: string;
+  round_num: number;
+  team_a_name: string;
+  team_b_name: string;
+  winner_name: string;
+  tournament_slug: string;
+}
+
+export function notifyUserMatchResult(match: MatchResultInfo, siteUrl: string) {
+  const payload = {
+    title: "⚔️ KẾT QUẢ TRẬN ĐẤU",
+    subtitle: vnNow(),
+    sections: [{
+      rows: [
+        { label: "🥊 Trận", value: `${match.team_a_name} vs ${match.team_b_name}`, bold: true },
+        { label: "🏅 Vòng", value: `${match.round} #${match.round_num}` },
+        { label: "🏆 Thắng", value: match.winner_name, status: "ok" as const },
+      ],
+    }],
+    actions: [{ label: "👉 Xem giải đấu", url: `${siteUrl}/tournaments/${match.tournament_slug}` }],
+    footer: `🏆 ${new URL(siteUrl).hostname}`,
+  };
+  return sendUserTelegramNotification(payload).catch(() => null);
+}
+
 // ── Free Fire version mới ─────────────────────────────────────────────────────
 
 export function notifyUserFFVersion(

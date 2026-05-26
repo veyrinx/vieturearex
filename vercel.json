@@ -13,12 +13,17 @@
     {
       "path": "/api/cron/ff-version-check",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/event-reminders",
+      "schedule": "0 * * * *"
     }
   ],
   "functions": {
     "src/app/api/admin/sql/route.ts": { "maxDuration": 30 },
     "src/app/api/admin/settings/migrate-encrypt/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/daily-report/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/event-reminders/route.ts": { "maxDuration": 30 },
     "src/app/api/streams/sync/route.ts": { "maxDuration": 30 },
     "src/app/api/tms/tournaments/[id]/generate-matches/route.ts": { "maxDuration": 30 },
     "src/app/api/upload/route.ts": { "maxDuration": 30 },

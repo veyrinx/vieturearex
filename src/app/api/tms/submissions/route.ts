@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createScoreSubmission, getScoreSubmissions, getUserSubmissions, getUserWeeklySubmissionCount } from "@/lib/tms/data";
 import { getSettings } from "@/lib/data/content-service";
@@ -7,7 +7,9 @@ import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "tms-submissions", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -45,7 +47,7 @@ export async function GET(req: Request) {
 
 type PlayerInput = { ff_id: string; display_name?: string; placement?: number | null; kills: number; assists: number; deaths: number; damage: number };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -119,6 +121,23 @@ export async function POST(req: Request) {
           )
         )
       );
+
+      const batchPayload = {
+        title: "📦 BATCH KẾT QUẢ NỘP",
+        subtitle: vnNow(),
+        sections: [{ rows: [
+          { label: "Giải đấu", value: body.tournament_id ?? "—", mono: true },
+          { label: "Số người", value: String(results.length), bold: true },
+          ...(body.match_id ? [{ label: "Match ID", value: body.match_id, mono: true }] : []),
+        ]}],
+        footer: "🏆 Arex TMS",
+      };
+      void Promise.allSettled([
+        sendTelegramNotification(batchPayload),
+        sendDiscordInternalNotification(batchPayload, DISCORD_COLORS.info),
+        sendLarkNotification(batchPayload, "main"),
+      ]);
+
       return NextResponse.json(results, { status: 201 });
     }
 
@@ -158,6 +177,16 @@ export async function POST(req: Request) {
 
     return NextResponse.json(sub, { status: 201 });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    const msg = (e as Error).message;
+    void sendTelegramNotification({
+      title: "❌ LỖI NỘP KẾT QUẢ",
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "Giải đấu", value: body.tournament_id ?? "—", mono: true },
+        { label: "Chi tiết", value: msg.slice(0, 300), status: "err" },
+      ]}],
+      footer: "⚠️ Arex TMS",
+    }).catch(() => null);
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

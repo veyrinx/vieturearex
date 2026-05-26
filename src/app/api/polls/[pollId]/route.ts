@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/server/auth";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 type RouteContext = { params: Promise<{ pollId: string }> };
 
-export async function GET(_req: Request, { params }: RouteContext) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
+  const limited = enforceRateLimit(req, { name: "polls-detail", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const { pollId } = await params;
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
@@ -71,11 +75,35 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Status không hợp lệ." }, { status: 400 });
   }
 
+  const { data: pollRow } = await (db.from("polls") as ReturnType<typeof db.from>)
+    .select("question")
+    .eq("id", pollId)
+    .single() as { data: { question: string } | null };
+
   const { error } = await (db.from("polls") as ReturnType<typeof db.from>)
     .update({ status } as never)
     .eq("id", pollId);
 
-  if (error) return NextResponse.json({ error: "Không thể cập nhật." }, { status: 500 });
+  if (error) {
+    void sendTelegramNotification({
+      title: "❌ LỖI CẬP NHẬT POLL",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Poll ID", value: pollId, mono: true, status: "err" }] }],
+      footer: "⚠️ Arex Poll",
+    }).catch(() => null);
+    return NextResponse.json({ error: "Không thể cập nhật." }, { status: 500 });
+  }
+
+  void sendTelegramNotification({
+    title: status === "closed" ? "🔒 POLL ĐÃ ĐÓNG" : "🔓 POLL MỞ LẠI",
+    subtitle: vnNow(),
+    sections: [{ rows: [
+      ...(pollRow ? [{ label: "❓ Câu hỏi", value: pollRow.question, bold: true }] : []),
+      { label: "Trạng thái", value: status === "closed" ? "Đã đóng" : "Đang mở", status: status === "closed" ? "warn" : "ok" as "warn" | "ok" },
+    ]}],
+    footer: "📊 Arex Poll",
+  }).catch(() => null);
+
   return NextResponse.json({ ok: true });
 }
 
@@ -87,10 +115,34 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
+  const { data: pollRow } = await (db.from("polls") as ReturnType<typeof db.from>)
+    .select("question")
+    .eq("id", pollId)
+    .single() as { data: { question: string } | null };
+
   const { error } = await (db.from("polls") as ReturnType<typeof db.from>)
     .delete()
     .eq("id", pollId);
 
-  if (error) return NextResponse.json({ error: "Không thể xóa." }, { status: 500 });
+  if (error) {
+    void sendTelegramNotification({
+      title: "❌ LỖI XÓA POLL",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "Poll ID", value: pollId, mono: true, status: "err" }] }],
+      footer: "⚠️ Arex Poll",
+    }).catch(() => null);
+    return NextResponse.json({ error: "Không thể xóa." }, { status: 500 });
+  }
+
+  void sendTelegramNotification({
+    title: "🗑️ POLL BỊ XÓA",
+    subtitle: vnNow(),
+    sections: [{ rows: [
+      ...(pollRow ? [{ label: "❓ Câu hỏi", value: pollRow.question }] : []),
+      { label: "Poll ID", value: pollId, mono: true },
+    ]}],
+    footer: "📊 Arex Poll",
+  }).catch(() => null);
+
   return NextResponse.json({ ok: true });
 }

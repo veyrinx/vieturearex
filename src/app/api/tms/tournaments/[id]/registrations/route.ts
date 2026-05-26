@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
@@ -9,6 +9,7 @@ import {
 } from "@/lib/tms/data";
 import { createNotification } from "@/lib/server/notifications";
 import { siteConfig } from "@/lib/constants/site";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 async function sendRegistrationEmail(to: string, teamTag: string, teamName: string, tournamentName: string, tournamentSlug: string) {
   const gmailUser = process.env.GMAIL_USER;
@@ -47,13 +48,15 @@ async function sendRegistrationEmail(to: string, teamTag: string, teamName: stri
   } catch { /* non-fatal */ }
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-registrations", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
   const { id } = await params;
   const regs = await getTmsRegistrations(id).catch(() => []);
   return NextResponse.json(regs);
 }
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: tournamentId } = await params;
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
@@ -90,6 +93,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       .eq("id", auth.userId)
       .single() as { data: { email: string } | null };
 
+    // Notify admin on Telegram about new registration (non-blocking)
+    void sendTelegramNotification({
+      title: "📋 ĐĂNG KÝ GIẢI MỚI",
+      subtitle: `Lúc ${vnNow()} (ICT)`,
+      sections: [{
+        rows: [
+          { label: "🏆 Giải đấu", value: tournamentRow.name, bold: true },
+          { label: "🏅 Team", value: `[${teamRow.tag}] ${teamRow.name}` },
+          { label: "Trạng thái", value: "⏳ Chờ duyệt" },
+        ],
+      }],
+      actions: [{ label: "👉 Quản lý đăng ký", url: `${siteConfig.url}/tournaments/${tournamentRow.slug}` }],
+      footer: "🏆 Arex TMS",
+    }).catch(() => null);
+
     // Auto-approve if tournament has setting enabled
     if (tournamentRow.auto_approve_registrations) {
       await updateRegistrationStatus(reg.id, "approved");
@@ -117,7 +135,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const guard = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (guard) return guard;
 

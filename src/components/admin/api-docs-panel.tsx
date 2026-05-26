@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronRight, ExternalLink, Key, Zap, MessageSquare,
   RefreshCw, Plug, Unplug, AlertCircle, CheckCircle2, Loader2,
   FileSpreadsheet, Star, MessageCircle, Vote, Trophy, Upload, Users, Shield,
+  Play, FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -1100,8 +1101,55 @@ function MethodBadge({ method }: { method: Method }) {
 // ── EndpointCard ────────────────────────────────────────────────────────────────
 function EndpointCard({ ep }: { ep: Endpoint }) {
   const [open, setOpen] = useState(false);
-  const fullPath = ep.path.startsWith("http") ? ep.path : `${BASE_URL}${ep.path}`;
+  const [showTry, setShowTry] = useState(false);
+  const [tryBody, setTryBody] = useState(ep.body ?? "");
+  const [tryParams, setTryParams] = useState<Record<string, string>>({});
+  const [tryPathVars, setTryPathVars] = useState<Record<string, string>>({});
+  const [tryResult, setTryResult] = useState<{ status: number; body: string; ms: number } | null>(null);
+  const [tryLoading, setTryLoading] = useState(false);
+
+  const isExternal = ep.path.startsWith("http");
+  const fullPath = isExternal ? ep.path : `${BASE_URL}${ep.path}`;
   const hasDetails = ep.auth || ep.rateLimit || ep.params?.length || ep.body || ep.response || ep.note;
+  const pathParamNames = (ep.path.match(/\[(\w+)\]/g) ?? []).map((s) => s.slice(1, -1));
+
+  const handleTry = async () => {
+    setTryLoading(true);
+    setTryResult(null);
+    let url = ep.path;
+    for (const [k, v] of Object.entries(tryPathVars)) {
+      url = url.replace(`[${k}]`, encodeURIComponent(v || `{${k}}`));
+    }
+    const qs = Object.entries(tryParams)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+      .join("&");
+    const finalUrl = qs ? `${url}?${qs}` : url;
+    const start = Date.now();
+    try {
+      const fetchOpts: RequestInit = { method: ep.method };
+      if (ep.method !== "GET" && tryBody.trim()) {
+        fetchOpts.headers = { "Content-Type": "application/json" };
+        fetchOpts.body = tryBody;
+      }
+      const res = await fetch(finalUrl, fetchOpts);
+      const ms = Date.now() - start;
+      const text = await res.text();
+      let pretty: string;
+      try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch { pretty = text; }
+      setTryResult({ status: res.status, body: pretty, ms });
+    } catch (e) {
+      setTryResult({ status: 0, body: String(e), ms: Date.now() - start });
+    } finally {
+      setTryLoading(false);
+    }
+  };
+
+  const statusColor = (s: number) =>
+    s === 0 ? "text-red-500" :
+    s < 300 ? "text-green-500 dark:text-green-400" :
+    s < 400 ? "text-blue-500" :
+    s < 500 ? "text-amber-500" : "text-red-500";
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card/60 transition hover:border-border/80">
@@ -1118,7 +1166,22 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
       >
         <MethodBadge method={ep.method} />
         <code className="flex-1 truncate font-mono text-xs font-medium text-foreground">{ep.path}</code>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {!isExternal && (
+            <button
+              type="button"
+              onClick={() => { setShowTry((v) => !v); setOpen(true); }}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition",
+                showTry
+                  ? "border-primary/30 bg-primary/10 text-primary dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400"
+                  : "border-border bg-muted/40 text-muted-foreground hover:border-primary/20 hover:bg-primary/5 hover:text-primary dark:hover:border-amber-400/20 dark:hover:text-amber-400",
+              )}
+            >
+              <FlaskConical className="size-3" />
+              Try
+            </button>
+          )}
           <CopyButton text={fullPath} />
           {hasDetails && (
             <span className="text-muted-foreground/50">
@@ -1200,6 +1263,122 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
             <ExternalLink className="size-3" />
           </a>
         </div>
+
+        {/* ── Try It Panel ──────────────────────────────────────────── */}
+        {showTry && !isExternal && (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 dark:border-amber-400/15 dark:bg-amber-400/5 space-y-3 p-3">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="size-3.5 text-primary dark:text-amber-400" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-primary dark:text-amber-400">Try it</span>
+            </div>
+
+            {/* Path params */}
+            {pathParamNames.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Path Params</p>
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  {pathParamNames.map((name) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <code className="w-24 shrink-0 truncate font-mono text-[11px] text-muted-foreground">[{name}]</code>
+                      <input
+                        type="text"
+                        value={tryPathVars[name] ?? ""}
+                        onChange={(e) => setTryPathVars((prev) => ({ ...prev, [name]: e.target.value }))}
+                        placeholder={name}
+                        className="h-7 flex-1 rounded-lg border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Query params */}
+            {ep.params && ep.params.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Query Params</p>
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  {ep.params.map((p) => (
+                    <div key={p.name} className="flex items-center gap-2">
+                      <code className="w-24 shrink-0 truncate font-mono text-[11px] text-muted-foreground">{p.name}</code>
+                      <input
+                        type="text"
+                        value={tryParams[p.name] ?? ""}
+                        onChange={(e) => setTryParams((prev) => ({ ...prev, [p.name]: e.target.value }))}
+                        placeholder={p.required ? "(bắt buộc)" : "(tuỳ chọn)"}
+                        className="h-7 flex-1 rounded-lg border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Request body */}
+            {ep.method !== "GET" && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Request Body (JSON)</p>
+                  {ep.body && (
+                    <button
+                      type="button"
+                      onClick={() => setTryBody(ep.body ?? "")}
+                      className="text-[10px] text-muted-foreground hover:text-foreground transition"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={tryBody}
+                  onChange={(e) => setTryBody(e.target.value)}
+                  rows={Math.min(10, (tryBody.split("\n").length) + 1)}
+                  className="w-full rounded-xl border border-border bg-[#0d1117] px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-300 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
+                  spellCheck={false}
+                />
+              </div>
+            )}
+
+            {/* Send button */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleTry}
+                disabled={tryLoading}
+                className="flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary transition hover:bg-primary/20 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400 dark:hover:bg-amber-400/20 disabled:opacity-50"
+              >
+                {tryLoading
+                  ? <Loader2 className="size-3.5 animate-spin" />
+                  : <Play className="size-3.5" />}
+                {tryLoading ? "Đang gửi..." : "Gửi Request"}
+              </button>
+              {tryResult && (
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span className={cn("font-black", statusColor(tryResult.status))}>
+                    {tryResult.status === 0 ? "ERR" : tryResult.status}
+                  </span>
+                  <span className="text-muted-foreground">{tryResult.ms}ms</span>
+                </div>
+              )}
+            </div>
+
+            {/* Response */}
+            {tryResult && (
+              <div className="overflow-hidden rounded-xl border border-border bg-[#0d1117]">
+                <div className="flex items-center justify-between border-b border-border/60 px-3 py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-[10px] font-black", statusColor(tryResult.status))}>
+                      {tryResult.status === 0 ? "NETWORK ERROR" : `HTTP ${tryResult.status}`}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{tryResult.ms}ms</span>
+                  </div>
+                  <CopyButton text={tryResult.body} />
+                </div>
+                <pre className="max-h-80 overflow-auto p-3 text-[11px] leading-relaxed text-slate-300">{tryResult.body}</pre>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

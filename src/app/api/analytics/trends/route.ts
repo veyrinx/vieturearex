@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSettings } from "@/lib/data/content-service";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 
 const DAILY_KEY = "analytics.daily_views";
 
@@ -18,7 +18,10 @@ function sumRange(daily: Record<string, number>, startDaysAgo: number, endDaysAg
   return total;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "analytics-trends", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 

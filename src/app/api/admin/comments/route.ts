@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createNotification } from "@/lib/server/notifications";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 type Comment = {
   id: string;
@@ -17,6 +18,9 @@ type Comment = {
 };
 
 export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-comments", limit: 120, windowMs: 60_000 });
+  if (limited) return limited;
+
   const guard = await enforceAdminApiAuth({ minimumRole: "support" });
   if (guard) return guard;
 
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-comments-patch", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   const guard = await enforceAdminApiAuth({ capability: "comments.moderate" });
   if (guard) return guard;
 
@@ -77,7 +84,18 @@ export async function PATCH(request: NextRequest) {
       error: unknown;
     };
 
-  if (error) return NextResponse.json({ error: "Không thể cập nhật." }, { status: 500 });
+  if (error) {
+    void sendTelegramNotification({
+      title: "❌ LỖI DUYỆT BÌNH LUẬN",
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "Số lượng", value: String(ids.length) },
+        { label: "Hành động", value: raw.status ?? "", status: "err" },
+      ]}],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
+    return NextResponse.json({ error: "Không thể cập nhật." }, { status: 500 });
+  }
 
   const label = raw.status === "approved" ? "APPROVED" : raw.status === "rejected" ? "REJECTED" : "PENDING";
   await logAdminActivity({
@@ -86,6 +104,21 @@ export async function PATCH(request: NextRequest) {
     targetId: ids[0],
     summary: `${ids.length} bình luận → ${raw.status}`,
   }).catch(() => {});
+
+  if (raw.status === "approved" || raw.status === "rejected") {
+    const statusIcon = raw.status === "approved" ? "✅" : "❌";
+    const statusText = raw.status === "approved" ? "Đã duyệt" : "Đã từ chối";
+    void sendTelegramNotification({
+      title: `${statusIcon} KIỂM DUYỆT BÌNH LUẬN`,
+      subtitle: vnNow(),
+      sections: [{ rows: [
+        { label: "Số lượng", value: String(updated?.length ?? ids.length), bold: true },
+        { label: "Kết quả", value: statusText, status: raw.status === "approved" ? "ok" : "err" },
+        { label: "Bảng", value: table },
+      ]}],
+      footer: "💬 Arex Admin",
+    }).catch(() => null);
+  }
 
   // In-app notification for approved user comments
   if (raw.status === "approved" && updated?.length) {
@@ -124,6 +157,9 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-comments-delete", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   const guard = await enforceAdminApiAuth({ capability: "comments.moderate" });
   if (guard) return guard;
 
@@ -135,7 +171,15 @@ export async function DELETE(request: NextRequest) {
 
   const table = body.table === "event_comments" ? "event_comments" : "news_comments";
   const { error } = await (admin.from(table) as ReturnType<typeof admin.from>).delete().eq("id", body.id);
-  if (error) return NextResponse.json({ error: "Không thể xóa." }, { status: 500 });
+  if (error) {
+    void sendTelegramNotification({
+      title: "❌ LỖI XÓA BÌNH LUẬN",
+      subtitle: vnNow(),
+      sections: [{ rows: [{ label: "ID", value: body.id, mono: true, status: "err" }] }],
+      footer: "⚠️ Arex Admin",
+    }).catch(() => null);
+    return NextResponse.json({ error: "Không thể xóa." }, { status: 500 });
+  }
 
   await logAdminActivity({
     action: "COMMENT_DELETED",
@@ -143,6 +187,16 @@ export async function DELETE(request: NextRequest) {
     targetId: body.id,
     summary: `Đã xóa bình luận ${body.id}`,
   }).catch(() => {});
+
+  void sendTelegramNotification({
+    title: "🗑️ BÌNH LUẬN BỊ XÓA",
+    subtitle: vnNow(),
+    sections: [{ rows: [
+      { label: "ID", value: body.id, mono: true },
+      { label: "Bảng", value: table },
+    ]}],
+    footer: "💬 Arex Admin",
+  }).catch(() => null);
 
   return NextResponse.json({ ok: true });
 }

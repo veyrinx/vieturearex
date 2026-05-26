@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/data/content-service";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-stats", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 

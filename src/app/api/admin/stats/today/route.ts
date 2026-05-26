@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 function vnDateStart(): string {
@@ -10,7 +10,10 @@ function vnDateStart(): string {
   return `${y}-${m}-${d}T00:00:00+07:00`;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "admin-stats-today", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 

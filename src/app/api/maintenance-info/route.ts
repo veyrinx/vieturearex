@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSettings } from "@/lib/data/content-service";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "maintenance-info", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const settings = await getSettings();
     const settingsMap = settings.reduce<Record<string, string>>((acc, s) => {
