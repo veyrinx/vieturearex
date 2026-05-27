@@ -9,6 +9,9 @@ const DAILY_KEY             = "analytics.daily_views";
 const SCHEDULE_HOUR_KEY     = "integrations.report_schedule_hour";
 const SCHEDULE_INTERVAL_KEY = "integrations.report_schedule_interval";
 const SCHEDULE_DAYS_KEY     = "integrations.report_schedule_days";
+const TG_HOUR_KEY           = "integrations.telegram_report_hour";
+const LARK_HOUR_KEY         = "integrations.lark_report_hour";
+const DISCORD_HOUR_KEY      = "integrations.discord_report_hour";
 
 function vnHourNow(): number {
   const s = new Intl.DateTimeFormat("en-US", {
@@ -22,18 +25,24 @@ function vnWeekdayNow(): number {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })).getDay();
 }
 
-function shouldSendNow(settings: { key: string; value: string }[], force = false): boolean {
-  if (force) return true;
-  const hour     = parseInt(settings.find((s) => s.key === SCHEDULE_HOUR_KEY)?.value ?? "8");
-  const interval = parseInt(settings.find((s) => s.key === SCHEDULE_INTERVAL_KEY)?.value ?? "24");
-  const daysRaw  = settings.find((s) => s.key === SCHEDULE_DAYS_KEY)?.value ?? "";
-  const current  = vnHourNow();
-  const weekday  = vnWeekdayNow();
+type Setting = { key: string; value: string };
 
-  if (daysRaw) {
-    const allowed = daysRaw.split(",").map((d) => parseInt(d.trim())).filter((d) => !isNaN(d));
-    if (allowed.length > 0 && !allowed.includes(weekday)) return false;
-  }
+function isDayAllowed(settings: Setting[]): boolean {
+  const daysRaw = settings.find((s) => s.key === SCHEDULE_DAYS_KEY)?.value ?? "";
+  if (!daysRaw) return true;
+  const allowed = daysRaw.split(",").map((d) => parseInt(d.trim())).filter((d) => !isNaN(d));
+  return allowed.length === 0 || allowed.includes(vnWeekdayNow());
+}
+
+function shouldChannelSend(settings: Setting[], channelHourKey: string, force: boolean): boolean {
+  if (force) return true;
+  if (!isDayAllowed(settings)) return false;
+
+  const globalHour = parseInt(settings.find((s) => s.key === SCHEDULE_HOUR_KEY)?.value ?? "8");
+  const interval   = parseInt(settings.find((s) => s.key === SCHEDULE_INTERVAL_KEY)?.value ?? "24");
+  const raw        = settings.find((s) => s.key === channelHourKey)?.value;
+  const hour       = raw ? parseInt(raw) : globalHour;
+  const current    = vnHourNow();
 
   if (interval <= 1) return true;
   if (interval >= 24) return current === hour;
@@ -87,15 +96,15 @@ export async function GET(request: NextRequest) {
     getTodayStats(),
   ]);
 
-  if (!shouldSendNow(settings, force)) {
-    return NextResponse.json({ ok: true, sent: false, reason: "not_scheduled_hour", hour: vnHourNow() });
-  }
+  const larkEnabled     = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false"
+                          && shouldChannelSend(settings, LARK_HOUR_KEY, force);
+  const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false"
+                          && shouldChannelSend(settings, TG_HOUR_KEY, force);
+  const discordEnabled  = settings.find((s) => s.key === "integrations.discord_daily_report")?.value === "true"
+                          && shouldChannelSend(settings, DISCORD_HOUR_KEY, force);
 
-  const larkEnabled     = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false";
-  const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false";
-  const discordEnabled  = settings.find((s) => s.key === "integrations.discord_daily_report")?.value === "true";
   if (!larkEnabled && !telegramEnabled && !discordEnabled) {
-    return NextResponse.json({ ok: true, sent: false, reason: "disabled" });
+    return NextResponse.json({ ok: true, sent: false, reason: "not_scheduled_or_disabled", hour: vnHourNow() });
   }
 
   const dailyRaw = settings.find((s) => s.key === DAILY_KEY)?.value ?? "{}";

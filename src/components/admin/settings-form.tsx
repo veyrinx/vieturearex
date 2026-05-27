@@ -172,6 +172,29 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
+function HourSelect({ value, onChange, hint }: { value: string; onChange: (v: string) => void; hint?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Select value={value || "__global__"} onValueChange={(v) => onChange(!v || v === "__global__" ? "" : v)}>
+        <SelectTrigger className="max-w-44">
+          <SelectValue placeholder="Theo lịch chung" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__global__">
+            <span className="text-muted-foreground">Theo lịch chung</span>
+          </SelectItem>
+          {Array.from({ length: 24 }, (_, h) => (
+            <SelectItem key={h} value={String(h)}>
+              {String(h).padStart(2, "0")}:00 ICT
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
+    </div>
+  );
+}
+
 function getSlots(value: string) {
   const s = value.split(/\r?\n/);
   return Array.from({ length: 3 }, (_, i) => s[i] ?? "");
@@ -1131,16 +1154,28 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               )}
             </div>
           </Field>
-          <Field label="Bật báo cáo ngày qua Discord" hint="Gửi cùng lúc Telegram + Lark lúc 07:00 ICT">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={v("integrations.discord_daily_report") === "true"}
-                onChange={(e) => set("integrations.discord_daily_report", e.target.checked ? "true" : "false")}
-                className="size-4 cursor-pointer accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">Mặc định tắt. Bật để nhận báo cáo ngày trên Discord.</span>
-            </label>
+          <Field label="Bật báo cáo ngày qua Discord" hint="Báo cáo thống kê tự động">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={v("integrations.discord_daily_report") === "true"}
+                  onChange={(e) => set("integrations.discord_daily_report", e.target.checked ? "true" : "false")}
+                  className="size-4 cursor-pointer accent-primary"
+                />
+                <span className="text-xs text-muted-foreground">Mặc định tắt. Bật để nhận báo cáo ngày trên Discord.</span>
+              </label>
+              {v("integrations.discord_daily_report") === "true" && (
+                <div className="pl-6">
+                  <p className="text-[11px] text-muted-foreground mb-1.5 flex items-center gap-1"><Clock className="size-3" /> Giờ gửi riêng (ICT)</p>
+                  <HourSelect
+                    value={v("integrations.discord_report_hour")}
+                    onChange={(val) => set("integrations.discord_report_hour", val)}
+                    hint="Để trống = theo lịch chung"
+                  />
+                </div>
+              )}
+            </div>
           </Field>
         </Card>
 
@@ -1188,16 +1223,28 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             <Input value={v("integrations.lark_alerts_webhook_url")} onChange={(e) => set("integrations.lark_alerts_webhook_url", e.target.value)} placeholder="https://open.larksuite.com/open-apis/bot/v2/hook/..." className="font-mono text-xs" />
             <SensitiveHint hint={sensitiveHint("integrations.lark_alerts_webhook_url")} />
           </Field>
-          <Field label="Bật báo cáo lượt xem hằng ngày" hint="Cron 08:00 sáng giờ VN" icon={Plug}>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={v("integrations.lark_daily_report") !== "false"}
-                onChange={(e) => set("integrations.lark_daily_report", e.target.checked ? "true" : "false")}
-                className="size-4 cursor-pointer accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
-            </label>
+          <Field label="Bật báo cáo lượt xem hằng ngày" hint="Báo cáo thống kê tự động" icon={Plug}>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={v("integrations.lark_daily_report") !== "false"}
+                  onChange={(e) => set("integrations.lark_daily_report", e.target.checked ? "true" : "false")}
+                  className="size-4 cursor-pointer accent-primary"
+                />
+                <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
+              </label>
+              {v("integrations.lark_daily_report") !== "false" && (
+                <div className="pl-6">
+                  <p className="text-[11px] text-muted-foreground mb-1.5 flex items-center gap-1"><Clock className="size-3" /> Giờ gửi riêng (ICT)</p>
+                  <HourSelect
+                    value={v("integrations.lark_report_hour")}
+                    onChange={(val) => set("integrations.lark_report_hour", val)}
+                    hint="Để trống = theo lịch chung"
+                  />
+                </div>
+              )}
+            </div>
           </Field>
 
         </Card>
@@ -1326,16 +1373,28 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               )}
             </div>
           </Field>
-          <Field label="Bật báo cáo hằng ngày qua Telegram" hint="Cùng schedule với Lark — 08:00 sáng giờ VN" icon={Plug}>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={v("integrations.telegram_daily_report") !== "false"}
-                onChange={(e) => set("integrations.telegram_daily_report", e.target.checked ? "true" : "false")}
-                className="size-4 cursor-pointer accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
-            </label>
+          <Field label="Bật báo cáo hằng ngày qua Telegram" hint="Báo cáo thống kê tự động" icon={Plug}>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={v("integrations.telegram_daily_report") !== "false"}
+                  onChange={(e) => set("integrations.telegram_daily_report", e.target.checked ? "true" : "false")}
+                  className="size-4 cursor-pointer accent-primary"
+                />
+                <span className="text-xs text-muted-foreground">Mặc định bật. Tắt nếu không muốn nhận.</span>
+              </label>
+              {v("integrations.telegram_daily_report") !== "false" && (
+                <div className="pl-6">
+                  <p className="text-[11px] text-muted-foreground mb-1.5 flex items-center gap-1"><Clock className="size-3" /> Giờ gửi riêng (ICT)</p>
+                  <HourSelect
+                    value={v("integrations.telegram_report_hour")}
+                    onChange={(val) => set("integrations.telegram_report_hour", val)}
+                    hint="Để trống = theo lịch chung"
+                  />
+                </div>
+              )}
+            </div>
           </Field>
 
         </Card>
@@ -1680,8 +1739,11 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.telegram_bot_token",
               "integrations.telegram_chat_id",
               "integrations.telegram_daily_report",
+              "integrations.telegram_report_hour",
               "integrations.telegram_user_bot_token",
               "integrations.telegram_user_chat_id",
+              "integrations.lark_report_hour",
+              "integrations.discord_report_hour",
               "integrations.ai_auto_reply",
               "integrations.ai_bot_name",
               "integrations.ai_system_prompt",
