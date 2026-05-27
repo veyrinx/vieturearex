@@ -8,6 +8,7 @@ import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-
 import { NewsToc } from "@/components/news/news-toc";
 import { NewsComments } from "@/components/news/news-comments";
 import { AwardViewPoints } from "@/components/news/award-view-points";
+import { BookmarkButton } from "@/components/news/bookmark-button";
 import { siteConfig } from "@/lib/constants/site";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 
@@ -99,9 +100,10 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
       <div className="space-y-3">
         <div className="text-xs uppercase tracking-[0.14em] text-primary">{article.category}</div>
         <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">{article.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {formatVietnamDate(article.created_at)}
-        </p>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-muted-foreground">{formatVietnamDate(article.created_at)}</p>
+          <BookmarkButton itemId={article.id} itemTitle={article.title} itemImage={article.cover} />
+        </div>
       </div>
       {/* Ảnh bìa */}
       <div className="relative w-full overflow-hidden rounded-2xl border border-border" style={{ aspectRatio: "16/7" }}>

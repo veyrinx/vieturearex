@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, CheckSquare, Square, Send, FileText, Loader2 } from "lucide-react";
 import { useAdminNewsQuery, useInvalidateAdminNews } from "@/hooks/use-admin-news-query";
 import { NewsEditorDialog } from "@/components/admin/news-editor-dialog";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import type { NewsItem } from "@/lib/types/content";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
+import { cn } from "@/lib/utils";
 
 const publishStatusLabel: Record<NewsItem["status"], string> = {
   draft: "NHÁP",
@@ -27,9 +28,42 @@ export function NewsAdminPanel() {
   const invalidate = useInvalidateAdminNews();
   const [creatingOpen, setCreatingOpen] = useState(false);
   const [editing, setEditing] = useState<NewsItem | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
-  const refresh = async () => {
-    await invalidate();
+  const refresh = async () => { await invalidate(); };
+
+  const toggleSelect = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  const toggleAll = () =>
+    setSelected(selected.size === news.length ? new Set() : new Set(news.map((n) => n.id)));
+
+  const bulkAction = async (action: "publish" | "draft" | "delete") => {
+    if (selected.size === 0) return;
+    if (action === "delete" && !confirm(`Xóa ${selected.size} bài viết? Không thể khôi phục.`)) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/admin/news/bulk", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [...selected], action }),
+      });
+      if (!res.ok) { toast.error("Thao tác thất bại."); return; }
+      const d = await res.json() as { affected: number };
+      const labels = { publish: "đã xuất bản", draft: "chuyển về nháp", delete: "đã xóa" };
+      toast.success(`${d.affected} bài ${labels[action]}.`);
+      setSelected(new Set());
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng.");
+    } finally {
+      setBulkLoading(false);
+    }
   };
 
   const onDelete = async (id: string) => {
@@ -46,6 +80,8 @@ export function NewsAdminPanel() {
       toast.error("Lỗi mạng, không thể xóa bài viết.");
     }
   };
+
+  const allSelected = news.length > 0 && selected.size === news.length;
 
   return (
     <section className="space-y-4">
@@ -66,6 +102,46 @@ export function NewsAdminPanel() {
         />
       </div>
 
+      {/* Bulk action toolbar */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
+          <span className="text-xs font-semibold text-primary">
+            Đã chọn {selected.size} bài
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            {bulkLoading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+            <Button
+              size="sm" variant="outline" disabled={bulkLoading}
+              onClick={() => bulkAction("publish")}
+              className="gap-1.5 h-7 rounded-lg px-3 text-xs border-emerald-400/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <Send className="size-3" /> Xuất bản
+            </Button>
+            <Button
+              size="sm" variant="outline" disabled={bulkLoading}
+              onClick={() => bulkAction("draft")}
+              className="gap-1.5 h-7 rounded-lg px-3 text-xs border-sky-400/40 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10"
+            >
+              <FileText className="size-3" /> Chuyển nháp
+            </Button>
+            <Button
+              size="sm" variant="outline" disabled={bulkLoading}
+              onClick={() => bulkAction("delete")}
+              className="gap-1.5 h-7 rounded-lg px-3 text-xs border-rose-400/40 text-rose-600 hover:bg-rose-500/10"
+            >
+              <Trash2 className="size-3" /> Xóa
+            </Button>
+            <Button
+              size="sm" variant="ghost" disabled={bulkLoading}
+              onClick={() => setSelected(new Set())}
+              className="h-7 rounded-lg px-3 text-xs text-muted-foreground"
+            >
+              Bỏ chọn
+            </Button>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <LoadingSpinner className="py-10" label="ĐANG TẢI BÀI VIẾT..." />
       ) : news.length === 0 ? (
@@ -76,6 +152,14 @@ export function NewsAdminPanel() {
             <table className="min-w-full text-left text-sm">
               <thead className="bg-muted text-muted-foreground">
                 <tr>
+                  <th className="px-3 py-3 w-10">
+                    <button type="button" onClick={toggleAll} className="text-muted-foreground hover:text-foreground">
+                      {allSelected
+                        ? <CheckSquare className="size-4 text-primary" />
+                        : <Square className="size-4" />
+                      }
+                    </button>
+                  </th>
                   <th className="px-4 py-3 uppercase tracking-[0.08em]">TIÊU ĐỀ</th>
                   <th className="px-4 py-3 uppercase tracking-[0.08em]">DANH MỤC</th>
                   <th className="px-4 py-3 uppercase tracking-[0.08em]">NGÀY ĐĂNG</th>
@@ -85,7 +169,21 @@ export function NewsAdminPanel() {
               </thead>
               <tbody>
                 {news.map((item) => (
-                  <tr key={item.id} className="border-t border-border text-foreground">
+                  <tr
+                    key={item.id}
+                    className={cn(
+                      "border-t border-border text-foreground transition-colors",
+                      selected.has(item.id) && "bg-primary/5",
+                    )}
+                  >
+                    <td className="px-3 py-3">
+                      <button type="button" onClick={() => toggleSelect(item.id)} className="text-muted-foreground hover:text-foreground">
+                        {selected.has(item.id)
+                          ? <CheckSquare className="size-4 text-primary" />
+                          : <Square className="size-4" />
+                        }
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="space-y-0.5">
                         <p className="line-clamp-1 font-medium text-foreground">{item.title}</p>
@@ -109,7 +207,7 @@ export function NewsAdminPanel() {
                           type="button"
                           size="icon"
                           variant="outline"
-                          title="Chỉnh sửa bài viết: nội dung, tiêu đề, ảnh bìa, danh mục"
+                          title="Chỉnh sửa bài viết"
                           aria-label="Chỉnh sửa bài viết"
                           className="border-border bg-card text-foreground hover:border-primary/40 hover:text-primary"
                           onClick={() => setEditing(item)}
@@ -145,9 +243,7 @@ export function NewsAdminPanel() {
 
       <NewsEditorDialog
         open={Boolean(editing)}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null);
-        }}
+        onOpenChange={(open) => { if (!open) setEditing(null); }}
         initialData={editing}
         triggerLabel="CHỈNH SỬA"
         showTrigger={false}

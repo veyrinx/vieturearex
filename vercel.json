@@ -17,6 +17,10 @@
     {
       "path": "/api/cron/event-reminders",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/publish-scheduled",
+      "schedule": "0 * * * *"
     }
   ],
   "functions": {
@@ -28,7 +32,8 @@
     "src/app/api/tms/tournaments/[id]/generate-matches/route.ts": { "maxDuration": 30 },
     "src/app/api/upload/route.ts": { "maxDuration": 30 },
     "src/app/api/admin/upload/route.ts": { "maxDuration": 30 },
-    "src/app/api/cron/ff-version-check/route.ts": { "maxDuration": 30 }
+    "src/app/api/cron/ff-version-check/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/publish-scheduled/route.ts": { "maxDuration": 30 }
   },
   "headers": [
     {

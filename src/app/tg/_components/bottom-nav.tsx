@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Newspaper, CalendarDays, Trophy } from "lucide-react";
+import { Home, Newspaper, CalendarDays, Trophy, User, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/tg", label: "Trang chủ", icon: Home, exact: true },
   { href: "/tg/tin-tuc", label: "Tin tức", icon: Newspaper },
   { href: "/tg/su-kien", label: "Sự kiện", icon: CalendarDays },
-  { href: "/tg/giai-dau", label: "Giải đấu", icon: Trophy },
+  { href: "/tg/leaderboard", label: "BXH", icon: Trophy },
+  { href: "/tg/quiz", label: "Quiz FF", icon: HelpCircle },
+  { href: "/tg/profile", label: "Tôi", icon: User },
 ];
 
 export function BottomNav() {
