@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Trash2, CheckSquare, Square, Send, FileText, Loader2 } from "lucide-react";
+import { Pencil, Trash2, CheckSquare, Square, Send, FileText, Loader2, CalendarClock } from "lucide-react";
 import { useAdminNewsQuery, useInvalidateAdminNews } from "@/hooks/use-admin-news-query";
 import { NewsEditorDialog } from "@/components/admin/news-editor-dialog";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
@@ -195,11 +195,19 @@ export function NewsAdminPanel() {
                     <td className="px-4 py-3 text-muted-foreground">{item.category}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatVietnamDate(item.created_at)}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-md border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${publishStatusClassMap[item.status]}`}
-                      >
-                        {publishStatusLabel[item.status]}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`inline-flex rounded-md border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${publishStatusClassMap[item.status]}`}
+                        >
+                          {publishStatusLabel[item.status]}
+                        </span>
+                        {item.scheduled_at && item.status === "draft" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-amber-500">
+                            <CalendarClock className="size-3" />
+                            {new Date(item.scheduled_at).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">

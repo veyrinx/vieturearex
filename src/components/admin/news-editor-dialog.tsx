@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Clock, Send, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
@@ -127,6 +127,20 @@ export function NewsEditorDialog({
   const [newCategory, setNewCategory] = useState("");
   const [isCategorySaving, setIsCategorySaving] = useState(false);
   const [content, setContent] = useState(initialData?.content ?? "");
+  const [publishMode, setPublishMode] = useState<"now" | "schedule">(
+    initialData?.scheduled_at ? "schedule" : "now",
+  );
+  const [scheduledAt, setScheduledAt] = useState(() => {
+    if (initialData?.scheduled_at) {
+      // Convert ISO to datetime-local format
+      return initialData.scheduled_at.slice(0, 16);
+    }
+    // Default: 1 hour from now, rounded to nearest 30m
+    const d = new Date(Date.now() + 3600_000);
+    d.setMinutes(d.getMinutes() < 30 ? 30 : 0);
+    if (d.getMinutes() === 0) d.setHours(d.getHours() + 1);
+    return d.toISOString().slice(0, 16);
+  });
   const selectedCategory = watch("category");
 
   const loadCategories = useCallback(async () => {
@@ -236,6 +250,8 @@ export function NewsEditorDialog({
       const initialContent = initialData.content ?? "";
       setContent(initialContent);
       setValue("content", initialContent, { shouldValidate: false });
+      setPublishMode(initialData.scheduled_at ? "schedule" : "now");
+      if (initialData.scheduled_at) setScheduledAt(initialData.scheduled_at.slice(0, 16));
       return;
     }
 
@@ -248,6 +264,7 @@ export function NewsEditorDialog({
     });
     setContent("");
     setValue("content", "", { shouldValidate: false });
+    setPublishMode("now");
   }, [initialData, loadCategories, open, reset, setValue]);
 
   useEffect(() => {
@@ -263,23 +280,36 @@ export function NewsEditorDialog({
       return;
     }
 
+    if (publishMode === "schedule" && !scheduledAt) {
+      toast.error("Vui lòng chọn thời gian hẹn đăng.");
+      return;
+    }
+
+    const isScheduled = publishMode === "schedule";
+    const scheduledIso = isScheduled ? new Date(scheduledAt).toISOString() : null;
+
+    // Validate scheduled time is in the future
+    if (isScheduled && new Date(scheduledAt) <= new Date()) {
+      toast.error("Thời gian hẹn đăng phải ở tương lai.");
+      return;
+    }
+
     const finalContent = content.trim() || initialData?.content?.trim() || createFallbackContent(normalizedTitle);
     const excerptFromContent = finalContent.replace(/<[^>]+>/g, "").slice(0, 220).trim() || createFallbackExcerpt(normalizedTitle);
 
-    const payload: NewsInput = {
+    const payload: NewsInput & { scheduled_at?: string | null } = {
       ...values,
       slug: createSlug(normalizedTitle),
       excerpt: initialData?.excerpt?.trim() || excerptFromContent,
       content: finalContent,
       created_at: toVietnamIsoFromDateInput(cleanedCreatedAt),
-      status: "published",
+      status: isScheduled ? "draft" : "published",
+      scheduled_at: scheduledIso,
     };
 
     const response = await fetch("/api/admin/news", {
       method: initialData ? "PATCH" : "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
@@ -289,7 +319,12 @@ export function NewsEditorDialog({
       return;
     }
 
-    toast.success(initialData ? "Đã cập nhật bài viết." : "Đã tạo bài viết.");
+    if (isScheduled) {
+      const fmtDate = new Date(scheduledAt).toLocaleString("vi-VN");
+      toast.success(`Đã lên lịch đăng lúc ${fmtDate}.`);
+    } else {
+      toast.success(initialData ? "Đã cập nhật bài viết." : "Đã tạo bài viết.");
+    }
     onOpenChange(false);
     await onSaved();
   });
@@ -418,9 +453,71 @@ export function NewsEditorDialog({
               ))}
             </div>
 
+            {/* ── Publish mode ────────────────────────────────── */}
+            <div className="md:col-span-2 space-y-3">
+              <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                THỜI GIAN ĐĂNG
+              </label>
+
+              {/* Toggle */}
+              <div className="flex rounded-xl border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setPublishMode("now")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors ${
+                    publishMode === "now"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/40 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Send className="size-3.5" />
+                  Đăng ngay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPublishMode("schedule")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors border-l border-border ${
+                    publishMode === "schedule"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/40 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <CalendarClock className="size-3.5" />
+                  Hẹn giờ đăng
+                </button>
+              </div>
+
+              {/* Datetime picker — only visible in schedule mode */}
+              {publishMode === "schedule" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="size-3.5 text-muted-foreground shrink-0" />
+                    <input
+                      type="datetime-local"
+                      value={scheduledAt}
+                      onChange={(e) => setScheduledAt(e.target.value)}
+                      min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                      className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  {scheduledAt && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                      <CalendarClock className="size-3" />
+                      Bài sẽ được lưu là <strong>Nháp</strong> và tự động xuất bản lúc{" "}
+                      <strong>{new Date(scheduledAt).toLocaleString("vi-VN")}</strong>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="md:col-span-2">
               <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl">
-                {isSubmitting ? "ĐANG LƯU..." : "LƯU TIN TỨC"}
+                {isSubmitting
+                  ? "ĐANG LƯU..."
+                  : publishMode === "schedule"
+                  ? "HẸN GIỜ ĐĂNG BÀI"
+                  : "ĐĂNG BÀI NGAY"}
               </Button>
             </div>
           </form>

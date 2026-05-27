@@ -92,7 +92,10 @@
       "Bash(Out-String)",
       "Bash(find D:\\\\\\\\vieture-arex\\\\\\\\src\\\\\\\\app\\\\\\\\admin -maxdepth 1 -type d)",
       "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 40)",
-      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)"
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)",
+      "PowerShell(git push *)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 30)",
+      "PowerShell(git *)"
     ]
   }
 }

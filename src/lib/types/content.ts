@@ -51,6 +51,7 @@ export type NewsItem = {
   status: PublishStatus;
   created_at: string;
   created_by_name: string | null;
+  scheduled_at?: string | null;
 };
 
 export type NewsCommentItem = {

@@ -20,6 +20,7 @@ export const newsSchema = z.object({
   category: z.string().min(2).max(60).default("ESPORTS"),
   created_at: z.string().datetime().optional(),
   status: z.enum(["draft", "published"]).default("published"),
+  scheduled_at: z.string().datetime().nullable().optional(),
 });
 
 export type NewsInput = z.infer<typeof newsSchema>;
