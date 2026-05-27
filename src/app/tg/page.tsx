@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Newspaper, CalendarDays, Trophy, Flame } from "lucide-react";
+import { Newspaper, CalendarDays, Trophy, Flame, Radio } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { NotificationButton } from "./_components/notification-button";
 
@@ -34,6 +34,13 @@ const QUICK_LINKS = [
     label: "Giải đấu",
     desc: "Bracket & kết quả",
     color: "#f59e0b",
+  },
+  {
+    href: "/tg/stream",
+    icon: Radio,
+    label: "Stream",
+    desc: "Livestream & VOD",
+    color: "#ef4444",
   },
 ];
 
@@ -86,7 +93,7 @@ export default function TgHomePage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {QUICK_LINKS.map(({ href, icon: Icon, label, desc, color }) => (
           <Link
             key={href}
