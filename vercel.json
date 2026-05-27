@@ -8,7 +8,7 @@
   "crons": [
     {
       "path": "/api/cron/daily-report",
-      "schedule": "0 * * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/ff-version-check",
@@ -16,11 +16,11 @@
     },
     {
       "path": "/api/cron/event-reminders",
-      "schedule": "0 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/publish-scheduled",
-      "schedule": "0 * * * *"
+      "schedule": "0 6 * * *"
     }
   ],
   "functions": {
