@@ -28,6 +28,8 @@ export const SENSITIVE_KEYS = new Set([
   "integrations.telegram_user_bot_token",
   "integrations.telegram_user_chat_id",
   "tms.payment_info",
+  "push.vapid_private_key",
+  "streams.youtube_api_key",
 ]);
 
 function getSecret(): Uint8Array {
