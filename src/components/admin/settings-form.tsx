@@ -8,6 +8,7 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, ToggleLeft, Link, Columns3,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,11 @@ const NAV_ITEMS = [
   { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
   { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark, Telegram, AI" },
   { id: "tms",          icon: Trophy,       label: "Giải Đấu",    desc: "Quota & thanh toán TMS" },
+  { id: "content",      icon: FileText,     label: "Nội Dung",    desc: "Bình luận & bài viết" },
+  { id: "users",        icon: UserCog,      label: "Người Dùng",  desc: "Đăng ký & hồ sơ" },
+  { id: "push",         icon: Bell,         label: "Push Notify", desc: "Web push notifications" },
+  { id: "streams",      icon: Tv,           label: "Livestream",  desc: "YouTube livestream" },
+  { id: "appearance",   icon: Paintbrush,   label: "Giao Diện",   desc: "Màu sắc & card style" },
   { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
   { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
 ] as const;
@@ -2007,6 +2013,581 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         </Card>
 
         <SaveRow onSave={() => save(["tms.free_per_week", "tms.payment_price", "tms.payment_info", "tms.payment_qr_url"], "tms")} saving={saving === "tms"} />
+      </div>
+    ),
+
+    // ── NỘI DUNG ─────────────────────────────────────────────────────────────
+    content: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={MessageSquare} title="Bình Luận" desc="Cấu hình hệ thống bình luận bài viết" />
+          </div>
+          <Field label="Bật bình luận" hint="Tắt để ẩn khung bình luận toàn bộ website">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("content.comments_enabled") !== "false"}
+                onChange={(val) => set("content.comments_enabled", val ? "true" : "false")}
+                label="Bật/tắt bình luận"
+              />
+              <span className={cn("text-sm font-semibold", v("content.comments_enabled") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("content.comments_enabled") !== "false" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Yêu cầu đăng nhập" hint="Chỉ người dùng đã đăng nhập mới được bình luận">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("content.comments_require_login") === "true"}
+                onChange={(val) => set("content.comments_require_login", val ? "true" : "false")}
+                label="Yêu cầu đăng nhập"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("content.comments_require_login") === "true" ? "Bắt buộc đăng nhập" : "Cho phép ẩn danh"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Tự động duyệt" hint="Tắt để admin phải duyệt từng bình luận trước khi hiện">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("content.comments_auto_approve") !== "false"}
+                onChange={(val) => set("content.comments_auto_approve", val ? "true" : "false")}
+                label="Tự động duyệt"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("content.comments_auto_approve") !== "false" ? "Hiện ngay sau khi gửi" : "Chờ admin duyệt"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Giới hạn ký tự" hint="Tối đa ký tự cho 1 bình luận (mặc định: 1000)" icon={Hash}>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={50}
+                max={5000}
+                step={50}
+                value={v("content.comments_max_length") || "1000"}
+                onChange={(e) => set("content.comments_max_length", e.target.value)}
+                className="max-w-32 font-mono"
+              />
+              <span className="text-xs text-muted-foreground">ký tự</span>
+            </div>
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Newspaper} title="Bài Viết" desc="Phân trang và hiển thị danh sách tin tức" />
+          </div>
+          <Field label="Bài viết / trang" hint="Số bài mỗi trang trong trang /tin-tuc (mặc định: 12)" icon={Columns3}>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={4}
+                max={60}
+                step={4}
+                value={v("content.news_per_page") || "12"}
+                onChange={(e) => set("content.news_per_page", e.target.value)}
+                className="max-w-32 font-mono"
+              />
+              <span className="text-xs text-muted-foreground">bài / trang</span>
+            </div>
+          </Field>
+          <Field label="Bài nổi bật trang chủ" hint="Số bài viết nổi bật ở khu vực đầu trang chủ (mặc định: 3)" icon={Sparkles}>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={v("content.featured_count") || "3"}
+                onChange={(e) => set("content.featured_count", e.target.value)}
+                className="max-w-32 font-mono"
+              />
+              <span className="text-xs text-muted-foreground">bài</span>
+            </div>
+          </Field>
+          <Field label="Hiển thị lượt xem" hint="Hiện số lượt xem dưới mỗi bài viết" icon={Eye}>
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("content.show_view_count") !== "false"}
+                onChange={(val) => set("content.show_view_count", val ? "true" : "false")}
+                label="Hiện lượt xem"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("content.show_view_count") !== "false" ? "Hiện" : "Ẩn"}
+              </span>
+            </div>
+          </Field>
+        </Card>
+
+        <SaveRow
+          onSave={() => save([
+            "content.comments_enabled",
+            "content.comments_require_login",
+            "content.comments_auto_approve",
+            "content.comments_max_length",
+            "content.news_per_page",
+            "content.featured_count",
+            "content.show_view_count",
+          ], "content")}
+          saving={saving === "content"}
+        />
+      </div>
+    ),
+
+    // ── NGƯỜI DÙNG ───────────────────────────────────────────────────────────
+    users: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={UserCog} title="Đăng Ký & Xác Thực" desc="Kiểm soát việc tạo tài khoản và xác thực email" />
+          </div>
+          <Field label="Cho phép đăng ký" hint="Tắt để ngừng tạo tài khoản mới (admin vẫn tạo được)">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("users.registration_enabled") !== "false"}
+                onChange={(val) => set("users.registration_enabled", val ? "true" : "false")}
+                label="Cho phép đăng ký"
+              />
+              <span className={cn("text-sm font-semibold", v("users.registration_enabled") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400")}>
+                {v("users.registration_enabled") !== "false" ? "Mở đăng ký" : "Đóng đăng ký"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Bắt buộc xác thực email" hint="Người dùng phải xác thực email trước khi đăng nhập">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("users.require_email_verification") === "true"}
+                onChange={(val) => set("users.require_email_verification", val ? "true" : "false")}
+                label="Yêu cầu xác thực email"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("users.require_email_verification") === "true" ? "Bắt buộc" : "Không bắt buộc"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Đăng nhập bằng Google" hint="Cho phép đăng nhập qua tài khoản Google (cần cấu hình OAuth trong Supabase)">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("users.google_login_enabled") !== "false"}
+                onChange={(val) => set("users.google_login_enabled", val ? "true" : "false")}
+                label="Đăng nhập Google"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("users.google_login_enabled") !== "false" ? "Bật" : "Tắt"}
+              </span>
+            </div>
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={User} title="Hồ Sơ Người Dùng" desc="Cài đặt mặc định cho tài khoản mới" />
+          </div>
+          <Field label="Avatar mặc định" hint="URL ảnh đại diện khi người dùng chưa cài ảnh" icon={ImageIcon}>
+            <div className="space-y-2">
+              <Input
+                value={v("users.default_avatar_url")}
+                onChange={(e) => set("users.default_avatar_url", e.target.value)}
+                placeholder="https://..."
+              />
+              {v("users.default_avatar_url") && (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={v("users.default_avatar_url")}
+                    alt="avatar preview"
+                    className="size-10 rounded-full border border-border object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                  <span className="text-xs text-muted-foreground">Preview avatar mặc định</span>
+                </div>
+              )}
+            </div>
+          </Field>
+          <Field label="Hồ sơ công khai" hint="Cho phép người dùng khác xem trang profile">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("users.public_profiles") !== "false"}
+                onChange={(val) => set("users.public_profiles", val ? "true" : "false")}
+                label="Hồ sơ công khai"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("users.public_profiles") !== "false" ? "Công khai" : "Riêng tư"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Cho phép đổi tên" hint="Người dùng có thể tự cập nhật tên hiển thị của mình">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("users.allow_display_name_change") !== "false"}
+                onChange={(val) => set("users.allow_display_name_change", val ? "true" : "false")}
+                label="Cho phép đổi tên"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("users.allow_display_name_change") !== "false" ? "Được phép" : "Không được phép"}
+              </span>
+            </div>
+          </Field>
+        </Card>
+
+        <SaveRow
+          onSave={() => save([
+            "users.registration_enabled",
+            "users.require_email_verification",
+            "users.google_login_enabled",
+            "users.default_avatar_url",
+            "users.public_profiles",
+            "users.allow_display_name_change",
+          ], "users")}
+          saving={saving === "users"}
+        />
+      </div>
+    ),
+
+    // ── PUSH NOTIFICATION ────────────────────────────────────────────────────
+    push: (
+      <div className="space-y-5">
+        <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+            <Bell className="size-5" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Web Push Notifications</p>
+            <p className="text-xs text-muted-foreground">
+              Gửi thông báo trực tiếp đến trình duyệt người dùng kể cả khi họ không mở website. Cần VAPID keys từ{" "}
+              <span className="font-mono text-primary">web-push-codelab.glitch.me</span>.
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Bell} title="Cài Đặt Push" desc="Bật/tắt và cấu hình VAPID keys" />
+          </div>
+          <Field label="Bật Web Push" hint="Người dùng sẽ thấy hộp thoại xin phép nhận thông báo">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("push.enabled") === "true"}
+                onChange={(val) => set("push.enabled", val ? "true" : "false")}
+                label="Bật push notification"
+              />
+              <span className={cn("text-sm font-semibold", v("push.enabled") === "true" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("push.enabled") === "true" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+          <Field label="VAPID Public Key" hint="Khóa công khai — an toàn để lộ" icon={ShieldCheck}>
+            <Input
+              value={v("push.vapid_public_key")}
+              onChange={(e) => set("push.vapid_public_key", e.target.value)}
+              placeholder="BNtx8..."
+              className="font-mono text-xs"
+            />
+          </Field>
+          <Field label="VAPID Private Key" hint="Khóa bí mật — không chia sẻ" icon={ShieldCheck}>
+            <div className="space-y-2">
+              <Input
+                type="password"
+                value={v("push.vapid_private_key")}
+                onChange={(e) => set("push.vapid_private_key", e.target.value)}
+                placeholder="••••••••••••••••"
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("push.vapid_private_key")} />
+            </div>
+          </Field>
+          <Field label="VAPID Email" hint="Email liên lạc cho push service (phải bắt đầu bằng mailto:)" icon={Mail}>
+            <Input
+              value={v("push.vapid_email")}
+              onChange={(e) => set("push.vapid_email", e.target.value)}
+              placeholder="mailto:admin@arex.tech"
+              className="font-mono text-xs"
+            />
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BellRing} title="Nội Dung Mặc Định" desc="Icon và tiêu đề mặc định khi gửi push" />
+          </div>
+          <Field label="Tiêu đề mặc định" hint="Hiển thị làm tiêu đề thông báo nếu không truyền title" icon={Sparkles}>
+            <Input
+              value={v("push.default_title")}
+              onChange={(e) => set("push.default_title", e.target.value)}
+              placeholder="Arex Network"
+              maxLength={80}
+            />
+          </Field>
+          <Field label="URL icon thông báo" hint="Ảnh nhỏ hiện ở góc thông báo — nên 192×192 PNG" icon={ImageIcon}>
+            <div className="space-y-2">
+              <Input
+                value={v("push.icon_url")}
+                onChange={(e) => set("push.icon_url", e.target.value)}
+                placeholder="https://.../icon-192.png"
+              />
+              {v("push.icon_url") && (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={v("push.icon_url")}
+                    alt="push icon"
+                    className="size-12 rounded-xl border border-border object-contain bg-muted"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                  <span className="text-xs text-muted-foreground">Icon preview (192×192)</span>
+                </div>
+              )}
+            </div>
+          </Field>
+          <Field label="URL badge" hint="Icon nhỏ trên thanh thông báo Android — nên 72×72 PNG trắng" icon={ImageIcon}>
+            <Input
+              value={v("push.badge_url")}
+              onChange={(e) => set("push.badge_url", e.target.value)}
+              placeholder="https://.../badge-72.png"
+            />
+          </Field>
+        </Card>
+
+        <SaveRow
+          onSave={() => save([
+            "push.enabled",
+            "push.vapid_public_key",
+            "push.vapid_private_key",
+            "push.vapid_email",
+            "push.default_title",
+            "push.icon_url",
+            "push.badge_url",
+          ], "push")}
+          saving={saving === "push"}
+        />
+      </div>
+    ),
+
+    // ── LIVESTREAM ───────────────────────────────────────────────────────────
+    streams: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Tv} title="YouTube Livestream" desc="Hiển thị stream đang phát và sắp diễn ra trên website" />
+          </div>
+          <Field label="YouTube Channel ID" hint="Lấy trong youtube.com/channel/UC... hoặc dùng @handle" icon={Youtube}>
+            <div className="space-y-1">
+              <Input
+                value={v("streams.youtube_channel_id")}
+                onChange={(e) => set("streams.youtube_channel_id", e.target.value)}
+                placeholder="UCxxxxxxxxxxxxxxxxxxxxxxx hoặc @ArexNetwork"
+                className="font-mono text-xs"
+              />
+              {v("streams.youtube_channel_id") && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="size-3.5" /> Đã cấu hình kênh YouTube
+                </p>
+              )}
+            </div>
+          </Field>
+          <Field label="YouTube API Key" hint="Cần để fetch livestream tự động — nhạy cảm" icon={ShieldCheck}>
+            <div className="space-y-2">
+              <Input
+                type="password"
+                value={v("streams.youtube_api_key")}
+                onChange={(e) => set("streams.youtube_api_key", e.target.value)}
+                placeholder="AIza..."
+                className="font-mono text-xs"
+              />
+              <SensitiveHint hint={sensitiveHint("streams.youtube_api_key")} />
+              <p className="text-[11px] text-muted-foreground">Lấy tại <span className="font-mono text-primary">console.cloud.google.com</span> → YouTube Data API v3</p>
+            </div>
+          </Field>
+          <Field label="Tự động ghim stream" hint="Ghim stream đang phát lên đầu trang chủ tự động">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("streams.auto_featured") !== "false"}
+                onChange={(val) => set("streams.auto_featured", val ? "true" : "false")}
+                label="Tự động ghim"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("streams.auto_featured") !== "false" ? "Tự động" : "Thủ công"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Hiện stream sắp tới" hint="Hiển thị scheduled livestream chưa phát">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("streams.show_upcoming") !== "false"}
+                onChange={(val) => set("streams.show_upcoming", val ? "true" : "false")}
+                label="Hiện stream sắp tới"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("streams.show_upcoming") !== "false" ? "Hiện" : "Ẩn"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Số stream hiển thị tối đa" hint="Giới hạn số card stream trên trang (mặc định: 4)" icon={MonitorPlay}>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={v("streams.max_displayed") || "4"}
+                onChange={(e) => set("streams.max_displayed", e.target.value)}
+                className="max-w-28 font-mono"
+              />
+              <span className="text-xs text-muted-foreground">stream</span>
+            </div>
+          </Field>
+        </Card>
+
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-1.5">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+            <AlertTriangle className="size-3.5" /> Lấy Channel ID
+          </p>
+          <ol className="space-y-1 text-[11px] text-muted-foreground list-decimal list-inside">
+            <li>Vào trang YouTube channel của bạn</li>
+            <li>Click vào &quot;...&quot; → Chia sẻ kênh → Copy link</li>
+            <li>Hoặc dùng <span className="font-mono">commentpicker.com/youtube-channel-id</span> để tìm nhanh</li>
+            <li>Dán ID dạng <span className="font-mono">UCxxxxxxxx...</span> hoặc handle <span className="font-mono">@ArexNetwork</span></li>
+          </ol>
+        </div>
+
+        <SaveRow
+          onSave={() => save([
+            "streams.youtube_channel_id",
+            "streams.youtube_api_key",
+            "streams.auto_featured",
+            "streams.show_upcoming",
+            "streams.max_displayed",
+          ], "streams")}
+          saving={saving === "streams"}
+        />
+      </div>
+    ),
+
+    // ── GIAO DIỆN ────────────────────────────────────────────────────────────
+    appearance: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Paintbrush} title="Màu Sắc" desc="Màu chủ đạo và chế độ sáng/tối mặc định" />
+          </div>
+          <Field label="Màu primary" hint="Màu accent chính — hex code (VD: #f97316 = cam)" icon={Paintbrush}>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={v("appearance.primary_color") || "#f97316"}
+                  onChange={(e) => set("appearance.primary_color", e.target.value)}
+                  className="size-10 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
+                />
+              </div>
+              <Input
+                value={v("appearance.primary_color") || "#f97316"}
+                onChange={(e) => set("appearance.primary_color", e.target.value)}
+                placeholder="#f97316"
+                className="max-w-36 font-mono text-sm"
+                maxLength={7}
+              />
+              {v("appearance.primary_color") && (
+                <div className="size-8 rounded-lg border border-border shadow-sm" style={{ backgroundColor: v("appearance.primary_color") }} />
+              )}
+            </div>
+          </Field>
+          <Field label="Chế độ màu mặc định" hint="Theme mặc định khi người dùng chưa chọn" icon={Paintbrush}>
+            <Select
+              value={v("appearance.default_theme") || "system"}
+              onValueChange={(val) => set("appearance.default_theme", val ?? "system")}
+            >
+              <SelectTrigger className="max-w-44">
+                <SelectValue placeholder="Chọn chế độ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system">Theo hệ thống</SelectItem>
+                <SelectItem value="light">Sáng (Light)</SelectItem>
+                <SelectItem value="dark">Tối (Dark)</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={LayoutGrid} title="Kiểu Hiển Thị" desc="Card style và mật độ thông tin" />
+          </div>
+          <Field label="Kiểu card bài viết" hint="Ảnh hưởng trang /tin-tuc và các danh sách bài viết" icon={LayoutGrid}>
+            <Select
+              value={v("appearance.card_style") || "default"}
+              onValueChange={(val) => set("appearance.card_style", val ?? "default")}
+            >
+              <SelectTrigger className="max-w-48">
+                <SelectValue placeholder="Chọn kiểu card" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  <span className="font-medium">Mặc định</span>
+                  <span className="ml-2 text-xs text-muted-foreground">Ảnh lớn + tóm tắt</span>
+                </SelectItem>
+                <SelectItem value="compact">
+                  <span className="font-medium">Compact</span>
+                  <span className="ml-2 text-xs text-muted-foreground">Ảnh nhỏ + tiêu đề</span>
+                </SelectItem>
+                <SelectItem value="minimal">
+                  <span className="font-medium">Minimal</span>
+                  <span className="ml-2 text-xs text-muted-foreground">Chỉ tiêu đề + ngày</span>
+                </SelectItem>
+                <SelectItem value="magazine">
+                  <span className="font-medium">Magazine</span>
+                  <span className="ml-2 text-xs text-muted-foreground">Grid không đều</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Hiển thị số lượt xem trên card" hint="Hiện icon 👁 + số view ở góc card">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("appearance.card_show_views") !== "false"}
+                onChange={(val) => set("appearance.card_show_views", val ? "true" : "false")}
+                label="Hiện lượt xem trên card"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("appearance.card_show_views") !== "false" ? "Hiện" : "Ẩn"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Hiển thị badge danh mục" hint="Hiện label danh mục (VD: Sự Kiện, Cập Nhật...) trên card">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("appearance.card_show_category") !== "false"}
+                onChange={(val) => set("appearance.card_show_category", val ? "true" : "false")}
+                label="Hiện badge danh mục"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("appearance.card_show_category") !== "false" ? "Hiện" : "Ẩn"}
+              </span>
+            </div>
+          </Field>
+          <Field label="Hiển thị tác giả" hint="Hiện tên tác giả ở dưới tiêu đề bài viết">
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("appearance.show_author") !== "false"}
+                onChange={(val) => set("appearance.show_author", val ? "true" : "false")}
+                label="Hiện tác giả"
+              />
+              <span className="text-sm text-muted-foreground">
+                {v("appearance.show_author") !== "false" ? "Hiện" : "Ẩn"}
+              </span>
+            </div>
+          </Field>
+        </Card>
+
+        <SaveRow
+          onSave={() => save([
+            "appearance.primary_color",
+            "appearance.default_theme",
+            "appearance.card_style",
+            "appearance.card_show_views",
+            "appearance.card_show_category",
+            "appearance.show_author",
+          ], "appearance")}
+          saving={saving === "appearance"}
+        />
       </div>
     ),
   };
