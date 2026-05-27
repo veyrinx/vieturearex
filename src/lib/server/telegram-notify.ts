@@ -100,10 +100,13 @@ export async function sendTelegramNotification(payload: NotifyPayload) {
   catch (err) { console.error("[tg-admin]", err); return { sent: false, reason: "fetch_error" }; }
 }
 
-/** Bot User → gửi vào channel/nhóm public cho người dùng theo dõi */
+/** Bot User → gửi vào channel/nhóm public cho người dùng theo dõi.
+ *  Nếu không cấu hình USER_TOKEN_KEY riêng, fallback sang admin bot token. */
 export async function sendUserTelegramNotification(payload: NotifyPayload) {
   const settings = await getSettings();
-  const token  = settings.find((s) => s.key === USER_TOKEN_KEY)?.value || "";
+  const userToken  = settings.find((s) => s.key === USER_TOKEN_KEY)?.value || "";
+  const adminToken = settings.find((s) => s.key === TOKEN_KEY)?.value || "";
+  const token  = userToken || adminToken;
   const chatId = settings.find((s) => s.key === USER_CHAT_KEY)?.value || "";
   if (!token || !chatId) return { sent: false, reason: "not_configured" };
   try { return await sendToBot(token, chatId, buildText(payload)); }

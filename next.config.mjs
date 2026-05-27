@@ -247,6 +247,11 @@ const nextConfig = {
             key: "Cross-Origin-Opener-Policy",
             value: "unsafe-none",
           },
+          {
+            // Allow YouTube embed features (autoplay, fullscreen, picture-in-picture)
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), autoplay=*, fullscreen=*, picture-in-picture=*, encrypted-media=*",
+          },
         ],
       },
     ];
