@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { awardAchievement } from "@/lib/server/award-achievement";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ."),
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
     if (displayName) {
       await adminClient.from("users").update({ display_name: displayName } as never).eq("id", authUser.id);
     }
+    void awardAchievement(authUser.id, "newcomer");
   } catch {
     // Profile creation failed — auth user exists, non-fatal
   }

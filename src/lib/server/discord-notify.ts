@@ -2,9 +2,11 @@ import "server-only";
 import { getSettings } from "@/lib/data/content-service";
 import type { NotifyPayload } from "./telegram-notify";
 
-const INTERNAL_KEY = "integrations.discord_internal_webhook";
-const PUBLIC_KEY   = "integrations.discord_public_webhook";
-const LEGACY_KEY   = "site.discord_webhook";
+const INTERNAL_KEY  = "integrations.discord_internal_webhook";
+const PUBLIC_KEY    = "integrations.discord_public_webhook";
+const LEGACY_KEY    = "site.discord_webhook";
+const SITE_NAME_KEY = "branding.site_name";
+const LOGO_KEY      = "branding.logo_light_url";
 
 const COLORS = { ok: 0x22c55e, err: 0xef4444, warn: 0xf59e0b, info: 0x3b82f6, default: 0xfbbf24 };
 
@@ -46,11 +48,20 @@ function buildEmbed(payload: NotifyPayload, color = COLORS.default) {
   };
 }
 
-async function post(url: string, payload: NotifyPayload, color?: number) {
+async function post(
+  url: string,
+  payload: NotifyPayload,
+  color?: number,
+  profile?: { username?: string; avatar_url?: string },
+) {
+  const body: Record<string, unknown> = { embeds: [buildEmbed(payload, color)] };
+  if (profile?.username) body.username = profile.username.slice(0, 80);
+  if (profile?.avatar_url) body.avatar_url = profile.avatar_url;
+
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ embeds: [buildEmbed(payload, color)] }),
+    body: JSON.stringify(body),
   });
   // Discord returns 204 No Content on success
   if (res.status === 204 || res.ok) return { sent: true };
@@ -62,6 +73,12 @@ async function post(url: string, payload: NotifyPayload, color?: number) {
   return { sent: false, status: res.status, reason };
 }
 
+function getProfile(settings: Awaited<ReturnType<typeof getSettings>>) {
+  const username = settings.find((s) => s.key === SITE_NAME_KEY)?.value?.trim() || undefined;
+  const avatar_url = settings.find((s) => s.key === LOGO_KEY)?.value?.trim() || undefined;
+  return { username, avatar_url };
+}
+
 /** Gửi vào channel nội bộ — CSKH alerts, security, báo cáo ngày */
 export async function sendDiscordInternalNotification(payload: NotifyPayload, color?: number) {
   const settings = await getSettings();
@@ -70,7 +87,7 @@ export async function sendDiscordInternalNotification(payload: NotifyPayload, co
     settings.find((s) => s.key === LEGACY_KEY)?.value?.trim() ||
     "";
   if (!url) return { sent: false, reason: "no_webhook" };
-  try { return await post(url, payload, color); }
+  try { return await post(url, payload, color, getProfile(settings)); }
   catch (err) { console.error("[discord-internal]", err); return { sent: false, reason: "fetch_error" }; }
 }
 
@@ -79,7 +96,7 @@ export async function sendDiscordPublicNotification(payload: NotifyPayload, colo
   const settings = await getSettings();
   const url = settings.find((s) => s.key === PUBLIC_KEY)?.value?.trim() || "";
   if (!url) return { sent: false, reason: "no_webhook" };
-  try { return await post(url, payload, color); }
+  try { return await post(url, payload, color, getProfile(settings)); }
   catch (err) { console.error("[discord-public]", err); return { sent: false, reason: "fetch_error" }; }
 }
 

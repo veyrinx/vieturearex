@@ -1,12 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal } from "lucide-react";
+import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/common/section-heading";
+
+const HISTORY_KEY = "search_history";
+const MAX_HISTORY = 8;
+
+function getHistory(): string[] {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as string[]; } catch { return []; }
+}
+function saveHistory(q: string) {
+  const prev = getHistory().filter((s) => s !== q);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify([q, ...prev].slice(0, MAX_HISTORY)));
+}
+function clearHistory() { localStorage.removeItem(HISTORY_KEY); }
 
 type SearchResult = {
   type: "event" | "news";
@@ -31,7 +43,11 @@ export default function SearchPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [category, setCategory] = useState<string>("all");
+  const [history, setHistory] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { setHistory(getHistory()); }, []);
 
   const doSearch = async (q: string, type: "all" | "event" | "news" = filter) => {
     if (q.trim().length < 2) { setResults([]); return; }
@@ -42,6 +58,7 @@ export default function SearchPage() {
       if (res.ok) {
         const data = await res.json() as { results: SearchResult[] };
         setResults(data.results ?? []);
+        if (data.results?.length) { saveHistory(q.trim()); setHistory(getHistory()); }
       } else {
         setResults([]);
       }
@@ -103,10 +120,32 @@ export default function SearchPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setShowHistory(true)}
+              onBlur={() => setTimeout(() => setShowHistory(false), 150)}
               placeholder="Nhập từ khóa tìm kiếm..."
               className="h-12 rounded-xl pl-10 text-sm"
               autoFocus
             />
+            {/* Search history dropdown */}
+            {showHistory && !query && history.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-border bg-background shadow-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tìm gần đây</span>
+                  <button type="button" onClick={() => { clearHistory(); setHistory([]); }} className="text-[10px] text-muted-foreground hover:text-foreground">Xóa</button>
+                </div>
+                {history.map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    onMouseDown={() => { setQuery(h); void doSearch(h); setShowHistory(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left"
+                  >
+                    <Clock size={13} className="text-muted-foreground shrink-0" />
+                    {h}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <Button type="submit" className="h-12 rounded-xl px-6" disabled={loading}>
             {loading ? "Đang tìm..." : "TÌM KIẾM"}

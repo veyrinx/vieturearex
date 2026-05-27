@@ -3,6 +3,7 @@ import { getAuthContext } from "@/lib/server/auth";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { awardAchievement } from "@/lib/server/award-achievement";
 
 function getDb() {
   const db = createAdminSupabaseClient();
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
     item_title: body.item_title ?? null,
     item_image: body.item_image ?? null,
   }, { onConflict: "user_id,item_type,item_id" });
+
+  // Check bookmarker achievement (5+ bookmarks)
+  void (async () => {
+    try {
+      const { count } = await untypedFrom(db, "user_favorites")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", auth.userId) as { count: number | null };
+      if ((count ?? 0) >= 5) await awardAchievement(auth.userId!, "bookmarker");
+    } catch { /* non-critical */ }
+  })();
 
   return NextResponse.json({ ok: true });
 }

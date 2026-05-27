@@ -1668,6 +1668,65 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           })()}
         </Card>
 
+        {/* ── TỰ ĐỘNG GỬI THÔNG BÁO ───────────────────────────────────────── */}
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BellRing} title="Tự Động Gửi Thông Báo" desc="Kiểm soát khi nào bot gửi thông báo tự động qua Telegram + Discord + Push" />
+          </div>
+
+          <Field label="Bài viết mới (đăng thủ công)" hint="Gửi thông báo khi admin tạo bài viết mới" icon={Newspaper}>
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("integrations.tg_auto_news") !== "false"}
+                onChange={(val) => set("integrations.tg_auto_news", val ? "true" : "false")}
+                label="Bật/tắt thông báo bài viết mới"
+              />
+              <span className={cn("text-sm font-semibold", v("integrations.tg_auto_news") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("integrations.tg_auto_news") !== "false" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+
+          <Field label="Bài viết lên lịch (cron tự động)" hint="Gửi thông báo khi cron đăng bài viết đã lên lịch" icon={Clock}>
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("integrations.tg_auto_scheduled") !== "false"}
+                onChange={(val) => set("integrations.tg_auto_scheduled", val ? "true" : "false")}
+                label="Bật/tắt thông báo bài viết lên lịch"
+              />
+              <span className={cn("text-sm font-semibold", v("integrations.tg_auto_scheduled") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("integrations.tg_auto_scheduled") !== "false" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+
+          <Field label="Sự kiện mới" hint="Gửi thông báo khi admin tạo sự kiện mới" icon={Calendar}>
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("integrations.tg_auto_events") !== "false"}
+                onChange={(val) => set("integrations.tg_auto_events", val ? "true" : "false")}
+                label="Bật/tắt thông báo sự kiện mới"
+              />
+              <span className={cn("text-sm font-semibold", v("integrations.tg_auto_events") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("integrations.tg_auto_events") !== "false" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+
+          <Field label="Broadcast DM (Mini App)" hint="Gửi DM tới tất cả subscribers khi có nội dung mới" icon={SendHorizonal}>
+            <div className="flex items-center gap-3">
+              <Toggle
+                checked={v("integrations.tg_auto_broadcast_dm") !== "false"}
+                onChange={(val) => set("integrations.tg_auto_broadcast_dm", val ? "true" : "false")}
+                label="Bật/tắt broadcast DM"
+              />
+              <span className={cn("text-sm font-semibold", v("integrations.tg_auto_broadcast_dm") !== "false" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                {v("integrations.tg_auto_broadcast_dm") !== "false" ? "Đang bật" : "Đang tắt"}
+              </span>
+            </div>
+          </Field>
+        </Card>
+
         {/* ── AI CSKH ──────────────────────────────────────────────────────── */}
         <Card>
           <div className="py-4">
@@ -1754,6 +1813,10 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.ai_bot_name",
               "integrations.ai_system_prompt",
               "integrations.ai_api_key",
+              "integrations.tg_auto_news",
+              "integrations.tg_auto_scheduled",
+              "integrations.tg_auto_events",
+              "integrations.tg_auto_broadcast_dm",
             ],
             "integrations",
           )}

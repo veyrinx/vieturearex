@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { CskhChat } from "@/components/community/cskh-chat";
@@ -51,9 +52,10 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
         siteName={settingsMap["branding.site_name"] || activeSite.shortName}
       />
       <PageTransition>
-        <main className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl px-4 pb-24 md:pb-16 md:px-6">{children}</main>
       </PageTransition>
       <SiteFooter />
+      <MobileBottomNav />
       <CskhChat />
       <AutoTranslate />
     </div>

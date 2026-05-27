@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { isAfter, isBefore } from "date-fns";
 import { ArrowUpRight } from "lucide-react";
@@ -32,6 +32,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
   const [toDate, setToDate] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeDate, setActiveDate] = useState<"from" | "to" | null>(null);
+  const [displayCount, setDisplayCount] = useState(12);
   const { data: news } = useNewsQuery("published");
   const safeNews = useMemo(() => news ?? initialNews ?? [], [news, initialNews]);
 
@@ -58,6 +59,11 @@ export function NewsList({ news: initialNews }: NewsListProps) {
         return sort === "newest" ? right - left : left - right;
       });
   }, [category, fromDate, safeNews, sort, toDate]);
+
+  useEffect(() => { setDisplayCount(12); }, [filteredNews]);
+
+  const visibleNews = filteredNews.slice(0, displayCount);
+  const hasMore = displayCount < filteredNews.length;
 
   return (
     <div className="space-y-4">
@@ -135,7 +141,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {filteredNews.map((item) => (
+          {visibleNews.map((item) => (
             <article key={item.id} className="group relative flex flex-col overflow-hidden rounded-[14px] border bg-white px-4 pt-4 pb-2 transition-all dark:border-border dark:bg-card">
               <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
               <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
@@ -157,12 +163,23 @@ export function NewsList({ news: initialNews }: NewsListProps) {
               </div>
 
               <div className="flex flex-1 items-center justify-center p-3 text-center">
-                <h3 className="font-heading text-[0.95rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-1">
+                <h3 className="font-heading text-[0.95rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-2 leading-snug">
                   {item.title}
                 </h3>
               </div>
             </article>
           ))}
+        </div>
+      )}
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            onClick={() => setDisplayCount((c) => c + 12)}
+            className="rounded-xl px-8"
+          >
+            Xem thêm ({filteredNews.length - displayCount} bài)
+          </Button>
         </div>
       )}
     </div>

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
+import { checkProfileAchievements } from "@/lib/server/award-achievement";
+import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 
 const urlOrEmpty = z.string().max(300).optional().default("").transform((v) => {
   if (!v) return null;
@@ -183,6 +185,25 @@ export async function PATCH(request: NextRequest) {
       .update(remaining as never)
       .eq("id", user.id);
     if (!error) {
+      // Check profile/social achievements asynchronously (don't block response)
+      void (async () => {
+        try {
+          const { data: row } = await writeClient
+            .from("users")
+            .select("avatar_url, bio, ff_id, " + SOCIAL_DEFS.map((s) => s.field).join(", "))
+            .eq("id", user.id)
+            .maybeSingle();
+          if (!row) return;
+          const r = row as Record<string, unknown>;
+          const socialCount = SOCIAL_DEFS.filter((s) => Boolean(r[s.field])).length;
+          await checkProfileAchievements(user.id, {
+            avatar_url: r.avatar_url as string | null,
+            bio: r.bio as string | null,
+            ff_id: r.ff_id as string | null,
+            socialCount,
+          });
+        } catch { /* non-critical */ }
+      })();
       return NextResponse.json({ ok: true });
     }
     lastError = error;

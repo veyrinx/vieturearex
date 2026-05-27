@@ -14,6 +14,7 @@ import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { getSettings } from "@/lib/data/content-service";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -165,26 +166,33 @@ export async function POST(request: NextRequest) {
       summary: `Tạo sự kiện ${event.title}`,
     });
 
+    const evtSettings = await getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>);
+    const evtMap = Object.fromEntries(evtSettings.map((s) => [s.key, s.value]));
+    const autoEventsEnabled = evtMap["integrations.tg_auto_events"] !== "false";
+    const autoBroadcastEnabled = evtMap["integrations.tg_auto_broadcast_dm"] !== "false";
+
     notifyEventChange(event, "created", adminName);
 
-    // Broadcast DM tới subscribers của Mini App
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
-    import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
-      const start = new Date(event.start_date).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-      const text = `📅 <b>SỰ KIỆN MỚI</b>\n\n<b>${event.title}</b>\n🗓 Bắt đầu: ${start}${event.server_region ? `\n🌐 Server: ${event.server_region}` : ""}\n\n<a href="${siteUrl}/su-kien/${event.id}">👉 Xem chi tiết</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
-      broadcastToSubscribers(text).catch(() => null);
-    });
+    if (autoEventsEnabled) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+      if (autoBroadcastEnabled) {
+        import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
+          const start = new Date(event.start_date).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+          const text = `📅 <b>SỰ KIỆN MỚI</b>\n\n<b>${event.title}</b>\n🗓 Bắt đầu: ${start}${event.server_region ? `\n🌐 Server: ${event.server_region}` : ""}\n\n<a href="${siteUrl}/events/${event.id}">👉 Xem chi tiết</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
+          broadcastToSubscribers(text).catch(() => null);
+        });
+      }
 
-    // User channels — Zalo, Push, Telegram user
-    import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
-      notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
-    });
-    import("@/lib/server/push-notify").then(({ sendPushNotification }) => {
-      sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
-    });
-    import("@/lib/server/user-notify").then(({ notifyUserNewEvent }) => {
-      notifyUserNewEvent(event, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
-    });
+      import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
+        notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
+      });
+      import("@/lib/server/push-notify").then(({ sendPushNotification }) => {
+        sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
+      });
+      import("@/lib/server/user-notify").then(({ notifyUserNewEvent }) => {
+        notifyUserNewEvent(event, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
+      });
+    }
     revalidatePath("/events", "layout");
     revalidatePath("/calendar", "layout");
     revalidatePath("/", "layout");

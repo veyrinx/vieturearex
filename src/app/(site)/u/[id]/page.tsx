@@ -10,8 +10,13 @@ import { getUserPublicProfile } from "@/lib/data/content-service";
 import { getRank } from "@/lib/constants/ranks";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 import { GAME_META_BY_KEY } from "@/lib/constants/game-list";
+import { ShareButtons } from "@/components/news/share-buttons";
+import { siteConfig } from "@/lib/constants/site";
 import type { GameProfile } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
+import { AchievementsDisplay } from "@/components/profile/achievements-display";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -41,14 +46,28 @@ const ONLINE_MS = 90_000;
 
 export const revalidate = 120;
 
+async function getPublicAchievements(userId: string) {
+  const admin = createAdminSupabaseClient();
+  if (!admin) return [];
+  const { data } = await untypedFrom(admin, "user_achievements")
+    .select("achievement, earned_at")
+    .eq("user_id", userId)
+    .order("earned_at", { ascending: true }) as { data: { achievement: string; earned_at: string }[] | null };
+  return data ?? [];
+}
+
 export default async function PublicProfilePage({ params }: Props) {
   const { id } = await params;
-  const profile = await getUserPublicProfile(id);
+  const [profile, achievements] = await Promise.all([
+    getUserPublicProfile(id),
+    getPublicAchievements(id),
+  ]);
   if (!profile) notFound();
 
   const name = profile.display_name || "Ẩn danh";
   const meta = ROLE_META[profile.role] ?? ROLE_META.user;
   const joinDate = format(new Date(profile.created_at), "dd 'tháng' MM, yyyy", { locale: vi });
+  const profileUrl = `${siteConfig.url}/u/${profile.id}`;
   const points = Number(profile.points ?? 0);
   const rankMeta = getRank(points);
   const rankLabel = profile.rank ?? rankMeta.rank;
@@ -121,8 +140,13 @@ export default async function PublicProfilePage({ params }: Props) {
             )}
           </div>
 
+          {/* Share */}
+          <div className="mt-4 flex justify-end">
+            <ShareButtons url={profileUrl} title={`Hồ sơ ${name} — Arex`} />
+          </div>
+
           {/* Stats grid */}
-          <div className="mt-5 grid grid-cols-3 gap-2.5">
+          <div className="mt-3 grid grid-cols-3 gap-2.5">
             <Stat icon={Sparkles} label="Điểm" value={points.toLocaleString("vi-VN")} accent="text-amber-500" />
             <Stat icon={Eye}      label="Lượt xem" value={views.toLocaleString("vi-VN")} accent="text-blue-500" />
             <Stat icon={CalendarDays} label="Tham gia" value={joinDate} accent="text-emerald-500" small />
@@ -203,6 +227,16 @@ export default async function PublicProfilePage({ params }: Props) {
                   </Link>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Achievements */}
+          {achievements.length > 0 && (
+            <div className="mt-5">
+              <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <Trophy className="size-3" /> Thành tích ({achievements.length})
+              </p>
+              <AchievementsDisplay earned={achievements} />
             </div>
           )}
         </div>

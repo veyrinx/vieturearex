@@ -7,7 +7,10 @@ import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
   Smartphone, Camera, Trash2, Phone, Gamepad2, Plus, ImageIcon,
+  Bookmark, Bell, X, Trophy,
 } from "lucide-react";
+import { AchievementsDisplay } from "@/components/profile/achievements-display";
+import Link from "next/link";
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
 import { GAME_LIST } from "@/lib/constants/game-list";
 import type { GameProfile } from "@/lib/types/content";
@@ -57,6 +60,15 @@ type ProfileData = {
   contact_email?: string | null;
 } & Partial<Record<`${SocialKey}_url` & string, string | null>>;
 
+type FavoriteItem = {
+  id: string;
+  item_type: string;
+  item_id: string;
+  item_title: string | null;
+  item_image: string | null;
+  created_at: string;
+};
+
 type TotpFactor = {
   id: string;
   friendly_name?: string;
@@ -88,6 +100,11 @@ export default function ProfilePage() {
   // Banner upload
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
+  // Dashboard data
+  const [bookmarks, setBookmarks] = useState<FavoriteItem[]>([]);
+  const [follows, setFollows] = useState<string[]>([]);
+  const [achievements, setAchievements] = useState<{ achievement: string; earned_at: string }[]>([]);
 
   // Password change
   const [newPassword, setNewPassword] = useState("");
@@ -124,6 +141,11 @@ export default function ProfilePage() {
         setAvatarPreview(data.avatar_url ?? null);
         setBannerPreview(data.banner_url ?? null);
         setLoading(false);
+        void Promise.all([
+          fetch("/api/user/favorites").then((r) => r.json()).then((d: FavoriteItem[]) => setBookmarks(d ?? [])).catch(() => null),
+          fetch("/api/user/follows").then((r) => r.json()).then((d: { follows?: string[] }) => setFollows(d.follows ?? [])).catch(() => null),
+          fetch("/api/user/achievements").then((r) => r.json()).then((d: { achievement: string; earned_at: string }[]) => setAchievements(d ?? [])).catch(() => null),
+        ]);
       })
       .catch(() => router.replace("/login"));
   }, [router]);
@@ -336,6 +358,20 @@ export default function ProfilePage() {
       await loadMfaFactors();
     } catch { toast.error("Lỗi mạng."); }
     finally { setRemovingMfa(false); }
+  };
+
+  const removeBookmark = async (item: FavoriteItem) => {
+    await fetch(`/api/user/favorites?item_type=${item.item_type}&item_id=${item.item_id}`, { method: "DELETE" });
+    setBookmarks((prev) => prev.filter((b) => b.id !== item.id));
+  };
+
+  const unfollowCategory = async (cat: string) => {
+    await fetch("/api/user/follows", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: cat }),
+    });
+    setFollows((prev) => prev.filter((f) => f !== cat));
   };
 
   const onLogout = async () => {
@@ -868,6 +904,87 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Bookmarks */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
+              <Bookmark className="size-4 text-muted-foreground" /> Bài viết đã lưu
+              {bookmarks.length > 0 && (
+                <span className="ml-auto text-xs font-normal text-muted-foreground">{bookmarks.length} mục</span>
+              )}
+            </h2>
+            {bookmarks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Chưa lưu bài viết nào.</p>
+            ) : (
+              <div className="space-y-2">
+                {bookmarks.map((b) => (
+                  <div key={b.id} className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-2.5">
+                    {b.item_image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={b.item_image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{b.item_type}</p>
+                      <Link
+                        href={b.item_type === "news" ? `/news/${b.item_id}` : `/esports/events/${b.item_id}`}
+                        className="text-sm font-semibold text-foreground hover:text-primary line-clamp-1"
+                      >
+                        {b.item_title ?? b.item_id}
+                      </Link>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void removeBookmark(b)}
+                      className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      title="Xóa khỏi danh sách lưu"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Achievements */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
+              <Trophy className="size-4 text-muted-foreground" /> Thành tích
+              {achievements.length > 0 && (
+                <span className="ml-auto text-xs font-normal text-muted-foreground">{achievements.length} đã mở khóa</span>
+              )}
+            </h2>
+            <AchievementsDisplay earned={achievements} showLocked />
+          </div>
+
+          {/* Followed categories */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
+              <Bell className="size-4 text-muted-foreground" /> Chuyên mục đang theo dõi
+              {follows.length > 0 && (
+                <span className="ml-auto text-xs font-normal text-muted-foreground">{follows.length} chuyên mục</span>
+              )}
+            </h2>
+            {follows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Chưa theo dõi chuyên mục nào. Mở bài viết bất kỳ để theo dõi chuyên mục.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {follows.map((cat) => (
+                  <div key={cat} className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary dark:text-amber-400">
+                    {cat}
+                    <button
+                      type="button"
+                      onClick={() => void unfollowCategory(cat)}
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20"
+                      title={`Bỏ theo dõi ${cat}`}
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Danger zone */}

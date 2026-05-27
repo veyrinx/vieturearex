@@ -48,7 +48,7 @@ function TournamentCard({ t }: { t: TmsTournament }) {
       )}
     >
       {/* Banner */}
-      <div className="relative aspect-[16/7] overflow-hidden bg-muted">
+      <div className="relative aspect-video overflow-hidden bg-muted md:aspect-[16/7]">
         {t.banner_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

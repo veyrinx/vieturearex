@@ -137,9 +137,12 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             <Search className="size-[17px]" />
           </Link>
           <UserNavButton className={isHomePage ? ctrlClass : undefined} />
-          <NotificationBell className={isHomePage ? ctrlClass : undefined} />
-          <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
-          <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
+          {/* Hide extra icons on mobile — moved into sheet */}
+          <span className="hidden md:contents">
+            <NotificationBell className={isHomePage ? ctrlClass : undefined} />
+            <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
+            <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
+          </span>
 
           {/* Mobile hamburger */}
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -152,7 +155,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               <Menu className="size-5" />
             </SheetTrigger>
 
-            <SheetContent side="right" className="w-72 border-border bg-card text-foreground">
+            <SheetContent side="right" className="flex w-72 flex-col border-border bg-card text-foreground">
               <SheetHeader className="pb-2">
                 <SheetTitle className="font-heading text-sm uppercase tracking-[0.1em] text-foreground">
                   {siteName}
@@ -163,7 +166,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               </SheetHeader>
 
               {/* Logo in sheet */}
-              <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
+              <div className="mb-4 flex items-center gap-3 border-b border-border pb-4">
                 <Image
                   src={iconLight}
                   alt={siteName}
@@ -188,7 +191,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                 </div>
               </div>
 
-              <nav className="space-y-1">
+              <nav className="flex-1 space-y-1 overflow-y-auto">
                 {navItems.map((item, i) => {
                   const active = pathname === item.href;
                   return (
@@ -214,6 +217,16 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                   );
                 })}
               </nav>
+
+              {/* Quick controls in sheet (mobile only) */}
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
+                <div className="flex items-center gap-1.5">
+                  <NotificationBell />
+                  <PushNotificationButton />
+                  <ThemeToggle />
+                </div>
+              </div>
             </SheetContent>
           </Sheet>
         </div>

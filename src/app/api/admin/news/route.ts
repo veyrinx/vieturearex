@@ -14,6 +14,7 @@ import { sendPushNotification } from "@/lib/server/push-notify";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { getSettings } from "@/lib/data/content-service";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -139,18 +140,29 @@ export async function POST(request: NextRequest) {
       summary: `Tạo bài viết ${article.title}`,
     });
 
-    notifyNewsChange(article, "created", adminName);
+    const settings = await getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>);
+    const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+    const autoNewsEnabled = settingsMap["integrations.tg_auto_news"] !== "false";
+    const autoBroadcastEnabled = settingsMap["integrations.tg_auto_broadcast_dm"] !== "false";
 
-    void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
-    import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
-      notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
-    });
-    // Broadcast DM tới subscribers của Mini App
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
-    import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
-      const text = `📰 <b>BÀI VIẾT MỚI</b>\n\n<b>${article.title}</b>${article.category ? `\n🏷 ${article.category}` : ""}\n\n<a href="${siteUrl}/tin-tuc/${article.slug}">👉 Đọc ngay</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
-      broadcastToSubscribers(text).catch(() => null);
-    });
+    if (autoNewsEnabled) {
+      notifyNewsChange(article, "created", adminName);
+      void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
+      import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
+        notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
+      });
+    } else {
+      // Always send internal admin notification regardless of toggle
+      notifyNewsChange(article, "created", adminName);
+    }
+
+    if (autoBroadcastEnabled) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+      import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
+        const text = `📰 <b>BÀI VIẾT MỚI</b>\n\n<b>${article.title}</b>${article.category ? `\n🏷 ${article.category}` : ""}\n\n<a href="${siteUrl}/news/${article.slug}">👉 Đọc ngay</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
+        broadcastToSubscribers(text).catch(() => null);
+      });
+    }
     revalidatePath("/news", "layout");
     revalidatePath("/", "layout");
 

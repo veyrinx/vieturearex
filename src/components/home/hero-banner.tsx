@@ -121,7 +121,7 @@ export function HeroBanner({
   ];
 
   return (
-    <section className="relative -mt-6 overflow-hidden pt-10 pb-4">
+    <section className="relative -mt-6 overflow-hidden pt-8 pb-4 md:pt-10">
       {/* Background: subtle grid mesh */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.055]"
@@ -135,10 +135,10 @@ export function HeroBanner({
       <div className="pointer-events-none absolute -right-32 top-0 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px] dark:bg-amber-400/10" />
       <div className="pointer-events-none absolute -left-16 bottom-0 h-80 w-80 rounded-full bg-primary/6 blur-[90px] dark:bg-amber-400/6" />
 
-      <div className="relative grid gap-10 lg:grid-cols-[1fr,440px] lg:gap-12 xl:grid-cols-[1fr,480px]">
+      <div className="relative grid gap-8 lg:grid-cols-[1fr,440px] lg:gap-12 xl:grid-cols-[1fr,480px]">
 
         {/* ─── Left: Typography + CTAs ─── */}
-        <div className="flex flex-col justify-center gap-7">
+        <div className="flex flex-col justify-center gap-5 md:gap-7">
 
           {/* Eyebrow */}
           <motion.div
@@ -159,7 +159,7 @@ export function HeroBanner({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h1 className="font-heading text-[clamp(3rem,8vw,6rem)] font-black uppercase leading-[0.88]">
+            <h1 className="font-heading text-[clamp(2.4rem,8vw,6rem)] font-black uppercase leading-[0.88]">
               <span className="block text-foreground">
                 {heroTitle
                   ? heroTitle.split(" ").slice(0, 2).join(" ")
@@ -185,18 +185,18 @@ export function HeroBanner({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap gap-6"
+            className="grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:gap-6"
           >
             {stats.map(({ icon: Icon, label, value, color }) => (
-              <div key={label} className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl border border-border bg-card">
-                  <Icon className={`size-4 ${color}`} />
+              <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card px-2 py-2.5 sm:flex-row sm:items-center sm:gap-2.5 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+                <div className="flex size-8 items-center justify-center rounded-lg border border-border bg-background sm:size-9 sm:rounded-xl">
+                  <Icon className={`size-3.5 sm:size-4 ${color}`} />
                 </div>
-                <div>
-                  <p className={`font-heading text-2xl font-black leading-none tabular-nums ${color}`}>
+                <div className="text-center sm:text-left">
+                  <p className={`font-heading text-xl font-black leading-none tabular-nums sm:text-2xl ${color}`}>
                     {value}
                   </p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-[10px] sm:tracking-[0.1em]">
                     {label}
                   </p>
                 </div>
@@ -215,16 +215,16 @@ export function HeroBanner({
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 ⏱ Sự kiện tiếp theo
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 {countdown.map((unit) => (
                   <div
                     key={unit.label}
-                    className="flex min-w-[52px] flex-col items-center rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 dark:border-amber-400/20 dark:bg-amber-400/5"
+                    className="flex min-w-[44px] flex-col items-center rounded-xl border border-primary/20 bg-primary/5 px-2 py-2 dark:border-amber-400/20 dark:bg-amber-400/5 sm:min-w-[52px] sm:px-3"
                   >
-                    <span className="font-heading text-2xl font-black tabular-nums text-primary dark:text-amber-400">
+                    <span className="font-heading text-xl font-black tabular-nums text-primary dark:text-amber-400 sm:text-2xl">
                       {String(unit.value).padStart(2, "0")}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                    <span className="text-[8px] font-bold uppercase tracking-[0.08em] text-muted-foreground sm:text-[9px]">
                       {unit.label}
                     </span>
                   </div>
@@ -238,15 +238,15 @@ export function HeroBanner({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-wrap gap-3"
+            className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3"
           >
-            <Button asChild size="lg" className="h-11 rounded-xl px-6">
+            <Button asChild size="lg" className="h-11 w-full rounded-xl px-6 sm:w-auto">
               <Link href="/calendar">
                 XEM LỊCH SỰ KIỆN
                 <CalendarClock className="ml-2 size-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="ghost" className="h-11 rounded-xl px-5 text-muted-foreground hover:text-foreground">
+            <Button asChild size="lg" variant="ghost" className="h-11 w-full rounded-xl px-5 text-muted-foreground hover:text-foreground sm:w-auto">
               <Link href="/news">
                 TIN TỨC
                 <ArrowRight className="ml-2 size-4" />

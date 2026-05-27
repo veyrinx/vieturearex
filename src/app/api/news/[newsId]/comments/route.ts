@@ -8,6 +8,7 @@ import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { POINTS } from "@/lib/constants/ranks";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { awardAchievement } from "@/lib/server/award-achievement";
 
 const postSchema = z.object({
   content: z.string().min(1).max(500),
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     summary: `${displayName} (${user.email}) bình luận bài viết ${newsId}`,
   }).catch(() => {});
 
-  // Award points for approved comment
+  // Award points and achievements for approved comment
   if (verdict === "approved") {
     const admin = createAdminSupabaseClient();
     if (admin) {
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         .rpc("increment_user_points", { uid: user.id, amount: POINTS.COMMENT_APPROVED })
         .catch(() => null);
     }
+    void awardAchievement(user.id, "first_comment");
   }
 
   if (verdict === "pending") {
