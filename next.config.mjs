@@ -118,6 +118,25 @@ const nextConfig = {
       "upgrade-insecure-requests",
     ].join("; ");
 
+    // CSP for /tg paths: allow Telegram to embed in iframe and load SDK
+    const tgScriptSrc = [scriptSrc, "https://telegram.org"].join(" ");
+    const tgConnectSrc = [connectSrc, "https://telegram.org"].join(" ");
+    const tgContentSecurityPolicy = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "frame-ancestors 'self' https://t.me https://web.telegram.org https://telegram.org",
+      "object-src 'none'",
+      "img-src 'self' data: blob: https:",
+      "media-src 'self' data: blob: https:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      `script-src ${tgScriptSrc}`,
+      `connect-src ${tgConnectSrc}`,
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+
     return [
       // Block .map files entirely (belt-and-suspenders after productionBrowserSourceMaps:false)
       {
@@ -209,6 +228,24 @@ const nextConfig = {
           {
             key: "X-DNS-Prefetch-Control",
             value: "on",
+          },
+        ],
+      },
+      // Telegram Mini App: allow framing from Telegram domains
+      {
+        source: "/tg/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: tgContentSecurityPolicy,
+          },
+          {
+            key: "X-Frame-Options",
+            value: "ALLOWALL",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "unsafe-none",
           },
         ],
       },

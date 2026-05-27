@@ -1459,14 +1459,14 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <Field label="URL Mini App" hint="Trỏ URL này trong BotFather → /newapp" icon={Globe}>
             <div className="flex items-center gap-2">
               <Input
-                value={`${typeof window !== "undefined" ? window.location.origin : "https://arexnetwork.site"}/tg`}
+                value={`${process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site"}/tg`}
                 readOnly
                 className="font-mono text-xs bg-muted/40 cursor-default"
               />
               <button
                 type="button"
                 onClick={() => {
-                  const url = `${window.location.origin}/tg`;
+                  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site"}/tg`;
                   navigator.clipboard.writeText(url).then(() => toast.success("Đã copy URL!")).catch(() => {});
                 }}
                 className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs font-medium transition hover:bg-muted"
