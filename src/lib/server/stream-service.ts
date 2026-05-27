@@ -1,40 +1,13 @@
 import "server-only";
 import { getSettings, updateSetting } from "@/lib/data/content-service";
 import type { StreamItem, StreamStatus } from "@/lib/types/content";
+import { extractYouTubeId, buildThumbnailUrl, buildWatchUrl, buildEmbedUrl } from "@/lib/utils/stream-utils";
+
+export { extractYouTubeId, buildThumbnailUrl, buildWatchUrl, buildEmbedUrl };
 
 const STREAMS_KEY = "esports.streams";
 const STREAM_CATEGORIES_KEY = "esports.categories";
 const DEFAULT_STREAM_CATEGORIES = ["ESPORTS", "GAMING", "CỘNG ĐỒNG"];
-
-function extractYouTubeId(url: string): string {
-  const trimmed = url.trim();
-  // Already an ID (11 chars, no slash)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
-  // youtu.be/ID
-  const short = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-  if (short) return short[1];
-  // youtube.com/watch?v=ID or /live/ID or /embed/ID
-  const long = trimmed.match(/(?:v=|\/live\/|\/embed\/)([a-zA-Z0-9_-]{11})/);
-  if (long) return long[1];
-  return trimmed;
-}
-
-export function buildThumbnailUrl(youtubeUrl: string): string {
-  const id = extractYouTubeId(youtubeUrl);
-  return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-}
-
-export function buildWatchUrl(youtubeUrl: string): string {
-  const id = extractYouTubeId(youtubeUrl);
-  return `https://www.youtube.com/watch?v=${id}`;
-}
-
-export function buildEmbedUrl(youtubeUrl: string): string {
-  const id = extractYouTubeId(youtubeUrl);
-  return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
-}
-
-export { extractYouTubeId };
 
 function parseStreams(raw?: string | null): StreamItem[] {
   if (!raw?.trim()) return [];
