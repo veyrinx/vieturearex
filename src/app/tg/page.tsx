@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Newspaper, CalendarDays, Trophy, Flame, Radio } from "lucide-react";
+import { Newspaper, CalendarDays, Trophy, Flame, Radio, BarChart2 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { NotificationButton } from "./_components/notification-button";
 
@@ -41,6 +41,13 @@ const QUICK_LINKS = [
     label: "Stream",
     desc: "Livestream & VOD",
     color: "#ef4444",
+  },
+  {
+    href: "/tg/poll",
+    icon: BarChart2,
+    label: "Bình chọn",
+    desc: "Poll cộng đồng",
+    color: "#8b5cf6",
   },
 ];
 
@@ -94,11 +101,11 @@ export default function TgHomePage() {
 
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-3">
-        {QUICK_LINKS.map(({ href, icon: Icon, label, desc, color }) => (
+        {QUICK_LINKS.map(({ href, icon: Icon, label, desc, color }, idx) => (
           <Link
             key={href}
             href={href}
-            className="rounded-2xl p-3 flex flex-col items-center gap-2 text-center active:opacity-70 transition-opacity"
+            className={`rounded-2xl p-3 flex flex-col items-center gap-2 text-center active:opacity-70 transition-opacity${idx === QUICK_LINKS.length - 1 && QUICK_LINKS.length % 2 !== 0 ? " col-span-2 flex-row justify-center gap-4" : ""}`}
             style={{ backgroundColor: "var(--tg-theme-secondary-bg-color, #111)" }}
           >
             <div

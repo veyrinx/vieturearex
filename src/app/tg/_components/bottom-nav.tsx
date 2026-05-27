@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Newspaper, CalendarDays, Trophy, User, Radio } from "lucide-react";
+import { Home, Newspaper, CalendarDays, BarChart2, Radio, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/tg", label: "Trang chủ", icon: Home, exact: true },
   { href: "/tg/tin-tuc", label: "Tin tức", icon: Newspaper },
   { href: "/tg/su-kien", label: "Sự kiện", icon: CalendarDays },
-  { href: "/tg/leaderboard", label: "BXH", icon: Trophy },
+  { href: "/tg/poll", label: "Poll", icon: BarChart2 },
   { href: "/tg/stream", label: "Stream", icon: Radio },
   { href: "/tg/profile", label: "Tôi", icon: User },
 ];
