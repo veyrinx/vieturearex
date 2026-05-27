@@ -10,7 +10,6 @@ import {
 } from "@/lib/server/stream-service";
 import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 const streamSchema = z.object({
   id: z.string().optional(),
@@ -88,7 +87,6 @@ export async function POST(request: NextRequest) {
   void Promise.allSettled([
     sendTelegramNotification(notifyPayload),
     sendDiscordInternalNotification(notifyPayload, DISCORD_COLORS.info),
-    sendLarkNotification(notifyPayload, "main"),
     sendUserTelegramNotification(notifyPayload),
     sendDiscordPublicNotification(notifyPayload, DISCORD_COLORS.info),
     sendPushNotification(isLive ? "🔴 Phát trực tiếp ngay!" : "📺 Lịch stream mới", stream.title, "/esports").catch(() => null),
@@ -132,7 +130,6 @@ export async function PATCH(request: NextRequest) {
     void Promise.allSettled([
       sendTelegramNotification(livePayload),
       sendDiscordInternalNotification(livePayload, DISCORD_COLORS.ok),
-      sendLarkNotification(livePayload, "main"),
       sendUserTelegramNotification(livePayload),
       sendDiscordPublicNotification(livePayload, DISCORD_COLORS.ok),
       sendPushNotification("🔴 Phát trực tiếp ngay!", stream.title, "/esports").catch(() => null),

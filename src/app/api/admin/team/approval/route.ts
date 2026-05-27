@@ -4,7 +4,6 @@ import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { getSettings } from "@/lib/data/content-service";
 import { hasCapability, parseRoleCapabilities } from "@/lib/permissions";
@@ -124,7 +123,6 @@ export async function POST(request: NextRequest) {
       ],
       footer: "👥 Arex Team Monitor",
     };
-    void sendLarkNotification(rejectPayload).catch(() => null);
     void sendTelegramNotification(rejectPayload).catch(() => null);
     return NextResponse.json({ ok: true });
   }
@@ -169,7 +167,6 @@ export async function POST(request: NextRequest) {
       ],
       footer: "👥 Arex Team Monitor",
     };
-    void sendLarkNotification(itApprovePayload).catch(() => null);
     void sendTelegramNotification(itApprovePayload).catch(() => null);
     return NextResponse.json({ ok: true, next: "pending_admin" });
   }
@@ -232,7 +229,6 @@ export async function POST(request: NextRequest) {
       ],
       footer: "👥 Arex Team Monitor",
     };
-    void sendLarkNotification(adminApprovePayload).catch(() => null);
     void sendTelegramNotification(adminApprovePayload).catch(() => null);
     return NextResponse.json({ ok: true, resetSent });
   }

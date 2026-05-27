@@ -5,7 +5,6 @@ import { createScoreSubmission, getScoreSubmissions, getUserSubmissions, getUser
 import { getSettings } from "@/lib/data/content-service";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 export async function GET(req: NextRequest) {
   const limited = enforceRateLimit(req, { name: "tms-submissions", limit: 30, windowMs: 60_000 });
@@ -135,7 +134,6 @@ export async function POST(req: NextRequest) {
       void Promise.allSettled([
         sendTelegramNotification(batchPayload),
         sendDiscordInternalNotification(batchPayload, DISCORD_COLORS.info),
-        sendLarkNotification(batchPayload, "main"),
       ]);
 
       return NextResponse.json(results, { status: 201 });
@@ -172,7 +170,6 @@ export async function POST(req: NextRequest) {
     void Promise.allSettled([
       sendTelegramNotification(notifyPayload),
       sendDiscordInternalNotification(notifyPayload, DISCORD_COLORS.info),
-      sendLarkNotification(notifyPayload, "main"),
     ]);
 
     return NextResponse.json(sub, { status: 201 });

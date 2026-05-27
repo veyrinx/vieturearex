@@ -6,7 +6,6 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { checkContent } from "@/lib/server/content-filter";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const postSchema = z.object({
@@ -110,7 +109,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     void Promise.allSettled([
       sendTelegramNotification(payload),
       sendDiscordInternalNotification(payload, DISCORD_COLORS.warn),
-      sendLarkNotification(payload, "main"),
     ]);
     return NextResponse.json({ ok: true, pending: true, message: "Bình luận của bạn đang chờ kiểm duyệt." });
   }

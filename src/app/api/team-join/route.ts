@@ -5,7 +5,6 @@ import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const optionalUrl = z.string().max(300).optional().default("").transform((v) => v.trim());
@@ -250,7 +249,6 @@ export async function POST(request: NextRequest) {
     ],
     footer: "👥 Arex Team Monitor",
   };
-  void sendLarkNotification(joinPayload).catch(() => null);
   void sendTelegramNotification(joinPayload).catch(() => null);
 
   return NextResponse.json({ ok: true, status: "pending" });

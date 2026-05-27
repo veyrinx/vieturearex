@@ -3,7 +3,6 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { fetchFFVersion, checkCdnUrls, DEFAULT_CDN_PATTERNS } from "@/lib/server/ff-version";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 import type { NotifySection } from "@/lib/server/telegram-notify";
 import { notifyUserFFVersion } from "@/lib/server/user-notify";
 
@@ -96,7 +95,6 @@ export async function GET(request: NextRequest) {
 
     await Promise.all([
       sendTelegramNotification(payload).catch(() => null),
-      sendLarkNotification(payload).catch(() => null),
       notifyUserFFVersion(
         info.version,
         accessibleLinks,

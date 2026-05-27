@@ -6,7 +6,6 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 const BAN_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const WARN_THRESHOLD = 10;
@@ -87,37 +86,9 @@ export async function recordFailedLogin(ip: string): Promise<LoginCheckResult> {
     }, { onConflict: "ip" });
 
     if (bannedUntil) {
-      void sendLarkNotification({
-        title: "🚨 TẤN CÔNG ĐĂNG NHẬP — ĐÃ CHẶN IP 30 NGÀY",
-        sections: [{
-          icon: "🔒",
-          heading: "Chi tiết",
-          rows: [
-            { label: "IP bị chặn", value: ip, mono: true, status: "err" as const },
-            { label: "Số lần thử", value: String(newCount), bold: true },
-            { label: "Hết hạn chặn", value: new Date(now + BAN_DURATION_MS).toLocaleString("vi-VN") },
-          ],
-        }],
-        footer: "🔒 Arex Security",
-      }, "alerts").catch(() => null);
       return { status: "banned", bannedUntil: now + BAN_DURATION_MS };
     }
 
-    if (newCount === WARN_THRESHOLD) {
-      void sendLarkNotification({
-        title: "⚠️ CẢNH BÁO: THỬ ĐĂNG NHẬP SAI NHIỀU LẦN",
-        sections: [{
-          icon: "⚠️",
-          heading: "Chi tiết",
-          rows: [
-            { label: "IP", value: ip, mono: true, status: "warn" as const },
-            { label: "Số lần thử", value: String(newCount), bold: true },
-            { label: "Còn lại trước khi ban", value: String(BAN_THRESHOLD - newCount) },
-          ],
-        }],
-        footer: "🔒 Arex Security",
-      }, "alerts").catch(() => null);
-    }
 
     if (newCount >= WARN_THRESHOLD) {
       return { status: "warn", attemptsLeft: BAN_THRESHOLD - newCount };

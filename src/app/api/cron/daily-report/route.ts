@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, getDashboardStats } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification } from "@/lib/server/discord-notify";
 
@@ -10,7 +9,6 @@ const SCHEDULE_HOUR_KEY     = "integrations.report_schedule_hour";
 const SCHEDULE_INTERVAL_KEY = "integrations.report_schedule_interval";
 const SCHEDULE_DAYS_KEY     = "integrations.report_schedule_days";
 const TG_HOUR_KEY           = "integrations.telegram_report_hour";
-const LARK_HOUR_KEY         = "integrations.lark_report_hour";
 const DISCORD_HOUR_KEY      = "integrations.discord_report_hour";
 
 function vnHourNow(): number {
@@ -96,14 +94,12 @@ export async function GET(request: NextRequest) {
     getTodayStats(),
   ]);
 
-  const larkEnabled     = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false"
-                          && shouldChannelSend(settings, LARK_HOUR_KEY, force);
   const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false"
                           && shouldChannelSend(settings, TG_HOUR_KEY, force);
   const discordEnabled  = settings.find((s) => s.key === "integrations.discord_daily_report")?.value === "true"
                           && shouldChannelSend(settings, DISCORD_HOUR_KEY, force);
 
-  if (!larkEnabled && !telegramEnabled && !discordEnabled) {
+  if (!telegramEnabled && !discordEnabled) {
     return NextResponse.json({ ok: true, sent: false, reason: "not_scheduled_or_disabled", hour: vnHourNow() });
   }
 
@@ -157,16 +153,14 @@ export async function GET(request: NextRequest) {
     footer: "📊 Arex Auto-Report",
   };
 
-  const [larkResult, telegramResult, discordResult] = await Promise.all([
-    larkEnabled     ? sendLarkNotification(payload)             : Promise.resolve({ sent: false }),
+  const [telegramResult, discordResult] = await Promise.all([
     telegramEnabled ? sendTelegramNotification(payload)         : Promise.resolve({ sent: false }),
     discordEnabled  ? sendDiscordInternalNotification(payload)  : Promise.resolve({ sent: false }),
   ]);
 
   return NextResponse.json({
     ok: true,
-    sent: larkResult.sent || telegramResult.sent || discordResult.sent,
-    lark: larkResult.sent,
+    sent: telegramResult.sent || discordResult.sent,
     telegram: telegramResult.sent,
     discord: discordResult.sent,
     today,

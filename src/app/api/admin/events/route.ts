@@ -14,7 +14,6 @@ import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -75,7 +74,6 @@ function notifyEventChange(
   void Promise.allSettled([
     sendTelegramNotification(payload),
     sendDiscordInternalNotification(payload, color),
-    sendLarkNotification(payload, "main"),
   ]);
 }
 

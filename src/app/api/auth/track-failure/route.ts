@@ -4,7 +4,6 @@ import { recordFailure } from "@/lib/server/ip-blocker";
 import { updateSetting, getSettings } from "@/lib/data/content-service";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { sendLarkNotification } from "@/lib/server/lark-notify";
 
 const BLOCKED_IPS_KEY = "security.blocked_ips";
 
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
     void Promise.allSettled([
       sendTelegramNotification(payload),
       sendDiscordInternalNotification(payload, DISCORD_COLORS.err),
-      sendLarkNotification(payload, "alerts"),
     ]);
   }
 
