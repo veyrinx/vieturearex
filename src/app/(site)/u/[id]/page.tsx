@@ -21,13 +21,13 @@ import { AchievementsDisplay } from "@/components/profile/achievements-display";
 type Props = { params: Promise<{ id: string }> };
 
 const ROLE_META: Record<string, { label: string; color: string; gradient: string }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30", gradient: "from-red-500/30 via-rose-500/20 to-pink-500/15" },
-  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", gradient: "from-amber-500/30 via-orange-500/20 to-yellow-500/15" },
-  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", gradient: "from-violet-500/30 via-purple-500/20 to-fuchsia-500/15" },
-  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30", gradient: "from-blue-500/30 via-indigo-500/20 to-cyan-500/15" },
-  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", gradient: "from-green-500/30 via-emerald-500/20 to-teal-500/15" },
-  team_member: { label: "Team",        color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/30", gradient: "from-cyan-500/30 via-sky-500/20 to-blue-500/15" },
-  user:        { label: "Thành Viên",  color: "text-muted-foreground bg-muted border-border", gradient: "from-muted to-muted/50" },
+  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30",      gradient: "from-red-600 via-rose-500 to-pink-600" },
+  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", gradient: "from-amber-500 via-orange-500 to-yellow-500" },
+  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", gradient: "from-violet-600 via-purple-500 to-fuchsia-600" },
+  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30",   gradient: "from-blue-600 via-indigo-500 to-cyan-600" },
+  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", gradient: "from-green-500 via-emerald-500 to-teal-600" },
+  team_member: { label: "Team",        color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/30",   gradient: "from-cyan-500 via-sky-500 to-blue-600" },
+  user:        { label: "Thành Viên",  color: "text-muted-foreground bg-muted border-border",       gradient: "from-primary/60 via-primary/40 to-primary/20" },
 };
 
 const AVATAR_COLORS = [
@@ -85,38 +85,48 @@ export default async function PublicProfilePage({ params }: Props) {
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-16">
       {/* Hero card */}
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
-        {/* Banner */}
-        {profile.banner_url ? (
-          <div className="relative h-32 overflow-hidden">
-            <Image src={profile.banner_url} alt="Banner" fill className="object-cover" unoptimized />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/40" />
-          </div>
-        ) : (
-          <div className={cn("h-32 bg-gradient-to-br", meta.gradient)} />
-        )}
+      <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
 
-        <div className="px-6 pb-6 -mt-14">
+        {/* ── Banner ── */}
+        <div className="relative h-48 overflow-hidden sm:h-56">
+          {profile.banner_url ? (
+            <Image src={profile.banner_url} alt="Banner" fill className="object-cover" unoptimized />
+          ) : (
+            <>
+              <div className={cn("size-full bg-gradient-to-br opacity-80", meta.gradient)} />
+              {/* Noise texture */}
+              <div className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay"
+                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")" }}
+              />
+            </>
+          )}
+          {/* Bottom scrim */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/15 to-transparent" />
+        </div>
+
+        {/* ── Profile info ── */}
+        <div className="px-6 pb-6 -mt-16 sm:-mt-18">
+
           {/* Avatar */}
-          <div className="relative mx-auto size-24 sm:mx-0">
-            <div className="size-24 overflow-hidden rounded-full ring-4 ring-card">
+          <div className="relative mx-auto size-28 sm:mx-0 sm:size-32">
+            <div className="size-full overflow-hidden rounded-full ring-4 ring-card shadow-xl">
               {profile.avatar_url ? (
-                <Image src={profile.avatar_url} alt={name} width={96} height={96} className="size-full object-cover" unoptimized />
+                <Image src={profile.avatar_url} alt={name} fill className="object-cover" unoptimized />
               ) : (
-                <div className={cn("flex size-full items-center justify-center bg-gradient-to-br text-3xl font-black text-white", avatarColor(profile.id))}>
+                <div className={cn("flex size-full items-center justify-center bg-gradient-to-br text-4xl font-black text-white", avatarColor(profile.id))}>
                   {name.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
             {isOnline && (
-              <span className="absolute bottom-1 right-1 flex size-4">
+              <span className="absolute bottom-1.5 right-1.5 flex size-4">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex size-4 rounded-full border-2 border-card bg-green-500" />
               </span>
             )}
           </div>
 
-          {/* Name + role */}
+          {/* Name + badges */}
           <div className="mt-4 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground">
@@ -133,11 +143,11 @@ export default async function PublicProfilePage({ params }: Props) {
               <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", rankMeta.bg, rankMeta.color)}>
                 <Trophy className="size-3" /> {rankLabel}
               </span>
-              {isOnline ? (
+              {isOnline && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">
                   <span className="size-1.5 rounded-full bg-green-500" /> Trực tuyến
                 </span>
-              ) : null}
+              )}
             </div>
 
             {profile.bio && (
