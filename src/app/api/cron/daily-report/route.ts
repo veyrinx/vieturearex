@@ -90,11 +90,23 @@ export async function GET(request: NextRequest) {
 
   const force = request.headers.get("x-force-report") === "1";
 
-  const [stats, settings, todayStats] = await Promise.all([
-    getDashboardStats(),
-    getSettings(),
-    getTodayStats(),
-  ]);
+  let stats: Awaited<ReturnType<typeof getDashboardStats>>;
+  let settings: Awaited<ReturnType<typeof getSettings>>;
+  let todayStats: Awaited<ReturnType<typeof getTodayStats>>;
+
+  try {
+    [stats, settings, todayStats] = await Promise.all([
+      getDashboardStats(),
+      getSettings(),
+      getTodayStats(),
+    ]);
+  } catch (err) {
+    console.error("[daily-report] fetch data failed:", err);
+    return NextResponse.json(
+      { ok: false, error: "Không thể tải dữ liệu thống kê", detail: String(err) },
+      { status: 500 },
+    );
+  }
 
   const sm = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
