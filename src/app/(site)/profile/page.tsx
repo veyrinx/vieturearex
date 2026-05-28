@@ -20,12 +20,12 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const ROLE_META: Record<string, { label: string; color: string; banner: string }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30",      banner: "from-red-600 via-rose-500 to-pink-600" },
-  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", banner: "from-amber-500 via-orange-500 to-yellow-500" },
-  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", banner: "from-violet-600 via-purple-500 to-fuchsia-600" },
-  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30",   banner: "from-blue-600 via-indigo-500 to-cyan-600" },
-  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", banner: "from-green-500 via-emerald-500 to-teal-600" },
-  user:        { label: "Người Dùng",  color: "text-muted-foreground bg-muted border-border",       banner: "from-primary/60 via-primary/40 to-primary/20" },
+  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30",       banner: "from-red-950 via-rose-900 to-pink-950" },
+  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", banner: "from-amber-950 via-orange-900 to-yellow-950" },
+  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", banner: "from-violet-950 via-purple-900 to-fuchsia-950" },
+  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30",    banner: "from-blue-950 via-indigo-900 to-blue-950" },
+  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", banner: "from-green-950 via-emerald-900 to-teal-950" },
+  user:        { label: "Người Dùng",  color: "text-muted-foreground bg-muted border-border",        banner: "from-slate-800 via-slate-700 to-slate-800" },
 };
 
 const AVATAR_COLORS = [
@@ -429,18 +429,17 @@ export default function ProfilePage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={bannerPreview} alt="Banner" className="size-full object-cover" />
           ) : (
-            <div className={cn("size-full bg-gradient-to-br opacity-80", roleMeta.banner)} />
+            <>
+              <div className={cn("absolute inset-0 bg-gradient-to-br", roleMeta.banner)} />
+              {/* Noise grain for depth */}
+              <div className="pointer-events-none absolute inset-0 opacity-[0.15]"
+                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }}
+              />
+            </>
           )}
 
-          {/* Bottom scrim — blends banner into page bg */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-
-          {/* Subtle noise / depth on gradient-only banner */}
-          {!bannerPreview && (
-            <div className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay"
-              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")" }}
-            />
-          )}
+          {/* Vignette — darkens edges for depth, never washes out */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.35)_100%)]" />
 
           {/* Banner controls — always visible in top-right */}
           <div className="absolute right-3 top-3 flex items-center gap-1.5">
