@@ -88,3 +88,53 @@ export async function markRead(notificationId: string, userId: string): Promise<
     .eq("id", notificationId)
     .eq("user_id", userId);
 }
+
+export async function notifyCategoryFollowers(
+  category: string,
+  article: { id: string; title: string; slug: string },
+  siteUrl: string,
+): Promise<void> {
+  try {
+    const db = getDb();
+    const { data: follows } = await untypedFrom(db, "user_category_follows")
+      .select("user_id")
+      .eq("category", category) as { data: { user_id: string }[] | null };
+    if (!follows || follows.length === 0) return;
+
+    const entityUrl = `${siteUrl}/news/${article.slug}`;
+    await createNotifications(
+      follows.map(({ user_id }) => ({
+        user_id,
+        type: "new_article",
+        title: `Bài viết mới trong ${category}`,
+        body: article.title,
+        entity_type: "news",
+        entity_id: article.id,
+        entity_url: entityUrl,
+      })),
+    );
+  } catch {
+    // Non-fatal
+  }
+}
+
+export async function notifyCommentReply(
+  parentCommentUserId: string,
+  replierName: string,
+  newsId: string,
+  newsSlug: string,
+  siteUrl: string,
+): Promise<void> {
+  try {
+    await createNotification({
+      user_id: parentCommentUserId,
+      type: "comment_reply",
+      title: `${replierName} đã trả lời bình luận của bạn`,
+      entity_type: "news",
+      entity_id: newsId,
+      entity_url: `${siteUrl}/news/${newsSlug}`,
+    });
+  } catch {
+    // Non-fatal
+  }
+}

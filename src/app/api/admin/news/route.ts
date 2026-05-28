@@ -15,6 +15,7 @@ import { sendPushNotification } from "@/lib/server/push-notify";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { notifyCategoryFollowers } from "@/lib/server/notifications";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -149,6 +150,12 @@ export async function POST(request: NextRequest) {
 
     // Admin bot nội bộ luôn gửi nếu đã cấu hình
     notifyNewsChange(article, "created", adminName);
+
+    // In-app: notify users who follow this category
+    if (article.category && article.status === "published") {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+      void notifyCategoryFollowers(article.category, article, siteUrl).catch(() => null);
+    }
 
     if (autoNewsEnabled) {
       void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);

@@ -9,6 +9,7 @@ import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/di
 import { POINTS } from "@/lib/constants/ranks";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { awardAchievement } from "@/lib/server/award-achievement";
+import { notifyCommentReply } from "@/lib/server/notifications";
 
 const postSchema = z.object({
   content: z.string().min(1).max(500),
@@ -106,6 +107,26 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         .catch(() => null);
     }
     void awardAchievement(user.id, "first_comment");
+
+    // Notify parent comment author on reply
+    if (parsed.data.parent_id) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+      void (async () => {
+        const db = createAdminSupabaseClient() ?? supabase;
+        if (!db) return;
+        const [parentRes, newsRes] = await Promise.all([
+          (db as unknown as { from: (t: string) => { select: (f: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { user_id: string | null } | null }> } } } })
+            .from("news_comments").select("user_id").eq("id", parsed.data.parent_id!).maybeSingle(),
+          (db as unknown as { from: (t: string) => { select: (f: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { slug: string } | null }> } } } })
+            .from("news").select("slug").eq("id", newsId).maybeSingle(),
+        ]);
+        const parentUserId = parentRes.data?.user_id;
+        const slug = newsRes.data?.slug;
+        if (parentUserId && parentUserId !== user.id && slug) {
+          void notifyCommentReply(parentUserId, displayName, newsId, slug, siteUrl).catch(() => null);
+        }
+      })();
+    }
   }
 
   if (verdict === "pending") {
