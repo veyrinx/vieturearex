@@ -19,13 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-const ROLE_META: Record<string, { label: string; color: string }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30" },
-  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
-  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30" },
-  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30" },
-  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30" },
-  user:        { label: "Người Dùng",  color: "text-muted-foreground bg-muted border-border" },
+const ROLE_META: Record<string, { label: string; color: string; banner: string }> = {
+  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30",      banner: "from-red-600 via-rose-500 to-pink-600" },
+  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", banner: "from-amber-500 via-orange-500 to-yellow-500" },
+  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", banner: "from-violet-600 via-purple-500 to-fuchsia-600" },
+  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30",   banner: "from-blue-600 via-indigo-500 to-cyan-600" },
+  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", banner: "from-green-500 via-emerald-500 to-teal-600" },
+  user:        { label: "Người Dùng",  color: "text-muted-foreground bg-muted border-border",       banner: "from-primary/60 via-primary/40 to-primary/20" },
 };
 
 const AVATAR_COLORS = [
@@ -422,124 +422,125 @@ export default function ProfilePage() {
     <main className="min-h-screen">
       {/* Hero */}
       <section className="border-b border-border">
-        {/* Banner */}
-        <div className="relative h-36 overflow-hidden bg-muted/40 sm:h-44">
-          {bannerPreview && (
+
+        {/* ── Banner ── */}
+        <div className="relative h-48 overflow-hidden sm:h-60">
+          {bannerPreview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={bannerPreview} alt="Banner" className="size-full object-cover" />
+          ) : (
+            <div className={cn("size-full bg-gradient-to-br opacity-80", roleMeta.banner)} />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
-          {/* Banner upload overlay */}
-          <button
-            type="button"
-            onClick={() => bannerInputRef.current?.click()}
-            disabled={uploadingBanner}
-            title="Đổi ảnh bìa"
-            className={cn(
-              "absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity hover:opacity-100",
-              uploadingBanner && "opacity-100 cursor-wait",
+
+          {/* Bottom scrim — blends banner into page bg */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+
+          {/* Subtle noise / depth on gradient-only banner */}
+          {!bannerPreview && (
+            <div className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")" }}
+            />
+          )}
+
+          {/* Banner controls — always visible in top-right */}
+          <div className="absolute right-3 top-3 flex items-center gap-1.5">
+            {bannerPreview && !uploadingBanner && (
+              <button
+                type="button"
+                onClick={onRemoveBanner}
+                title="Xóa ảnh bìa"
+                className="flex size-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-colors hover:bg-black/75"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
             )}
-          >
-            {uploadingBanner
-              ? <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              : <div className="flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
-                  <ImageIcon className="size-3.5" /> Đổi ảnh bìa
-                </div>
-            }
-          </button>
-          {bannerPreview && !uploadingBanner && (
             <button
               type="button"
-              onClick={onRemoveBanner}
-              title="Xóa ảnh bìa"
-              className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm hover:bg-black/70"
+              onClick={() => bannerInputRef.current?.click()}
+              disabled={uploadingBanner}
+              title="Đổi ảnh bìa"
+              className="flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/75 disabled:cursor-wait"
             >
-              <Trash2 className="size-3" /> Xóa
+              {uploadingBanner
+                ? <div className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                : <ImageIcon className="size-3.5" />
+              }
+              {uploadingBanner ? "Đang tải..." : "Đổi ảnh bìa"}
             </button>
-          )}
+          </div>
+
           <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onBannerFileChange} />
         </div>
 
+        {/* ── Profile info ── */}
         <div className="mx-auto max-w-2xl px-6 pb-6">
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left -mt-10 sm:-mt-12">
+          <div className="-mt-14 flex flex-col items-center gap-4 text-center sm:-mt-16 sm:flex-row sm:items-end sm:gap-6 sm:text-left">
 
-            {/* Avatar with upload overlay */}
+            {/* Avatar */}
             <div className="relative shrink-0">
-              <div
-                className={cn(
-                  "flex size-20 items-center justify-center rounded-2xl text-3xl font-extrabold text-white shadow-lg overflow-hidden",
-                  !avatarPreview && `bg-gradient-to-br ${avatarGradient}`,
-                )}
-              >
+              <div className={cn(
+                "size-28 overflow-hidden rounded-full ring-4 ring-background shadow-xl sm:size-32",
+                !avatarPreview && `bg-gradient-to-br ${avatarGradient}`,
+              )}>
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarPreview}
-                    alt="Avatar"
-                    className="size-full object-cover"
-                  />
-                ) : initial}
+                  <img src={avatarPreview} alt="Avatar" className="size-full object-cover" />
+                ) : (
+                  <div className={cn("flex size-full items-center justify-center text-4xl font-black text-white bg-gradient-to-br", avatarGradient)}>
+                    {initial}
+                  </div>
+                )}
               </div>
 
-              {/* Upload button overlay */}
+              {/* Camera edit button */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
                 title="Đổi ảnh đại diện"
-                className={cn(
-                  "absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 transition-opacity hover:opacity-100",
-                  uploadingAvatar && "opacity-100 cursor-wait",
-                )}
+                className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-full border-2 border-background bg-card shadow-lg transition-colors hover:bg-muted disabled:cursor-wait sm:size-9"
               >
                 {uploadingAvatar
-                  ? <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  : <Camera className="size-5 text-white" />
+                  ? <div className="size-3.5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
+                  : <Camera className="size-3.5 text-foreground" />
                 }
               </button>
 
-              {/* Remove avatar button */}
+              {/* Remove avatar dot */}
               {avatarPreview && !uploadingAvatar && (
                 <button
                   type="button"
                   onClick={onRemoveAvatar}
                   title="Xóa ảnh đại diện"
-                  className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow hover:brightness-110"
+                  className="absolute right-0 top-0.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:brightness-110"
                 >
-                  <Trash2 className="size-3" />
+                  <X className="size-3" />
                 </button>
               )}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={onAvatarFileChange}
-              />
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={onAvatarFileChange} />
             </div>
 
-            <div className="min-w-0 flex-1">
+            {/* Name + meta */}
+            <div className="min-w-0 flex-1 pb-1">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                <h1 className="inline-flex items-center gap-1.5 font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">
+                <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">
                   {label}
-                  {profile.is_verified && (
-                    <BadgeCheck aria-label="Đã được xác minh bởi IT" className="size-6 shrink-0 text-blue-500" />
-                  )}
                 </h1>
+                {profile.is_verified && (
+                  <BadgeCheck aria-label="Đã được xác minh bởi IT" className="size-6 shrink-0 text-blue-500 dark:text-amber-400" />
+                )}
                 <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide", roleMeta.color)}>
                   {roleMeta.label}
                 </span>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
-              <div className="mt-2 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground sm:justify-start">
+              <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:justify-start">
                 <span className="flex items-center gap-1.5">
-                  <CalendarDays className="size-3.5" />
-                  Tham gia {joinDate}
+                  <CalendarDays className="size-3.5" /> Tham gia {joinDate}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Eye className="size-3.5" />
-                  {Number(profile.views ?? 0).toLocaleString("vi-VN")} lượt xem
+                  <Eye className="size-3.5" /> {Number(profile.views ?? 0).toLocaleString("vi-VN")} lượt xem
                 </span>
                 {has2FA && (
                   <span className="flex items-center gap-1.5 text-green-500">
