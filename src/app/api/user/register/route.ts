@@ -5,6 +5,7 @@ import { ensureUserAccount } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { awardAchievement } from "@/lib/server/award-achievement";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ."),
@@ -62,6 +63,19 @@ export async function POST(request: NextRequest) {
     targetId: authUser.id,
     summary: `Tài khoản mới đăng ký: ${email}${displayName ? ` (${displayName})` : ""}`,
   }).catch(() => {});
+
+  void sendTelegramNotification({
+    title: "👤 THÀNH VIÊN MỚI ĐĂNG KÝ",
+    subtitle: vnNow(),
+    sections: [{
+      rows: [
+        { label: "Email", value: email },
+        { label: "Tên hiển thị", value: displayName ?? "Chưa đặt" },
+        { label: "ID", value: authUser.id },
+      ],
+    }],
+    footer: "✨ Arex Register",
+  }).catch(() => null);
 
   return NextResponse.json({ ok: true, emailVerificationRequired: true });
 }
