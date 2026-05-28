@@ -96,11 +96,21 @@ export async function GET(request: NextRequest) {
     getTodayStats(),
   ]);
 
-  const telegramEnabled = settings.find((s) => s.key === "integrations.telegram_daily_report")?.value !== "false"
+  const sm = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+
+  // Kênh được gửi khi: toggle ON + có credentials + đúng lịch
+  const hasTgCreds      = !!(sm["integrations.telegram_bot_token"] && sm["integrations.telegram_chat_id"]);
+  const hasDiscordCreds = !!sm["integrations.discord_internal_webhook"];
+  const hasLarkCreds    = !!sm["integrations.lark_webhook_url"];
+
+  const telegramEnabled = sm["integrations.telegram_daily_report"] !== "false"
+                          && hasTgCreds
                           && shouldChannelSend(settings, TG_HOUR_KEY, force);
-  const discordEnabled  = settings.find((s) => s.key === "integrations.discord_daily_report")?.value === "true"
+  const discordEnabled  = sm["integrations.discord_daily_report"] === "true"
+                          && hasDiscordCreds
                           && shouldChannelSend(settings, DISCORD_HOUR_KEY, force);
-  const larkEnabled     = settings.find((s) => s.key === "integrations.lark_daily_report")?.value !== "false"
+  const larkEnabled     = sm["integrations.lark_daily_report"] !== "false"
+                          && hasLarkCreds
                           && shouldChannelSend(settings, LARK_HOUR_KEY, force);
 
   if (!telegramEnabled && !discordEnabled && !larkEnabled) {
@@ -157,18 +167,23 @@ export async function GET(request: NextRequest) {
     footer: "📊 Arex Auto-Report",
   };
 
-  const [telegramResult, discordResult, larkResult] = await Promise.all([
+  // allSettled: mỗi kênh chạy độc lập, 1 kênh lỗi không ảnh hưởng kênh khác
+  const [telegramResult, discordResult, larkResult] = await Promise.allSettled([
     telegramEnabled ? sendTelegramNotification(payload)        : Promise.resolve({ sent: false }),
     discordEnabled  ? sendDiscordInternalNotification(payload) : Promise.resolve({ sent: false }),
     larkEnabled     ? sendLarkNotification(payload)            : Promise.resolve({ sent: false }),
   ]);
 
+  const tg  = telegramResult.status === "fulfilled" ? telegramResult.value : { sent: false };
+  const dc  = discordResult.status  === "fulfilled" ? discordResult.value  : { sent: false };
+  const lk  = larkResult.status     === "fulfilled" ? larkResult.value     : { sent: false };
+
   return NextResponse.json({
     ok: true,
-    sent: telegramResult.sent || discordResult.sent || larkResult.sent,
-    telegram: telegramResult.sent,
-    discord: discordResult.sent,
-    lark: larkResult.sent,
+    sent: tg.sent || dc.sent || lk.sent,
+    telegram: tg.sent,
+    discord: dc.sent,
+    lark: lk.sent,
     today,
     yesterday,
     last7,
