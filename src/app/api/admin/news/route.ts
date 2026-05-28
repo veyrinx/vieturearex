@@ -5,6 +5,7 @@ import {
   createNews,
   deleteNews,
   getNewsAdmin,
+  getSettings,
   updateNews,
 } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -14,7 +15,6 @@ import { sendPushNotification } from "@/lib/server/push-notify";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { getSettings } from "@/lib/data/content-service";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -141,19 +141,20 @@ export async function POST(request: NextRequest) {
     });
 
     const settings = await getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>);
-    const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
-    const autoNewsEnabled = settingsMap["integrations.tg_auto_news"] !== "false";
-    const autoBroadcastEnabled = settingsMap["integrations.tg_auto_broadcast_dm"] !== "false";
+    const sm = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+    const hasTgCreds = !!(sm["integrations.telegram_bot_token"] && sm["integrations.telegram_chat_id"]);
+    const hasBotCreds = !!(sm["integrations.telegram_bot_token"]);
+    const autoNewsEnabled = sm["integrations.tg_auto_news"] !== "false" && hasTgCreds;
+    const autoBroadcastEnabled = sm["integrations.tg_auto_broadcast_dm"] !== "false" && hasBotCreds;
+
+    // Admin bot nội bộ luôn gửi nếu đã cấu hình
+    notifyNewsChange(article, "created", adminName);
 
     if (autoNewsEnabled) {
-      notifyNewsChange(article, "created", adminName);
       void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
       import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
         notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
       });
-    } else {
-      // Always send internal admin notification regardless of toggle
-      notifyNewsChange(article, "created", adminName);
     }
 
     if (autoBroadcastEnabled) {

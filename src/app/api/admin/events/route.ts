@@ -5,6 +5,7 @@ import {
   createEvent,
   deleteEvent,
   getEventsAdmin,
+  getSettings,
   updateEvent,
 } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
@@ -14,7 +15,6 @@ import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
-import { getSettings } from "@/lib/data/content-service";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -167,10 +167,13 @@ export async function POST(request: NextRequest) {
     });
 
     const evtSettings = await getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>);
-    const evtMap = Object.fromEntries(evtSettings.map((s) => [s.key, s.value]));
-    const autoEventsEnabled = evtMap["integrations.tg_auto_events"] !== "false";
-    const autoBroadcastEnabled = evtMap["integrations.tg_auto_broadcast_dm"] !== "false";
+    const sm = Object.fromEntries(evtSettings.map((s) => [s.key, s.value]));
+    const hasTgCreds = !!(sm["integrations.telegram_bot_token"] && sm["integrations.telegram_chat_id"]);
+    const hasBotCreds = !!(sm["integrations.telegram_bot_token"]);
+    const autoEventsEnabled = sm["integrations.tg_auto_events"] !== "false" && hasTgCreds;
+    const autoBroadcastEnabled = sm["integrations.tg_auto_broadcast_dm"] !== "false" && hasBotCreds;
 
+    // Admin bot nội bộ luôn gửi nếu đã cấu hình
     notifyEventChange(event, "created", adminName);
 
     if (autoEventsEnabled) {
