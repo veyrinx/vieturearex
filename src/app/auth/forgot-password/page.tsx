@@ -2,56 +2,46 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle2, Inbox } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!email.trim()) {
+      toast.error("VUI LÒNG NHẬP EMAIL.");
+      return;
+    }
+
     setLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
 
-    const supabase = createClient();
-    if (!supabase) {
-      setLoading(false);
-      toast.error("KHÔNG THỂ KẾT NỐI MÁY CHỦ.");
-      return;
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
-    });
-    setLoading(false);
-
-    if (error) {
-      const msg = error.message?.toLowerCase() ?? "";
-      if (msg.includes("rate limit") || msg.includes("too many")) {
+      if (res.status === 429) {
         toast.error("GỬI QUÁ NHIỀU LẦN. VUI LÒNG ĐỢI VÀI PHÚT RỒI THỬ LẠI.");
-      } else if (msg.includes("user not found") || msg.includes("invalid email")) {
-        toast.error("KHÔNG TÌM THẤY TÀI KHOẢN VỚI EMAIL NÀY.");
-      } else {
-        toast.error("KHÔNG THỂ GỬI EMAIL. VUI LÒNG KIỂM TRA LẠI EMAIL HOẶC THỬ SAU.");
+        return;
       }
-      return;
-    }
 
-    setSent(true);
-    toast.success("MÃ XÁC NHẬN ĐÃ ĐƯỢC GỬI ĐẾN EMAIL CỦA BẠN.");
-    // Chuyển sang trang nhập OTP sau 1.5 giây để user thấy toast
-    window.setTimeout(() => {
-      router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
-    }, 1500);
+      // Always show success — don't reveal if email exists
+      setSent(true);
+      toast.success("EMAIL ĐẶT LẠI MẬT KHẨU ĐÃ ĐƯỢC GỬI.");
+    } catch {
+      toast.error("KHÔNG THỂ GỬI EMAIL. VUI LÒNG THỬ LẠI SAU.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Màn hình xác nhận đã gửi
   if (sent) {
     return (
       <main className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -60,22 +50,38 @@ export default function ForgotPasswordPage() {
             <CheckCircle2 className="size-7 text-green-500" />
           </div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-[0.08em] text-foreground">
-            ĐÃ GỬI MÃ XÁC NHẬN
+            KIỂM TRA EMAIL CỦA BẠN
           </h1>
           <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            KIỂM TRA HỘP THƯ{" "}
-            <span className="font-semibold text-foreground">{email.toUpperCase()}</span>{" "}
-            VÀ NHẬP MÃ 6 SỐ ĐỂ ĐẶT LẠI MẬT KHẨU.
+            Chúng tôi đã gửi link đặt lại mật khẩu đến{" "}
+            <span className="font-semibold text-foreground">{email}</span>.
+            Nhấp vào link trong email để tạo mật khẩu mới.
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            ĐANG CHUYỂN ĐẾN TRANG NHẬP MÃ...
-          </p>
-          <Link
-            href="/auth/login"
-            className="mt-6 block text-xs uppercase tracking-[0.06em] font-medium text-muted-foreground hover:text-foreground transition-colors"
+
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-left">
+            <Inbox className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
+              Không thấy email? Kiểm tra thư mục <strong>Spam / Junk</strong>.
+              Link có hiệu lực trong <strong>60 phút</strong>.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => { setSent(false); setEmail(""); }}
+            className="mt-5 text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground transition-colors"
           >
-            QUAY LẠI ĐĂNG NHẬP
-          </Link>
+            Gửi lại với email khác
+          </button>
+
+          <div className="mt-3">
+            <Link
+              href="/auth/login"
+              className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Quay lại đăng nhập
+            </Link>
+          </div>
         </section>
       </main>
     );
@@ -101,7 +107,7 @@ export default function ForgotPasswordPage() {
               QUÊN MẬT KHẨU
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              NHẬP EMAIL ĐỂ NHẬN MÃ XÁC NHẬN 6 SỐ
+              NHẬP EMAIL ĐỂ NHẬN LINK ĐẶT LẠI MẬT KHẨU
             </p>
           </div>
         </div>
@@ -113,6 +119,7 @@ export default function ForgotPasswordPage() {
             type="email"
             required
             placeholder="ĐỊA CHỈ EMAIL"
+            autoComplete="email"
             className="h-11 rounded-xl uppercase tracking-[0.02em] font-medium placeholder:uppercase"
           />
           <Button
@@ -120,9 +127,18 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             className="h-11 w-full rounded-xl uppercase tracking-[0.08em] font-bold"
           >
-            {loading ? "ĐANG GỬI MÃ..." : "GỬI MÃ XÁC NHẬN"}
+            {loading ? "ĐANG GỬI..." : "GỬI LINK ĐẶT LẠI"}
           </Button>
         </form>
+
+        <div className="mt-5 text-center">
+          <Link
+            href="/login"
+            className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Chưa có tài khoản? Đăng ký miễn phí
+          </Link>
+        </div>
       </section>
     </main>
   );
