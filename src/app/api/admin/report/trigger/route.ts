@@ -1,23 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { runDailyReport } from "@/lib/server/send-daily-report";
 
 export async function POST(request: NextRequest) {
+  void request;
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (denied) return denied;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
-  const secret  = process.env.CRON_SECRET;
-
   try {
-    const res = await fetch(`${siteUrl}/api/cron/daily-report`, {
-      headers: {
-        ...(secret ? { authorization: `Bearer ${secret}` } : {}),
-        "x-force-report": "1",
-      },
-    });
-    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    return NextResponse.json(data, { status: res.ok ? 200 : res.status });
+    const result = await runDailyReport(true);
+    return NextResponse.json(result, { status: result.ok ? 200 : 500 });
   } catch (err) {
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
+    return NextResponse.json({ ok: false, sent: false, error: String(err) }, { status: 500 });
   }
 }
