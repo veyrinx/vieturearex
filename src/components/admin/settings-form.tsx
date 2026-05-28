@@ -1598,6 +1598,30 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </Select>
           </Field>
 
+          <Field label="Kênh gửi báo cáo" hint="Chọn kênh nào nhận báo cáo tự động" icon={SendHorizonal}>
+            <div className="space-y-2.5">
+              {[
+                { key: "integrations.telegram_daily_report", label: "Telegram Admin Bot", defaultOn: true },
+                { key: "integrations.discord_daily_report",  label: "Discord (Internal)", defaultOn: false },
+                { key: "integrations.lark_daily_report",     label: "Lark / Feishu",      defaultOn: true },
+              ].map(({ key, label, defaultOn }) => {
+                const on = defaultOn ? v(key) !== "false" : v(key) === "true";
+                return (
+                  <div key={key} className="flex items-center gap-3">
+                    <Toggle
+                      checked={on}
+                      onChange={(val) => set(key, val ? "true" : "false")}
+                      label={label}
+                    />
+                    <span className={cn("text-sm font-semibold", on ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </Field>
+
           <Field label="Ngày trong tuần" hint="Chỉ gửi vào các ngày được chọn — bỏ chọn hết = gửi mọi ngày" icon={Calendar}>
             {(() => {
               const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -1801,6 +1825,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               "integrations.report_schedule_hour",
               "integrations.report_schedule_interval",
               "integrations.report_schedule_days",
+              "integrations.telegram_daily_report",
+              "integrations.discord_daily_report",
+              "integrations.lark_daily_report",
               "integrations.telegram_bot_token",
               "integrations.telegram_chat_id",
               "integrations.telegram_daily_report",
