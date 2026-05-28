@@ -421,9 +421,47 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen">
       {/* Hero */}
-      <section className="border-b border-border bg-muted/30 py-10">
-        <div className="mx-auto max-w-2xl px-6">
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+      <section className="border-b border-border">
+        {/* Banner */}
+        <div className="relative h-36 overflow-hidden bg-muted/40 sm:h-44">
+          {bannerPreview && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={bannerPreview} alt="Banner" className="size-full object-cover" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+          {/* Banner upload overlay */}
+          <button
+            type="button"
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={uploadingBanner}
+            title="Đổi ảnh bìa"
+            className={cn(
+              "absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity hover:opacity-100",
+              uploadingBanner && "opacity-100 cursor-wait",
+            )}
+          >
+            {uploadingBanner
+              ? <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              : <div className="flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+                  <ImageIcon className="size-3.5" /> Đổi ảnh bìa
+                </div>
+            }
+          </button>
+          {bannerPreview && !uploadingBanner && (
+            <button
+              type="button"
+              onClick={onRemoveBanner}
+              title="Xóa ảnh bìa"
+              className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm hover:bg-black/70"
+            >
+              <Trash2 className="size-3" /> Xóa
+            </button>
+          )}
+          <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onBannerFileChange} />
+        </div>
+
+        <div className="mx-auto max-w-2xl px-6 pb-6">
+          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left -mt-10 sm:-mt-12">
 
             {/* Avatar with upload overlay */}
             <div className="relative shrink-0">

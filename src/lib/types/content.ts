@@ -107,6 +107,8 @@ export type UserItem = {
   is_banned: boolean;
   is_verified?: boolean;
   avatar_url?: string | null;
+  bio?: string | null;
+  phone?: string | null;
   created_at: string;
 };
 
@@ -152,6 +154,7 @@ export type PublicUserProfile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  banner_url?: string | null;
   role: UserRole;
   is_verified: boolean;
   created_at: string;

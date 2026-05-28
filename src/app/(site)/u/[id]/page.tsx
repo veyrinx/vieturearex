@@ -86,8 +86,15 @@ export default async function PublicProfilePage({ params }: Props) {
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-16">
       {/* Hero card */}
       <section className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
-        {/* Role gradient banner */}
-        <div className={cn("h-32 bg-gradient-to-br", meta.gradient)} />
+        {/* Banner */}
+        {profile.banner_url ? (
+          <div className="relative h-32 overflow-hidden">
+            <Image src={profile.banner_url} alt="Banner" fill className="object-cover" unoptimized />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/40" />
+          </div>
+        ) : (
+          <div className={cn("h-32 bg-gradient-to-br", meta.gradient)} />
+        )}
 
         <div className="px-6 pb-6 -mt-14">
           {/* Avatar */}

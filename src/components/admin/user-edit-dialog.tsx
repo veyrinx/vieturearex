@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   Mail, User, Shield, KeyRound, Copy, Check, BadgeCheck, BadgeX,
   LogOut, Trash2, Lock, Unlock, Activity, CalendarDays, Eye,
-  ChevronDown, AlertTriangle,
+  ChevronDown, AlertTriangle, Phone, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,8 @@ function getAvatarColor(email: string) {
 const editSchema = z.object({
   display_name: z.string().min(1, "Tên hiển thị không được để trống.").max(60, "Tối đa 60 ký tự."),
   email: z.string().email("Email không hợp lệ."),
+  bio: z.string().max(300, "Tối đa 300 ký tự.").optional(),
+  phone: z.string().max(20, "Tối đa 20 ký tự.").optional(),
 });
 type EditFormValues = z.infer<typeof editSchema>;
 
@@ -86,7 +88,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
 
   useEffect(() => {
     if (user && open) {
-      reset({ display_name: user.display_name ?? user.email.split("@")[0], email: user.email });
+      reset({ display_name: user.display_name ?? user.email.split("@")[0], email: user.email, bio: user.bio ?? "", phone: user.phone ?? "" });
       setTempPassword(null);
       setCopiedPw(false);
       setSelectedRole(user.role);
@@ -119,6 +121,8 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
           id: user.id, action: "update_info",
           display_name: values.display_name !== (user.display_name ?? "") ? values.display_name : undefined,
           email: values.email !== user.email ? values.email : undefined,
+          bio: values.bio !== (user.bio ?? "") ? (values.bio ?? "") : undefined,
+          phone: values.phone !== (user.phone ?? "") ? (values.phone ?? "") : undefined,
         }),
       });
       if (!res.ok) {
@@ -351,6 +355,36 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
                 />
                 {errors.email && <p className="text-xs text-rose-500">{errors.email.message}</p>}
               </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Phone className="size-3" /> Số điện thoại
+                  </label>
+                  <Input
+                    {...register("phone")}
+                    placeholder="0xxxxxxxxx"
+                    maxLength={20}
+                    className="h-9 bg-background"
+                  />
+                  {errors.phone && <p className="text-xs text-rose-500">{errors.phone.message}</p>}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <FileText className="size-3" /> Giới thiệu (bio)
+                </label>
+                <textarea
+                  {...register("bio")}
+                  rows={2}
+                  maxLength={300}
+                  placeholder="Vài dòng giới thiệu..."
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {errors.bio && <p className="text-xs text-rose-500">{errors.bio.message}</p>}
+              </div>
+
               <Button type="submit" disabled={isSaving || !isDirty} size="sm" className="w-full gap-1.5 rounded-xl">
                 {isSaving ? "Đang lưu..." : "Lưu thông tin"}
               </Button>

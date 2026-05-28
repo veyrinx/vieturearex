@@ -151,6 +151,8 @@ function normalizeUserItem(row: Partial<UserItem>): UserItem {
     is_banned: Boolean(row.is_banned),
     is_verified: row.is_verified === true,
     avatar_url: row.avatar_url ?? null,
+    bio: (row as { bio?: string | null }).bio ?? null,
+    phone: (row as { phone?: string | null }).phone ?? null,
     created_at: String(row.created_at ?? new Date().toISOString()),
   };
 }
@@ -603,7 +605,7 @@ export async function getUserByEmail(email: string): Promise<UserItem | null> {
 
 export async function updateUserInfo(
   id: string,
-  data: { display_name?: string; email?: string },
+  data: { display_name?: string; email?: string; bio?: string; phone?: string },
 ): Promise<UserItem> {
   if (!hasSupabaseEnv) {
     const demo = getDemoStore();
@@ -621,9 +623,11 @@ export async function updateUserInfo(
     if (authErr) throw new Error(authErr.message);
   }
 
-  const updates: Record<string, string> = {};
+  const updates: Record<string, string | null> = {};
   if (data.display_name !== undefined) updates.display_name = data.display_name;
   if (data.email !== undefined) updates.email = data.email;
+  if (data.bio !== undefined) updates.bio = data.bio || null;
+  if (data.phone !== undefined) updates.phone = data.phone || null;
 
   const { data: updated, error } = await supabase
     .from("users")
@@ -802,7 +806,7 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
 
   let result = await client
     .from("users")
-    .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, last_seen_at, points, rank, views")
+    .select("id, display_name, avatar_url, banner_url, role, is_verified, created_at, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, last_seen_at, points, rank, views")
     .eq("id", id)
     .maybeSingle() as { data: PublicUserProfile | null; error: { message?: string } | null };
 

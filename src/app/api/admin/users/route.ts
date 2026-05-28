@@ -43,6 +43,8 @@ const updateInfoSchema = z.object({
   action: z.literal("update_info"),
   display_name: z.string().min(1).max(60).optional(),
   email: z.string().email().optional(),
+  bio: z.string().max(300).optional(),
+  phone: z.string().max(20).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -66,13 +68,15 @@ export async function PATCH(request: NextRequest) {
     const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "users.edit" });
     if (denied) return denied;
 
-    if (!infoParsed.data.display_name && !infoParsed.data.email) {
+    if (!infoParsed.data.display_name && !infoParsed.data.email && infoParsed.data.bio === undefined && infoParsed.data.phone === undefined) {
       return NextResponse.json({ error: "Không có thông tin nào để cập nhật." }, { status: 400 });
     }
 
     const user = await updateUserInfo(infoParsed.data.id, {
       display_name: infoParsed.data.display_name,
       email: infoParsed.data.email,
+      bio: infoParsed.data.bio,
+      phone: infoParsed.data.phone,
     });
     await logAdminActivity({
       action: "USER_INFO_UPDATED",
