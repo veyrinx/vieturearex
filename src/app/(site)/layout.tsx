@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { CskhChat } from "@/components/community/cskh-chat";
 import { AutoTranslate } from "@/components/common/auto-translate";
+import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -44,7 +45,11 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      className="relative min-h-screen"
+      style={{ paddingTop: "var(--banner-h, 0px)", transition: "padding-top 0.22s cubic-bezier(0.4,0,0.2,1)" }}
+    >
+      <AnnouncementBar />
       <AutoReload />
       <SiteNavbar
         logoLight={settingsMap["branding.logo_light_url"]}

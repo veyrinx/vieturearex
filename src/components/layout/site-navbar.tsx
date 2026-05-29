@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
-  BookOpenText, Users, Swords, Mail,
+  BookOpenText, Users, Swords,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -33,7 +33,6 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/news":        BookOpenText,
   "/team":        Users,
   "/tournaments": Swords,
-  "/contact":     Mail,
 };
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
@@ -75,11 +74,12 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
 
   return (
     <header
+      style={{ top: "var(--banner-h, 0px)", transition: "top 0.22s cubic-bezier(0.4,0,0.2,1)" }}
       className={cn(
         "z-50 backdrop-blur-xl",
         isHomePage
-          ? "fixed inset-x-0 top-0 bg-white/72 shadow-[0_8px_24px_rgba(15,23,42,0.07)] dark:bg-slate-950/42 dark:shadow-none"
-          : "sticky top-0 border-b border-border bg-background/90",
+          ? "fixed inset-x-0 bg-white/72 shadow-[0_8px_24px_rgba(15,23,42,0.07)] dark:bg-slate-950/42 dark:shadow-none"
+          : "sticky border-b border-border bg-background/90",
       )}
     >
       <motion.div

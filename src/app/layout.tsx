@@ -117,6 +117,8 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://googlevideo.com" />
         {/* Preload font chính để giảm blocking */}
         <link rel="preload" href="/fonts/GFF-Latin-Regular.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
+        {/* Announcement bar: set --banner-h before first paint to prevent layout shift */}
+        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('cskh-bar-v1')!=='1')document.documentElement.style.setProperty('--banner-h','40px');}catch(e){}` }} />
         {/* DMCA verification */}
         <meta name="dmca-site-verification" content="cmE4MmRVTTUvU1ozdU9Xb0lHQmxodDZwemQ0bFgyc1MvNHY5M2VWZUxYTT01" />
         {/* Google Analytics */}
