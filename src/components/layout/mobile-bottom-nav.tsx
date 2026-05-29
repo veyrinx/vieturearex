@@ -7,11 +7,11 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/",            icon: Home,        label: "Trang chủ", exact: true },
-  { href: "/news",        icon: Newspaper,   label: "Tin tức" },
-  { href: "/events",      icon: CalendarDays,label: "Sự kiện" },
-  { href: "/esports",     icon: Radio,       label: "Stream" },
-  { href: "/tournaments", icon: Trophy,      label: "Giải đấu" },
+  { href: "/",            icon: Home,         label: "Trang chủ", exact: true },
+  { href: "/news",        icon: Newspaper,    label: "Tin tức" },
+  { href: "/events",      icon: CalendarDays, label: "Sự kiện" },
+  { href: "/esports",     icon: Radio,        label: "Stream" },
+  { href: "/tournaments", icon: Trophy,       label: "Giải đấu" },
 ];
 
 export function MobileBottomNav() {
@@ -24,49 +24,60 @@ export function MobileBottomNav() {
   ) return null;
 
   return (
-    <div
-      className="fixed inset-x-3 z-50 md:hidden"
-      style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
-    >
-      <nav className="flex items-stretch justify-around rounded-2xl border border-border/50 bg-card/96 shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 md:hidden">
+      {/* iOS-style hairline separator */}
+      <div className="h-px bg-black/[0.12] dark:bg-white/[0.1]" />
+
+      {/* Frosted glass layer — mimics iOS UITabBar blur */}
+      <div className="absolute inset-0 bg-background/82 backdrop-blur-2xl" />
+
+      {/* Tab items */}
+      <div
+        className="relative flex"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         {NAV.map(({ href, icon: Icon, label, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
+
           return (
             <Link
               key={href}
               href={href}
-              className="relative flex flex-1 flex-col items-center py-3"
+              className="flex flex-1 flex-col items-center gap-[3px] pt-2 pb-1.5"
             >
-              {/* Sliding active pill */}
-              {active && (
-                <motion.span
-                  layoutId="mob-nav-pill"
-                  className="absolute inset-x-1.5 inset-y-1.5 rounded-xl bg-primary/10 dark:bg-amber-400/10"
-                  transition={{ type: "spring", stiffness: 500, damping: 38 }}
-                />
-              )}
-
               <motion.span
-                animate={{ y: active ? -1 : 0, scale: active ? 1.06 : 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                className="relative z-10 flex flex-col items-center gap-1"
+                animate={{ scale: active ? 1 : 0.9, y: active ? -0.5 : 0 }}
+                transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                className="flex flex-col items-center gap-[3px]"
               >
-                <Icon
-                  size={22}
-                  strokeWidth={active ? 2.5 : 1.8}
-                  className={cn(
-                    "transition-colors duration-150",
-                    active
-                      ? "text-primary dark:text-amber-400"
-                      : "text-muted-foreground/55",
+                {/* Icon wrapper — filled circle on active like iOS */}
+                <span className="relative flex items-center justify-center">
+                  {active && (
+                    <motion.span
+                      layoutId="ios-tab-bg"
+                      className="absolute size-9 rounded-[10px] bg-primary/10 dark:bg-amber-400/10"
+                      transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                    />
                   )}
-                />
+                  <Icon
+                    size={23}
+                    strokeWidth={active ? 2.4 : 1.65}
+                    className={cn(
+                      "relative z-10 transition-colors duration-100",
+                      active
+                        ? "text-primary dark:text-amber-400"
+                        : "text-[#8E8E93] dark:text-[#98989D]",
+                    )}
+                  />
+                </span>
+
+                {/* Label */}
                 <span
                   className={cn(
-                    "text-[9px] font-bold leading-none tracking-wide transition-colors duration-150",
+                    "text-[10px] leading-none tracking-tight transition-colors duration-100",
                     active
-                      ? "text-primary dark:text-amber-400"
-                      : "text-muted-foreground/45",
+                      ? "font-semibold text-primary dark:text-amber-400"
+                      : "font-medium text-[#8E8E93] dark:text-[#98989D]",
                   )}
                 >
                   {label}
@@ -75,7 +86,7 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 }
