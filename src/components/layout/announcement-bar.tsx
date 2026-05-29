@@ -35,7 +35,7 @@ export function AnnouncementBar() {
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
           className="fixed inset-x-0 top-0 z-[65] overflow-hidden"
         >
-          <div className="relative flex h-10 items-center justify-center bg-[#060606] px-12 dark:bg-[#060606]">
+          <div className="relative flex h-10 items-center justify-center bg-[#060606] px-12 pb-1.5 dark:bg-[#060606]">
             {/* Subtle gradient accent line at bottom */}
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
@@ -43,7 +43,7 @@ export function AnnouncementBar() {
               href="/contact"
               className="group flex items-center gap-2 text-[11px] font-medium tracking-wide text-white/70 transition-all duration-200 hover:text-white"
             >
-              <Headset className="size-3.5 shrink-0 -translate-y-px text-white/50 transition-colors group-hover:text-white/80" />
+              <Headset className="size-3.5 shrink-0 -translate-y-[2px] text-white/50 transition-colors group-hover:text-white/80" />
               <span>Cần hỗ trợ?</span>
               <span className="hidden text-white/50 sm:inline">·</span>
               <span className="hidden text-white/70 transition-colors group-hover:text-white sm:inline">
