@@ -13,6 +13,22 @@ import { TournamentBanner } from "@/components/common/safe-image";
 export const metadata: Metadata = {
   title: "Giải Đấu | Arex",
   description: "Tất cả giải đấu Free Fire trên hệ thống Arex — đăng ký, thi đấu, bảng xếp hạng.",
+  alternates: { canonical: "https://arexnetwork.site/tournaments" },
+  openGraph: {
+    title: "Giải Đấu Free Fire — Arex",
+    description: "Đăng ký và thi đấu các giải Free Fire. Theo dõi bảng xếp hạng, kết quả và lịch thi đấu.",
+    url: "https://arexnetwork.site/tournaments",
+    type: "website",
+    siteName: "Arex - Trang Tin Tức Cộng Đồng Free Fire",
+    locale: "vi_VN",
+    images: [{ url: "https://arexnetwork.site/og-image.png", width: 1200, height: 630, alt: "Giải Đấu Free Fire — Arex" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Giải Đấu Free Fire — Arex",
+    description: "Đăng ký và thi đấu các giải Free Fire. Bảng xếp hạng và kết quả cập nhật liên tục.",
+    images: ["https://arexnetwork.site/og-image.png"],
+  },
 };
 
 export const dynamic = "force-dynamic";

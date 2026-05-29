@@ -217,7 +217,7 @@ export default function CookiePolicyPage() {
               id={section.id}
               className="scroll-mt-28 rounded-2xl border border-border bg-card p-6 shadow-sm"
             >
-              <h2 className="mb-5 font-heading text-lg font-bold uppercase tracking-[0.06em] text-foreground">
+              <h2 className="mb-5 font-heading text-lg font-black uppercase tracking-[0.06em] text-foreground">
                 {section.title}
               </h2>
 

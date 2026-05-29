@@ -106,7 +106,7 @@ export function TeamGrid({ profiles }: Props) {
             key={`${profile.id}-${tick}`}
             href={`/u/${profile.id}`}
             aria-label={`Xem hồ sơ ${name}`}
-            className="group relative flex flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 hover:border-primary/40 dark:bg-card dark:border-border dark:hover:border-amber-400/40"
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 hover:border-primary/40 dark:hover:border-amber-400/40"
           >
             <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-10" />
 

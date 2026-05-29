@@ -89,7 +89,7 @@ export function TeamJoinForm({ token, config }: Props) {
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-emerald-500/10">
             <ShieldCheck className="size-7 text-emerald-500" />
           </div>
-          <h1 className="font-heading text-xl font-bold uppercase tracking-[0.06em]">Đã gửi yêu cầu</h1>
+          <h1 className="font-heading text-xl font-black uppercase tracking-[0.06em]">Đã gửi yêu cầu</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{config.successMessage}</p>
           <p className="mt-3 text-sm font-semibold text-foreground">{form.email}</p>
           <Button onClick={() => router.push("/")} className="mt-6 rounded-xl">Về trang chủ</Button>
@@ -102,7 +102,7 @@ export function TeamJoinForm({ token, config }: Props) {
     <main className="flex min-h-screen items-start justify-center px-4 py-10">
       <section className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-xl md:p-8">
         <header className="mb-6 text-center">
-          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] md:text-3xl">{config.title}</h1>
+          <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] md:text-3xl">{config.title}</h1>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{config.subtitle}</p>
         </header>
 

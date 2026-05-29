@@ -157,7 +157,7 @@ function Card({ id, num, title, Icon, tag, tagColor = "blue", children }: {
               <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[9px] font-black text-white dark:bg-amber-500">{num}</span>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="font-heading text-lg font-bold uppercase tracking-[0.06em] text-foreground md:text-xl xl:text-[1.5rem]">{title}</h2>
+              <h2 className="font-heading text-lg font-black uppercase tracking-[0.06em] text-foreground md:text-xl xl:text-[1.5rem]">{title}</h2>
               {tag && (
                 <span className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-widest md:text-xs ${tagCls[tagColor]}`}>
                   <Icons.Scale /><span>{tag}</span>

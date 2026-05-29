@@ -152,7 +152,7 @@ export default async function AdminDashboardPage() {
             <Link
               key={href}
               href={href}
-              className="group glass-card flex flex-col gap-3 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+              className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
             >
               <div className={`flex size-10 items-center justify-center rounded-xl ${color} transition-transform duration-200 group-hover:scale-110`}>
                 <Icon className="size-5" />

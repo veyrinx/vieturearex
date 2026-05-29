@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -43,6 +44,42 @@ function avatarColor(id: string) {
 }
 
 const ONLINE_MS = 90_000;
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const profile = await getUserPublicProfile(id);
+  if (!profile) return { title: "Người dùng không tồn tại" };
+
+  const name = profile.display_name ?? "Ẩn danh";
+  const rank = profile.rank ?? getRank(profile.points ?? 0).rank;
+  const url = `${siteConfig.url}/u/${id}`;
+  const description = profile.bio
+    ? `${profile.bio} — Hạng ${rank} · ${(profile.points ?? 0).toLocaleString("vi-VN")} điểm`
+    : `Hồ sơ của ${name} trên Arex. Hạng: ${rank}.`;
+
+  return {
+    title: `${name} — Hồ sơ`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${name} · Arex`,
+      description,
+      url,
+      type: "profile",
+      siteName: siteConfig.name,
+      locale: "vi_VN",
+      ...(profile.avatar_url && {
+        images: [{ url: profile.avatar_url, width: 400, height: 400, alt: name }],
+      }),
+    },
+    twitter: {
+      card: profile.avatar_url ? "summary" : "summary",
+      title: `${name} · Arex`,
+      description,
+      ...(profile.avatar_url && { images: [profile.avatar_url] }),
+    },
+  };
+}
 
 export const revalidate = 120;
 

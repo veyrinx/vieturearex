@@ -536,9 +536,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             <div className="space-y-2">
               <Input value={v("branding.logo_light_url")} onChange={(e) => set("branding.logo_light_url", e.target.value)} placeholder="https://..." />
               {v("branding.logo_light_url") && (
-                <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-100 px-3 py-2">
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2">
                   <Image src={v("branding.logo_light_url")} alt="" width={36} height={36} className="rounded object-contain" unoptimized />
-                  <span className="text-xs text-gray-400">Light preview</span>
+                  <span className="text-xs text-muted-foreground">Light preview</span>
                 </div>
               )}
             </div>

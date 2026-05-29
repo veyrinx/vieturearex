@@ -338,7 +338,7 @@ export default function AdminProfilePage() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <div className="glass-card rounded-2xl p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
           {/* Avatar */}
           <div className="relative shrink-0">
@@ -404,8 +404,8 @@ export default function AdminProfilePage() {
 
       {/* ── TAB: Thông tin ── */}
       {tab === "info" && (
-        <div className="glass-card rounded-2xl p-6 space-y-5">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+          <h2 className="font-heading text-sm font-black uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
             <User className="size-4 text-muted-foreground" /> Thông tin cá nhân
           </h2>
 
@@ -485,8 +485,8 @@ export default function AdminProfilePage() {
 
       {/* ── TAB: Mạng xã hội ── */}
       {tab === "social" && (
-        <div className="glass-card rounded-2xl p-6 space-y-5">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+          <h2 className="font-heading text-sm font-black uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
             <Globe className="size-4 text-muted-foreground" /> Mạng xã hội & Liên hệ
           </h2>
 
@@ -523,8 +523,8 @@ export default function AdminProfilePage() {
       {tab === "security" && (
         <div className="space-y-5">
           {/* Password */}
-          <div className="glass-card rounded-2xl p-6 space-y-4">
-            <h2 className="font-heading text-sm font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
               <KeyRound className="size-4 text-muted-foreground" /> Đổi mật khẩu
             </h2>
             <div className="space-y-3">
@@ -543,8 +543,8 @@ export default function AdminProfilePage() {
           </div>
 
           {/* 2FA */}
-          <div className="glass-card rounded-2xl p-6 space-y-4">
-            <h2 className="font-heading text-sm font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
               <Smartphone className="size-4 text-muted-foreground" /> Xác thực 2 yếu tố (2FA)
             </h2>
             <p className="text-xs text-muted-foreground">Bảo vệ tài khoản bằng Google Authenticator hoặc Authy.</p>
@@ -600,9 +600,9 @@ export default function AdminProfilePage() {
 
       {/* ── TAB: Lịch sử đăng nhập ── */}
       {tab === "login_history" && (
-        <div className="glass-card rounded-2xl p-6 space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-heading text-sm font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.08em] text-foreground flex items-center gap-2">
               <Clock className="size-4 text-muted-foreground" /> Lịch sử đăng nhập
             </h2>
             <Button size="sm" variant="outline" onClick={loadLoginLogs} disabled={loadingLogs} className="gap-1.5 rounded-xl text-xs">
