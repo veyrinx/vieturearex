@@ -14,7 +14,7 @@ import { DatePickerInput } from "@/components/common/date-picker-input";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EventModal } from "@/components/timeline/event-modal";
 import { useFavoriteEventIds } from "@/components/events/event-actions";
 import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
@@ -253,7 +253,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">TRẠNG THÁI</p>
             <Select value={status} onValueChange={(value) => setStatus(value as typeof status)}>
               <SelectTrigger className="h-11 w-full border-border bg-background uppercase tracking-[0.08em] text-foreground">
-                {statusOptions.find((option) => option.value === status)?.label ?? "TẤT CẢ TRẠNG THÁI"}
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-border bg-card text-foreground">
                 {statusOptions.map((option) => (

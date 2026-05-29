@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Radio, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
@@ -200,7 +200,7 @@ export function StreamsAdminPanel() {
             <label className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">DANH MỤC</label>
             <Select value={form.category} onValueChange={(v) => setForm((p) => ({ ...p, category: v ?? p.category }))}>
               <SelectTrigger className="border-border bg-background text-foreground uppercase tracking-[0.08em]">
-                {form.category}
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-border bg-card text-foreground">
                 {categories.map((cat) => (
@@ -213,7 +213,7 @@ export function StreamsAdminPanel() {
             <label className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">TRẠNG THÁI</label>
             <Select value={form.status} onValueChange={(v) => setForm((p) => ({ ...p, status: v as StreamStatus }))}>
               <SelectTrigger className="border-border bg-background text-foreground uppercase tracking-[0.08em]">
-                {statusLabel[form.status]}
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-border bg-card text-foreground">
                 <SelectItem value="upcoming">SẮP DIỄN RA</SelectItem>

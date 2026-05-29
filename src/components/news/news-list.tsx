@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { useNewsQuery } from "@/hooks/use-news-query";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { NewsItem } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 import {
@@ -105,12 +105,12 @@ export function NewsList({ news: initialNews }: NewsListProps) {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">CHUYÊN MỤC</p>
             <Select value={category} onValueChange={(value) => setCategory(value ?? "all")}>
               <SelectTrigger className="h-10 w-full border-border bg-background text-foreground uppercase tracking-[0.08em]">
-                {category === "all" ? "TẤT CẢ" : category}
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-border bg-card text-foreground">
                 {categories.map((item) => (
                   <SelectItem key={item} value={item} className="uppercase tracking-[0.08em]">
-                    {item === "all" ? "TẤT CẢ CHUYÊN MỤC" : item}
+                    {item === "all" ? "TẤT CẢ" : item}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -121,7 +121,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">SẮP XẾP</p>
             <Select value={sort} onValueChange={(value) => setSort(value as (typeof sortOptions)[number]["value"])}>
               <SelectTrigger className="h-10 w-full border-border bg-background text-foreground uppercase tracking-[0.08em]">
-                {sortOptions.find((option) => option.value === sort)?.label ?? "MỚI NHẤT"}
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-border bg-card text-foreground">
                 {sortOptions.map((option) => (

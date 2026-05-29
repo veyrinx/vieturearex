@@ -6,7 +6,7 @@ import { ArrowRight, ArrowUpRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventModal } from "@/components/timeline/event-modal";
@@ -103,7 +103,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">TRẠNG THÁI</p>
           <Select value={status} onValueChange={(value) => setStatus(value as EventStatus | "all")}>
             <SelectTrigger className="h-11 w-full border-border bg-background text-foreground uppercase tracking-[0.08em]">
-              {statusOptions.find((option) => option.value === status)?.label ?? "TẤT CẢ TRẠNG THÁI"}
+              <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-border bg-card text-foreground">
               {statusOptions.map((option) => (
@@ -119,7 +119,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">SẮP XẾP</p>
           <Select value={sort} onValueChange={(value) => setSort(value as (typeof sortOptions)[number]["value"])}>
             <SelectTrigger className="h-11 w-full border-border bg-background text-foreground uppercase tracking-[0.08em]">
-              {sortOptions.find((option) => option.value === sort)?.label ?? "MỚI NHẤT"}
+              <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-border bg-card text-foreground">
               {sortOptions.map((option) => (
