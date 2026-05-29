@@ -107,7 +107,7 @@ export default async function PlayerComparePage({
       </div>
 
       <div className="space-y-1">
-        <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">
+        <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">
           So Sánh Tuyển Thủ
         </h1>
         <p className="text-sm text-muted-foreground">Tìm 2 tuyển thủ để so sánh thống kê.</p>

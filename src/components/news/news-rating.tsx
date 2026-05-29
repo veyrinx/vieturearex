@@ -187,7 +187,7 @@ export function NewsRating({ slug, title }: Props) {
   };
 
   return (
-    <div className="glass-card rounded-2xl p-5 space-y-5">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
       {/* Header thống kê */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">

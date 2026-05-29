@@ -66,9 +66,12 @@ function JoinContent() {
       </div>
 
       <div className="max-w-xl mx-auto rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">
-          Tham gia để được
-        </h2>
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+            Tham gia để được
+          </h2>
+        </div>
         <div className="space-y-2.5">
           {[
             { icon: Swords, text: "Tham gia giải đấu chính thức" },

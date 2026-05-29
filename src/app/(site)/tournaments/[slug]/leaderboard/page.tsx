@@ -34,7 +34,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             <ArrowLeft className="size-4" />
           </Link>
           <div>
-            <h1 className="font-heading text-xl font-bold uppercase tracking-[0.06em] flex items-center gap-2">
+            <h1 className="font-heading text-xl font-black uppercase tracking-[0.06em] flex items-center gap-2">
               <Trophy className="size-5 text-amber-400" /> Bảng Xếp Hạng
             </h1>
             <p className="text-xs text-muted-foreground">{tournament.name}</p>
@@ -57,7 +57,10 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
 
       {/* Team BXH */}
       <section className="space-y-3">
-        <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">Xếp hạng đội</h2>
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">Xếp hạng đội</h2>
+        </div>
         {teamLB.length === 0 ? (
           <p className="text-xs text-muted-foreground">Chưa có kết quả.</p>
         ) : (
@@ -101,9 +104,12 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
 
       {/* Player BXH */}
       <section className="space-y-3">
-        <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Zap className="size-3.5 text-amber-400" /> Xếp hạng cá nhân
-        </h2>
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+            <Zap className="size-3.5" /> Xếp hạng cá nhân
+          </h2>
+        </div>
         {playerLB.length === 0 ? (
           <p className="text-xs text-muted-foreground">Chưa có kết quả.</p>
         ) : (

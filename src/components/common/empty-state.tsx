@@ -11,7 +11,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, action, className }: EmptyStateProps) {
   return (
-    <div className={cn("glass-card flex flex-col items-center gap-3 p-10 text-center", className)}>
+    <div className={cn("rounded-2xl border border-dashed border-border flex flex-col items-center gap-3 p-10 text-center", className)}>
       <div className="rounded-full border border-primary/25 bg-primary/10 p-3 text-primary">
         <Inbox className="size-6" />
       </div>

@@ -58,7 +58,7 @@ export function AnnouncementPopup({ title, content, imageUrl, linkUrl }: Props) 
           filter: visible && !closing ? "blur(0px)" : "blur(10px)",
           transition: "transform 0.48s cubic-bezier(0.22,1,0.36,1), opacity 0.38s ease-out, filter 0.38s ease-out",
         }}
-        className="glass-card relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">

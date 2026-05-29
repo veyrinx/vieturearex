@@ -42,7 +42,7 @@ export function NewsToc({ html }: { html: string }) {
   if (items.length < 2) return null;
 
   return (
-    <nav className="glass-card rounded-2xl p-4 space-y-1">
+    <nav className="rounded-2xl border border-border bg-card p-4 space-y-1">
       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3">Mục lục</p>
       {items.map((item) => (
         <a

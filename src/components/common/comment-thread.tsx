@@ -336,7 +336,7 @@ export function CommentThread({ apiPath, realtimeTable, realtimeFilter, realtime
     }, {});
 
   return (
-    <section id="comments" className="scroll-mt-24 glass-card rounded-2xl p-6 space-y-6">
+    <section id="comments" className="scroll-mt-24 rounded-2xl border border-border bg-card p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-2">
         <MessageSquare className="size-5 text-primary dark:text-amber-400" />

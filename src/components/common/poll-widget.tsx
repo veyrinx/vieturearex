@@ -97,7 +97,7 @@ export function PollWidget({ pollId, question, options: initialOptions, endsAt }
 
   if (loading) {
     return (
-      <div className="glass-card rounded-2xl p-6 space-y-3 animate-pulse">
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-3 animate-pulse">
         <div className="h-4 w-40 rounded bg-muted" />
         <div className="h-3 w-full rounded bg-muted" />
         {[1, 2, 3].map((i) => <div key={i} className="h-10 w-full rounded bg-muted" />)}
@@ -108,7 +108,7 @@ export function PollWidget({ pollId, question, options: initialOptions, endsAt }
   const displayOptions = poll?.options ?? initialOptions.map((o) => ({ ...o, votes: 0, percent: 0 }));
 
   return (
-    <section className="glass-card rounded-2xl p-6 space-y-4">
+    <section className="rounded-2xl border border-border bg-card p-6 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <BarChart2 className="size-5 shrink-0 text-primary dark:text-amber-400" />

@@ -72,7 +72,7 @@ export default function SetupPage() {
           <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-amber-400/10">
             <Flame className="size-7 text-primary dark:text-amber-400" />
           </div>
-          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">
+          <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">
             Hoàn thiện hồ sơ
           </h1>
           <p className="text-sm text-muted-foreground">
