@@ -19,7 +19,8 @@ export default async function VodPage() {
   return (
     <div className="space-y-6 pt-6 md:pt-8">
       <SectionHeading
-        title="Thư viện VOD"
+        eyebrow="Esports"
+        title="THƯ VIỆN VOD"
         description="Xem lại các buổi phát sóng trực tiếp của cộng đồng Arex."
       />
       <VodGrid vods={vods} />

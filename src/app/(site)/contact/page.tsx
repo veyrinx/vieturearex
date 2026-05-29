@@ -43,15 +43,17 @@ export default async function ContactPage() {
   return (
     <div className="space-y-8 pt-6 md:pt-8">
       <SectionHeading
-        title="Kết nối cộng đồng"
-        description="Gửi câu hỏi, góp ý hoặc đề xuất hợp tác. Biểu mẫu có kiểm tra dữ liệu và phản hồi bằng toast."
+        eyebrow="Liên hệ"
+        title="KẾT NỐI CỘNG ĐỒNG"
+        description="Gửi câu hỏi, góp ý hoặc đề xuất hợp tác với đội ngũ Arex."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr,1.1fr]">
-        <aside className="glass-card space-y-5 rounded-[24px] p-5">
-          <div className="space-y-2">
-            <h3 className="font-heading text-xl font-semibold uppercase tracking-[0.08em] text-foreground">
-              KÊNH CHÍNH THỨC
+        <aside className="rounded-[24px] border border-border bg-card space-y-5 p-5">
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h3 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+              Kênh chính thức
             </h3>
           </div>
 

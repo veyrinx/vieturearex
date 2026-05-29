@@ -64,7 +64,7 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
         <div className="space-y-1 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">[{team.tag}]</span>
-            <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">{team.name}</h1>
+            <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">{team.name}</h1>
           </div>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <CalendarDays className="size-3" /> Thành lập {format(new Date(team.created_at), "dd/MM/yyyy", { locale: vi })}
@@ -92,9 +92,12 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Members */}
         <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Users className="size-4" /> Thành viên ({members.length})
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Users className="size-3.5" /> Thành viên ({members.length})
+            </h2>
+          </div>
           {members.length === 0 ? (
             <p className="text-xs text-muted-foreground">Chưa có thành viên.</p>
           ) : (
@@ -123,9 +126,12 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
 
         {/* Tournament history */}
         <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Trophy className="size-4" /> Lịch sử giải đấu
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Trophy className="size-3.5" /> Lịch sử giải đấu
+            </h2>
+          </div>
           {(tournamentStats as TeamLeaderboardWithTournament[]).length === 0 ? (
             <p className="text-xs text-muted-foreground">Chưa tham gia giải đấu nào.</p>
           ) : (
@@ -168,9 +174,12 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
 
       {/* Match history */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Swords className="size-4" /> Lịch sử trận đấu ({matches.length})
-        </h2>
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+            <Swords className="size-3.5" /> Lịch sử trận đấu ({matches.length})
+          </h2>
+        </div>
         {matches.length === 0 ? (
           <p className="text-xs text-muted-foreground">Chưa có trận nào.</p>
         ) : (

@@ -58,7 +58,7 @@ export default async function TournamentDetailPage({ params }: { params: Promise
       {/* Title + actions */}
       <div className="flex flex-col sm:flex-row gap-4 sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">{tournament.name}</h1>
+          <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">{tournament.name}</h1>
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
             <TmsServerBadge server={tournament.server} variant="full" />
             <span className="flex items-center gap-1"><Swords className="size-3" />{MODE_LABELS[tournament.mode]}</span>
@@ -112,9 +112,12 @@ export default async function TournamentDetailPage({ params }: { params: Promise
       {/* Teams */}
       {approvedTeams.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-heading text-base font-bold uppercase tracking-widest flex items-center gap-2">
-            <Users className="size-4 text-primary" /> Teams tham dự ({approvedTeams.length})
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Users className="size-3.5" /> Teams tham dự ({approvedTeams.length})
+            </h2>
+          </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {approvedTeams.map((r) => (
               <div key={r.id} className="flex items-center gap-2 rounded-xl border border-border bg-card p-2">
@@ -132,16 +135,22 @@ export default async function TournamentDetailPage({ params }: { params: Promise
       {/* Live bracket */}
       {allMatches.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-heading text-base font-bold uppercase tracking-widest flex items-center gap-2">
-            <Trophy className="size-4 text-amber-400" /> Bracket ({allMatches.length} trận)
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Trophy className="size-3.5" /> Bracket ({allMatches.length} trận)
+            </h2>
+          </div>
           <TournamentBracket matches={allMatches} />
         </section>
       )}
 
       {tournament.rules && (
         <section className="space-y-2">
-          <h2 className="font-heading text-base font-bold uppercase tracking-widest">Luật thi đấu</h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">Luật thi đấu</h2>
+          </div>
           <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
             {tournament.rules}
           </div>

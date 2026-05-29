@@ -58,7 +58,7 @@ export function ContactForm() {
   });
 
   return (
-    <form onSubmit={onSubmit} className="glass-card space-y-4 rounded-2xl p-5">
+    <form onSubmit={onSubmit} className="rounded-2xl border border-border bg-card space-y-4 p-5">
       {prefilled && (
         <div className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/6 px-3 py-2.5 dark:border-amber-400/25 dark:bg-amber-400/6">
           <UserCircle className="size-4 shrink-0 text-primary dark:text-amber-400" />

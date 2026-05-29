@@ -7,7 +7,7 @@ import type { StreamItem } from "@/lib/types/content";
 
 function VodPlayer({ vod, onClose }: { vod: StreamItem; onClose: () => void }) {
   return (
-    <div className="glass-card rounded-2xl overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
         <iframe
           src={buildEmbedUrl(vod.youtube_url)}
@@ -49,7 +49,7 @@ export function VodGrid({ vods }: Props) {
 
   if (vods.length === 0) {
     return (
-      <div className="glass-card rounded-2xl p-10 text-center text-muted-foreground">
+      <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
         Chưa có VOD nào.
       </div>
     );
@@ -99,7 +99,7 @@ export function VodGrid({ vods }: Props) {
               key={vod.id}
               type="button"
               onClick={() => setSelected(isActive ? null : vod)}
-              className={`group text-left glass-card rounded-2xl overflow-hidden transition-all hover:-translate-y-1 ${isActive ? "ring-2 ring-primary dark:ring-amber-400" : ""}`}
+              className={`group text-left rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${isActive ? "ring-2 ring-primary dark:ring-amber-400" : ""}`}
             >
               <div className="relative aspect-video overflow-hidden bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

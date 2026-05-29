@@ -98,9 +98,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       {/* Career stats */}
       {totalMatches > 0 && (
         <section className="space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground">
-            Thống kê sự nghiệp
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+              Thống kê sự nghiệp
+            </h2>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {statCards.map(({ key, label, icon: Icon, color }) => (
               <div key={key} className="rounded-xl border border-border bg-card p-3 text-center space-y-1">
@@ -118,9 +121,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       {/* Tournament history */}
       {career.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Trophy className="size-4 text-amber-400" /> Lịch sử giải đấu ({career.length})
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Trophy className="size-4" /> Lịch sử giải đấu ({career.length})
+            </h2>
+          </div>
           <div className="space-y-2">
             {career.map((row) => {
               const t = row.tournament as { id: string; name: string; slug: string; status: string } | undefined;

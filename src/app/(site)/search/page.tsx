@@ -113,7 +113,7 @@ export default function SearchPage() {
     <div className="space-y-6 pt-6 md:pt-8">
       <SectionHeading title="Tìm kiếm" description="Tìm kiếm sự kiện, tin tức trong hệ thống Arex." />
 
-      <div className="glass-card rounded-2xl p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <form onSubmit={(e) => { e.preventDefault(); void doSearch(query); }} className="flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -227,7 +227,7 @@ export default function SearchPage() {
         <div className="space-y-3">
           {filtered.map((result) => (
             <Link key={`${result.type}-${result.id}`} href={result.href}>
-              <div className="glass-card rounded-2xl p-4 transition hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg dark:hover:border-amber-400/20">
+              <div className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-lg">
                 <div className="flex items-start gap-3">
                   <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
                     result.type === "event" ? "bg-blue-500/10 text-blue-500" : "bg-green-500/10 text-green-500"
@@ -264,7 +264,7 @@ export default function SearchPage() {
           ))}
         </div>
       ) : query.trim().length >= 2 && !loading ? (
-        <div className="glass-card rounded-2xl p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
           <X className="mx-auto size-10 text-muted-foreground/30" />
           <p className="mt-3 font-heading text-sm font-bold uppercase text-muted-foreground">KHÔNG TÌM THẤY KẾT QUẢ</p>
           <p className="mt-1 text-xs text-muted-foreground">Thử tìm với từ khóa khác</p>
