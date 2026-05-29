@@ -225,7 +225,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
 
   return (
     <section className="space-y-5">
-      <div className="glass-card rounded-2xl p-4 md:p-5">
+      <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
         {/* Mobile toggle */}
         <button
           type="button"
@@ -364,7 +364,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
               .slice(0, 6);
             if (suggestions.length === 0) return null;
             return (
-              <div className="glass-card rounded-2xl p-5">
+              <div className="rounded-2xl border border-border bg-card p-5">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   GỢI Ý — SỰ KIỆN SẮP DIỄN RA
                 </p>
@@ -403,7 +403,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
           })()}
         </div>
       ) : (
-        <div ref={scrollerRef} className="glass-card overflow-x-auto rounded-2xl border-border p-4 md:p-5">
+        <div ref={scrollerRef} className="overflow-x-auto rounded-2xl border border-border bg-card p-4 md:p-5">
           <div style={{ width: timelineWidth }} className="timeline-track overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-card/80 to-card/40 shadow-sm">
             {/* Month band — labels stick to viewport while horizontally scrolling */}
             <div className="flex h-11 border-b border-border bg-muted/40 backdrop-blur-sm" style={{ width: timelineWidth }}>

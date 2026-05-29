@@ -142,10 +142,10 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
       {hasHeadings ? (
         <div className="grid gap-6 xl:grid-cols-[1fr_260px]">
           <div className="space-y-6 min-w-0">
-            <div className="glass-card rounded-2xl p-6">
+            <div className="rounded-2xl border border-border bg-card p-6">
               <RichTextRenderer html={processedHtml} />
             </div>
-            <div className="glass-card rounded-2xl px-5 py-4 space-y-3">
+            <div className="rounded-2xl border border-border bg-card px-5 py-4 space-y-3">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 font-heading text-sm font-bold">
                   AX
@@ -167,10 +167,10 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="glass-card rounded-2xl p-6">
+          <div className="rounded-2xl border border-border bg-card p-6">
             <RichTextRenderer html={processedHtml} />
           </div>
-          <div className="glass-card rounded-2xl px-5 py-4 space-y-3">
+          <div className="rounded-2xl border border-border bg-card px-5 py-4 space-y-3">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 font-heading text-sm font-bold">
                 AX

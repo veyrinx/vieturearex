@@ -181,7 +181,7 @@ export default function MyTeamPage() {
       <div className="flex items-center gap-3">
         <Users className="size-7 text-primary dark:text-amber-400" />
         <div>
-          <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">Team của tôi</h1>
+          <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">Team của tôi</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Quản lý team thi đấu của bạn</p>
         </div>
       </div>
@@ -281,9 +281,12 @@ export default function MyTeamPage() {
 
           {/* Members */}
           <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-              <Users className="size-3.5" /> Thành viên ({members.length})
-            </h3>
+            <div className="flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h3 className="font-heading text-xs font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <Users className="size-3" /> Thành viên ({members.length})
+              </h3>
+            </div>
             <div className="space-y-1.5">
               {members.map((m) => (
                 <div key={m.id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
@@ -307,9 +310,12 @@ export default function MyTeamPage() {
           {/* Tournament registrations */}
           {regs.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Trophy className="size-3.5" /> Đăng ký giải đấu ({regs.length})
-              </h3>
+              <div className="flex items-center gap-2.5">
+                <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+                <h3 className="font-heading text-xs font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                  <Trophy className="size-3" /> Đăng ký giải đấu ({regs.length})
+                </h3>
+              </div>
               <div className="space-y-2">
                 {regs.map((r) => {
                   const Icon = REG_ICON[r.status];
@@ -367,9 +373,9 @@ export default function MyTeamPage() {
       {/* No team: create form */}
       {!missingSetup && !t && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
-          <div className="flex items-center gap-2">
-            <Plus className="size-4 text-primary dark:text-amber-400" />
-            <h2 className="font-heading text-sm font-bold uppercase tracking-widest">Tạo team mới</h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">Tạo team mới</h2>
           </div>
 
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">

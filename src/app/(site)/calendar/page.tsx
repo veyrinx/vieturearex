@@ -59,8 +59,9 @@ export default async function CalendarPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
       />
       <SectionHeading
-        title="Lịch sự kiện theo tháng"
-        description="Mặc định hiển thị nguyên tháng hiện tại, có thể lọc theo khoảng ngày và trạng thái để xem chi tiết."
+        eyebrow="Sự kiện"
+        title="LỊCH SỰ KIỆN"
+        description="Hiển thị theo tháng, lọc theo khoảng ngày và trạng thái sự kiện."
       />
       <EventTimeline initialEvents={events} />
     </div>

@@ -163,7 +163,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       <EventImageEditor event={event} />
 
       {event.description && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
           <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
             {event.description}
           </p>
