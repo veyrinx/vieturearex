@@ -43,7 +43,7 @@ export function AnnouncementBar() {
               href="/contact"
               className="group flex items-center gap-2 text-[11px] font-medium tracking-wide text-white/70 transition-all duration-200 hover:text-white"
             >
-              <Headset className="size-3.5 shrink-0 text-white/50 transition-colors group-hover:text-white/80" />
+              <Headset className="size-3.5 shrink-0 -translate-y-px text-white/50 transition-colors group-hover:text-white/80" />
               <span>Cần hỗ trợ?</span>
               <span className="hidden text-white/50 sm:inline">·</span>
               <span className="hidden text-white/70 transition-colors group-hover:text-white sm:inline">
