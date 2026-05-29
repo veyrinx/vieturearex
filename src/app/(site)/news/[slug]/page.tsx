@@ -111,14 +111,20 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
       />
 
       {/* Header - full width */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="text-xs uppercase tracking-[0.14em] text-primary">{article.category}</div>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-primary dark:bg-amber-400/10 dark:text-amber-400">
+            {article.category}
+          </span>
           <FollowCategoryButton category={article.category} />
         </div>
-        <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">{article.title}</h1>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">{formatVietnamDate(article.created_at)}</p>
+        <h1 className="font-heading text-3xl font-black uppercase leading-tight tracking-[0.02em] text-foreground md:text-4xl lg:text-5xl">
+          {article.title}
+        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {formatVietnamDate(article.created_at)}
+          </p>
           <div className="flex items-center gap-2">
             <ShareButtons url={articleUrl} title={article.title} />
             <BookmarkButton itemId={article.id} itemTitle={article.title} itemImage={article.cover} />
@@ -182,30 +188,40 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
       {/* Related articles */}
       {related.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">
-            Bài viết liên quan
-          </h2>
+        <section className="space-y-4 border-t border-border pt-6">
+          <div className="flex items-center gap-3">
+            <span className="h-px w-5 bg-primary dark:bg-amber-400" />
+            <h2 className="text-[10px] font-black uppercase tracking-[0.28em] text-primary dark:text-amber-400">
+              Bài viết liên quan
+            </h2>
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {related.map((item) => (
               <Link
                 key={item.id}
                 href={`/news/${item.slug}`}
-                className="glass-card group rounded-2xl overflow-hidden hover:-translate-y-1 transition-transform"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md dark:hover:border-amber-400/20"
               >
                 <div className="relative aspect-video overflow-hidden">
                   <Image
                     src={item.cover}
                     alt={item.title}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, 33vw"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                  {item.category && (
+                    <span className="absolute left-2 top-2 rounded bg-primary px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-primary-foreground">
+                      {item.category}
+                    </span>
+                  )}
                 </div>
-                <div className="p-3 space-y-1">
-                  <p className="text-[10px] uppercase tracking-widest text-primary">{item.category}</p>
-                  <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
-                  <p className="text-[11px] text-muted-foreground">{formatVietnamDate(item.created_at)}</p>
+                <div className="flex flex-1 flex-col gap-1.5 p-3">
+                  <h3 className="font-heading text-xs font-bold uppercase leading-snug tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
+                    {item.title}
+                  </h3>
+                  <p className="mt-auto text-[10px] text-muted-foreground">{formatVietnamDate(item.created_at)}</p>
                 </div>
               </Link>
             ))}

@@ -47,8 +47,9 @@ export default async function NewsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
       />
       <SectionHeading
-        title="Tin tức cộng đồng"
-        description="Bố cục đồng bộ với phần sự kiện, có lọc ngày đăng và tối ưu SEO cho từng bài viết."
+        eyebrow="Tin tức"
+        title="TIN TỨC CỘNG ĐỒNG"
+        description="Sự kiện in-game, cập nhật patch, esports và hoạt động cộng đồng"
       />
       <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
         <NewsList news={news} />
