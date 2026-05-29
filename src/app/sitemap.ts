@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getEvents, getNews } from "@/lib/data/content-service";
+import { getTmsTournaments } from "@/lib/tms/data";
 import { siteConfig } from "@/lib/constants/site";
 
 const BASE = siteConfig.url;
@@ -23,9 +24,10 @@ function newsPriority(days: number): number {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [news, events] = await Promise.all([
+  const [news, events, tournaments] = await Promise.all([
     getNews("published").catch(() => []),
     getEvents().catch(() => []),
+    getTmsTournaments().catch(() => []),
   ]);
 
   const now = new Date();
@@ -185,6 +187,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // ── Tournaments ──────────────────────────────────────────────────────────
+  const tournamentRoutes: MetadataRoute.Sitemap = tournaments.map((t) => ({
+    url: `${BASE}/tournaments/${t.slug}`,
+    lastModified: new Date(t.created_at),
+    changeFrequency: t.status === "ongoing" ? "daily" : t.status === "registering" ? "weekly" : "monthly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+    priority: t.status === "ongoing" ? 0.85 : t.status === "registering" ? 0.78 : 0.60,
+  }));
+
   return [
     ...coreRoutes,
     ...viRoutes,
@@ -193,5 +203,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...viNewsRoutes,
     // Ghi đè /events và /su-kien với lastModified chính xác hơn từ DB
     ...eventRoutes,
+    ...tournamentRoutes,
   ];
 }

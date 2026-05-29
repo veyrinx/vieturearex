@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { isAfter, isBefore, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -43,6 +43,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeDate, setActiveDate] = useState<"from" | "to" | null>(null);
   const [displayCount, setDisplayCount] = useState(12);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { data: news } = useNewsQuery("published");
   const safeNews = useMemo(() => news ?? initialNews ?? [], [news, initialNews]);
 
@@ -74,6 +75,18 @@ export function NewsList({ news: initialNews }: NewsListProps) {
 
   const visibleNews = filteredNews.slice(0, displayCount);
   const hasMore = displayCount < filteredNews.length;
+
+  // Auto-load more when sentinel scrolls into view
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setDisplayCount((c) => c + 12); },
+      { rootMargin: "300px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, visibleNews.length]);
 
   return (
     <div className="space-y-4">
@@ -175,6 +188,8 @@ export function NewsList({ news: initialNews }: NewsListProps) {
                     <img
                       src={item.cover}
                       alt={item.title}
+                      loading="lazy"
+                      decoding="async"
                       className="aspect-[16/9] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                       referrerPolicy="no-referrer"
                     />
@@ -215,8 +230,9 @@ export function NewsList({ news: initialNews }: NewsListProps) {
         </div>
       )}
 
+      {/* Sentinel — IntersectionObserver tự động load thêm */}
       {hasMore && (
-        <div className="flex justify-center pt-2">
+        <div ref={sentinelRef} className="flex justify-center pt-2">
           <Button
             variant="outline"
             onClick={() => setDisplayCount((c) => c + 12)}

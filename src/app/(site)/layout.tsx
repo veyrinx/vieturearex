@@ -8,6 +8,7 @@ import { AutoReload } from "@/components/common/auto-reload";
 import { CskhChat } from "@/components/community/cskh-chat";
 import { AutoTranslate } from "@/components/common/auto-translate";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
+import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -62,6 +63,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <SiteFooter />
       <MobileBottomNav />
       <CskhChat />
+      <ScrollToTop />
       <AutoTranslate />
     </div>
   );
