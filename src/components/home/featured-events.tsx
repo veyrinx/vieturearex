@@ -91,8 +91,9 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
     <section className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
+          eyebrow="Sự kiện"
           title="SỰ KIỆN NỔI BẬT"
-          description="THEO DÕI NHANH CÁC HOẠT ĐỘNG ĐANG CHẠY VÀ SẮP MỞ TRONG CỘNG ĐỒNG."
+          description="Theo dõi nhanh các hoạt động đang chạy và sắp mở trong cộng đồng"
         />
         <div className="flex shrink-0 items-center gap-2">
           {canEdit && (
@@ -162,7 +163,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
               <Reveal key={event.id} delay={index * 0.07}>
                 <article
                   className={cn(
-                    "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-white transition-all duration-300 hover:shadow-lg dark:bg-card",
+                    "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card transition-all duration-300 hover:shadow-lg",
                     statusBorderMap[event.status] ?? "border-border",
                     selectedEvent && selectedEvent.id !== event.id && "opacity-50 scale-[0.98]",
                   )}
@@ -213,7 +214,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                   </div>
 
                   <div className="flex flex-1 flex-col gap-2 px-4 py-3">
-                    <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-2 text-center leading-snug">
+                    <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 text-center leading-snug transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
                       {event.title}
                     </h3>
 

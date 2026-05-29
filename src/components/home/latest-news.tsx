@@ -138,7 +138,7 @@ function MiniCard({ item, index, canEdit, onEdit, onDelete }: { item: NewsItem; 
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-          <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-[#0052ff] dark:text-amber-400 line-clamp-2 transition-opacity group-hover:opacity-80">
+          <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
             {item.title}
           </h3>
           <div className="flex items-center justify-between gap-2">
@@ -218,8 +218,9 @@ export function LatestNews({ news }: LatestNewsProps) {
     <section className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
+          eyebrow="Tin tức"
           title="TIN TỨC MỚI NHẤT"
-          description="BÀI VIẾT MỚI NHẤT ĐƯỢC CẬP NHẬT THEO CHUYÊN MỤC."
+          description="Bài viết mới nhất được cập nhật theo chuyên mục"
         />
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <AdminOnlineBadge />

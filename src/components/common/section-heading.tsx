@@ -16,13 +16,16 @@ export function SectionHeading({ eyebrow, title, description, className }: Secti
           <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary dark:text-amber-400">
             {eyebrow}
           </span>
+          <span className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent dark:from-amber-400/30" />
         </div>
       ) : null}
-      <h2 className="font-heading text-3xl font-black uppercase md:text-4xl text-foreground">
-        {title}
+      <h2 className="font-heading text-3xl font-black uppercase tracking-[0.03em] md:text-4xl">
+        <span className="text-foreground">{title}</span>
       </h2>
       {description ? (
-        <p className="text-sm text-muted-foreground md:text-base">{description}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground md:text-sm">
+          {description}
+        </p>
       ) : null}
     </div>
   );
