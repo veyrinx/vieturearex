@@ -3,23 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, Newspaper, CalendarDays, Trophy, Radio } from "lucide-react";
+import {
+  House, BookOpenText, Flame, MonitorPlay, Swords,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/",            icon: Home,         label: "Trang chủ", exact: true },
-  { href: "/news",        icon: Newspaper,    label: "Tin tức" },
-  { href: "/events",      icon: CalendarDays, label: "Sự kiện" },
-  { href: "/esports",     icon: Radio,        label: "Stream" },
-  { href: "/tournaments", icon: Trophy,       label: "Giải đấu" },
+  { href: "/",            icon: House,        label: "Trang chủ", exact: true },
+  { href: "/news",        icon: BookOpenText, label: "Tin tức" },
+  { href: "/events",      icon: Flame,        label: "Sự kiện" },
+  { href: "/esports",     icon: MonitorPlay,  label: "Stream" },
+  { href: "/tournaments", icon: Swords,       label: "Giải đấu" },
 ];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  /* Collapse labels when scrolling down, expand when scrolling up / near top */
   useEffect(() => {
     let prev = window.scrollY;
     const onScroll = () => {
@@ -41,35 +42,30 @@ export function MobileBottomNav() {
 
   return (
     <div
-      className="fixed inset-x-4 z-50 md:hidden"
-      style={{ bottom: "calc(14px + env(safe-area-inset-bottom))" }}
+      className="fixed inset-x-3 z-50 md:hidden"
+      style={{ bottom: "calc(12px + env(safe-area-inset-bottom))" }}
     >
-      {/* ── Liquid Glass shell ── */}
       <motion.nav
-        animate={{ borderRadius: collapsed ? 24 : 28 }}
+        animate={{ borderRadius: collapsed ? 22 : 26 }}
         transition={{ type: "spring", stiffness: 400, damping: 35 }}
         className="relative overflow-hidden
-          border border-white/40 dark:border-white/[0.07]
-          bg-white/30 dark:bg-zinc-900/75
-          backdrop-blur-[44px] backdrop-saturate-[180%]"
+          border border-white/40 dark:border-white/[0.08]
+          bg-white/35 dark:bg-zinc-900/80
+          backdrop-blur-[48px] backdrop-saturate-[200%]"
         style={{
           boxShadow: [
-            /* outer drop */
-            "0 8px 32px rgba(0,0,0,0.10)",
-            "0 2px 8px rgba(0,0,0,0.07)",
-            /* crisp edge ring */
-            "0 0 0 0.5px rgba(0,0,0,0.05)",
-            /* inner top specular */
-            "inset 0 1.5px 0 rgba(255,255,255,0.75)",
-            /* inner bottom rim */
-            "inset 0 -0.5px 0 rgba(255,255,255,0.18)",
+            "0 8px 40px rgba(0,0,0,0.12)",
+            "0 2px 8px rgba(0,0,0,0.06)",
+            "0 0 0 0.5px rgba(0,0,0,0.04)",
+            "inset 0 1.5px 0 rgba(255,255,255,0.80)",
+            "inset 0 -0.5px 0 rgba(255,255,255,0.14)",
           ].join(", "),
         }}
       >
-        {/* Top specular streak */}
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent" />
+        {/* Top specular */}
+        <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/95 to-transparent" />
 
-        <div className="flex items-center px-2">
+        <div className="flex items-center px-1.5">
           {NAV.map(({ href, icon: Icon, label, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href);
 
@@ -77,39 +73,44 @@ export function MobileBottomNav() {
               <Link
                 key={href}
                 href={href}
-                className="relative flex flex-1 flex-col items-center py-2"
+                className="relative flex flex-1 flex-col items-center py-2.5"
               >
-                {/* Sliding inner glass pill for active tab */}
+                {/* Active glass pill */}
                 {active && (
                   <motion.span
                     layoutId="ios26-pill"
-                    className="absolute inset-x-1 -inset-y-0.5 rounded-[18px]
-                      border border-white/60 dark:border-white/10
-                      bg-white/60 dark:bg-white/[0.10]"
+                    className="absolute inset-x-1 -inset-y-0.5 rounded-[17px]
+                      border border-white/55 dark:border-white/12
+                      bg-white/65 dark:bg-white/[0.11]"
                     style={{
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 3px rgba(0,0,0,0.07)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 4px rgba(0,0,0,0.08)",
                     }}
                     transition={{ type: "spring", stiffness: 520, damping: 38 }}
                   />
                 )}
 
                 <motion.span
-                  animate={{ scale: active ? 1.05 : 1, y: active ? -0.5 : 0 }}
+                  animate={{ scale: active ? 1.08 : 1, y: active ? -0.5 : 0 }}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   className="relative z-10 flex flex-col items-center gap-[3px]"
                 >
                   <Icon
-                    size={23}
-                    strokeWidth={active ? 2.35 : 1.7}
+                    size={21}
+                    strokeWidth={active ? 2.4 : 1.65}
                     className={cn(
                       "transition-colors duration-100",
                       active
                         ? "text-primary dark:text-amber-400"
-                        : "text-black/38 dark:text-white/38",
+                        : "text-black/36 dark:text-white/36",
                     )}
                   />
 
-                  {/* Label — fades out when collapsed (scroll-down) */}
+                  {/* Glow dot indicator */}
+                  {active && (
+                    <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 size-1 rounded-full bg-primary dark:bg-amber-400 shadow-[0_0_6px_2px_hsl(var(--primary)/0.55)] dark:shadow-[0_0_6px_2px_rgba(251,191,36,0.55)]" />
+                  )}
+
+                  {/* Label */}
                   <AnimatePresence initial={false}>
                     {!collapsed && (
                       <motion.span
@@ -117,12 +118,12 @@ export function MobileBottomNav() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.18, ease: "easeInOut" }}
+                        transition={{ duration: 0.16, ease: "easeInOut" }}
                         className={cn(
-                          "overflow-hidden text-[9.5px] leading-none tracking-tight",
+                          "overflow-hidden text-[9px] leading-none tracking-tight font-semibold",
                           active
-                            ? "font-semibold text-primary dark:text-amber-400"
-                            : "font-medium text-black/38 dark:text-white/38",
+                            ? "text-primary dark:text-amber-400"
+                            : "text-black/36 dark:text-white/36",
                         )}
                       >
                         {label}

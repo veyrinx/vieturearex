@@ -4,13 +4,17 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, UserCircle, UserPlus, User, LayoutDashboard, Heart, Trophy } from "lucide-react";
+import {
+  LogOut, UserCircle, UserPlus, User, LayoutDashboard,
+  Bookmark, Trophy, CalendarDays, BarChart2, Swords, Settings,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -117,6 +121,14 @@ export function UserNavButton({ className }: Props) {
   const initial = label.charAt(0).toUpperCase();
   const avatarGradient = getAvatarColor(email);
 
+  const roleLabel: Record<string, string> = {
+    super_admin: "Super Admin",
+    admin: "Admin",
+    it: "IT",
+    manager: "Manager",
+    support: "Support",
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -133,45 +145,131 @@ export function UserNavButton({ className }: Props) {
           : initial
         }
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-xl border-border bg-card">
-        <div className="px-3 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">TÀI KHOẢN</p>
-          <p className="mt-0.5 truncate text-sm font-semibold text-foreground">{label}</p>
-          <p className="truncate text-xs text-muted-foreground">{email}</p>
+
+      <DropdownMenuContent align="end" className="w-60 rounded-2xl border-border bg-card p-1.5">
+        {/* User header */}
+        <div className="flex items-center gap-3 px-2.5 py-2.5 mb-1">
+          <div className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-xl text-sm font-black overflow-hidden",
+            avatarUrl ? "bg-muted" : `bg-gradient-to-br ${avatarGradient} text-white`,
+          )}>
+            {avatarUrl
+              ? <Image src={avatarUrl} alt={label} width={40} height={40} className="size-full object-cover" />
+              : initial
+            }
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-sm font-bold text-foreground">{label}</p>
+              {role && roleLabel[role] && (
+                <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-primary dark:bg-amber-400/15 dark:text-amber-400">
+                  {roleLabel[role]}
+                </span>
+              )}
+            </div>
+            <p className="truncate text-[11px] text-muted-foreground">{email}</p>
+          </div>
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer gap-2 p-0">
-          <Link href="/profile" className="flex w-full items-center gap-2 px-2 py-1.5">
-            <User className="size-4" />
+
+        <DropdownMenuSeparator className="mx-1 my-1" />
+
+        {/* Tài khoản */}
+        <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+          Tài khoản
+        </DropdownMenuLabel>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/profile" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 dark:bg-amber-400/10">
+              <User className="size-3.5 text-primary dark:text-amber-400" />
+            </span>
             <span className="text-sm font-medium">Hồ sơ cá nhân</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer gap-2 p-0">
-          <Link href="/yeu-thich" className="flex w-full items-center gap-2 px-2 py-1.5">
-            <Heart className="size-4 text-rose-500" />
-            <span className="text-sm font-medium">Sự kiện đã lưu</span>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/profile?tab=settings" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-muted">
+              <Settings className="size-3.5 text-muted-foreground" />
+            </span>
+            <span className="text-sm font-medium">Cài đặt</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer gap-2 p-0">
-          <Link href="/tournaments/my-team" className="flex w-full items-center gap-2 px-2 py-1.5">
-            <Trophy className="size-4 text-amber-400" />
+
+        <DropdownMenuSeparator className="mx-1 my-1" />
+
+        {/* Khám phá */}
+        <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+          Khám phá
+        </DropdownMenuLabel>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/yeu-thich" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-rose-500/10">
+              <Bookmark className="size-3.5 text-rose-500" />
+            </span>
+            <span className="text-sm font-medium">Đã lưu</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/calendar" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
+              <CalendarDays className="size-3.5 text-blue-500" />
+            </span>
+            <span className="text-sm font-medium">Lịch sự kiện</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/leaderboard" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
+              <BarChart2 className="size-3.5 text-amber-500" />
+            </span>
+            <span className="text-sm font-medium">Bảng xếp hạng</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/players/compare" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-violet-500/10">
+              <Swords className="size-3.5 text-violet-500" />
+            </span>
+            <span className="text-sm font-medium">So sánh tuyển thủ</span>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="mx-1 my-1" />
+
+        {/* Giải đấu */}
+        <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+          Giải đấu
+        </DropdownMenuLabel>
+        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+          <Link href="/tournaments/my-team" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
+              <Trophy className="size-3.5 text-amber-500" />
+            </span>
             <span className="text-sm font-medium">Team của tôi</span>
           </Link>
         </DropdownMenuItem>
+
         {role && ADMIN_ROLES.includes(role) && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer gap-2 p-0">
-              <Link href="/admin" className="flex w-full items-center gap-2 px-2 py-1.5 text-primary dark:text-amber-400">
-                <LayoutDashboard className="size-4" />
-                <span className="text-sm font-medium">Trang quản trị</span>
+            <DropdownMenuSeparator className="mx-1 my-1" />
+            <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+              <Link href="/admin" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 dark:bg-amber-400/10">
+                  <LayoutDashboard className="size-3.5 text-primary dark:text-amber-400" />
+                </span>
+                <span className="text-sm font-medium text-primary dark:text-amber-400">Trang quản trị</span>
               </Link>
             </DropdownMenuItem>
           </>
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onLogout} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
-          <LogOut className="size-4" />
+
+        <DropdownMenuSeparator className="mx-1 my-1" />
+        <DropdownMenuItem
+          onClick={onLogout}
+          className="cursor-pointer rounded-xl gap-2.5 px-2.5 py-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          <span className="flex size-7 items-center justify-center rounded-lg bg-destructive/10">
+            <LogOut className="size-3.5 text-destructive" />
+          </span>
           <span className="text-sm font-medium">Đăng xuất</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
