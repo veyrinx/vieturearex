@@ -208,7 +208,7 @@ export default function UserRegisterPage() {
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-green-500/10">
             <CheckCircle2 className="size-7 text-green-500" />
           </div>
-          <h2 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground">
+          <h2 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">
             Đăng ký thành công
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -299,7 +299,7 @@ export default function UserRegisterPage() {
               <div className="lg:hidden mb-4">
                 <Image src={siteConfig.favicon} alt="Arex" width={56} height={56} className="mx-auto rounded-2xl" />
               </div>
-              <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground md:text-3xl">
+              <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground md:text-3xl">
                 TẠO TÀI KHOẢN
               </h1>
               <p className="text-sm text-muted-foreground">Miễn phí · Không cần xác minh email</p>

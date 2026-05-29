@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, Search } from "lucide-react";
+import {
+  Menu, Search, House, CalendarDays, Flame, MonitorPlay,
+  BookOpenText, Users, Swords, Mail,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -20,6 +23,18 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants/site";
+import type { LucideIcon } from "lucide-react";
+
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "/":            House,
+  "/calendar":    CalendarDays,
+  "/events":      Flame,
+  "/esports":     MonitorPlay,
+  "/news":        BookOpenText,
+  "/team":        Users,
+  "/tournaments": Swords,
+  "/contact":     Mail,
+};
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
 
@@ -216,6 +231,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               <nav className="flex-1 space-y-1 overflow-y-auto">
                 {navItems.map((item, i) => {
                   const active = pathname === item.href;
+                  const Icon = NAV_ICONS[item.href];
                   return (
                     <motion.div
                       key={item.href}
@@ -227,12 +243,22 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                         href={item.href}
                         onClick={() => setSheetOpen(false)}
                         className={cn(
-                          "flex items-center rounded-xl border px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
+                          "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
                           active
                             ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
                             : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
                         )}
                       >
+                        {Icon && (
+                          <span className={cn(
+                            "flex size-7 shrink-0 items-center justify-center rounded-lg",
+                            active
+                              ? "bg-primary/15 dark:bg-amber-400/15"
+                              : "bg-muted",
+                          )}>
+                            <Icon className="size-3.5" />
+                          </span>
+                        )}
                         {item.title}
                       </Link>
                     </motion.div>

@@ -177,7 +177,7 @@ export default function UserLoginPage() {
                   className="mx-auto rounded-2xl"
                 />
               </div>
-              <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground md:text-3xl">
+              <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground md:text-3xl">
                 ĐĂNG NHẬP
               </h1>
               <p className="text-sm text-muted-foreground">
