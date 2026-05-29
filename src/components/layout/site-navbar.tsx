@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { PushNotificationButton } from "@/components/common/push-notification-button";
@@ -39,7 +39,21 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
   const iconDark = logoDark || ICON_DARK_DEFAULT;
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [compact, setCompact] = useState(false);
   const isHomePage = pathname === "/";
+
+  useEffect(() => {
+    let prev = 0;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < 56)         setCompact(false);
+      else if (y > prev + 6) setCompact(true);
+      else if (prev > y + 6) setCompact(false);
+      prev = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const ctrlClass =
     "theme-control-surface border-slate-200/90 bg-white/84 text-slate-900 hover:bg-white dark:border-white/15 dark:bg-[#0F1115]/72 dark:text-white dark:hover:bg-[#151820]";
@@ -53,7 +67,11 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           : "sticky top-0 border-b border-border bg-background/90",
       )}
     >
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 md:px-6">
+      <motion.div
+        animate={{ height: compact ? 44 : 64 }}
+        transition={{ type: "spring", stiffness: 420, damping: 38 }}
+        className="mx-auto flex w-full max-w-7xl items-center gap-4 overflow-hidden px-4 md:px-6"
+      >
 
         {/* ── Logo ── */}
         <Link
@@ -87,9 +105,13 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             <span className="font-heading text-[0.72rem] font-black uppercase tracking-[0.14em] text-foreground">
               {siteName}
             </span>
-            <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+            <motion.span
+              animate={{ opacity: compact ? 0 : 1, height: compact ? 0 : "auto" }}
+              transition={{ duration: 0.18, ease: "easeInOut" }}
+              className="overflow-hidden text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground"
+            >
               Community Hub
-            </span>
+            </motion.span>
           </div>
         </Link>
 
@@ -230,7 +252,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             </SheetContent>
           </Sheet>
         </div>
-      </div>
+      </motion.div>
     </header>
   );
 }
