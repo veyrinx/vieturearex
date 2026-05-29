@@ -4,22 +4,50 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  House, BookOpenText, Flame, MonitorPlay, Swords,
+  House, BookOpenText, Flame, MonitorPlay, User, LayoutDashboard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
-const NAV = [
-  { href: "/",            icon: House,        label: "Trang chủ", exact: true },
-  { href: "/news",        icon: BookOpenText, label: "Tin tức" },
-  { href: "/events",      icon: Flame,        label: "Sự kiện" },
-  { href: "/esports",     icon: MonitorPlay,  label: "Stream" },
-  { href: "/tournaments", icon: Swords,       label: "Giải đấu" },
+type NavItem = {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  exact?: boolean;
+};
+
+const BASE_NAV: NavItem[] = [
+  { href: "/",        icon: House,        label: "Trang chủ", exact: true },
+  { href: "/news",    icon: BookOpenText, label: "Tin tức" },
+  { href: "/events",  icon: Flame,        label: "Sự kiện" },
+  { href: "/esports", icon: MonitorPlay,  label: "Stream" },
+  { href: "/profile", icon: User,         label: "Hồ sơ" },
 ];
+
+const ADMIN_ITEM: NavItem = { href: "/admin", icon: LayoutDashboard, label: "Admin" };
+const ADMIN_ROLES = ["super_admin", "admin", "manager", "support"];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle<{ role: string }>();
+      if (profile?.role && ADMIN_ROLES.includes(profile.role)) {
+        setIsAdmin(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let prev = window.scrollY;
@@ -39,6 +67,8 @@ export function MobileBottomNav() {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/tg")
   ) return null;
+
+  const nav = isAdmin ? [...BASE_NAV, ADMIN_ITEM] : BASE_NAV;
 
   return (
     <div
@@ -66,7 +96,7 @@ export function MobileBottomNav() {
         <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/95 to-transparent" />
 
         <div className="flex items-center px-1.5">
-          {NAV.map(({ href, icon: Icon, label, exact }) => {
+          {nav.map(({ href, icon: Icon, label, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href);
 
             return (
@@ -75,7 +105,6 @@ export function MobileBottomNav() {
                 href={href}
                 className="relative flex flex-1 flex-col items-center py-2.5"
               >
-                {/* Active glass pill */}
                 {active && (
                   <motion.span
                     layoutId="ios26-pill"
@@ -105,12 +134,10 @@ export function MobileBottomNav() {
                     )}
                   />
 
-                  {/* Glow dot indicator */}
                   {active && (
                     <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 size-1 rounded-full bg-primary dark:bg-amber-400 shadow-[0_0_6px_2px_hsl(var(--primary)/0.55)] dark:shadow-[0_0_6px_2px_rgba(251,191,36,0.55)]" />
                   )}
 
-                  {/* Label */}
                   <AnimatePresence initial={false}>
                     {!collapsed && (
                       <motion.span

@@ -5,7 +5,6 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
-import { CskhChat } from "@/components/community/cskh-chat";
 import { AutoTranslate } from "@/components/common/auto-translate";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
@@ -62,7 +61,6 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       </PageTransition>
       <SiteFooter />
       <MobileBottomNav />
-      <CskhChat />
       <ScrollToTop />
       <AutoTranslate />
     </div>
