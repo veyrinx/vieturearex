@@ -123,7 +123,7 @@ export function TournamentsPreview({ tournaments, topTeams }: TournamentsPreview
         <SectionHeading
           eyebrow="TMS"
           title="GIẢI ĐẤU & ĐỘI TUYỂN"
-          description="CÁC GIẢI ĐẤU ĐANG DIỄN RA VÀ TOP ĐỘI MẠNH NHẤT CỘNG ĐỒNG."
+          description="Các giải đấu đang diễn ra và top đội mạnh nhất cộng đồng"
         />
         <Button asChild size="sm" variant="outline" className="shrink-0 rounded-xl">
           <Link href="/tournaments">

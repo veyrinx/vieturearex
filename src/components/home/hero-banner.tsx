@@ -160,12 +160,12 @@ export function HeroBanner({
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           >
             <h1 className="font-heading text-[clamp(2.4rem,8vw,6rem)] font-black uppercase leading-[0.88]">
-              <span className="block text-foreground">
+              <span className="block text-primary dark:text-amber-400">
                 {heroTitle
                   ? heroTitle.split(" ").slice(0, 2).join(" ")
                   : "AREX"}
               </span>
-              <span className="block text-foreground/18 dark:text-white/12">COMMUNITY</span>
+              <span className="block [-webkit-text-stroke:1px_hsl(var(--foreground)/0.12)] text-transparent dark:[-webkit-text-stroke:1px_rgba(255,255,255,0.10)]">COMMUNITY</span>
               <span className="block text-foreground">HUB</span>
             </h1>
           </motion.div>
@@ -240,13 +240,13 @@ export function HeroBanner({
             transition={{ duration: 0.5, delay: 0.4 }}
             className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3"
           >
-            <Button asChild size="lg" className="h-11 w-full rounded-xl px-6 sm:w-auto">
+            <Button asChild size="lg" className="h-11 w-full rounded-xl px-6 shadow-[0_4px_20px_hsl(var(--primary)/0.35)] sm:w-auto">
               <Link href="/calendar">
                 XEM LỊCH SỰ KIỆN
                 <CalendarClock className="ml-2 size-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="ghost" className="h-11 w-full rounded-xl px-5 text-muted-foreground hover:text-foreground sm:w-auto">
+            <Button asChild size="lg" variant="outline" className="h-11 w-full rounded-xl px-5 sm:w-auto">
               <Link href="/news">
                 TIN TỨC
                 <ArrowRight className="ml-2 size-4" />
@@ -264,7 +264,7 @@ export function HeroBanner({
         >
           {/* Main image card */}
           <div
-            className="group relative overflow-hidden rounded-[20px] border border-border bg-muted shadow-2xl"
+            className="group relative overflow-hidden rounded-[20px] border border-border bg-muted shadow-2xl ring-1 ring-primary/10 dark:ring-amber-400/10"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >

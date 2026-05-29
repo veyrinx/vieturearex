@@ -56,8 +56,9 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
     <section className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
+          eyebrow="Gallery"
           title="KHOẢNH KHẮC CỘNG ĐỒNG"
-          description="GALLERY ẢNH ĐẸP TỪ CỘNG ĐỒNG — NHẤN ĐỂ XEM FULL."
+          description="Ảnh đẹp từ cộng đồng — nhấn để xem full"
         />
         <Button asChild size="sm" variant="outline" className="shrink-0 rounded-xl">
           <Link href="/gallery">
@@ -82,7 +83,7 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
               <Reveal key={item.id} delay={index * 0.05}>
                 <figure
                   className={[
-                    "group relative cursor-pointer overflow-hidden rounded-[14px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 dark:border-border dark:bg-card",
+                    "group relative cursor-pointer overflow-hidden rounded-[14px] border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5",
                     isBig ? "col-span-2 row-span-2 sm:col-span-1 sm:row-span-2" : "",
                     isMedium ? "sm:col-span-2" : "",
                   ].join(" ")}
