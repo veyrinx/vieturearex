@@ -58,8 +58,9 @@ export default async function EventsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
       />
       <SectionHeading
-        title="Toàn bộ sự kiện cộng đồng"
-        description="Grid card hỗ trợ lọc trạng thái, lọc ngày bắt đầu - kết thúc và mở nhanh chi tiết."
+        eyebrow="Sự kiện"
+        title="TOÀN BỘ SỰ KIỆN CỘNG ĐỒNG"
+        description="Lọc theo trạng thái, ngày và server — nhấn card để xem chi tiết nhanh"
       />
       <EventsGrid initialEvents={events} />
     </div>

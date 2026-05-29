@@ -88,7 +88,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
           onClick={() => setSelectedEvent(null)}
         />
       )}
-      <div className="glass-card mb-6 rounded-2xl p-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 rounded-2xl border border-border bg-card p-4">
         {/* Mobile toggle */}
         <button
           type="button"
@@ -184,7 +184,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
       {events.length === 0 ? (
         <EmptyState
           title="CHƯA CÓ SỰ KIỆN PHÙ HỢP"
-          description="THỬ ĐỔI BỘ LỌC HOẶC KHOẢNG NGÀY ĐỂ XEM THÊM SỰ KIỆN."
+          description="Thử đổi bộ lọc hoặc khoảng ngày để xem thêm sự kiện."
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -192,19 +192,19 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
             <article key={event.id}
               onClick={() => setSelectedEvent(event)}
               className={cn(
-                "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-white px-4 pt-4 pb-2 transition-all duration-300 dark:bg-card",
+                "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5",
                 statusCardClassMap[event.status],
                 selectedEvent && "opacity-40 scale-[0.98]",
               )}
             >
               <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
-              <div className="relative overflow-hidden rounded-[8px]">
+              <div className="relative overflow-hidden">
                 <MediaFrame
                   src={event.image_url}
                   alt={event.title}
                   sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   aspectClassName="aspect-[16/9]"
-                  imageClassName="object-cover"
+                  imageClassName="object-cover transition duration-500 group-hover:scale-105"
                 />
                 <StatusBadge
                   status={event.status}
@@ -219,7 +219,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
               </div>
 
               <div className="flex flex-1 flex-col gap-2 p-3 text-center">
-                <h3 className="font-heading text-[0.95rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-1">
+                <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 leading-snug transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
                   {event.title}
                 </h3>
                 {event.link && (

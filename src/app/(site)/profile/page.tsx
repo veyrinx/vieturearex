@@ -557,9 +557,12 @@ export default function ProfilePage() {
 
           {/* Display name + avatar upload hint */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground">
-              Thông tin cá nhân
-            </h2>
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+                Thông tin cá nhân
+              </h2>
+            </div>
             <div className="space-y-4">
 
               {/* Avatar upload section */}
@@ -814,9 +817,12 @@ export default function ProfilePage() {
 
           {/* Password change */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
-              <KeyRound className="size-4 text-muted-foreground" /> Đổi mật khẩu
-            </h2>
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <KeyRound className="size-3.5" /> Đổi mật khẩu
+              </h2>
+            </div>
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -856,9 +862,12 @@ export default function ProfilePage() {
 
           {/* 2FA */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-1 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
-              <Smartphone className="size-4 text-muted-foreground" /> Xác thực 2 yếu tố (2FA)
-            </h2>
+            <div className="mb-1 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <Smartphone className="size-3.5" /> Xác thực 2 yếu tố (2FA)
+              </h2>
+            </div>
             <p className="mb-4 text-xs text-muted-foreground">
               Bảo vệ tài khoản bằng ứng dụng xác thực như Google Authenticator hoặc Authy.
             </p>
@@ -925,9 +934,12 @@ export default function ProfilePage() {
 
           {/* Account info */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground">
-              Thông tin tài khoản
-            </h2>
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+                Thông tin tài khoản
+              </h2>
+            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 { icon: Shield,       label: "Vai trò",        value: roleMeta.label },
@@ -946,12 +958,15 @@ export default function ProfilePage() {
 
           {/* Bookmarks */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
-              <Bookmark className="size-4 text-muted-foreground" /> Bài viết đã lưu
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <Bookmark className="size-3.5" /> Bài viết đã lưu
+              </h2>
               {bookmarks.length > 0 && (
-                <span className="ml-auto text-xs font-normal text-muted-foreground">{bookmarks.length} mục</span>
+                <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{bookmarks.length} mục</span>
               )}
-            </h2>
+            </div>
             {bookmarks.length === 0 ? (
               <p className="text-sm text-muted-foreground">Chưa lưu bài viết nào.</p>
             ) : (
@@ -987,23 +1002,29 @@ export default function ProfilePage() {
 
           {/* Achievements */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
-              <Trophy className="size-4 text-muted-foreground" /> Thành tích
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <Trophy className="size-3.5" /> Thành tích
+              </h2>
               {achievements.length > 0 && (
-                <span className="ml-auto text-xs font-normal text-muted-foreground">{achievements.length} đã mở khóa</span>
+                <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{achievements.length} đã mở khóa</span>
               )}
-            </h2>
+            </div>
             <AchievementsDisplay earned={achievements} showLocked />
           </div>
 
           {/* Followed categories */}
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-base font-bold uppercase tracking-[0.06em] text-foreground flex items-center gap-2">
-              <Bell className="size-4 text-muted-foreground" /> Chuyên mục đang theo dõi
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <Bell className="size-3.5" /> Chuyên mục đang theo dõi
+              </h2>
               {follows.length > 0 && (
-                <span className="ml-auto text-xs font-normal text-muted-foreground">{follows.length} chuyên mục</span>
+                <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{follows.length} chuyên mục</span>
               )}
-            </h2>
+            </div>
             {follows.length === 0 ? (
               <p className="text-sm text-muted-foreground">Chưa theo dõi chuyên mục nào. Mở bài viết bất kỳ để theo dõi chuyên mục.</p>
             ) : (
@@ -1027,9 +1048,12 @@ export default function ProfilePage() {
 
           {/* Danger zone */}
           <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
-            <h2 className="mb-1 font-heading text-base font-bold uppercase tracking-[0.06em] text-rose-500">
-              Đăng xuất
-            </h2>
+            <div className="mb-1 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-rose-500" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-rose-500">
+                Đăng xuất
+              </h2>
+            </div>
             <p className="mb-4 text-sm text-muted-foreground">
               Bạn sẽ được chuyển về trang đăng nhập và cần xác thực lại để truy cập.
             </p>
