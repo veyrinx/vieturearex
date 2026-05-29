@@ -38,7 +38,7 @@ function FeaturedCard({ item, canEdit, onEdit, onDelete }: { item: NewsItem } & 
   const ago = timeAgo(item.created_at);
   return (
     <Reveal>
-      <article className="group relative flex flex-col overflow-hidden rounded-[18px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 dark:border-border dark:bg-card">
+      <article className="group relative flex flex-col overflow-hidden rounded-[18px] border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
         <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
         <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
         {canEdit && (
@@ -108,7 +108,7 @@ function MiniCard({ item, index, canEdit, onEdit, onDelete }: { item: NewsItem; 
   const author = item.created_by_name;
   return (
     <Reveal delay={index * 0.07}>
-      <article className="group relative flex gap-3 overflow-hidden rounded-[12px] border bg-white p-3 transition-all duration-200 hover:shadow-md hover:border-primary/30 dark:border-border dark:bg-card dark:hover:border-amber-400/30">
+      <article className="group relative flex gap-3 overflow-hidden rounded-[12px] border border-border bg-card p-3 transition-all duration-200 hover:shadow-md hover:border-primary/30">
         <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
         <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
         {canEdit && (

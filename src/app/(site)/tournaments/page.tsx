@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap, Globe } from "lucide-react";
+import { SectionHeading } from "@/components/common/section-heading";
 import { TmsServerBadge } from "@/components/tms/server-badge";
 import { getTmsTournaments } from "@/lib/tms/data";
 import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/tms/types";
@@ -65,16 +66,14 @@ export default async function TournamentsPage({
 
   return (
     <div className="py-10 space-y-8">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Trophy className="size-7 text-amber-400" />
-          <div>
-            <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.06em]">Giải Đấu</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Tournament Management System — Arex</p>
-          </div>
-        </div>
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <SectionHeading
+          eyebrow="TMS"
+          title="GIẢI ĐẤU"
+          description="Tournament Management System — đăng ký, thi đấu, bảng xếp hạng"
+        />
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           {isAdmin && (
             <Link
               href="/admin/tms"

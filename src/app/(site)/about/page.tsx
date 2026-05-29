@@ -81,9 +81,11 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 md:py-14 space-y-10">
       {/* Hero */}
-      <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/5 via-background to-background p-8 md:p-12 text-center space-y-4">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Về Chúng Tôi</p>
-        <h1 className="font-heading text-4xl font-black uppercase tracking-[0.06em] text-foreground md:text-5xl">
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 md:p-12 text-center space-y-4">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent dark:from-amber-400/6" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
+        <p className="relative text-[10px] font-black uppercase tracking-[0.28em] text-primary dark:text-amber-400">Về Chúng Tôi</p>
+        <h1 className="relative font-heading text-4xl font-black uppercase tracking-[0.04em] text-foreground md:text-5xl">
           Arex Network
         </h1>
         <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
@@ -102,7 +104,7 @@ export default function AboutPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {STATS.map(({ label, value, desc }) => (
           <div key={label} className="rounded-2xl border border-border bg-card p-5 text-center space-y-1">
-            <p className="font-heading text-3xl font-black text-primary">{value}</p>
+            <p className="font-heading text-3xl font-black text-primary dark:text-amber-400">{value}</p>
             <p className="text-sm font-semibold text-foreground">{label}</p>
             <p className="text-xs text-muted-foreground leading-snug">{desc}</p>
           </div>
@@ -113,9 +115,12 @@ export default function AboutPage() {
       <div className="space-y-8">
         {SECTIONS.map(({ title, content }) => (
           <section key={title} className="rounded-2xl border border-border bg-card p-6 md:p-8 space-y-4">
-            <h2 className="font-heading text-xl font-bold uppercase tracking-[0.06em] text-foreground md:text-2xl">
-              {title}
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
+                {title}
+              </h2>
+            </div>
             <div className="space-y-3">
               {content.map((para, i) => (
                 <p key={i} className="text-base leading-relaxed text-muted-foreground">
@@ -129,7 +134,7 @@ export default function AboutPage() {
 
       {/* Contact CTA */}
       <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-8 text-center space-y-4">
-        <h2 className="font-heading text-xl font-bold uppercase tracking-[0.06em] text-foreground">
+        <h2 className="font-heading text-xl font-black uppercase tracking-[0.06em] text-foreground">
           Liên hệ với chúng tôi
         </h2>
         <p className="text-muted-foreground">
@@ -153,7 +158,7 @@ export default function AboutPage() {
 
       {/* Navigation links */}
       <div className="space-y-4">
-        <h2 className="font-heading text-lg font-bold uppercase tracking-[0.06em] text-foreground">
+        <h2 className="font-heading text-lg font-black uppercase tracking-[0.06em] text-foreground">
           Khám phá Arex
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">

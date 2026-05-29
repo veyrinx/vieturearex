@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy, Swords, Star, Target, TrendingUp, Shield } from "lucide-react";
 import { getGlobalPlayerLeaderboard, getGlobalTeamLeaderboard } from "@/lib/tms/data";
+import { SectionHeading } from "@/components/common/section-heading";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/constants/site";
 
@@ -29,19 +30,21 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="py-10 space-y-10">
-      <div>
-        <h1 className="font-heading text-3xl font-black uppercase tracking-[0.06em] flex items-center gap-3">
-          <Trophy className="size-7 text-amber-400" /> Bảng Xếp Hạng
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Thống kê tổng hợp từ tất cả giải đấu</p>
-      </div>
+      <SectionHeading
+        eyebrow="TMS"
+        title="BẢNG XẾP HẠNG"
+        description="Thống kê tổng hợp từ tất cả giải đấu"
+      />
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Player leaderboard */}
         <section className="space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Swords className="size-4" /> Top Tuyển Thủ
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Swords className="size-3.5" /> Top Tuyển Thủ
+            </h2>
+          </div>
 
           {players.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
@@ -101,9 +104,12 @@ export default async function LeaderboardPage() {
 
         {/* Team leaderboard */}
         <section className="space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Shield className="size-4" /> Top Đội Thi Đấu
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+              <Shield className="size-3.5" /> Top Đội Thi Đấu
+            </h2>
+          </div>
 
           {teams.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground text-sm">

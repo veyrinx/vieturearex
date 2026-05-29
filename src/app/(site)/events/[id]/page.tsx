@@ -125,7 +125,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <div className="flex items-center gap-3">
           <StatusBadge status={event.status} />
         </div>
-        <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 md:text-3xl">
+        <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground md:text-3xl">
           {event.title}
         </h1>
 

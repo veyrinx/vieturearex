@@ -120,7 +120,7 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
               onMouseEnter={() => setHoveredId(stream.id)}
               onMouseLeave={() => setHoveredId(null)}
               className={cn(
-                "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-white px-4 pt-4 pb-2 transition-all duration-300 dark:bg-card",
+                "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card px-4 pt-4 pb-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5",
                 statusCardClass[stream.status],
                 selectedStream && "opacity-40 scale-[0.98]",
               )}
@@ -144,7 +144,7 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
                 {/* Category badge - ẩn */}
               </div>
               <div className="flex flex-1 items-center justify-center p-3 text-center">
-                <h3 className="font-heading text-[0.95rem] font-bold uppercase tracking-[0.04em] text-[#0052ff] dark:text-amber-400 line-clamp-1">
+                <h3 className="font-heading text-[0.95rem] font-bold uppercase tracking-[0.04em] text-foreground transition-colors group-hover:text-primary dark:group-hover:text-amber-400 line-clamp-1">
                   {stream.title}
                 </h3>
               </div>

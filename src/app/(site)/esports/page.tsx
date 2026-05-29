@@ -61,8 +61,9 @@ export default async function EsportsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(videoList) }}
       />
       <SectionHeading
+        eyebrow="Esports"
         title="PHÁT TRỰC TIẾP"
-        description="THEO DÕI CÁC BUỔI PHÁT TRỰC TIẾP VÀ SỰ KIỆN CỦA CỘNG ĐỒNG."
+        description="Theo dõi các buổi phát trực tiếp và sự kiện của cộng đồng"
       />
       <StreamsGrid initialStreams={streams} categories={categories} />
     </div>
