@@ -170,7 +170,7 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
       />
 
       {/* Invite links — only super_admin can create */}
-      <section className="glass-card rounded-2xl p-5">
+      <section className="rounded-2xl border border-border bg-card p-5">
         <h2 className="mb-3 font-heading text-base font-bold uppercase tracking-[0.06em]">
           Link mời gia nhập team
         </h2>
@@ -288,10 +288,10 @@ function PendingSection({
   onRefresh: () => void;
 }) {
   return (
-    <section className="glass-card rounded-2xl p-5">
+    <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-heading text-base font-bold uppercase tracking-[0.06em]">
+          <h2 className="font-heading text-base font-black uppercase tracking-[0.06em]">
             {title} ({list.length})
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>

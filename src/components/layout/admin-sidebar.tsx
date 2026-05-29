@@ -24,7 +24,7 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
   const pathname = usePathname();
 
   return (
-    <aside className="glass-card flex max-h-[calc(100vh-3rem)] flex-col rounded-none p-4 md:rounded-2xl">
+    <aside className="flex max-h-[calc(100vh-3rem)] flex-col rounded-none border border-border bg-card p-4 md:rounded-2xl">
       <div className="mb-4 shrink-0 border-b border-border pb-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -35,7 +35,7 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
               height={28}
               className="rounded-md border border-border"
             />
-            <h2 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-foreground">
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.14em] text-foreground">
               {siteName} QUẢN TRỊ
             </h2>
           </div>

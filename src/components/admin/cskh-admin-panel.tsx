@@ -110,7 +110,7 @@ export function CskhAdminPanel() {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.08em] text-foreground">CSKH</h1>
+          <h1 className="font-heading text-3xl font-black uppercase tracking-[0.08em] text-foreground">CSKH</h1>
           <p className="text-sm text-muted-foreground">Quản lý và trả lời yêu cầu hỗ trợ của người dùng.</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchSessions} className="gap-2 rounded-xl">
@@ -121,7 +121,7 @@ export function CskhAdminPanel() {
 
       <div className="grid h-[600px] gap-4 md:grid-cols-[280px_1fr]">
         {/* Sessions list */}
-        <div className="glass-card flex flex-col overflow-hidden rounded-2xl">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               Phiên ({sessions.filter((s) => s.status === "open").length} đang mở)
@@ -160,7 +160,7 @@ export function CskhAdminPanel() {
         </div>
 
         {/* Message view */}
-        <div className="glass-card flex flex-col overflow-hidden rounded-2xl">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
           {!selected ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
               <MessageCircle className="size-10 opacity-30" />

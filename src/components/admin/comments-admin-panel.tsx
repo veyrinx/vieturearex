@@ -233,7 +233,7 @@ export function CommentsAdminPanel() {
               <div
                 key={c.id}
                 className={cn(
-                  "glass-card rounded-xl border p-4 transition-colors",
+                  "rounded-xl border bg-card p-4 transition-colors",
                   c.status === "pending" && "border-amber-500/20 bg-amber-500/3",
                   c.status === "approved" && "border-green-500/15",
                   c.status === "rejected" && "border-rose-500/15 opacity-70",

@@ -66,7 +66,7 @@ export function TeamManagementClient({ initialProfiles }: { initialProfiles: Pub
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.08em]">QUẢN LÝ ĐỘI NGŨ</h1>
+        <h1 className="font-heading text-3xl font-black uppercase tracking-[0.08em]">QUẢN LÝ ĐỘI NGŨ</h1>
         <p className="text-sm text-muted-foreground">
           Bật/tắt hiển thị thành viên trên trang /team. Hiện đang hiển thị{" "}
           <span className="font-semibold text-foreground">{shown}</span> / {profiles.length} thành viên.
@@ -74,12 +74,12 @@ export function TeamManagementClient({ initialProfiles }: { initialProfiles: Pub
       </div>
 
       {profiles.length === 0 ? (
-        <div className="glass-card rounded-2xl p-10 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-border bg-card p-10 text-center text-muted-foreground">
           <Users className="mx-auto mb-2 size-8 opacity-30" />
           <p>Chưa có thành viên nào.</p>
         </div>
       ) : (
-        <div className="glass-card rounded-2xl divide-y divide-border overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
           {sorted.map((p) => {
             const rankMeta = getRank(p.points ?? 0);
             const isToggling = toggling === p.id;

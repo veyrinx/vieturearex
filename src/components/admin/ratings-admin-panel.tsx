@@ -101,7 +101,7 @@ export function RatingsAdminPanel() {
           { label: "5 sao", value: fiveStars, color: "text-green-500" },
           { label: "Có nội dung", value: withReview, color: "text-blue-500" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="glass-card flex flex-col items-center gap-1 rounded-xl p-3 text-center">
+          <div key={label} className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-3 text-center">
             <span className={cn("text-xl font-black", color)}>{value}</span>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</span>
           </div>
@@ -160,7 +160,7 @@ export function RatingsAdminPanel() {
           description={search || filterStar ? "Thử thay đổi bộ lọc." : "Chưa có đánh giá nào từ người dùng."}
         />
       ) : (
-        <div className="glass-card overflow-hidden rounded-2xl">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>

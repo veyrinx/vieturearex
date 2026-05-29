@@ -24,7 +24,7 @@ export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub 
 
   const inner = (
     <article className={cn(
-      "group glass-card relative overflow-hidden rounded-2xl p-5 transition-all duration-300",
+      "group relative overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all duration-300",
       href && "cursor-pointer hover:-translate-y-0.5",
       c.glow,
     )}>

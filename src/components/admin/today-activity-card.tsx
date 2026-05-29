@@ -37,7 +37,7 @@ export function TodayActivityCard() {
   const today = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
 
   return (
-    <div className="glass-card rounded-2xl p-5 space-y-4">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <TrendingUp className="size-4 text-primary dark:text-amber-400" />

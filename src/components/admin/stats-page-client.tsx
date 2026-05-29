@@ -46,7 +46,7 @@ export function StatsPageClient() {
     <section className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.08em]">THỐNG KÊ CHI TIẾT</h1>
+          <h1 className="font-heading text-3xl font-black uppercase tracking-[0.08em]">THỐNG KÊ CHI TIẾT</h1>
           <p className="text-sm text-muted-foreground">Lượt xem 30 ngày, bài viết nổi bật, bảng xếp hạng thành viên.</p>
         </div>
         <Button size="sm" variant="outline" onClick={() => void load()} disabled={loading} className="gap-1.5 rounded-xl">
@@ -60,7 +60,7 @@ export function StatsPageClient() {
       ) : (
         <div className="space-y-8">
           {/* Daily views line chart */}
-          <div className="glass-card rounded-2xl p-6 space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
             <div className="flex items-center gap-2">
               <BarChart3 className="size-4 text-primary dark:text-amber-400" />
               <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Lượt xem 30 ngày</h2>
@@ -90,7 +90,7 @@ export function StatsPageClient() {
           </div>
 
           {/* Total views banner */}
-          <div className="glass-card rounded-2xl p-5 flex items-center gap-4">
+          <div className="rounded-2xl border border-border bg-card p-5 flex items-center gap-4">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-amber-400/10">
               <BarChart3 className="size-6 text-primary dark:text-amber-400" />
             </div>
@@ -105,7 +105,7 @@ export function StatsPageClient() {
           {/* Year / Month breakdown */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* By year */}
-            <div className="glass-card rounded-2xl p-6 space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <CalendarDays className="size-4 text-primary dark:text-amber-400" />
                 <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Lượt xem theo năm</h2>
@@ -133,7 +133,7 @@ export function StatsPageClient() {
             </div>
 
             {/* By month */}
-            <div className="glass-card rounded-2xl p-6 space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <Calendar className="size-4 text-primary dark:text-amber-400" />
                 <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Lượt xem theo tháng</h2>
@@ -161,7 +161,7 @@ export function StatsPageClient() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Top news by comments */}
-            <div className="glass-card rounded-2xl p-6 space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <Newspaper className="size-4 text-primary dark:text-amber-400" />
                 <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Bài viết nhiều bình luận nhất</h2>
@@ -199,7 +199,7 @@ export function StatsPageClient() {
             </div>
 
             {/* Points leaderboard */}
-            <div className="glass-card rounded-2xl p-6 space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <Trophy className="size-4 text-primary dark:text-amber-400" />
                 <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">Bảng xếp hạng thành viên</h2>

@@ -191,7 +191,7 @@ export function PopupManager() {
   return (
     <div className="space-y-4">
       {/* Toggle */}
-      <div className="glass-card flex items-center justify-between rounded-2xl p-4">
+      <div className="rounded-2xl border border-border bg-card flex items-center justify-between p-4">
         <div>
           <p className="font-heading text-sm font-bold uppercase tracking-[0.1em] text-foreground">TRẠNG THÁI POP-UP</p>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -205,14 +205,14 @@ export function PopupManager() {
       </div>
 
       {/* Tiêu đề */}
-      <div className="glass-card rounded-2xl p-4 space-y-2">
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
         <label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">TIÊU ĐỀ POP-UP</label>
         <Input value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="Nhập tiêu đề thông báo..." className="border-border bg-background text-foreground" />
       </div>
 
       {/* Ảnh + link nhanh */}
-      <div className="glass-card rounded-2xl p-4 space-y-3">
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">ẢNH HIỂN THỊ TRÊN POP-UP</label>
           <span className="text-[10px] text-muted-foreground">Tuỳ chọn — JPEG/PNG/WebP, ≤5MB</span>
@@ -284,7 +284,7 @@ export function PopupManager() {
       </div>
 
       {/* Editor */}
-      <div className="glass-card rounded-2xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {/* Toolbar */}
         <div className="border-b border-border px-3 py-2 flex flex-wrap gap-1 items-center">
           <ToolbarBtn title="In đậm" onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}><Bold size={14} /></ToolbarBtn>

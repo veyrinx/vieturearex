@@ -179,7 +179,7 @@ export function SecurityPanel() {
             <ShieldAlert className="size-5 text-red-500" />
           </div>
           <div>
-            <h1 className="font-heading text-lg font-bold uppercase tracking-[0.06em] text-foreground">Bảo Mật Hệ Thống</h1>
+            <h1 className="font-heading text-lg font-black uppercase tracking-[0.06em] text-foreground">Bảo Mật Hệ Thống</h1>
             <p className="text-xs text-muted-foreground">Theo dõi IP truy cập · Chặn / mở chặn · Danh sách trắng admin</p>
           </div>
         </div>
@@ -197,7 +197,7 @@ export function SecurityPanel() {
           { icon: AlertTriangle, label: "Tự động chặn", value: blocked.filter(b => b.reason.includes("lần")).length, color: "text-amber-500 bg-amber-500/10" },
           { icon: CheckCircle2, label: "Chặn thủ công", value: blocked.filter(b => !b.reason.includes("lần")).length, color: "text-purple-500 bg-purple-500/10" },
         ].map(({ icon: Icon, label, value, color }) => (
-          <div key={label} className="glass-card flex items-center gap-3 rounded-2xl p-4">
+          <div key={label} className="rounded-2xl border border-border bg-card flex items-center gap-3 p-4">
             <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", color)}>
               <Icon className="size-4" />
             </div>
@@ -238,7 +238,7 @@ export function SecurityPanel() {
 
       {/* ── TAB: Visitor Log ──────────────────────────────────────────── */}
       {tab === "visitors" && (
-        <div className="glass-card overflow-hidden rounded-2xl">
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-5 py-3">
             <div className="flex items-center gap-2">
               <Globe className="size-4 text-blue-500" />
@@ -335,7 +335,7 @@ export function SecurityPanel() {
       {tab === "blocked" && (
         <div className="space-y-4">
           {/* Manual block form */}
-          <div className="glass-card rounded-2xl p-5 space-y-3">
+          <div className="rounded-2xl border border-border bg-card rounded-2xl p-5 space-y-3">
             <div className="flex items-center gap-2">
               <Plus className="size-4 text-muted-foreground" />
               <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Chặn IP thủ công</h2>
@@ -362,7 +362,7 @@ export function SecurityPanel() {
             <p className="text-[11px] text-muted-foreground">IP bị chặn sẽ không thể truy cập bất kỳ trang nào trong 1 giờ.</p>
           </div>
 
-          <div className="glass-card overflow-hidden rounded-2xl">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="border-b border-border bg-muted/50 px-5 py-3">
               <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                 IP đang bị chặn ({blocked.length})
@@ -430,7 +430,7 @@ export function SecurityPanel() {
 
       {/* ── TAB: Whitelist ───────────────────────────────────────────── */}
       {tab === "whitelist" && (
-        <div className="glass-card rounded-2xl p-5 space-y-4">
+        <div className="rounded-2xl border border-border bg-card rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <ListChecks className="size-4 text-green-500" />

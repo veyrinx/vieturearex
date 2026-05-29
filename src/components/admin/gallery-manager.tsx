@@ -81,7 +81,7 @@ export function GalleryManager() {
 
   return (
     <section className="space-y-5">
-      <div className="glass-card rounded-2xl p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <h3 className="font-heading text-lg font-semibold uppercase tracking-[0.08em] text-foreground">
           Thêm ảnh mới
         </h3>
@@ -128,7 +128,7 @@ export function GalleryManager() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {gallery.map((item) => (
-            <article key={item.id} className="glass-card overflow-hidden rounded-2xl">
+            <article key={item.id} className="overflow-hidden rounded-2xl border border-border bg-card">
               <div className="relative h-44">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={item.image_url} alt={item.tag} className="h-full w-full object-cover" />

@@ -154,7 +154,7 @@ export function StreamsAdminPanel() {
   return (
     <section className="space-y-5">
       {/* Category manager */}
-      <div className="glass-card rounded-2xl p-4 space-y-3">
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
         <h3 className="font-heading text-base font-semibold uppercase tracking-[0.08em] text-foreground">DANH MỤC</h3>
         <div className="flex gap-2">
           <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)}
@@ -175,7 +175,7 @@ export function StreamsAdminPanel() {
       </div>
 
       {/* Form */}
-      <div className="glass-card rounded-2xl p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <h3 className="mb-4 font-heading text-lg font-semibold uppercase tracking-[0.08em] text-foreground">
           {editingId ? "Chỉnh sửa stream" : "Thêm stream mới"}
         </h3>
@@ -239,7 +239,7 @@ export function StreamsAdminPanel() {
       ) : streams.length === 0 ? (
         <EmptyState title="CHƯA CÓ STREAM" description="Thêm buổi phát trực tiếp đầu tiên." />
       ) : (
-        <div className="glass-card overflow-hidden rounded-2xl">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted text-muted-foreground">
               <tr>

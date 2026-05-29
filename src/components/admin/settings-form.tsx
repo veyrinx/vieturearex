@@ -102,7 +102,7 @@ function Field({ label, hint, children, icon: Icon }: {
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("glass-card divide-y divide-border rounded-2xl border border-border/50 bg-card/50 px-5 shadow-sm", className)}>
+    <div className={cn("divide-y divide-border rounded-2xl border border-border/50 bg-card/50 px-5 shadow-sm", className)}>
       {children}
     </div>
   );
@@ -635,7 +635,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
         </Card>
 
-        <div className="glass-card rounded-2xl p-5 space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
           <p className="text-xs font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
             <ImageIcon className="size-4 text-primary" /> Ảnh nền Slider
           </p>

@@ -65,7 +65,7 @@ export function ViewsTrendCard() {
 
   if (loading) {
     return (
-      <div className="glass-card rounded-2xl p-5">
+      <div className="rounded-2xl border border-border bg-card p-5">
         <div className="h-32 animate-pulse rounded-xl bg-muted" />
       </div>
     );
@@ -80,7 +80,7 @@ export function ViewsTrendCard() {
   ];
 
   return (
-    <div className="glass-card rounded-2xl p-5 space-y-4">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
       <div className="flex items-center gap-2">
         <BarChart3 className="size-4 text-primary dark:text-amber-400" />
         <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">

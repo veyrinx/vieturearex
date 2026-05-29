@@ -124,7 +124,7 @@ export function InvitedEmailsManager() {
   };
 
   return (
-    <section className="glass-card rounded-2xl p-5 space-y-5">
+    <section className="rounded-2xl border border-border bg-card p-5 space-y-5">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary dark:text-amber-400">QUẢN LÝ TÀI KHOẢN</p>
         <h3 className="font-heading text-lg font-semibold uppercase tracking-[0.06em] text-foreground">

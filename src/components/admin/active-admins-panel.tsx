@@ -25,13 +25,13 @@ export function ActiveAdminsPanel() {
   const { data: activeAdmins = [], isLoading } = useActiveAdminsQuery();
 
   return (
-    <section className="glass-card rounded-2xl p-5">
+    <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="space-y-0.5">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary dark:text-amber-400">
             Theo dõi thời gian thực
           </p>
-          <h2 className="font-heading text-lg font-bold uppercase tracking-[0.06em] text-foreground">
+          <h2 className="font-heading text-lg font-black uppercase tracking-[0.06em] text-foreground">
             Quản trị viên đang hoạt động
           </h2>
         </div>

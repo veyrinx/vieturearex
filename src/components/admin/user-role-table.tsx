@@ -369,7 +369,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
               key={role}
               onClick={() => setRoleFilter((f) => f === role ? "all" : role)}
               className={cn(
-                "glass-card flex flex-col items-center gap-0.5 rounded-xl p-3 text-center transition-all hover:scale-[1.02]",
+                "flex flex-col items-center gap-0.5 rounded-xl border border-border bg-card p-3 text-center transition-all hover:scale-[1.02]",
                 roleFilter === role && "ring-2 ring-primary",
               )}
             >
@@ -419,7 +419,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
       </div>
 
       {/* Table */}
-      <div className="glass-card overflow-hidden rounded-2xl">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/50">
