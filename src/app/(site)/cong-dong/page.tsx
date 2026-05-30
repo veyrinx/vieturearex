@@ -3,6 +3,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumList, CreatePostButton } from "@/components/forum/forum-client";
+import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { WeeklyVoteSection } from "@/components/community/weekly-vote-section";
 import { MessageSquare, Users, TrendingUp, Trophy } from "lucide-react";
 
@@ -42,12 +43,20 @@ async function getInitialPosts() {
   const db = createAdminSupabaseClient();
   if (!db) return { posts: [], total: 0 };
   const { data, count } = await untypedFrom(db, "forum_posts")
-    .select("id, title, category, display_name, avatar_url, view_count, reply_count, is_pinned, is_locked, created_at, updated_at", { count: "exact" })
+    .select("id, title, category, user_id, display_name, avatar_url, view_count, reply_count, is_pinned, is_locked, created_at, updated_at", { count: "exact" })
     .eq("status", "active")
     .order("is_pinned", { ascending: false })
     .order("updated_at", { ascending: false })
-    .range(0, 19) as { data: unknown[] | null; count: number | null };
-  return { posts: (data ?? []) as Parameters<typeof ForumList>[0]["initialPosts"], total: count ?? 0 };
+    .range(0, 19) as { data: Array<{ user_id: string | null; [k: string]: unknown }> | null; count: number | null };
+
+  const posts = data ?? [];
+  const userIds = posts.map((p) => p.user_id).filter((x): x is string => !!x);
+  const cosmetics = await fetchCosmetics(db, userIds);
+  const enriched = posts.map((p) => {
+    const c = p.user_id ? cosmetics.get(p.user_id) : undefined;
+    return { ...p, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null };
+  });
+  return { posts: enriched as unknown as Parameters<typeof ForumList>[0]["initialPosts"], total: count ?? 0 };
 }
 
 export default async function ForumPage() {

@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 
 const createSchema = z.object({
   title:    z.string().min(5).max(200),
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   const from = (page - 1) * limit;
 
   let q = untypedFrom(db, "forum_posts")
-    .select("id, title, category, display_name, avatar_url, view_count, reply_count, is_pinned, is_locked, created_at, updated_at", { count: "exact" })
+    .select("id, title, category, user_id, display_name, avatar_url, view_count, reply_count, is_pinned, is_locked, created_at, updated_at", { count: "exact" })
     .eq("status", "active")
     .order("is_pinned", { ascending: false })
     .order("updated_at", { ascending: false })
@@ -33,9 +34,19 @@ export async function GET(req: NextRequest) {
 
   if (category && category !== "all") q = q.eq("category", category) as typeof q;
 
-  const { data, count, error } = await q as { data: unknown[] | null; count: number | null; error: unknown };
+  const { data, count, error } = await q as { data: Array<{ user_id: string | null; [k: string]: unknown }> | null; count: number | null; error: unknown };
   if (error) return NextResponse.json({ posts: [], total: 0 });
-  return NextResponse.json({ posts: data ?? [], total: count ?? 0, page, limit });
+
+  const posts = data ?? [];
+  const userIds = posts.map((p) => p.user_id).filter((x): x is string => !!x);
+  const cosmetics = await fetchCosmetics(db, userIds);
+
+  const enriched = posts.map((p) => {
+    const c = p.user_id ? cosmetics.get(p.user_id) : undefined;
+    return { ...p, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null };
+  });
+
+  return NextResponse.json({ posts: enriched, total: count ?? 0, page, limit });
 }
 
 export async function POST(req: NextRequest) {

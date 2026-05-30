@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 
 type Ctx = { params: Promise<{ postId: string }> };
 
@@ -21,13 +22,22 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   if (!db) return NextResponse.json({ replies: [] });
 
   const { data } = await untypedFrom(db, "forum_replies")
-    .select("id, display_name, avatar_url, content, parent_id, created_at")
+    .select("id, user_id, display_name, avatar_url, content, parent_id, created_at")
     .eq("post_id", postId)
     .eq("status", "active")
     .order("created_at", { ascending: true })
-    .limit(500) as { data: unknown[] | null };
+    .limit(500) as { data: Array<{ user_id: string | null; [k: string]: unknown }> | null };
 
-  return NextResponse.json({ replies: data ?? [] });
+  const replies = data ?? [];
+  const userIds = replies.map((r) => r.user_id).filter((x): x is string => !!x);
+  const cosmetics = await fetchCosmetics(db, userIds);
+
+  const enriched = replies.map((r) => {
+    const c = r.user_id ? cosmetics.get(r.user_id) : undefined;
+    return { ...r, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null };
+  });
+
+  return NextResponse.json({ replies: enriched });
 }
 
 export async function POST(req: NextRequest, { params }: Ctx) {

@@ -6,9 +6,12 @@ import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumReplies } from "@/components/forum/forum-client";
+import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
+import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
 
 type Post = {
   id: string; title: string; content: string; category: string;
+  user_id: string | null;
   display_name: string; avatar_url: string | null;
   view_count: number; reply_count: number;
   is_pinned: boolean; is_locked: boolean;
@@ -52,9 +55,8 @@ export default async function ForumPostPage({ params }: Props) {
     .select("*").eq("id", id).eq("status", "active").single() as { data: Post | null };
   if (!post) notFound();
 
-  const initial = post.display_name.charAt(0).toUpperCase();
-  const gradients = ["from-blue-500 to-indigo-600","from-purple-500 to-pink-600","from-amber-500 to-orange-600","from-emerald-500 to-teal-600"];
-  const gradient = gradients[post.display_name.charCodeAt(0) % gradients.length];
+  const cosmetics = post.user_id ? await fetchCosmetics(db, [post.user_id]) : new Map();
+  const authorCosmetics = post.user_id ? cosmetics.get(post.user_id) : undefined;
 
   return (
     <div className="mx-auto max-w-3xl py-8 md:py-12 space-y-6">
@@ -74,13 +76,19 @@ export default async function ForumPostPage({ params }: Props) {
           </div>
           <h1 className="font-heading text-xl font-black uppercase leading-snug tracking-[0.02em] text-foreground md:text-2xl">{post.title}</h1>
           <div className="flex items-center gap-3">
-            {post.avatar_url ? (
-              <img src={post.avatar_url} alt={post.display_name} className="size-9 rounded-full object-cover" />
-            ) : (
-              <div className={`size-9 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-xs font-black text-white`}>{initial}</div>
-            )}
+            <UserAvatar
+              name={post.display_name}
+              url={post.avatar_url}
+              cssRing={authorCosmetics?.css_ring}
+              size={9}
+            />
             <div>
-              <p className="text-sm font-semibold text-foreground">{post.display_name}</p>
+              <UserNameWithTitle
+                name={post.display_name}
+                title={authorCosmetics?.title}
+                titleColor={authorCosmetics?.title_color}
+                className="text-sm"
+              />
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1"><Clock className="size-3" />{timeAgo(post.created_at)}</span>
                 <span className="flex items-center gap-1"><Eye className="size-3" />{post.view_count}</span>

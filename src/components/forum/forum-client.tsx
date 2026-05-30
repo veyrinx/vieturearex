@@ -13,9 +13,12 @@ export const FORUM_CATEGORIES = [
   "Clan & Team", "Free Fire", "Góp ý & Báo lỗi",
 ];
 
+import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
+
 type Post = {
   id: string; title: string; category: string;
   display_name: string; avatar_url: string | null;
+  css_ring: string | null; user_title: string | null; user_title_color: string | null;
   view_count: number; reply_count: number;
   is_pinned: boolean; is_locked: boolean;
   created_at: string; updated_at: string;
@@ -23,6 +26,7 @@ type Post = {
 
 type Reply = {
   id: string; display_name: string; avatar_url: string | null;
+  css_ring: string | null; user_title: string | null; user_title_color: string | null;
   content: string; parent_id: string | null; created_at: string;
 };
 
@@ -32,18 +36,6 @@ function timeAgo(iso: string) {
   if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
   return `${Math.floor(diff / 86400)} ngày trước`;
-}
-
-function Avatar({ name, url, size = 8 }: { name: string; url?: string | null; size?: number }) {
-  const colors = ["from-blue-500 to-indigo-600","from-purple-500 to-pink-600","from-amber-500 to-orange-600","from-emerald-500 to-teal-600","from-red-500 to-rose-600"];
-  const color = colors[name.charCodeAt(0) % colors.length];
-  const cls = `size-${size}`;
-  if (url) return <img src={url} alt={name} className={`${cls} rounded-full object-cover`} />;
-  return (
-    <div className={`${cls} shrink-0 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-xs`}>
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
 }
 
 // ─── Forum List ─────────────────────────────────────────────────────────────
@@ -107,7 +99,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
             href={`/cong-dong/${p.id}`}
             className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm md:gap-4"
           >
-            <Avatar name={p.display_name} url={p.avatar_url} size={9} />
+            <UserAvatar name={p.display_name} url={p.avatar_url} cssRing={p.css_ring} size={9} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2 flex-wrap">
                 {p.is_pinned && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary dark:text-amber-400"><Pin className="size-2.5" />Ghim</span>}
@@ -116,7 +108,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
               </div>
               <p className="mt-1 font-heading text-sm font-bold text-foreground line-clamp-1 md:text-base">{p.title}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                <span>{p.display_name}</span>
+                <UserNameWithTitle name={p.display_name} title={p.user_title} titleColor={p.user_title_color} className="text-[11px]" />
                 <span className="flex items-center gap-1"><Clock className="size-3" />{timeAgo(p.updated_at)}</span>
                 <span className="flex items-center gap-1"><Eye className="size-3" />{p.view_count}</span>
                 <span className="flex items-center gap-1"><MessageSquare className="size-3" />{p.reply_count}</span>
@@ -290,10 +282,10 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
 function ReplyCard({ r, onReply }: { r: Reply; onReply: () => void }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3.5">
-      <Avatar name={r.display_name} url={r.avatar_url} size={8} />
+      <UserAvatar name={r.display_name} url={r.avatar_url} cssRing={r.css_ring} size={8} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-bold text-foreground">{r.display_name}</span>
+          <UserNameWithTitle name={r.display_name} title={r.user_title} titleColor={r.user_title_color} className="text-sm" />
           <span className="text-[11px] text-muted-foreground">{timeAgo(r.created_at)}</span>
         </div>
         <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">{r.content}</p>
