@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Mail, Shield, FileText, Send } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 
 export const metadata: Metadata = {
@@ -68,11 +69,66 @@ const SECTIONS = [
   },
 ];
 
+const TEAM = [
+  {
+    name: "Qunzz Dev",
+    role: "Founder & Lead Developer",
+    desc: "Xây dựng và vận hành nền tảng Arex từ những ngày đầu. Full-stack developer, đam mê Free Fire và cộng đồng gaming Việt Nam.",
+    initials: "QD",
+    gradient: "from-blue-500 to-indigo-600",
+  },
+  {
+    name: "Đội Biên Tập",
+    role: "Content & Editorial",
+    desc: "Nhóm người chơi tự nguyện phụ trách kiểm duyệt, biên soạn và cập nhật tin tức, sự kiện hàng ngày trên nền tảng.",
+    initials: "BT",
+    gradient: "from-purple-500 to-pink-600",
+  },
+  {
+    name: "Cộng Đồng",
+    role: "Community Contributors",
+    desc: "Hơn 50.000 người chơi, người dùng và cộng tác viên đóng góp nội dung, phản hồi và hỗ trợ phát triển Arex mỗi ngày.",
+    initials: "CĐ",
+    gradient: "from-amber-500 to-orange-600",
+  },
+];
+
+const CONTACT_INFO = [
+  {
+    icon: Mail,
+    label: "Email chính thức",
+    value: "admin@arex.tech",
+    href: "mailto:admin@arex.tech",
+    desc: "Hợp tác, báo lỗi, góp ý",
+  },
+  {
+    icon: Send,
+    label: "Gửi bài viết",
+    value: "Khu vực gửi bài",
+    href: "/gui-bai-viet",
+    desc: "Đóng góp nội dung cho cộng đồng",
+  },
+  {
+    icon: Shield,
+    label: "Chính sách bảo mật",
+    value: "Xem chi tiết",
+    href: "/privacy-policy",
+    desc: "Dữ liệu cá nhân & quyền riêng tư",
+  },
+  {
+    icon: FileText,
+    label: "Điều khoản sử dụng",
+    value: "Xem chi tiết",
+    href: "/terms-of-use",
+    desc: "Quy tắc & điều khoản nền tảng",
+  },
+];
+
 const LINKS = [
   { label: "Tin Tức", href: "/news", desc: "Cập nhật mới nhất về Free Fire" },
   { label: "Sự Kiện", href: "/events", desc: "Tất cả sự kiện in-game" },
   { label: "Esports", href: "/esports", desc: "Stream & giải đấu trực tiếp" },
-  { label: "Liên Hệ", href: "/contact", desc: "Góp ý, hợp tác với chúng tôi" },
+  { label: "Gửi Bài Viết", href: "/gui-bai-viet", desc: "Đóng góp nội dung cộng đồng" },
   { label: "Chính Sách Bảo Mật", href: "/privacy-policy", desc: "Bảo vệ dữ liệu của bạn" },
   { label: "Điều Khoản Sử Dụng", href: "/terms-of-use", desc: "Quy tắc sử dụng nền tảng" },
 ];
@@ -132,29 +188,57 @@ export default function AboutPage() {
         ))}
       </div>
 
-      {/* Contact CTA */}
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-8 text-center space-y-4">
-        <h2 className="font-heading text-xl font-black uppercase tracking-[0.06em] text-foreground">
-          Liên hệ với chúng tôi
-        </h2>
-        <p className="text-muted-foreground">
-          Có câu hỏi, góp ý hoặc muốn hợp tác? Chúng tôi luôn sẵn sàng lắng nghe.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            href="/contact"
-            className="inline-flex items-center rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            Gửi Liên Hệ
-          </Link>
-          <a
-            href="mailto:admin@arex.tech"
-            className="inline-flex items-center rounded-xl border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:border-primary hover:text-primary"
-          >
-            admin@arex.tech
-          </a>
+      {/* Team */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
+            Đội ngũ quản trị
+          </h2>
         </div>
-      </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {TEAM.map(({ name, role, desc, initials, gradient }) => (
+            <div key={name} className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <div className={`inline-flex size-11 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-sm font-black text-white`}>
+                {initials}
+              </div>
+              <div>
+                <p className="font-heading text-sm font-black text-foreground">{name}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary dark:text-amber-400">{role}</p>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Contact grid */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
+            Liên hệ & Chính sách
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {CONTACT_INFO.map(({ icon: Icon, label, value, href, desc }) => (
+            <Link
+              key={label}
+              href={href}
+              className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-sm"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-amber-400/10">
+                <Icon className="size-4 text-primary dark:text-amber-400" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70">{label}</p>
+                <p className="text-sm font-bold text-foreground">{value}</p>
+                <p className="text-xs text-muted-foreground leading-snug">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* Navigation links */}
       <div className="space-y-4">

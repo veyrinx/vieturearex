@@ -120,21 +120,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // ── Trang pháp lý ────────────────────────────────────────────────────────
+  // ── Trang phụ ────────────────────────────────────────────────────────────
   const legalRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${BASE}/about`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
+    {
+      url: `${BASE}/gui-bai-viet`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.50,
+    },
     {
       url: `${BASE}/privacy-policy`,
       lastModified: now,
       changeFrequency: "yearly",
-      priority: 0.20,
+      priority: 0.25,
       alternates: { languages: { vi: `${BASE}/chinh-sach-bao-mat` } },
     },
     {
       url: `${BASE}/terms-of-use`,
       lastModified: now,
       changeFrequency: "yearly",
-      priority: 0.20,
+      priority: 0.25,
       alternates: { languages: { vi: `${BASE}/dieu-khoan-su-dung` } },
+    },
+    {
+      url: `${BASE}/cookie-policy`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.20,
     },
   ];
 

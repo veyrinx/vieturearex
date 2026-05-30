@@ -94,18 +94,22 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
             },
             headline: article.title,
             description: article.excerpt,
-            image: [article.cover],
+            image: [{ "@type": "ImageObject", url: article.cover, width: 1200, height: 630 }],
             datePublished: article.created_at,
             dateModified: article.created_at,
-            author: { "@type": "Organization", name: "Arex", url: siteConfig.url },
+            author: article.created_by_name
+              ? { "@type": "Person", name: article.created_by_name, url: `${siteConfig.url}/about` }
+              : { "@type": "Organization", name: "Arex", url: siteConfig.url },
             publisher: {
               "@type": "Organization",
               name: siteConfig.name,
               logo: { "@type": "ImageObject", url: siteConfig.sidebarIcon },
             },
             articleSection: article.category,
+            keywords: article.category,
             inLanguage: "vi-VN",
             isAccessibleForFree: true,
+            url: `${siteConfig.url}/news/${article.slug}`,
           }),
         }}
       />

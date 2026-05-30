@@ -9,7 +9,14 @@ export default function robots(): MetadataRoute.Robots {
       // ── Googlebot — only public content ──────────────────────────────────
       {
         userAgent: "Googlebot",
-        allow: ["/", "/news/", "/tin-tuc/", "/events", "/su-kien", "/esports", "/calendar", "/lich", "/gallery", "/contact", "/lien-he"],
+        allow: [
+          "/", "/news/", "/tin-tuc/", "/events", "/su-kien",
+          "/esports", "/calendar", "/lich", "/gallery",
+          "/contact", "/lien-he",
+          "/about", "/gui-bai-viet",
+          "/privacy-policy", "/terms-of-use", "/cookie-policy",
+          "/tournaments/",
+        ],
         disallow: [
           "/admin", "/admin/",
           "/api/", "/api/admin/", "/api/auth/",
@@ -27,7 +34,7 @@ export default function robots(): MetadataRoute.Robots {
       // ── Bingbot — limited ────────────────────────────────────────────────
       {
         userAgent: "Bingbot",
-        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact"],
+        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact", "/about", "/gui-bai-viet", "/privacy-policy", "/terms-of-use"],
         disallow: ["/admin", "/api/", "/auth/", "/login", "/register", "/*.map"],
         crawlDelay: 5,
       },
@@ -42,7 +49,7 @@ export default function robots(): MetadataRoute.Robots {
       // ── All others: public pages only, no crawl of admin/api/source ──────
       {
         userAgent: "*",
-        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact"],
+        allow: ["/", "/news/", "/tin-tuc/", "/events", "/esports", "/calendar", "/contact", "/about", "/gui-bai-viet", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
         disallow: [
           "/admin", "/admin/",
           "/api/", "/api/admin/", "/api/auth/",
