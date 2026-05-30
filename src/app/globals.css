@@ -516,6 +516,12 @@ body, .font-body {
 }
 
 @layer utilities {
+  /* Positions element above mobile bottom nav, accounting for iOS safe area */
+  .bottom-safe-nav {
+    bottom: 4.5rem;
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;

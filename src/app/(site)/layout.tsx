@@ -57,7 +57,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
         siteName={settingsMap["branding.site_name"] || activeSite.shortName}
       />
       <PageTransition>
-        <main className="mx-auto w-full max-w-7xl px-4 pb-24 md:pb-16 md:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl px-4 pb-28 md:pb-16 md:px-6">{children}</main>
       </PageTransition>
       <SiteFooter />
       <MobileBottomNav />
