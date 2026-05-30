@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -174,79 +175,85 @@ export function UserNavButton({ className }: Props) {
         <DropdownMenuSeparator className="mx-1 my-1" />
 
         {/* Tài khoản */}
-        <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
-          Tài khoản
-        </DropdownMenuLabel>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/profile" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 dark:bg-amber-400/10">
-              <User className="size-3.5 text-primary dark:text-amber-400" />
-            </span>
-            <span className="text-sm font-medium">Hồ sơ cá nhân</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/profile?tab=settings" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-muted">
-              <Settings className="size-3.5 text-muted-foreground" />
-            </span>
-            <span className="text-sm font-medium">Cài đặt</span>
-          </Link>
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+            Tài khoản
+          </DropdownMenuLabel>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/profile" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 dark:bg-amber-400/10">
+                <User className="size-3.5 text-primary dark:text-amber-400" />
+              </span>
+              <span className="text-sm font-medium">Hồ sơ cá nhân</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/profile?tab=settings" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-muted">
+                <Settings className="size-3.5 text-muted-foreground" />
+              </span>
+              <span className="text-sm font-medium">Cài đặt</span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="mx-1 my-1" />
 
         {/* Khám phá */}
-        <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
-          Khám phá
-        </DropdownMenuLabel>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/yeu-thich" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-rose-500/10">
-              <Bookmark className="size-3.5 text-rose-500" />
-            </span>
-            <span className="text-sm font-medium">Đã lưu</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/calendar" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
-              <CalendarDays className="size-3.5 text-blue-500" />
-            </span>
-            <span className="text-sm font-medium">Lịch sự kiện</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/leaderboard" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
-              <BarChart2 className="size-3.5 text-amber-500" />
-            </span>
-            <span className="text-sm font-medium">Bảng xếp hạng</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/players/compare" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-violet-500/10">
-              <Swords className="size-3.5 text-violet-500" />
-            </span>
-            <span className="text-sm font-medium">So sánh tuyển thủ</span>
-          </Link>
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+            Khám phá
+          </DropdownMenuLabel>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/yeu-thich" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-rose-500/10">
+                <Bookmark className="size-3.5 text-rose-500" />
+              </span>
+              <span className="text-sm font-medium">Đã lưu</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/calendar" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
+                <CalendarDays className="size-3.5 text-blue-500" />
+              </span>
+              <span className="text-sm font-medium">Lịch sự kiện</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/leaderboard" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
+                <BarChart2 className="size-3.5 text-amber-500" />
+              </span>
+              <span className="text-sm font-medium">Bảng xếp hạng</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/players/compare" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-violet-500/10">
+                <Swords className="size-3.5 text-violet-500" />
+              </span>
+              <span className="text-sm font-medium">So sánh tuyển thủ</span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="mx-1 my-1" />
 
         {/* Giải đấu */}
-        <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
-          Giải đấu
-        </DropdownMenuLabel>
-        <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-          <Link href="/tournaments/my-team" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
-              <Trophy className="size-3.5 text-amber-500" />
-            </span>
-            <span className="text-sm font-medium">Team của tôi</span>
-          </Link>
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+            Giải đấu
+          </DropdownMenuLabel>
+          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
+            <Link href="/tournaments/my-team" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
+                <Trophy className="size-3.5 text-amber-500" />
+              </span>
+              <span className="text-sm font-medium">Team của tôi</span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
 
         {role && ADMIN_ROLES.includes(role) && (
           <>
