@@ -1,0 +1,107 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { enforceRateLimit } from "@/lib/server/api-guard";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { untypedFrom } from "@/lib/supabase/untyped";
+
+const createSchema = z.object({
+  slug:      z.string().min(3).max(80).regex(/^[a-z0-9-]+$/, "Slug chỉ gồm chữ thường, số và dấu gạch ngang"),
+  title:     z.string().min(3).max(200),
+  content:   z.string().min(20),
+  excerpt:   z.string().max(300).optional(),
+  category:  z.string().default("Tổng quan"),
+  cover_url: z.string().url().optional().or(z.literal("")),
+});
+
+export async function GET(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "wiki-list", limit: 120, windowMs: 60_000 });
+  if (limited) return limited;
+
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ articles: [] });
+
+  const url = new URL(req.url);
+  const category = url.searchParams.get("category");
+  const q = url.searchParams.get("q");
+
+  let query = untypedFrom(db, "wiki_articles")
+    .select("id, slug, title, excerpt, category, cover_url, author_name, view_count, edit_count, updated_at, created_at")
+    .eq("status", "published")
+    .order("updated_at", { ascending: false })
+    .limit(60);
+
+  if (category) query = query.eq("category", category) as typeof query;
+  if (q)        query = query.ilike("title", `%${q}%`) as typeof query;
+
+  const { data, error } = await query as { data: unknown[] | null; error: unknown };
+  if (error) return NextResponse.json({ articles: [] });
+  return NextResponse.json({ articles: data ?? [] });
+}
+
+export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "wiki-create", limit: 5, windowMs: 3_600_000 });
+  if (limited) return limited;
+
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
+
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  if (!user) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Dữ liệu không hợp lệ.", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+
+  // Get user display_name
+  const { data: profile } = await untypedFrom(db, "users")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle() as { data: { display_name: string | null } | null };
+
+  const authorName = profile?.display_name ?? user.email?.split("@")[0] ?? "Ẩn danh";
+
+  const { data: article, error } = await untypedFrom(db, "wiki_articles").insert({
+    slug:        parsed.data.slug,
+    title:       parsed.data.title,
+    content:     parsed.data.content,
+    excerpt:     parsed.data.excerpt ?? null,
+    category:    parsed.data.category,
+    cover_url:   parsed.data.cover_url || null,
+    author_id:   user.id,
+    author_name: authorName,
+    status:      "published",
+  } as never).select("slug").single() as { data: { slug: string } | null; error: { code?: string; message?: string } | null };
+
+  if (error) {
+    if (error.code === "23505") {
+      return NextResponse.json({ error: "Slug đã tồn tại. Vui lòng chọn slug khác." }, { status: 409 });
+    }
+    return NextResponse.json({ error: "Không thể tạo bài wiki." }, { status: 500 });
+  }
+
+  // Upsert contributor_points: increment wiki_count + 10 points
+  const { data: existing } = await untypedFrom(db, "contributor_points")
+    .select("wiki_count, total_points, posts_count, replies_count")
+    .eq("user_id", user.id)
+    .maybeSingle() as { data: { wiki_count: number; total_points: number; posts_count: number; replies_count: number } | null };
+
+  await untypedFrom(db, "contributor_points").upsert({
+    user_id:       user.id,
+    display_name:  authorName,
+    avatar_url:    null,
+    posts_count:   existing?.posts_count ?? 0,
+    replies_count: existing?.replies_count ?? 0,
+    wiki_count:    (existing?.wiki_count ?? 0) + 1,
+    total_points:  (existing?.total_points ?? 0) + 10,
+    badge:         "member",
+    updated_at:    new Date().toISOString(),
+  } as never);
+
+  return NextResponse.json({ slug: article!.slug }, { status: 201 });
+}

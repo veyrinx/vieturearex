@@ -3,7 +3,8 @@ import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumList, CreatePostButton } from "@/components/forum/forum-client";
-import { MessageSquare, Users, TrendingUp } from "lucide-react";
+import { WeeklyVoteSection } from "@/components/community/weekly-vote-section";
+import { MessageSquare, Users, TrendingUp, Trophy } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Cộng Đồng — Diễn Đàn Free Fire | Arex",
@@ -83,6 +84,22 @@ export default async function ForumPage() {
       </div>
 
       <ForumList initialPosts={posts} initialTotal={total} />
+
+      {/* Weekly Best Post Voting */}
+      <section className="rounded-3xl border border-border bg-card p-6 md:p-8 space-y-5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 dark:bg-amber-400/15">
+            <Trophy className="size-4 text-primary dark:text-amber-400" />
+          </span>
+          <div>
+            <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">
+              🏆 Bình Chọn Bài Hay Nhất Tuần
+            </h2>
+            <p className="text-xs text-muted-foreground">Mỗi tuần mỗi người được 1 phiếu bình chọn</p>
+          </div>
+        </div>
+        <WeeklyVoteSection />
+      </section>
     </div>
   );
 }

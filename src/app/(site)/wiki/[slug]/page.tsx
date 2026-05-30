@@ -1,0 +1,167 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
+import { ArrowLeft, Eye, PenLine, History } from "lucide-react";
+
+export const revalidate = 120;
+
+type WikiArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  excerpt: string | null;
+  category: string;
+  cover_url: string | null;
+  author_name: string;
+  view_count: number;
+  edit_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    day: "2-digit", month: "long", year: "numeric",
+  });
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Metadata> {
+  const { slug } = await params;
+  const db = createAdminSupabaseClient();
+  if (!db) return { title: "Wiki | Arex" };
+
+  const { data } = await untypedFrom(db, "wiki_articles")
+    .select("title, excerpt")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle() as { data: { title: string; excerpt: string | null } | null };
+
+  if (!data) return { title: "Wiki | Arex" };
+
+  return {
+    title: `${data.title} — Wiki | Arex`,
+    description: data.excerpt ?? undefined,
+  };
+}
+
+export default async function WikiArticlePage(
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await params;
+  const db = createAdminSupabaseClient();
+  if (!db) notFound();
+
+  const { data: article } = await untypedFrom(db, "wiki_articles")
+    .select("id, slug, title, content, excerpt, category, cover_url, author_name, view_count, edit_count, created_at, updated_at")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle() as { data: WikiArticle | null };
+
+  if (!article) notFound();
+
+  void untypedFrom(db, "wiki_articles")
+    .update({ view_count: article.view_count + 1 } as never)
+    .eq("id", article.id);
+
+  return (
+    <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-6">
+      {/* Back */}
+      <Link
+        href="/wiki"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="size-4" />
+        Quay lại Wiki
+      </Link>
+
+      {/* Article card */}
+      <article className="rounded-3xl border border-border bg-card overflow-hidden">
+        {/* Cover */}
+        {article.cover_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={article.cover_url}
+            alt={article.title}
+            className="h-56 w-full object-cover md:h-72"
+          />
+        )}
+
+        <div className="p-6 md:p-10 space-y-6">
+          {/* Header */}
+          <div className="space-y-3">
+            <span className="inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              {article.category}
+            </span>
+            <h1 className="font-heading text-2xl font-black leading-snug tracking-tight text-foreground md:text-3xl">
+              {article.title}
+            </h1>
+            {article.excerpt && (
+              <p className="text-base text-muted-foreground leading-relaxed">{article.excerpt}</p>
+            )}
+
+            {/* Meta */}
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">{article.author_name}</span>
+              <span className="text-muted-foreground/40">·</span>
+              <span>{formatDate(article.created_at)}</span>
+              {article.updated_at !== article.created_at && (
+                <>
+                  <span className="text-muted-foreground/40">·</span>
+                  <span>Cập nhật {formatDate(article.updated_at)}</span>
+                </>
+              )}
+              <span className="ml-auto flex items-center gap-1">
+                <Eye className="size-3" />
+                {article.view_count.toLocaleString()} lượt xem
+              </span>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-border" />
+
+          {/* Content */}
+          <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90 min-h-[200px]">
+            {article.content}
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-border" />
+
+          {/* Footer */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <History className="size-3.5" />
+              {article.edit_count > 0
+                ? `Đã chỉnh sửa ${article.edit_count} lần`
+                : "Chưa có chỉnh sửa nào"}
+            </div>
+            <Link
+              href={`/wiki/${article.slug}/chinh-sua`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/8 hover:text-emerald-600 dark:hover:text-emerald-400"
+            >
+              <PenLine className="size-3.5" />
+              Chỉnh sửa bài này
+            </Link>
+          </div>
+        </div>
+      </article>
+
+      {/* Bottom back link */}
+      <div className="text-center">
+        <Link
+          href="/wiki"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="size-4" />
+          Xem tất cả bài Wiki
+        </Link>
+      </div>
+    </div>
+  );
+}

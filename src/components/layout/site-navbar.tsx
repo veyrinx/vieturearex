@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
   BookOpenText, Users, Swords, MessageSquare, Trophy, ChevronDown,
+  TrendingUp, Palette,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -36,10 +37,13 @@ const NAV_ICONS: Record<string, LucideIcon> = {
 };
 
 const COMMUNITY_ITEMS = [
-  { title: "Diễn Đàn",          href: "/cong-dong",           icon: MessageSquare, desc: "Thảo luận & chia sẻ cộng đồng" },
-  { title: "Bình Chọn",         href: "/binh-chon",           icon: Trophy,        desc: "Nhân vật mạnh nhất Free Fire" },
-  { title: "Giải Đấu CĐ",       href: "/giai-dau-cong-dong",  icon: Swords,        desc: "Tổ chức & tham gia giải đấu" },
-  { title: "Tuyển Thành Viên",  href: "/tuyen-thanh-vien",    icon: Users,         desc: "Tìm clan & guild phù hợp" },
+  { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
+  { title: "Wiki CĐ",        href: "/wiki",                  icon: BookOpenText,  desc: "Kiến thức do cộng đồng đóng góp" },
+  { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    desc: "Hot posts & top contributors" },
+  { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
+  { title: "Giải Đấu CĐ",    href: "/giai-dau-cong-dong",   icon: Swords,        desc: "Tổ chức & tham gia giải" },
+  { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         desc: "Tìm clan & guild" },
+  { title: "Trang Cá Nhân",  href: "/cong-dong/cosmetics",   icon: Palette,       desc: "Khung & Danh Hiệu" },
 ];
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
@@ -108,7 +112,7 @@ function CommunityDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute left-0 top-full z-50 mt-1.5 w-60 overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl"
+            className="absolute left-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl"
           >
             {/* Header strip */}
             <div className="border-b border-border/50 px-4 py-2.5">
