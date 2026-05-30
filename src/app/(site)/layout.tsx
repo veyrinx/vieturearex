@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { AutoTranslate } from "@/components/common/auto-translate";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
+import { AnnouncementBanner } from "@/components/common/announcement-banner";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
@@ -56,6 +57,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
         logoDark={settingsMap["branding.logo_dark_url"]}
         siteName={settingsMap["branding.site_name"] || activeSite.shortName}
       />
+      <AnnouncementBanner />
       <PageTransition>
         <main className="mx-auto w-full max-w-7xl px-4 pb-28 md:pb-16 md:px-6">{children}</main>
       </PageTransition>

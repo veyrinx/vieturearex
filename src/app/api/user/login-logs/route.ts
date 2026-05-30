@@ -5,7 +5,9 @@ import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl } from "@/lib/supabase/env";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = enforceRateLimit(request, { name: "login-logs-get", limit: 15, windowMs: 60_000 });
+  if (limited) return limited;
   const supabase = createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ logs: [] });
 

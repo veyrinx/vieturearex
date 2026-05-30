@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "follows", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
   const body = await req.json().catch(() => null);

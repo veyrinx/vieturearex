@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 
 type UserRow = {
   selected_frame_id: string | null;
@@ -36,6 +37,8 @@ const updateSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "cosmetics-get", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
   const supabase = createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
 
@@ -72,6 +75,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "cosmetics-put", limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   const supabase = createServerSupabaseClient();
   if (!supabase) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
 
