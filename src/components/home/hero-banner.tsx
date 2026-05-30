@@ -135,7 +135,7 @@ export function HeroBanner({
     >
       {/* ── Background layer ── */}
       <div className="absolute inset-0 bg-slate-950">
-        {/* Fallback gradient — visible when no images loaded */}
+        {/* Base gradient fallback */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(0,82,255,0.22),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(247,147,26,0.20),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(77,124,255,0.18),transparent)] dark:bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(255,178,30,0.12),transparent)]" />
 
@@ -154,11 +154,34 @@ export function HeroBanner({
           )}
         </AnimatePresence>
 
-        {/* Gradient overlays for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+        {/* Gradient overlays — lighter than before */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/30 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/15 to-transparent" />
 
-        {/* Subtle scanline texture */}
+        {/* Ambient glow orbs */}
+        <motion.div
+          animate={{ opacity: [0.35, 0.65, 0.35], scale: [1, 1.08, 1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-0 left-0 h-[420px] w-[520px] rounded-full blur-[120px]"
+          style={{ background: "radial-gradient(circle, hsl(var(--primary)/0.28) 0%, transparent 70%)" }}
+        />
+        <motion.div
+          animate={{ opacity: [0.2, 0.4, 0.2], scale: [1, 1.12, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute right-[10%] top-[20%] h-[300px] w-[300px] rounded-full blur-[90px]"
+          style={{ background: "radial-gradient(circle, rgba(147,51,234,0.18) 0%, transparent 70%)" }}
+        />
+
+        {/* Animated light streak */}
+        <motion.div
+          initial={{ x: "-100%", opacity: 0 }}
+          animate={{ x: "200%", opacity: [0, 0.7, 0] }}
+          transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 6, ease: [0.4, 0, 0.6, 1] }}
+          className="absolute top-[38%] h-px w-48 -rotate-12"
+          style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary)/0.9), rgba(255,255,255,0.8), transparent)" }}
+        />
+
+        {/* Scanline texture */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.025]"
           style={{
@@ -166,45 +189,80 @@ export function HeroBanner({
             backgroundSize: "100% 4px",
           }}
         />
+
+        {/* Top vignette edge */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent" />
       </div>
 
       {/* ── Content ── */}
       <div className="relative z-10 w-full px-4 pb-12 pt-24 md:px-8 md:pb-16 md:pt-32 lg:px-12">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-[640px] space-y-5 md:space-y-6">
+          <div className="max-w-[660px] space-y-5 md:space-y-6">
 
-            {/* Live badge + eyebrow */}
+            {/* Live badge */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="flex items-center gap-3"
             >
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              {/* Glow ping */}
+              <span className="relative flex size-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+                <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">Đang hoạt động</span>
-              <span className="h-px w-8 bg-white/20" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/50">Free Fire Vietnam</span>
+              <span
+                className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-300"
+                style={{ textShadow: "0 0 12px rgba(52,211,153,0.6)" }}
+              >
+                Đang hoạt động
+              </span>
+              <span className="h-px w-8 bg-white/30" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">Free Fire Vietnam</span>
             </motion.div>
+
+            {/* Decorative line */}
+            <motion.div
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.05 }}
+              className="origin-left h-px w-40"
+              style={{ background: "linear-gradient(90deg, hsl(var(--primary)), transparent)" }}
+            />
 
             {/* Main heading */}
             <motion.h1
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
               className="font-heading font-black uppercase leading-[0.85] tracking-tight"
               style={{ fontSize: "clamp(3rem, 11vw, 7.5rem)" }}
             >
-              <span className="block text-primary dark:text-amber-400">{line1}</span>
+              {/* Line 1 — glowing primary color */}
+              <span
+                className="block text-primary dark:text-amber-400"
+                style={{
+                  textShadow: "0 0 30px hsl(var(--primary)/0.8), 0 0 70px hsl(var(--primary)/0.4), 0 0 120px hsl(var(--primary)/0.2)",
+                }}
+              >
+                {line1}
+              </span>
+
+              {/* Line 2 — bright outline */}
               <span
                 className="block text-transparent"
-                style={{ WebkitTextStroke: "2px rgba(255,255,255,0.22)" }}
+                style={{ WebkitTextStroke: "2px rgba(255,255,255,0.55)" }}
               >
                 {line2}
               </span>
-              <span className="block text-white">{line3}</span>
+
+              {/* Line 3 — bright white */}
+              <span
+                className="block text-white"
+                style={{ textShadow: "0 2px 30px rgba(255,255,255,0.3)" }}
+              >
+                {line3}
+              </span>
             </motion.h1>
 
             {/* Tagline */}
@@ -212,7 +270,7 @@ export function HeroBanner({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="max-w-md text-sm leading-relaxed text-white/55 md:text-base"
+              className="max-w-md text-sm leading-relaxed text-white/78 md:text-base"
             >
               Theo dõi sự kiện, cập nhật tin tức Esports và kết nối cộng đồng Free Fire Việt Nam.
             </motion.p>
@@ -224,15 +282,19 @@ export function HeroBanner({
               transition={{ duration: 0.5, delay: 0.28 }}
               className="flex flex-wrap gap-2"
             >
-              {stats.map(({ icon: Icon, label, value, color }) => (
-                <div
+              {stats.map(({ icon: Icon, label, value, color }, i) => (
+                <motion.div
                   key={label}
-                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3.5 py-1.5 backdrop-blur-md"
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.35, delay: 0.3 + i * 0.07 }}
+                  className="flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-3.5 py-1.5 backdrop-blur-md"
+                  style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 0 16px rgba(255,255,255,0.04)" }}
                 >
                   <Icon className={`size-3.5 shrink-0 ${color}`} />
                   <span className={`font-heading text-sm font-black tabular-nums ${color}`}>{value}</span>
-                  <span className="text-[10px] font-medium text-white/45">{label}</span>
-                </div>
+                  <span className="text-[10px] font-medium text-white/62">{label}</span>
+                </motion.div>
               ))}
             </motion.div>
 
@@ -244,22 +306,28 @@ export function HeroBanner({
                 transition={{ duration: 0.5, delay: 0.32 }}
                 className="flex flex-wrap items-center gap-3"
               >
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/55">
                   ⏱ Sự kiện tiếp theo
                 </span>
                 <div className="flex gap-1.5">
-                  {countdown.map((unit) => (
-                    <div
+                  {countdown.map((unit, i) => (
+                    <motion.div
                       key={unit.label}
-                      className="flex min-w-[40px] flex-col items-center rounded-xl border border-primary/30 bg-primary/15 px-2 py-1.5 backdrop-blur-sm dark:border-amber-400/30 dark:bg-amber-400/10"
+                      animate={i === countdown.length - 1 ? { scale: [1, 1.04, 1] } : {}}
+                      transition={{ duration: 1, repeat: Infinity }}
+                      className="flex min-w-[44px] flex-col items-center rounded-xl border border-primary/40 bg-primary/18 px-2 py-1.5 backdrop-blur-sm dark:border-amber-400/40 dark:bg-amber-400/12"
+                      style={{ boxShadow: "0 0 14px hsl(var(--primary)/0.25), inset 0 1px 0 hsl(var(--primary)/0.2)" }}
                     >
-                      <span className="font-heading text-base font-black leading-none tabular-nums text-primary dark:text-amber-400 md:text-xl">
+                      <span
+                        className="font-heading text-base font-black leading-none tabular-nums text-primary dark:text-amber-400 md:text-xl"
+                        style={{ textShadow: "0 0 16px hsl(var(--primary)/0.7)" }}
+                      >
                         {String(unit.value).padStart(2, "0")}
                       </span>
-                      <span className="text-[8px] font-bold uppercase tracking-wide text-white/35">
+                      <span className="text-[8px] font-bold uppercase tracking-wide text-white/50">
                         {unit.label}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
@@ -275,7 +343,8 @@ export function HeroBanner({
               <Button
                 asChild
                 size="lg"
-                className="h-11 rounded-xl px-6 shadow-[0_4px_24px_hsl(var(--primary)/0.45)]"
+                className="h-11 rounded-xl px-6"
+                style={{ boxShadow: "0 4px 24px hsl(var(--primary)/0.5), 0 0 40px hsl(var(--primary)/0.2)" }}
               >
                 <Link href="/calendar">
                   XEM LỊCH SỰ KIỆN
@@ -286,7 +355,7 @@ export function HeroBanner({
                 asChild
                 size="lg"
                 variant="outline"
-                className="h-11 rounded-xl border-white/18 bg-white/8 px-5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white hover:border-white/30"
+                className="h-11 rounded-xl border-white/25 bg-white/10 px-5 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white hover:border-white/40"
               >
                 <Link href="/news">
                   TIN TỨC
@@ -301,7 +370,6 @@ export function HeroBanner({
       {/* ── Slider controls ── */}
       {hasMultiple && (
         <>
-          {/* Dot indicators */}
           <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 md:bottom-6">
             {allImages.map((_, i) => (
               <button
@@ -311,18 +379,19 @@ export function HeroBanner({
                 aria-label={`Ảnh ${i + 1}`}
                 className={[
                   "rounded-full transition-all duration-300",
-                  i === index ? "h-2 w-6 bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "size-2 bg-white/30 hover:bg-white/60",
+                  i === index
+                    ? "h-2 w-6 bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]"
+                    : "size-2 bg-white/35 hover:bg-white/65",
                 ].join(" ")}
               />
             ))}
           </div>
 
-          {/* Arrow buttons */}
           <button
             type="button"
             onClick={prev}
             aria-label="Ảnh trước"
-            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:left-5 md:size-10"
+            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 hover:border-white/40 md:left-5 md:size-10"
           >
             <ChevronLeft className="size-4" />
           </button>
@@ -330,7 +399,7 @@ export function HeroBanner({
             type="button"
             onClick={next}
             aria-label="Ảnh tiếp theo"
-            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:right-5 md:size-10"
+            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 hover:border-white/40 md:right-5 md:size-10"
           >
             <ChevronRight className="size-4" />
           </button>
