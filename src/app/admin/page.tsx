@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BarChart3, CalendarRange, Newspaper, Users, Shield, Zap,
   Settings, ImageIcon, Radio, Star, FileText, Activity,
-  ArrowRight, MessageSquare,
+  ArrowRight, MessageSquare, BookOpen, Palette, Trophy, Megaphone,
 } from "lucide-react";
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
@@ -44,7 +44,11 @@ const QUICK_ACTIONS = [
   { href: "/admin/comments", icon: MessageSquare,  label: "Bình luận", desc: "Kiểm duyệt bình luận", color: "text-indigo-500 bg-indigo-500/10" },
   { href: "/admin/ratings",  icon: Star,          label: "Đánh giá",  desc: "Phản hồi người dùng", color: "text-yellow-500 bg-yellow-500/10" },
   { href: "/admin/logs",     icon: Activity,      label: "Nhật ký",   desc: "Hoạt động admin",     color: "text-green-500 bg-green-500/10" },
-  { href: "/admin/settings", icon: Settings,      label: "Cài đặt",   desc: "Cấu hình hệ thống",  color: "text-foreground bg-muted" },
+  { href: "/admin/wiki",         icon: BookOpen,      label: "Wiki",       desc: "Quản lý bài viết wiki",   color: "text-emerald-500 bg-emerald-500/10" },
+  { href: "/admin/cosmetics",    icon: Palette,       label: "Cosmetics",  desc: "Khung & danh hiệu",       color: "text-pink-500 bg-pink-500/10" },
+  { href: "/admin/contributors", icon: Trophy,        label: "Contributors", desc: "Điểm cộng đồng",       color: "text-amber-500 bg-amber-500/10" },
+  { href: "/admin/broadcast",    icon: Megaphone,     label: "Broadcast",  desc: "Thông báo hệ thống",      color: "text-blue-500 bg-blue-500/10" },
+  { href: "/admin/settings",     icon: Settings,      label: "Cài đặt",   desc: "Cấu hình hệ thống",       color: "text-foreground bg-muted" },
 ];
 
 export default async function AdminDashboardPage() {
@@ -147,7 +151,7 @@ export default async function AdminDashboardPage() {
           <FileText className="size-4 text-muted-foreground" />
           <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Truy cập nhanh</h2>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-5">
           {QUICK_ACTIONS.map(({ href, icon: Icon, label, desc, color }) => (
             <Link
               key={href}

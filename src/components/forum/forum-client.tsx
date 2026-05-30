@@ -338,7 +338,7 @@ export function CreatePostButton() {
         <Plus className="size-4" /> Tạo bài viết
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-10 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-10 backdrop-blur-sm">
           <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-heading text-lg font-black uppercase tracking-wide text-foreground">Tạo bài viết mới</h2>
