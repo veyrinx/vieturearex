@@ -22,15 +22,18 @@ export const revalidate = 30;
 async function getForumStats() {
   const db = createAdminSupabaseClient();
   if (!db) return { totalPosts: 0, totalReplies: 0, activeToday: 0 };
-  const [{ count: totalPosts }, { count: totalReplies }] = await Promise.all([
-    untypedFrom(db, "forum_posts").select("*", { count: "exact", head: true }).eq("status", "active") as Promise<{ count: number | null }>,
-    untypedFrom(db, "forum_replies").select("*", { count: "exact", head: true }).eq("status", "active") as Promise<{ count: number | null }>,
+  const [postsRes, repliesRes] = await Promise.all([
+    untypedFrom(db, "forum_posts").select("*", { count: "exact", head: true }).eq("status", "active") as unknown as Promise<{ count: number | null }>,
+    untypedFrom(db, "forum_replies").select("*", { count: "exact", head: true }).eq("status", "active") as unknown as Promise<{ count: number | null }>,
   ]);
+  const totalPosts = postsRes.count;
+  const totalReplies = repliesRes.count;
   const yesterday = new Date(Date.now() - 86_400_000).toISOString();
-  const { count: activeToday } = await untypedFrom(db, "forum_posts")
+  const todayRes = await (untypedFrom(db, "forum_posts")
     .select("*", { count: "exact", head: true })
     .eq("status", "active")
-    .gte("created_at", yesterday) as { count: number | null };
+    .gte("created_at", yesterday) as unknown as Promise<{ count: number | null }>);
+  const activeToday = todayRes.count;
   return { totalPosts: totalPosts ?? 0, totalReplies: totalReplies ?? 0, activeToday: activeToday ?? 0 };
 }
 
