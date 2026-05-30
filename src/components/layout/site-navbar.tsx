@@ -85,7 +85,7 @@ function CommunityDropdown({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "relative flex items-center gap-0.5 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+          "relative flex items-center gap-1 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
           isHomePage
             ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -96,10 +96,10 @@ function CommunityDropdown({
         )}
       >
         Cộng Đồng
-        <ChevronDown className={cn("size-3 transition-transform duration-200", open && "rotate-180")} />
+        <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")} />
         {isCommunityActive && (
           <motion.span
-            layoutId="nav-underline"
+            layoutId="nav-underline-community"
             className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-400"
           />
         )}
