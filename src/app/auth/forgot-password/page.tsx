@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Mail, CheckCircle2, Inbox } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle2, Inbox, AlertCircle } from "lucide-react";
 
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("error") === "expired") {
+      toast.error("LINK ĐÃ HẾT HẠN. VUI LÒNG YÊU CẦU LẠI.");
+    }
+  }, [searchParams]);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -111,6 +119,13 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
         </div>
+
+        {searchParams.get("error") === "expired" && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3">
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">Link đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu gửi lại.</p>
+          </div>
+        )}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <Input

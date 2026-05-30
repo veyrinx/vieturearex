@@ -92,6 +92,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Password reset flow — skip admin domain check, redirect to update-password
+  if (nextPath === "/auth/update-password") {
+    return response; // response already redirects to /auth/update-password with session cookies
+  }
+
   if (!normalizedEmail.endsWith(`@${ADMIN_EMAIL_DOMAIN}`)) {
     await supabase.auth.signOut();
     loginRedirectUrl.searchParams.set("error", "google_not_allowed");
