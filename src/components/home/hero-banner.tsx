@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CalendarClock, ChevronLeft, ChevronRight, Flame, Newspaper, ImageIcon } from "lucide-react";
+import {
+  ArrowRight, CalendarClock, ChevronLeft, ChevronRight,
+  Flame, Newspaper, ImageIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HeroSliderEffect } from "@/lib/utils/site-settings";
 
@@ -23,16 +26,16 @@ type HeroBannerProps = {
 function getSliderVariants(effect: HeroSliderEffect) {
   if (effect === "cinematic") {
     return {
-      initial: { opacity: 0, scale: 1.08, filter: "blur(12px)" },
+      initial: { opacity: 0, scale: 1.06, filter: "blur(10px)" },
       animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-      exit: { opacity: 0, scale: 1.02, filter: "blur(6px)" },
+      exit: { opacity: 0, scale: 1.02, filter: "blur(4px)" },
     };
   }
   if (effect === "drift") {
     return {
-      initial: { opacity: 0, x: 16, scale: 1.04 },
+      initial: { opacity: 0, x: 24, scale: 1.04 },
       animate: { opacity: 1, x: 0, scale: 1 },
-      exit: { opacity: 0, x: -16, scale: 1.01 },
+      exit: { opacity: 0, x: -24, scale: 1.01 },
     };
   }
   return {
@@ -46,7 +49,6 @@ type CountdownUnit = { value: number; label: string };
 
 function useCountdown(targetDate: string | null | undefined) {
   const [units, setUnits] = useState<CountdownUnit[]>([]);
-
   useEffect(() => {
     if (!targetDate) return;
     const calc = () => {
@@ -67,7 +69,6 @@ function useCountdown(targetDate: string | null | undefined) {
     const timer = window.setInterval(calc, 1000);
     return () => window.clearInterval(timer);
   }, [targetDate]);
-
   return units;
 }
 
@@ -83,9 +84,12 @@ export function HeroBanner({
   transitionEffect = "fade",
   nextEventDate,
 }: HeroBannerProps) {
-  const desktopImages = useMemo(() => desktopBackgroundUrls.filter(Boolean).slice(0, 3), [desktopBackgroundUrls]);
+  const desktopImages = useMemo(
+    () => desktopBackgroundUrls.filter(Boolean).slice(0, 5),
+    [desktopBackgroundUrls],
+  );
   const allImages = useMemo(
-    () => (desktopImages.length > 0 ? desktopImages : mobileBackgroundUrls.filter(Boolean).slice(0, 3)),
+    () => (desktopImages.length > 0 ? desktopImages : mobileBackgroundUrls.filter(Boolean).slice(0, 5)),
     [desktopImages, mobileBackgroundUrls],
   );
 
@@ -93,333 +97,248 @@ export function HeroBanner({
   const [isPaused, setIsPaused] = useState(false);
   const countdown = useCountdown(nextEventDate);
 
-  const goTo = useCallback((i: number) => {
-    setIndex(((i % allImages.length) + allImages.length) % allImages.length);
-  }, [allImages.length]);
-
+  const goTo = useCallback(
+    (i: number) => setIndex(((i % allImages.length) + allImages.length) % allImages.length),
+    [allImages.length],
+  );
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
 
   useEffect(() => {
     if (allImages.length <= 1 || isPaused) return;
-    const safeInterval = Math.max(sliderIntervalMs, transitionMs + 1200);
-    const timer = window.setInterval(() => {
-      setIndex((cur) => (cur + 1) % allImages.length);
-    }, safeInterval);
-    return () => window.clearInterval(timer);
+    const interval = Math.max(sliderIntervalMs, transitionMs + 1200);
+    const t = window.setInterval(() => setIndex((c) => (c + 1) % allImages.length), interval);
+    return () => window.clearInterval(t);
   }, [allImages.length, sliderIntervalMs, transitionMs, isPaused]);
 
   const currentImage = allImages[index];
-  const transitionSeconds = transitionMs / 1000;
+  const transitionSecs = transitionMs / 1000;
   const hasMultiple = allImages.length > 1;
   const variants = getSliderVariants(transitionEffect);
 
+  const titleWords = heroTitle?.trim().split(/\s+/) ?? [];
+  const line1 = titleWords.slice(0, 1).join(" ") || "AREX";
+  const line2 = titleWords.slice(1, 3).join(" ") || "COMMUNITY";
+  const line3 = titleWords.slice(3).join(" ") || "HUB";
+
   const stats = [
-    { icon: Flame, label: "Sự kiện active", value: activeEventCount, color: "text-orange-500 dark:text-orange-400" },
-    { icon: Newspaper, label: "Bài viết", value: publishedNewsCount, color: "text-primary dark:text-amber-400" },
-    { icon: ImageIcon, label: "Ảnh cộng đồng", value: galleryCount, color: "text-emerald-600 dark:text-emerald-400" },
+    { icon: Flame,     label: "Sự kiện",   value: activeEventCount,  color: "text-orange-400" },
+    { icon: Newspaper, label: "Bài viết",  value: publishedNewsCount, color: "text-primary dark:text-amber-400" },
+    { icon: ImageIcon, label: "Ảnh",        value: galleryCount,       color: "text-emerald-400" },
   ];
 
   return (
-    <section className="relative -mt-6 overflow-hidden pt-8 pb-4 md:pt-10">
-      {/* Background: subtle grid mesh */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.055]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-        }}
-      />
-      {/* Color orbs */}
-      <div className="pointer-events-none absolute -right-32 top-0 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px] dark:bg-amber-400/10" />
-      <div className="pointer-events-none absolute -left-16 bottom-0 h-80 w-80 rounded-full bg-primary/6 blur-[90px] dark:bg-amber-400/6" />
+    <section
+      className="-mx-4 -mt-6 md:-mx-6 relative flex min-h-[78vh] md:min-h-[84vh] items-end overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* ── Background layer ── */}
+      <div className="absolute inset-0 bg-slate-950">
+        {/* Fallback gradient — visible when no images loaded */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(0,82,255,0.22),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(247,147,26,0.20),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(77,124,255,0.18),transparent)] dark:bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(255,178,30,0.12),transparent)]" />
 
-      <div className="relative grid gap-8 lg:grid-cols-[1fr,440px] lg:gap-12 xl:grid-cols-[1fr,480px]">
-
-        {/* ─── Left: Typography + CTAs ─── */}
-        <div className="flex flex-col justify-center gap-5 md:gap-7">
-
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="flex items-center gap-3"
-          >
-            <span className="h-px w-10 bg-primary dark:bg-amber-400" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-primary dark:text-amber-400">
-              Free Fire Vietnam
-            </span>
-          </motion.div>
-
-          {/* Main heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <h1 className="font-heading text-[clamp(2.4rem,8vw,6rem)] font-black uppercase leading-[0.88]">
-              <span className="block text-primary dark:text-amber-400">
-                {heroTitle
-                  ? heroTitle.split(" ").slice(0, 2).join(" ")
-                  : "AREX"}
-              </span>
-              <span className="block [-webkit-text-stroke:1px_hsl(var(--foreground)/0.12)] text-transparent dark:[-webkit-text-stroke:1px_rgba(255,255,255,0.10)]">COMMUNITY</span>
-              <span className="block text-foreground">HUB</span>
-            </h1>
-          </motion.div>
-
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.22 }}
-            className="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base"
-          >
-            Theo dõi sự kiện theo dòng thời gian, cập nhật tin tức theo chuyên mục và kết nối cộng đồng Free Fire Việt Nam.
-          </motion.p>
-
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:gap-6"
-          >
-            {stats.map(({ icon: Icon, label, value, color }) => (
-              <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card px-2 py-2.5 sm:flex-row sm:items-center sm:gap-2.5 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
-                <div className="flex size-8 items-center justify-center rounded-lg border border-border bg-background sm:size-9 sm:rounded-xl">
-                  <Icon className={`size-3.5 sm:size-4 ${color}`} />
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className={`font-heading text-xl font-black leading-none tabular-nums sm:text-2xl ${color}`}>
-                    {value}
-                  </p>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-[10px] sm:tracking-[0.1em]">
-                    {label}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Countdown */}
-          {countdown.length > 0 && (
+        {/* Slider images */}
+        <AnimatePresence mode="sync" initial={false}>
+          {currentImage && (
             <motion.div
+              key={currentImage}
+              initial={variants.initial}
+              animate={variants.animate}
+              exit={variants.exit}
+              transition={{ duration: transitionSecs, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${currentImage})` }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Gradient overlays for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+
+        {/* Subtle scanline texture */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: "linear-gradient(transparent 50%, rgba(0,0,0,1) 50%)",
+            backgroundSize: "100% 4px",
+          }}
+        />
+      </div>
+
+      {/* ── Content ── */}
+      <div className="relative z-10 w-full px-4 pb-12 pt-24 md:px-8 md:pb-16 md:pt-32 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-[640px] space-y-5 md:space-y-6">
+
+            {/* Live badge + eyebrow */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex items-center gap-3"
+            >
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">Đang hoạt động</span>
+              <span className="h-px w-8 bg-white/20" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/50">Free Fire Vietnam</span>
+            </motion.div>
+
+            {/* Main heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="font-heading font-black uppercase leading-[0.85] tracking-tight"
+              style={{ fontSize: "clamp(3rem, 11vw, 7.5rem)" }}
+            >
+              <span className="block text-primary dark:text-amber-400">{line1}</span>
+              <span
+                className="block text-transparent"
+                style={{ WebkitTextStroke: "2px rgba(255,255,255,0.22)" }}
+              >
+                {line2}
+              </span>
+              <span className="block text-white">{line3}</span>
+            </motion.h1>
+
+            {/* Tagline */}
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.35 }}
-              className="space-y-2"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="max-w-md text-sm leading-relaxed text-white/55 md:text-base"
             >
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                ⏱ Sự kiện tiếp theo
-              </p>
-              <div className="flex gap-1.5 sm:gap-2">
-                {countdown.map((unit) => (
-                  <div
-                    key={unit.label}
-                    className="flex min-w-[44px] flex-col items-center rounded-xl border border-primary/20 bg-primary/5 px-2 py-2 dark:border-amber-400/20 dark:bg-amber-400/5 sm:min-w-[52px] sm:px-3"
-                  >
-                    <span className="font-heading text-xl font-black tabular-nums text-primary dark:text-amber-400 sm:text-2xl">
-                      {String(unit.value).padStart(2, "0")}
-                    </span>
-                    <span className="text-[8px] font-bold uppercase tracking-[0.08em] text-muted-foreground sm:text-[9px]">
-                      {unit.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              Theo dõi sự kiện, cập nhật tin tức Esports và kết nối cộng đồng Free Fire Việt Nam.
+            </motion.p>
+
+            {/* Stats pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.28 }}
+              className="flex flex-wrap gap-2"
+            >
+              {stats.map(({ icon: Icon, label, value, color }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3.5 py-1.5 backdrop-blur-md"
+                >
+                  <Icon className={`size-3.5 shrink-0 ${color}`} />
+                  <span className={`font-heading text-sm font-black tabular-nums ${color}`}>{value}</span>
+                  <span className="text-[10px] font-medium text-white/45">{label}</span>
+                </div>
+              ))}
             </motion.div>
-          )}
 
-          {/* CTA buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3"
-          >
-            <Button asChild size="lg" className="h-11 w-full rounded-xl px-6 shadow-[0_4px_20px_hsl(var(--primary)/0.35)] sm:w-auto">
-              <Link href="/calendar">
-                XEM LỊCH SỰ KIỆN
-                <CalendarClock className="ml-2 size-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 w-full rounded-xl px-5 sm:w-auto">
-              <Link href="/news">
-                TIN TỨC
-                <ArrowRight className="ml-2 size-4" />
-              </Link>
-            </Button>
-          </motion.div>
-        </div>
-
-        {/* ─── Right: Image frame ─── */}
-        <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="relative hidden lg:flex flex-col gap-3"
-        >
-          {/* Main image card */}
-          <div
-            className="group relative overflow-hidden rounded-[20px] border border-border bg-muted shadow-2xl ring-1 ring-primary/10 dark:ring-amber-400/10"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
-            {/* Aspect ratio wrapper */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden">
-              <AnimatePresence mode="sync" initial={false}>
-                {currentImage ? (
-                  <motion.div
-                    key={currentImage}
-                    initial={variants.initial}
-                    animate={variants.animate}
-                    exit={variants.exit}
-                    transition={{ duration: transitionSeconds, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${currentImage})` }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-muted" />
-                )}
-              </AnimatePresence>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-              {/* Dot nav */}
-              {hasMultiple && (
-                <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
-                  {allImages.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => goTo(i)}
-                      aria-label={`Ảnh ${i + 1}`}
-                      className={[
-                        "rounded-full transition-all duration-300",
-                        i === index ? "h-2 w-5 bg-white shadow" : "size-2 bg-white/50 hover:bg-white/80",
-                      ].join(" ")}
-                    />
+            {/* Countdown */}
+            {countdown.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.32 }}
+                className="flex flex-wrap items-center gap-3"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+                  ⏱ Sự kiện tiếp theo
+                </span>
+                <div className="flex gap-1.5">
+                  {countdown.map((unit) => (
+                    <div
+                      key={unit.label}
+                      className="flex min-w-[40px] flex-col items-center rounded-xl border border-primary/30 bg-primary/15 px-2 py-1.5 backdrop-blur-sm dark:border-amber-400/30 dark:bg-amber-400/10"
+                    >
+                      <span className="font-heading text-base font-black leading-none tabular-nums text-primary dark:text-amber-400 md:text-xl">
+                        {String(unit.value).padStart(2, "0")}
+                      </span>
+                      <span className="text-[8px] font-bold uppercase tracking-wide text-white/35">
+                        {unit.label}
+                      </span>
+                    </div>
                   ))}
                 </div>
-              )}
-
-              {/* Arrow nav */}
-              {hasMultiple && (
-                <>
-                  <button
-                    type="button"
-                    onClick={prev}
-                    className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/50"
-                    aria-label="Ảnh trước"
-                  >
-                    <ChevronLeft className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={next}
-                    className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/50"
-                    aria-label="Ảnh tiếp theo"
-                  >
-                    <ChevronRight className="size-4" />
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Image card footer */}
-            <div className="flex items-center justify-between border-t border-border bg-card px-4 py-2.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Arex Community Hub
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 dark:text-emerald-400">
-                  Đang hoạt động
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick links row */}
-          <div className="grid grid-cols-2 gap-3">
-            <Link
-              href="/events"
-              className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition hover:border-primary/40 hover:bg-primary/5 dark:hover:border-amber-400/40 dark:hover:bg-amber-400/5"
-            >
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/15">
-                <Flame className="size-4 text-orange-500 dark:text-orange-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-foreground">Sự kiện</p>
-                <p className="text-[10px] text-muted-foreground">{activeEventCount} đang diễn ra</p>
-              </div>
-              <ArrowRight className="ml-auto size-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary dark:group-hover:text-amber-400" />
-            </Link>
-            <Link
-              href="/news"
-              className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition hover:border-primary/40 hover:bg-primary/5 dark:hover:border-amber-400/40 dark:hover:bg-amber-400/5"
-            >
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15">
-                <Newspaper className="size-4 text-primary dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-foreground">Tin tức</p>
-                <p className="text-[10px] text-muted-foreground">{publishedNewsCount} bài viết</p>
-              </div>
-              <ArrowRight className="ml-auto size-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary dark:group-hover:text-amber-400" />
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Mobile: Image below text */}
-      <div className="mt-8 lg:hidden">
-        <div
-          className="relative overflow-hidden rounded-[16px] border border-border bg-muted"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          <div className="relative aspect-[16/9] w-full overflow-hidden">
-            <AnimatePresence mode="sync" initial={false}>
-              {currentImage ? (
-                <motion.div
-                  key={currentImage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8 }}
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${currentImage})` }}
-                />
-              ) : (
-                <div className="absolute inset-0 bg-muted" />
-              )}
-            </AnimatePresence>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-            {hasMultiple && (
-              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
-                {allImages.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => goTo(i)}
-                    aria-label={`Ảnh ${i + 1}`}
-                    className={[
-                      "rounded-full transition-all duration-300",
-                      i === index ? "h-1.5 w-4 bg-white" : "size-1.5 bg-white/50",
-                    ].join(" ")}
-                  />
-                ))}
-              </div>
+              </motion.div>
             )}
+
+            {/* CTA buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.38 }}
+              className="flex flex-row flex-wrap gap-3"
+            >
+              <Button
+                asChild
+                size="lg"
+                className="h-11 rounded-xl px-6 shadow-[0_4px_24px_hsl(var(--primary)/0.45)]"
+              >
+                <Link href="/calendar">
+                  XEM LỊCH SỰ KIỆN
+                  <CalendarClock className="ml-2 size-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-11 rounded-xl border-white/18 bg-white/8 px-5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white hover:border-white/30"
+              >
+                <Link href="/news">
+                  TIN TỨC
+                  <ArrowRight className="ml-2 size-4" />
+                </Link>
+              </Button>
+            </motion.div>
           </div>
         </div>
       </div>
+
+      {/* ── Slider controls ── */}
+      {hasMultiple && (
+        <>
+          {/* Dot indicators */}
+          <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 md:bottom-6">
+            {allImages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Ảnh ${i + 1}`}
+                className={[
+                  "rounded-full transition-all duration-300",
+                  i === index ? "h-2 w-6 bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "size-2 bg-white/30 hover:bg-white/60",
+                ].join(" ")}
+              />
+            ))}
+          </div>
+
+          {/* Arrow buttons */}
+          <button
+            type="button"
+            onClick={prev}
+            aria-label="Ảnh trước"
+            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:left-5 md:size-10"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            aria-label="Ảnh tiếp theo"
+            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:right-5 md:size-10"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </>
+      )}
+
+      {/* Bottom fade into page */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 }
