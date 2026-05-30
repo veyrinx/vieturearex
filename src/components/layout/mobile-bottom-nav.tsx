@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  House, BookOpenText, Flame, MonitorPlay, User, LayoutDashboard,
+  House, BookOpenText, MessageSquare, MonitorPlay, User, LayoutDashboard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -18,11 +18,11 @@ type NavItem = {
 };
 
 const BASE_NAV: NavItem[] = [
-  { href: "/",        icon: House,        label: "Trang chủ", exact: true },
-  { href: "/news",    icon: BookOpenText, label: "Tin tức" },
-  { href: "/events",  icon: Flame,        label: "Sự kiện" },
-  { href: "/esports", icon: MonitorPlay,  label: "Stream" },
-  { href: "/profile", icon: User,         label: "Hồ sơ" },
+  { href: "/",          icon: House,          label: "Trang chủ", exact: true },
+  { href: "/news",      icon: BookOpenText,   label: "Tin tức" },
+  { href: "/cong-dong", icon: MessageSquare,  label: "Cộng đồng" },
+  { href: "/esports",   icon: MonitorPlay,    label: "Stream" },
+  { href: "/profile",   icon: User,           label: "Hồ sơ" },
 ];
 
 const ADMIN_ITEM: NavItem = { href: "/admin", icon: LayoutDashboard, label: "Admin" };

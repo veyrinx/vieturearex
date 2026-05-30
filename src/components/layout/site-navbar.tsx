@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
-  BookOpenText, Users, Swords,
+  BookOpenText, Users, Swords, MessageSquare,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -26,13 +26,14 @@ import { navItems, siteConfig } from "@/lib/constants/site";
 import type { LucideIcon } from "lucide-react";
 
 const NAV_ICONS: Record<string, LucideIcon> = {
-  "/":            House,
-  "/calendar":    CalendarDays,
-  "/events":      Flame,
-  "/esports":     MonitorPlay,
-  "/news":        BookOpenText,
-  "/team":        Users,
-  "/tournaments": Swords,
+  "/":              House,
+  "/calendar":      CalendarDays,
+  "/events":        Flame,
+  "/esports":       MonitorPlay,
+  "/news":          BookOpenText,
+  "/team":          Users,
+  "/tournaments":   Swords,
+  "/cong-dong":     MessageSquare,
 };
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
