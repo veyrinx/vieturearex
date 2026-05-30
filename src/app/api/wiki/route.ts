@@ -103,5 +103,15 @@ export async function POST(req: NextRequest) {
     updated_at:    new Date().toISOString(),
   } as never);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  void import("@/lib/server/user-notify").then(({ notifyUserNewWikiArticle }) =>
+    notifyUserNewWikiArticle({
+      slug: article!.slug,
+      title: body.data.title,
+      category: body.data.category ?? "Tổng quan",
+      author_name: authorName,
+    }, siteUrl)
+  );
+
   return NextResponse.json({ slug: article!.slug }, { status: 201 });
 }

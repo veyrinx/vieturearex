@@ -182,3 +182,55 @@ export function notifyUserFFVersion(
 
   return sendUserTelegramNotification(payload).catch(() => null);
 }
+
+// ── Bài đăng diễn đàn mới ────────────────────────────────────────────────────
+
+interface ForumPostInfo {
+  id: string;
+  title: string;
+  category: string;
+  display_name: string;
+}
+
+export function notifyUserNewForumPost(post: ForumPostInfo, siteUrl: string) {
+  const payload = {
+    title: "💬 BÀI VIẾT DIỄN ĐÀN MỚI!",
+    subtitle: `Đăng lúc ${vnNow()} (ICT)`,
+    sections: [{
+      rows: [
+        { label: "📌 Tiêu đề", value: post.title, bold: true },
+        { label: "🏷 Danh mục", value: post.category },
+        { label: "👤 Tác giả", value: post.display_name },
+      ],
+    }],
+    actions: [{ label: "👉 Xem bài viết", url: `${siteUrl}/cong-dong/${post.id}` }],
+    footer: `✨ ${new URL(siteUrl).hostname}`,
+  };
+  return sendUserTelegramNotification(payload).catch(() => null);
+}
+
+// ── Wiki article mới ──────────────────────────────────────────────────────────
+
+interface WikiInfo {
+  slug: string;
+  title: string;
+  category: string;
+  author_name: string;
+}
+
+export function notifyUserNewWikiArticle(article: WikiInfo, siteUrl: string) {
+  const payload = {
+    title: "📖 WIKI MỚI ĐƯỢC ĐÓNG GÓP!",
+    subtitle: `Đăng lúc ${vnNow()} (ICT)`,
+    sections: [{
+      rows: [
+        { label: "📌 Tiêu đề", value: article.title, bold: true },
+        { label: "🏷 Danh mục", value: article.category },
+        { label: "✍️ Tác giả", value: article.author_name },
+      ],
+    }],
+    actions: [{ label: "👉 Đọc Wiki", url: `${siteUrl}/wiki/${article.slug}` }],
+    footer: `📚 ${new URL(siteUrl).hostname}`,
+  };
+  return sendUserTelegramNotification(payload).catch(() => null);
+}

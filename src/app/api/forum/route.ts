@@ -69,5 +69,16 @@ export async function POST(req: NextRequest) {
   } as never).select("id").single() as { data: { id: string } | null; error: unknown };
 
   if (error || !post) return NextResponse.json({ error: "Không thể tạo bài." }, { status: 500 });
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  void import("@/lib/server/user-notify").then(({ notifyUserNewForumPost }) =>
+    notifyUserNewForumPost({
+      id: post.id,
+      title: parsed.data.title,
+      category: parsed.data.category,
+      display_name: profile?.display_name ?? "Ẩn danh",
+    }, siteUrl)
+  );
+
   return NextResponse.json({ id: post.id }, { status: 201 });
 }
