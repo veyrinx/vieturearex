@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     type: "recovery",
     email,
     options: {
-      redirectTo: `${siteUrl}/auth/callback?next=/auth/update-password`,
+      redirectTo: `${siteUrl}/auth/reset-callback`,
     },
   });
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           email,
-          redirect_to: `${siteUrl}/auth/callback?next=/auth/update-password`,
+          redirect_to: `${siteUrl}/auth/reset-callback`,
         }),
       }).catch(() => null);
     }

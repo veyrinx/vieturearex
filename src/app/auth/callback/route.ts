@@ -87,16 +87,7 @@ export async function GET(request: NextRequest) {
 
   const normalizedEmail = user?.email?.trim().toLowerCase();
   if (!user || !normalizedEmail) {
-    // If this was a password reset attempt, send back to forgot-password with error
-    if (nextPath === "/auth/update-password") {
-      return NextResponse.redirect(new URL("/auth/forgot-password?error=expired", requestUrl.origin));
-    }
     return NextResponse.redirect(new URL("/auth/login?error=missing_user", requestUrl.origin));
-  }
-
-  // Password reset flow — skip admin domain check, redirect to update-password
-  if (nextPath === "/auth/update-password") {
-    return response; // response already redirects to /auth/update-password with session cookies
   }
 
   if (!normalizedEmail.endsWith(`@${ADMIN_EMAIL_DOMAIN}`)) {
