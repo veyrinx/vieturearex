@@ -4,11 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
-  BookOpenText, Users, Swords, MessageSquare,
+  BookOpenText, Users, Swords, MessageSquare, Trophy, ChevronDown,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { PushNotificationButton } from "@/components/common/push-notification-button";
 import { UserNavButton } from "@/components/common/user-nav-button";
@@ -33,8 +33,14 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/news":          BookOpenText,
   "/team":          Users,
   "/tournaments":   Swords,
-  "/cong-dong":     MessageSquare,
 };
+
+const COMMUNITY_ITEMS = [
+  { title: "Diễn Đàn",          href: "/cong-dong",           icon: MessageSquare, desc: "Thảo luận & chia sẻ cộng đồng" },
+  { title: "Bình Chọn",         href: "/binh-chon",           icon: Trophy,        desc: "Nhân vật mạnh nhất Free Fire" },
+  { title: "Giải Đấu CĐ",       href: "/giai-dau-cong-dong",  icon: Swords,        desc: "Tổ chức & tham gia giải đấu" },
+  { title: "Tuyển Thành Viên",  href: "/tuyen-thanh-vien",    icon: Users,         desc: "Tìm clan & guild phù hợp" },
+];
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
 
@@ -49,6 +55,106 @@ type SiteNavbarProps = {
   siteName?: string;
 };
 
+// ── Community dropdown (desktop) ────────────────────────────────────────────
+function CommunityDropdown({
+  pathname, isHomePage, onNavigate,
+}: { pathname: string; isHomePage: boolean; onNavigate?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isCommunityActive = COMMUNITY_ITEMS.some((item) => pathname.startsWith(item.href));
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "relative flex items-center gap-0.5 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+          isHomePage
+            ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
+            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          isCommunityActive &&
+            (isHomePage
+              ? "text-primary dark:text-amber-300"
+              : "bg-primary/8 text-primary dark:bg-amber-400/8 dark:text-amber-300"),
+        )}
+      >
+        Cộng Đồng
+        <ChevronDown className={cn("size-3 transition-transform duration-200", open && "rotate-180")} />
+        {isCommunityActive && (
+          <motion.span
+            layoutId="nav-underline"
+            className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-400"
+          />
+        )}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            className="absolute left-0 top-full z-50 mt-1.5 w-60 overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl"
+          >
+            {/* Header strip */}
+            <div className="border-b border-border/50 px-4 py-2.5">
+              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground">
+                Cộng Đồng Arex
+              </p>
+            </div>
+            <div className="p-1.5 space-y-0.5">
+              {COMMUNITY_ITEMS.map(({ title, href, icon: Icon, desc }) => {
+                const active = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => { setOpen(false); onNavigate?.(); }}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                      active
+                        ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-300"
+                        : "text-foreground hover:bg-muted",
+                    )}
+                  >
+                    <span className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
+                      active
+                        ? "bg-primary/15 dark:bg-amber-400/15"
+                        : "bg-muted group-hover:bg-primary/10 dark:group-hover:bg-amber-400/10",
+                    )}>
+                      <Icon className={cn("size-4", active ? "text-primary dark:text-amber-400" : "text-muted-foreground group-hover:text-primary dark:group-hover:text-amber-400")} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold leading-tight">{title}</p>
+                      <p className="text-[10px] leading-tight text-muted-foreground">{desc}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Main navbar ──────────────────────────────────────────────────────────────
 export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }: SiteNavbarProps) {
   const iconLight = logoLight || ICON_LIGHT_DEFAULT;
   const iconDark = logoDark || ICON_DARK_DEFAULT;
@@ -133,7 +239,40 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
 
         {/* ── Nav links (desktop center) ── */}
         <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex">
-          {navItems.map((item) => {
+          {/* First 5: TRANG CHỦ → TIN TỨC */}
+          {navItems.slice(0, 5).map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+                  isHomePage
+                    ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  active &&
+                    (isHomePage
+                      ? "text-primary dark:text-amber-300"
+                      : "bg-primary/8 text-primary dark:bg-amber-400/8 dark:text-amber-300"),
+                )}
+              >
+                {item.title}
+                {active && (
+                  <motion.span
+                    layoutId="nav-underline"
+                    className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-400"
+                  />
+                )}
+              </Link>
+            );
+          })}
+
+          {/* Community dropdown */}
+          <CommunityDropdown pathname={pathname} isHomePage={isHomePage} />
+
+          {/* Last 2: ĐỘI NGŨ, GIẢI ĐẤU */}
+          {navItems.slice(5).map((item) => {
             const active = pathname === item.href;
             return (
               <Link
@@ -230,6 +369,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               </div>
 
               <nav className="flex-1 space-y-1 overflow-y-auto">
+                {/* Main nav items */}
                 {navItems.map((item, i) => {
                   const active = pathname === item.href;
                   const Icon = NAV_ICONS[item.href];
@@ -238,7 +378,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                       key={item.href}
                       initial={{ opacity: 0, x: 16 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.25, ease: "easeOut" }}
+                      transition={{ delay: i * 0.045, duration: 0.22, ease: "easeOut" }}
                     >
                       <Link
                         href={item.href}
@@ -253,9 +393,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                         {Icon && (
                           <span className={cn(
                             "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                            active
-                              ? "bg-primary/15 dark:bg-amber-400/15"
-                              : "bg-muted",
+                            active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
                           )}>
                             <Icon className="size-3.5" />
                           </span>
@@ -265,6 +403,43 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                     </motion.div>
                   );
                 })}
+
+                {/* Community section */}
+                <div className="pt-3">
+                  <p className="px-3.5 pb-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
+                    Cộng Đồng
+                  </p>
+                  {COMMUNITY_ITEMS.map(({ href, icon: Icon, title }, i) => {
+                    const active = pathname.startsWith(href);
+                    return (
+                      <motion.div
+                        key={href}
+                        initial={{ opacity: 0, x: 16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: (navItems.length + i) * 0.045, duration: 0.22, ease: "easeOut" }}
+                      >
+                        <Link
+                          href={href}
+                          onClick={() => setSheetOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
+                            active
+                              ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
+                              : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
+                          )}
+                        >
+                          <span className={cn(
+                            "flex size-7 shrink-0 items-center justify-center rounded-lg",
+                            active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
+                          )}>
+                            <Icon className="size-3.5" />
+                          </span>
+                          {title}
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </nav>
 
               {/* Quick controls in sheet (mobile only) */}
