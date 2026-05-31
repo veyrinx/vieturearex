@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
@@ -233,6 +233,11 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [miniAppStats, setMiniAppStats] = useState<{ active: number; total: number } | null>(null);
   const [miniAppBroadcast, setMiniAppBroadcast] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const [webhookStatus, setWebhookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const dirtyRef = useRef<Set<string>>(new Set());
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   async function sendReportNow() {
     setReportSending(true);
@@ -330,12 +335,48 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
 
   const defaults = siteId === "isc" ? { ...defaultSiteSettingValues, ...defaultIscSettingValues } : defaultSiteSettingValues;
   const v = (key: string) => state[pk(key)] ?? defaults[key] ?? "";
-  const set = (key: string, value: string) => setState((p) => ({ ...p, [pk(key)]: value }));
-  const setSlot = (key: string, i: number, value: string) => setState((p) => {
-    const slots = getSlots(p[pk(key)] ?? "");
-    slots[i] = value;
-    return { ...p, [pk(key)]: slots.join("\n") };
-  });
+
+  function scheduleAutoSave() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      const keys = [...dirtyRef.current];
+      if (keys.length === 0) return;
+      dirtyRef.current.clear();
+      setAutoSaveStatus("saving");
+      try {
+        await Promise.all(keys.map(async (k) => {
+          if (SENSITIVE_FORM_KEYS.has(k) && !stateRef.current[k]) return;
+          await fetch("/api/admin/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: k, value: stateRef.current[k] ?? "" }),
+          });
+        }));
+        setAutoSaveStatus("saved");
+        void onSaved();
+        setTimeout(() => setAutoSaveStatus("idle"), 2500);
+      } catch {
+        setAutoSaveStatus("idle");
+      }
+    }, 1500);
+  }
+
+  const set = (key: string, value: string) => {
+    const fullKey = pk(key);
+    setState((p) => ({ ...p, [fullKey]: value }));
+    dirtyRef.current.add(fullKey);
+    scheduleAutoSave();
+  };
+  const setSlot = (key: string, i: number, value: string) => {
+    const fullKey = pk(key);
+    setState((p) => {
+      const slots = getSlots(p[fullKey] ?? "");
+      slots[i] = value;
+      return { ...p, [fullKey]: slots.join("\n") };
+    });
+    dirtyRef.current.add(fullKey);
+    scheduleAutoSave();
+  };
 
   const sensitiveHint = (key: string) =>
     SENSITIVE_FORM_KEYS.has(key) && configuredKeys.has(key) && !v(key)
@@ -2744,7 +2785,21 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       </nav>
 
       {/* ── Content ── */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 space-y-4">
+        {autoSaveStatus !== "idle" && (
+          <div className={cn(
+            "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
+            autoSaveStatus === "saving"
+              ? "border-amber-400/30 bg-amber-400/10 text-amber-600 dark:text-amber-400"
+              : "border-green-400/30 bg-green-400/10 text-green-600 dark:text-green-400",
+          )}>
+            {autoSaveStatus === "saving" ? (
+              <><Loader2 className="size-3.5 animate-spin" /> Đang tự động lưu...</>
+            ) : (
+              <><CheckCircle2 className="size-3.5" /> Đã tự động lưu</>
+            )}
+          </div>
+        )}
         {sections[active]}
       </div>
     </div>

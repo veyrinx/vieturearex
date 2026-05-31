@@ -77,6 +77,7 @@ export const adminNavItems = [
   { title: "CONTRIBUTORS", href: "/admin/contributors" },
   { title: "BROADCAST", href: "/admin/broadcast" },
   { title: "CSKH", href: "/admin/cskh" },
+  { title: "DIỄN ĐÀN", href: "/admin/forum" },
   { title: "BÌNH LUẬN", href: "/admin/comments" },
   { title: "BÌNH CHỌN", href: "/admin/polls" },
   { title: "ĐÁNH GIÁ", href: "/admin/ratings" },

@@ -14,7 +14,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
-import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 
 async function getAdminName(): Promise<string> {
   const supabase = createServerSupabaseClient();
@@ -71,10 +71,10 @@ function notifyEventChange(
 
   const color = action === "created" ? DISCORD_COLORS.info : action === "deleted" ? DISCORD_COLORS.err : DISCORD_COLORS.warn;
 
-  // Admin channels only — user channel handled separately via notifyUserNewEvent
   void Promise.allSettled([
     sendTelegramNotification(payload),
     sendDiscordInternalNotification(payload, color),
+    ...(action === "created" ? [sendDiscordPublicNotification(payload, DISCORD_COLORS.info)] : []),
   ]);
 }
 

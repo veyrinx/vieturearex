@@ -3,6 +3,7 @@ import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 
 type WikiArticle = {
   id: string;
@@ -72,6 +73,10 @@ export async function PATCH(request: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
+  const { data: prev } = await untypedFrom(db, "wiki_articles")
+    .select("title, category, author_name, status")
+    .eq("slug", slug).single() as { data: { title: string; category: string; author_name: string; status: string } | null };
+
   const { error } = await untypedFrom(db, "wiki_articles").update({ status } as never).eq("slug", slug);
   if (error) return NextResponse.json({ error: "Không thể cập nhật trạng thái" }, { status: 500 });
 
@@ -81,6 +86,29 @@ export async function PATCH(request: NextRequest) {
     targetId: slug,
     summary: `Đổi trạng thái bài wiki "${slug}" → ${status}`,
   }).catch(() => null);
+
+  // Notify when going live (draft → published)
+  if (status === "published" && prev?.status !== "published" && prev) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const payload = {
+      title: "📖 WIKI MỚI ĐƯỢC XUẤT BẢN!",
+      sections: [{
+        rows: [
+          { label: "📌 Tiêu đề", value: prev.title, bold: true },
+          { label: "🏷 Danh mục", value: prev.category },
+          { label: "✍️ Tác giả", value: prev.author_name },
+        ],
+      }],
+      actions: [{ label: "👉 Đọc Wiki", url: `${siteUrl}/wiki/${slug}` }],
+      footer: `📚 ${new URL(siteUrl).hostname}`,
+    };
+    void Promise.allSettled([
+      import("@/lib/server/user-notify").then(({ notifyUserNewWikiArticle }) =>
+        notifyUserNewWikiArticle({ slug, title: prev.title, category: prev.category, author_name: prev.author_name }, siteUrl)
+      ),
+      sendDiscordPublicNotification(payload, DISCORD_COLORS.info),
+    ]);
+  }
 
   return NextResponse.json({ ok: true });
 }
