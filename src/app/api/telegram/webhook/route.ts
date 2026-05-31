@@ -4,6 +4,7 @@ import { getSettings, getNews, getEvents } from "@/lib/data/content-service";
 import { sanitizePlainText } from "@/lib/server/sanitize";
 import { siteConfig } from "@/lib/constants/site";
 import { subscribeUser } from "@/lib/server/telegram-broadcast";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 
 const TOKEN_KEY = "integrations.telegram_bot_token";
 const CHAT_KEY  = "integrations.telegram_chat_id";
@@ -134,6 +135,9 @@ export async function GET() {
 
 // Receive Telegram updates
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "tg-webhook", limit: 120, windowMs: 60_000 });
+  if (limited) return limited;
+
   // Validate the shared secret Telegram sends via header
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
   if (webhookSecret) {

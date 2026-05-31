@@ -1,17 +1,22 @@
-import { NextResponse } from "next/server";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { getTmsMatchResults, submitTmsResults } from "@/lib/tms/data";
 import type { SubmitResultInput } from "@/lib/tms/types";
 import { createNotifications } from "@/lib/server/notifications";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-match-results", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   const { id } = await params;
   const results = await getTmsMatchResults(id).catch(() => []);
   return NextResponse.json(results);
 }
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-match-results-post", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
   const guard = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (guard) return guard;
   const auth = await getAuthContext();

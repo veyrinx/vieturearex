@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ocrFromFetch } from "@/lib/server/ff-ocr";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 
 const OA_TOKEN = process.env.ZALO_OA_ACCESS_TOKEN ?? "";
 const WEBHOOK_SECRET = process.env.ZALO_WEBHOOK_SECRET ?? "";
@@ -38,6 +39,9 @@ async function sendZaloReply(userId: string, text: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, { name: "zalo-webhook", limit: 120, windowMs: 60_000 });
+  if (limited) return limited;
+
   // Validate secret if configured
   if (WEBHOOK_SECRET) {
     const sig = req.headers.get("x-zalo-signature") ?? "";

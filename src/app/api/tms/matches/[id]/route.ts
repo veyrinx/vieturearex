@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
-import { enforceAdminApiAuth } from "@/lib/server/api-guard";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { createNotifications } from "@/lib/server/notifications";
 import type { TmsMatch } from "@/lib/tms/types";
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-match-patch", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
   const guard = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (guard) return guard;
 

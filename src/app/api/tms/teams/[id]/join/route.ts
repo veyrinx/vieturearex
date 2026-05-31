@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { getTmsTeam, getMyTmsTeam, joinTeam } from "@/lib/tms/data";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = enforceRateLimit(req, { name: "tms-team-join", limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   const auth = await getAuthContext();
   if (!auth.userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
