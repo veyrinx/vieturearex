@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Trophy, Swords, Star, Target, TrendingUp, Shield } from "lucide-react";
 import { getGlobalPlayerLeaderboard, getGlobalTeamLeaderboard } from "@/lib/tms/data";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -146,7 +147,7 @@ export default async function LeaderboardPage() {
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
                             {t.logo_url
-                              ? <img src={t.logo_url} alt={t.team_name} className="size-6 rounded object-cover shrink-0" />
+                              ? <Image src={t.logo_url} alt={t.team_name} width={24} height={24} unoptimized className="size-6 rounded object-cover shrink-0" />
                               : <div className="size-6 rounded bg-muted flex items-center justify-center text-[9px] font-black text-muted-foreground shrink-0">{t.team_tag.slice(0, 2)}</div>
                             }
                             <div className="min-w-0">

@@ -53,7 +53,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const eventServers = useEventServers();
-  const { data } = useEventsQuery({ status });
+  const { data, isFetching } = useEventsQuery({ status });
   const safeData = useMemo(() => data ?? initialEvents ?? [], [data, initialEvents]);
 
   const events = useMemo(() => {
@@ -181,12 +181,27 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         </div>
       </div>
 
-      {events.length === 0 ? (
+      {isFetching && !data && (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-[14px] border border-border bg-card overflow-hidden">
+              <div className="h-44 bg-muted" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 w-3/4 rounded bg-muted" />
+                <div className="h-3 w-1/2 rounded bg-muted" />
+                <div className="h-3 w-2/3 rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isFetching && events.length === 0 ? (
         <EmptyState
           title="CHƯA CÓ SỰ KIỆN PHÙ HỢP"
           description="Thử đổi bộ lọc hoặc khoảng ngày để xem thêm sự kiện."
         />
-      ) : (
+      ) : !isFetching ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {events.map((event) => (
             <article key={event.id}
@@ -260,7 +275,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
             </article>
           ))}
         </div>
-      )}
+      ) : null}
 
       <EventModal
         event={selectedEvent}
