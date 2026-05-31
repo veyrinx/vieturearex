@@ -91,5 +91,20 @@ export async function POST(req: NextRequest) {
     }, siteUrl)
   );
 
+  // Award points + check forum achievements
+  void (async () => {
+    try {
+      await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
+        .rpc("increment_user_points", { uid: user.id, amount: 10 });
+
+      const { count } = await untypedFrom(db, "forum_posts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("status", "active") as { count: number | null };
+
+      const { checkForumAchievements } = await import("@/lib/server/award-achievement");
+      await checkForumAchievements(user.id, count ?? 1, 0);
+    } catch { /* non-critical */ }
+  })();
+
   return NextResponse.json({ id: post.id }, { status: 201 });
 }

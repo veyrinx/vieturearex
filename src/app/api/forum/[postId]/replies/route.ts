@@ -96,5 +96,28 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     );
   }
 
+  // Award points + check reply achievement + check post popularity
+  void (async () => {
+    try {
+      await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
+        .rpc("increment_user_points", { uid: user.id, amount: 5 });
+
+      const { count: replyCount } = await untypedFrom(db, "forum_replies")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("status", "active") as { count: number | null };
+
+      const { checkForumAchievements, checkForumPopularAchievement } = await import("@/lib/server/award-achievement");
+      await checkForumAchievements(user.id, 0, replyCount ?? 1);
+
+      // Check if the original post is now popular (10+ replies)
+      if (post?.user_id) {
+        const { count: postReplyCount } = await untypedFrom(db, "forum_replies")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", postId).eq("status", "active") as { count: number | null };
+        await checkForumPopularAchievement(post.user_id, postReplyCount ?? 0);
+      }
+    } catch { /* non-critical */ }
+  })();
+
   return NextResponse.json(reply, { status: 201 });
 }

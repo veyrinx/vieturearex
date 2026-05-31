@@ -36,18 +36,20 @@ export async function awardAchievement(userId: string, achievementId: string): P
   return true;
 }
 
-/**
- * Check and award rank-based achievements based on current points.
- */
+// ── Rank achievements ──────────────────────────────────────────────────────
+
 export async function checkRankAchievements(userId: string, points: number) {
-  if (points >= 10000) await awardAchievement(userId, "master_rank");
-  else if (points >= 5000) await awardAchievement(userId, "diamond_rank");
-  else if (points >= 500) await awardAchievement(userId, "gold_rank");
+  if (points >= 50_000) await awardAchievement(userId, "challenger_rank");
+  if (points >= 25_000) await awardAchievement(userId, "grandmaster_rank");
+  if (points >= 10_000) await awardAchievement(userId, "master_rank");
+  if (points >= 5_000)  await awardAchievement(userId, "diamond_rank");
+  if (points >= 1_000)  await awardAchievement(userId, "platinum_rank");
+  if (points >= 500)    await awardAchievement(userId, "gold_rank");
+  if (points >= 100)    await awardAchievement(userId, "silver_rank");
 }
 
-/**
- * Check profile completion and social link achievements.
- */
+// ── Profile achievements ───────────────────────────────────────────────────
+
 export async function checkProfileAchievements(
   userId: string,
   profile: {
@@ -55,20 +57,80 @@ export async function checkProfileAchievements(
     bio?: string | null;
     ff_id?: string | null;
     socialCount: number;
+    followCount?: number;
   },
 ) {
-  const { avatar_url, bio, ff_id, socialCount } = profile;
-  if (avatar_url && bio && ff_id) {
-    await awardAchievement(userId, "profile_complete");
-  }
-  if (socialCount >= 2) {
-    await awardAchievement(userId, "social_linked");
-  }
+  const { avatar_url, bio, ff_id, socialCount, followCount = 0 } = profile;
+  if (avatar_url && bio && ff_id) await awardAchievement(userId, "profile_complete");
+  if (socialCount >= 2) await awardAchievement(userId, "social_linked");
+  if (followCount >= 1) await awardAchievement(userId, "first_follow");
+  if (followCount >= 5) await awardAchievement(userId, "followed_5");
 }
 
-/**
- * Get all achievement IDs earned by a user.
- */
+// ── Forum achievements ─────────────────────────────────────────────────────
+
+export async function checkForumAchievements(userId: string, totalPosts: number, totalReplies: number) {
+  if (totalPosts >= 1)   await awardAchievement(userId, "forum_first_post");
+  if (totalPosts >= 10)  await awardAchievement(userId, "forum_10_posts");
+  if (totalPosts >= 50)  await awardAchievement(userId, "forum_50_posts");
+  if (totalPosts >= 100) await awardAchievement(userId, "forum_100_posts");
+  if (totalReplies >= 1) await awardAchievement(userId, "forum_first_reply");
+}
+
+export async function checkForumPopularAchievement(userId: string, replyCount: number) {
+  if (replyCount >= 10) await awardAchievement(userId, "forum_popular");
+}
+
+// ── Wiki achievements ──────────────────────────────────────────────────────
+
+export async function checkWikiAchievements(userId: string, totalPublished: number) {
+  if (totalPublished >= 1)  await awardAchievement(userId, "wiki_first_article");
+  if (totalPublished >= 3)  await awardAchievement(userId, "wiki_3_articles");
+  if (totalPublished >= 10) await awardAchievement(userId, "wiki_10_articles");
+}
+
+// ── Tournament achievements ────────────────────────────────────────────────
+
+export async function checkTournamentAchievements(
+  userId: string,
+  stats: {
+    tournamentsPlayed: number;
+    totalWins: number;
+    totalKills: number;
+    hasTop3: boolean;
+  },
+) {
+  const { tournamentsPlayed, totalWins, totalKills, hasTop3 } = stats;
+  if (tournamentsPlayed >= 1)  await awardAchievement(userId, "tournament_debut");
+  if (tournamentsPlayed >= 5)  await awardAchievement(userId, "tms_5_tournaments");
+  if (tournamentsPlayed >= 10) await awardAchievement(userId, "tms_10_tournaments");
+  if (totalWins >= 1)          await awardAchievement(userId, "tms_first_win");
+  if (totalWins >= 10)         await awardAchievement(userId, "tms_10_wins");
+  if (totalKills >= 100)       await awardAchievement(userId, "tms_100_kills");
+  if (totalKills >= 500)       await awardAchievement(userId, "tms_500_kills");
+  if (totalKills >= 1000)      await awardAchievement(userId, "tms_1000_kills");
+  if (hasTop3)                 await awardAchievement(userId, "tms_top_3");
+}
+
+// ── Content achievements ───────────────────────────────────────────────────
+
+export async function checkContentAchievements(userId: string, viewCount: number, bookmarkCount: number) {
+  if (viewCount >= 10)   await awardAchievement(userId, "reader_10");
+  if (viewCount >= 50)   await awardAchievement(userId, "reader_50");
+  if (viewCount >= 100)  await awardAchievement(userId, "reader_100");
+  if (bookmarkCount >= 5)  await awardAchievement(userId, "bookmarker");
+  if (bookmarkCount >= 20) await awardAchievement(userId, "bookmarker_20");
+}
+
+// ── Loyalty achievements ───────────────────────────────────────────────────
+
+export async function checkLoginStreakAchievements(userId: string, streakDays: number) {
+  if (streakDays >= 7)  await awardAchievement(userId, "login_7_days");
+  if (streakDays >= 30) await awardAchievement(userId, "login_30_days");
+}
+
+// ── Util ──────────────────────────────────────────────────────────────────
+
 export async function getUserAchievementIds(userId: string): Promise<string[]> {
   const admin = getAdmin();
   if (!admin) return [];

@@ -87,8 +87,23 @@ export async function PATCH(request: NextRequest) {
     summary: `Đổi trạng thái bài wiki "${slug}" → ${status}`,
   }).catch(() => null);
 
-  // Notify when going live (draft → published)
   if (status === "published" && prev?.status !== "published" && prev) {
+    // Award wiki points + achievements for the article author
+    void (async () => {
+      try {
+        const { data: article } = await untypedFrom(db, "wiki_articles")
+          .select("user_id").eq("slug", slug).single() as { data: { user_id: string | null } | null };
+        if (article?.user_id) {
+          const { count } = await untypedFrom(db, "wiki_articles")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", article.user_id).eq("status", "published") as { count: number | null };
+          const { checkWikiAchievements } = await import("@/lib/server/award-achievement");
+          await checkWikiAchievements(article.user_id, count ?? 1);
+          await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
+            .rpc("increment_user_points", { uid: article.user_id, amount: 30 });
+        }
+      } catch { /* non-critical */ }
+    })();
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
     const payload = {
       title: "📖 WIKI MỚI ĐƯỢC XUẤT BẢN!",

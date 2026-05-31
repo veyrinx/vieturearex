@@ -8,7 +8,7 @@ import {
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getUserPublicProfile } from "@/lib/data/content-service";
-import { getRank } from "@/lib/constants/ranks";
+import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 import { GAME_META_BY_KEY } from "@/lib/constants/game-list";
 import { ShareButtons } from "@/components/news/share-buttons";
@@ -107,7 +107,10 @@ export default async function PublicProfilePage({ params }: Props) {
   const profileUrl = `${siteConfig.url}/u/${profile.id}`;
   const points = Number(profile.points ?? 0);
   const rankMeta = getRank(points);
-  const rankLabel = profile.rank ?? rankMeta.rank;
+  const subRank = getSubRank(points);
+  const rankProgress = getRankProgress(points);
+  const pointsToNext = getPointsToNextRank(points);
+  const rankLabel = `${profile.rank ?? rankMeta.rank} ${subRank}`;
   const views = Number(profile.views ?? 0);
   const isOnline = profile.last_seen_at
     ? Date.now() - new Date(profile.last_seen_at).getTime() < ONLINE_MS
@@ -177,8 +180,9 @@ export default async function PublicProfilePage({ params }: Props) {
               <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", meta.color)}>
                 <ShieldCheck className="size-3" /> {meta.label}
               </span>
-              <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", rankMeta.bg, rankMeta.color)}>
-                <Trophy className="size-3" /> {rankLabel}
+              <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", rankMeta.bg, rankMeta.color)}>
+                <span className="text-sm leading-none">{rankMeta.icon}</span>
+                {rankLabel}
               </span>
               {isOnline && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">
@@ -197,6 +201,22 @@ export default async function PublicProfilePage({ params }: Props) {
           {/* Share */}
           <div className="mt-4 flex justify-end">
             <ShareButtons url={profileUrl} title={`Hồ sơ ${name} — Arex`} />
+          </div>
+
+          {/* Rank progress */}
+          <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className={cn("text-xs font-bold", rankMeta.color)}>{rankMeta.icon} {rankLabel}</span>
+              <span className="text-[10px] text-muted-foreground">
+                {pointsToNext != null ? `còn ${pointsToNext.toLocaleString("vi-VN")} điểm` : "Hạng tối đa"}
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full transition-all", rankMeta.color.replace("text-", "bg-"))}
+                style={{ width: `${rankProgress}%` }}
+              />
+            </div>
           </div>
 
           {/* Stats grid */}

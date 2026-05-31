@@ -4,6 +4,8 @@ import { getAuthContext } from "@/lib/server/auth";
 import { getTmsMatchResults, submitTmsResults } from "@/lib/tms/data";
 import type { SubmitResultInput } from "@/lib/tms/types";
 import { createNotifications } from "@/lib/server/notifications";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const limited = enforceRateLimit(req, { name: "tms-match-results", limit: 60, windowMs: 60_000 });
@@ -44,6 +46,46 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           };
         })
       );
+    }
+
+    // Check tournament achievements for each player
+    const db = createAdminSupabaseClient();
+    if (db && playerUserIds.length > 0) {
+      void (async () => {
+        const { checkTournamentAchievements, checkRankAchievements } = await import("@/lib/server/award-achievement");
+        await Promise.allSettled(playerUserIds.map(async (userId) => {
+          try {
+            const { data: career } = await untypedFrom(db, "tms_player_leaderboard")
+              .select("total_kills, total_wins, tournaments_played")
+              .eq("user_id", userId)
+              .maybeSingle() as { data: { total_kills: number; total_wins: number; tournaments_played: number } | null };
+
+            const playerResult = body.players.find((p) => p.user_id === userId);
+            const isTop3 = body.placement != null && body.placement <= 3;
+
+            await checkTournamentAchievements(userId, {
+              tournamentsPlayed: career?.tournaments_played ?? 1,
+              totalWins: career?.total_wins ?? 0,
+              totalKills: career?.total_kills ?? 0,
+              hasTop3: isTop3,
+            });
+
+            // Award points for win / top3
+            if (playerResult?.team_id === body.winner_id) {
+              await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
+                .rpc("increment_user_points", { uid: userId, amount: 20 });
+            } else if (isTop3) {
+              await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
+                .rpc("increment_user_points", { uid: userId, amount: 10 });
+            }
+
+            // Re-check rank achievements after points update
+            const { data: userRow } = await untypedFrom(db, "users")
+              .select("points").eq("id", userId).single() as { data: { points: number } | null };
+            if (userRow) await checkRankAchievements(userId, userRow.points);
+          } catch { /* non-critical */ }
+        }));
+      })();
     }
 
     return NextResponse.json({ ok: true });
