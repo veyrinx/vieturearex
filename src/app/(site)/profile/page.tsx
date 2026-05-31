@@ -10,6 +10,7 @@ import {
   Bookmark, Bell, X, Trophy,
 } from "lucide-react";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
+import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import Link from "next/link";
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
 import { GAME_LIST } from "@/lib/constants/game-list";
@@ -414,6 +415,11 @@ export default function ProfilePage() {
   const initial = label.charAt(0).toUpperCase();
   const avatarGradient = getAvatarColor(profile.email);
   const roleMeta = ROLE_META[profile.role] ?? ROLE_META.user;
+  const userPoints = Number((profile as unknown as { points?: number }).points ?? 0);
+  const rankMeta = getRank(userPoints);
+  const subRank = getSubRank(userPoints);
+  const rankProgress = getRankProgress(userPoints);
+  const pointsToNext = getPointsToNextRank(userPoints);
   const _joinDateObj = new Date(profile.created_at ?? "");
   const joinDate = Number.isNaN(_joinDateObj.getTime()) ? "-" : _joinDateObj.toLocaleDateString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
@@ -966,6 +972,31 @@ export default function ProfilePage() {
                   <p className="text-sm font-semibold text-foreground">{value}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Rank progress */}
+            <div className={cn("mt-3 rounded-xl border p-4 space-y-2", rankMeta.bg)}>
+              <div className="flex items-center justify-between">
+                <span className={cn("flex items-center gap-1.5 text-sm font-bold", rankMeta.color)}>
+                  <span className="text-base">{rankMeta.icon}</span>
+                  {rankMeta.rank} {subRank}
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    ({userPoints.toLocaleString("vi-VN")} điểm)
+                  </span>
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {pointsToNext != null
+                    ? `còn ${pointsToNext.toLocaleString("vi-VN")} điểm lên tier tiếp`
+                    : "🏆 Hạng tối đa"}
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-700", rankMeta.color.replace("text-", "bg-"))}
+                  style={{ width: `${rankProgress}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">{rankProgress}% tiến trình đến {rankMeta.rank} {subRank === "III" ? "II" : subRank === "II" ? "I" : pointsToNext != null ? "tier tiếp" : "đỉnh"}</p>
             </div>
           </div>
 

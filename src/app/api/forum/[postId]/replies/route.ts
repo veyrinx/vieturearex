@@ -106,8 +106,17 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id).eq("status", "active") as { count: number | null };
 
-      const { checkForumAchievements, checkForumPopularAchievement } = await import("@/lib/server/award-achievement");
+      const [{ checkForumAchievements, checkForumPopularAchievement }, { syncContributorPoints }] = await Promise.all([
+        import("@/lib/server/award-achievement"),
+        import("@/lib/server/contributor-sync"),
+      ]);
       await checkForumAchievements(user.id, 0, replyCount ?? 1);
+      await syncContributorPoints(
+        user.id,
+        profile?.display_name ?? user.email?.split("@")[0] ?? "Ẩn danh",
+        profile?.avatar_url,
+        "reply",
+      );
 
       // Check if the original post is now popular (10+ replies)
       if (post?.user_id) {

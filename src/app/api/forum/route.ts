@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     }, siteUrl)
   );
 
-  // Award points + check forum achievements
+  // Award points + check forum achievements + sync contributor_points
   void (async () => {
     try {
       await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
@@ -101,8 +101,17 @@ export async function POST(req: NextRequest) {
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id).eq("status", "active") as { count: number | null };
 
-      const { checkForumAchievements } = await import("@/lib/server/award-achievement");
+      const [{ checkForumAchievements }, { syncContributorPoints }] = await Promise.all([
+        import("@/lib/server/award-achievement"),
+        import("@/lib/server/contributor-sync"),
+      ]);
       await checkForumAchievements(user.id, count ?? 1, 0);
+      await syncContributorPoints(
+        user.id,
+        profile?.display_name ?? user.email?.split("@")[0] ?? "Ẩn danh",
+        profile?.avatar_url,
+        "post",
+      );
     } catch { /* non-critical */ }
   })();
 

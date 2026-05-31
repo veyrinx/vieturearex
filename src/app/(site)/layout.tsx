@@ -9,6 +9,7 @@ import { AutoTranslate } from "@/components/common/auto-translate";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { AnnouncementBanner } from "@/components/common/announcement-banner";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
+import { DailyCheckinTrigger } from "@/components/common/daily-checkin-trigger";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -67,6 +68,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <MobileBottomNav />
       <ScrollToTop />
       <AutoTranslate />
+      <DailyCheckinTrigger />
     </div>
   );
 }

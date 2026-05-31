@@ -97,8 +97,12 @@ export async function PATCH(request: NextRequest) {
           const { count } = await untypedFrom(db, "wiki_articles")
             .select("*", { count: "exact", head: true })
             .eq("user_id", article.user_id).eq("status", "published") as { count: number | null };
-          const { checkWikiAchievements } = await import("@/lib/server/award-achievement");
+          const [{ checkWikiAchievements }, { syncContributorPoints }] = await Promise.all([
+            import("@/lib/server/award-achievement"),
+            import("@/lib/server/contributor-sync"),
+          ]);
           await checkWikiAchievements(article.user_id, count ?? 1);
+          await syncContributorPoints(article.user_id, prev.author_name, null, "wiki");
           await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
             .rpc("increment_user_points", { uid: article.user_id, amount: 30 });
         }
