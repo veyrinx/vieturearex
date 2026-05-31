@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck, Star, Newspaper, MessageCircle } from "lucide-react";
+import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck, Star, Newspaper, MessageCircle, BookOpen, Users, Lock, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Notification = {
@@ -27,6 +27,11 @@ const TYPE_META: Record<string, { icon: React.ElementType; color: string }> = {
   comment_reply:          { icon: MessageCircle,        color: "text-blue-400" },
   rating_reply:           { icon: Star,                 color: "text-yellow-400" },
   new_article:            { icon: Newspaper,            color: "text-primary dark:text-amber-400" },
+  forum_reply:            { icon: MessageCircle,        color: "text-indigo-400" },
+  forum_mention:          { icon: Users,                color: "text-violet-400" },
+  wiki_approved:          { icon: BookOpen,             color: "text-emerald-400" },
+  forum_locked:           { icon: Lock,                 color: "text-muted-foreground" },
+  account_warning:        { icon: ShieldAlert,          color: "text-rose-400" },
 };
 
 function timeAgo(date: string) {
@@ -174,8 +179,8 @@ export function NotificationBell({ className }: { className?: string }) {
           </div>
 
           <div className="border-t border-border px-4 py-2">
-            <Link href="/tournaments" onClick={() => setOpen(false)} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-              Xem giải đấu →
+            <Link href="/notifications" onClick={() => setOpen(false)} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+              Xem tất cả thông báo →
             </Link>
           </div>
         </div>

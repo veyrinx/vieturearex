@@ -74,5 +74,27 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     { data: unknown; error: unknown };
 
   if (error || !reply) return NextResponse.json({ error: "Không thể gửi trả lời." }, { status: 500 });
+
+  // Notify the post author (if different from replier)
+  const { data: post } = await untypedFrom(db, "forum_posts")
+    .select("user_id, title")
+    .eq("id", postId)
+    .single() as { data: { user_id: string | null; title: string } | null };
+
+  if (post?.user_id && post.user_id !== user.id) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    void import("@/lib/server/notifications").then(({ createNotification }) =>
+      createNotification({
+        user_id: post.user_id!,
+        type: "forum_reply",
+        title: `${profile?.display_name ?? "Ai đó"} đã trả lời bài viết của bạn`,
+        body: parsed.data.content.slice(0, 120),
+        entity_type: "forum_post",
+        entity_id: postId,
+        entity_url: `${siteUrl}/cong-dong/${postId}`,
+      })
+    );
+  }
+
   return NextResponse.json(reply, { status: 201 });
 }
