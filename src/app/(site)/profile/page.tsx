@@ -384,12 +384,25 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <main className="min-h-screen">
-        <div className="mx-auto max-w-2xl px-6 py-16">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
-            ))}
+        <div className="mx-auto max-w-2xl px-4 py-8 space-y-4">
+          {/* Banner skeleton */}
+          <div className="h-32 animate-pulse rounded-3xl bg-muted" />
+          {/* Avatar + name skeleton */}
+          <div className="flex items-end gap-4 -mt-10 px-4">
+            <div className="size-20 rounded-2xl animate-pulse bg-muted border-4 border-background shrink-0" />
+            <div className="pb-2 space-y-2 flex-1">
+              <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+            </div>
           </div>
+          {/* Cards skeleton */}
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="animate-pulse rounded-2xl border border-border bg-card p-5 space-y-3">
+              <div className="h-4 w-32 rounded bg-muted" />
+              <div className="h-10 rounded-xl bg-muted" />
+              <div className="h-10 rounded-xl bg-muted" />
+            </div>
+          ))}
         </div>
       </main>
     );

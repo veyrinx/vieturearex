@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock } from "lucide-react";
+import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -222,8 +222,30 @@ export default function SearchPage() {
         )}
       </div>
 
+      {/* Skeleton loading */}
+      {loading && (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-2xl border border-border bg-card p-4">
+              <div className="flex items-start gap-3">
+                <div className="size-10 shrink-0 rounded-xl bg-muted" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="flex gap-1.5">
+                    <div className="h-4 w-16 rounded bg-muted" />
+                    <div className="h-4 w-12 rounded bg-muted" />
+                  </div>
+                  <div className="h-4 w-3/5 rounded bg-muted" />
+                  <div className="h-3 w-4/5 rounded bg-muted" />
+                  <div className="h-3 w-1/4 rounded bg-muted" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Results */}
-      {filtered.length > 0 ? (
+      {!loading && filtered.length > 0 && (
         <div className="space-y-3">
           {filtered.map((result) => (
             <Link key={`${result.type}-${result.id}`} href={result.href}>
@@ -262,14 +284,59 @@ export default function SearchPage() {
               </div>
             </Link>
           ))}
+          {filtered.length === 40 && (
+            <p className="text-center text-xs text-muted-foreground py-2">
+              Hiển thị 40 kết quả đầu — hãy thu hẹp từ khóa để tìm chính xác hơn
+            </p>
+          )}
         </div>
-      ) : query.trim().length >= 2 && !loading ? (
+      )}
+
+      {/* No results */}
+      {!loading && query.trim().length >= 2 && filtered.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-          <X className="mx-auto size-10 text-muted-foreground/30" />
+          <Search className="mx-auto size-10 text-muted-foreground/30" />
           <p className="mt-3 font-heading text-sm font-bold uppercase text-muted-foreground">KHÔNG TÌM THẤY KẾT QUẢ</p>
-          <p className="mt-1 text-xs text-muted-foreground">Thử tìm với từ khóa khác</p>
+          <p className="mt-1 text-xs text-muted-foreground">Thử tìm với từ khóa khác hoặc bỏ bộ lọc</p>
+          {hasActiveAdvanced && (
+            <button
+              type="button"
+              onClick={clearAdvanced}
+              className="mt-3 text-xs text-primary hover:underline dark:text-amber-400"
+            >
+              Bỏ bộ lọc nâng cao
+            </button>
+          )}
         </div>
-      ) : null}
+      )}
+
+      {/* Initial empty state */}
+      {!loading && query.trim().length < 2 && (
+        <div className="rounded-2xl border border-border bg-card p-8">
+          <p className="mb-5 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Gợi ý tìm kiếm
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {[
+              { icon: Flame, label: "Sự kiện đang diễn ra", q: "sự kiện", color: "text-orange-500 bg-orange-500/10" },
+              { icon: Trophy, label: "Giải đấu Free Fire", q: "giải đấu", color: "text-amber-500 bg-amber-500/10" },
+              { icon: TrendingUp, label: "Tin tức mới nhất", q: "update", color: "text-blue-500 bg-blue-500/10" },
+            ].map(({ icon: Icon, label, q, color }) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => { setQuery(q); void doSearch(q); }}
+                className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left transition hover:bg-muted"
+              >
+                <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${color}`}>
+                  <Icon className="size-4" />
+                </div>
+                <span className="text-sm font-medium text-foreground">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
