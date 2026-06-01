@@ -85,7 +85,7 @@ function CommunityDropdown({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+          "relative flex items-center gap-1 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
           isHomePage
             ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -96,20 +96,23 @@ function CommunityDropdown({
         )}
       >
         <span>Cộng Đồng</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="10" height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        {/* CSS border chevron — clearly an icon, not a letter */}
+        <span
           aria-hidden="true"
-          className={cn("shrink-0 transition-transform duration-200", open && "rotate-180")}
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+          className={cn(
+            "ml-0.5 inline-block shrink-0 transition-transform duration-200",
+            open && "rotate-180",
+          )}
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "4px solid transparent",
+            borderRight: "4px solid transparent",
+            borderTop: "5px solid currentColor",
+            opacity: 0.7,
+            marginBottom: "1px",
+          }}
+        />
         {isCommunityActive && (
           <motion.span
             layoutId="nav-underline-community"
