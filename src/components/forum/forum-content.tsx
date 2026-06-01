@@ -5,7 +5,8 @@ import sanitizeHtml from "sanitize-html";
 
 type Props = { content: string; className?: string };
 
-const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SANITIZE_OPTIONS: any = {
   allowedTags: [
     "p", "br", "strong", "em", "u", "s", "del",
     "h2", "h3", "h4",
@@ -20,7 +21,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   },
   allowedSchemes: ["https", "http"],
   transformTags: {
-    a: (_tag, attribs) => ({
+    a: (_tag: string, attribs: Record<string, string>) => ({
       tagName: "a",
       attribs: { ...attribs, target: "_blank", rel: "noopener noreferrer nofollow" },
     }),

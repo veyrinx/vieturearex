@@ -68,7 +68,7 @@ export default async function LeaderboardPage() {
                 <tbody>
                   {players.map((p, i) => {
                     const rank = i + 1;
-                    const winRate = p.matches_played > 0 ? Math.round((p.total_wins / p.matches_played) * 100) : 0;
+                    const winRate = p.matches_played > 0 ? Math.round((p.wins / p.matches_played) * 100) : 0;
                     return (
                       <tr key={p.user_id}
                         className={cn(

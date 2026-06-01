@@ -133,6 +133,7 @@ export type SubmitResultInput = {
   match_id: string;
   tournament_id: string;
   winner_id: string;
+  placement?: number;
   proof_url?: string;
   players: Array<{
     user_id: string;

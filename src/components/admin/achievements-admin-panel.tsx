@@ -122,7 +122,7 @@ export function AchievementsAdminPanel() {
             placeholder="User ID (UUID)..."
             className="flex-1 min-w-48 font-mono text-xs"
           />
-          <Select value={grantAchievement} onValueChange={setGrantAchievement}>
+          <Select value={grantAchievement} onValueChange={(v) => v != null && setGrantAchievement(v)}>
             <SelectTrigger className="w-56">
               <SelectValue placeholder="Chọn thành tựu..." />
             </SelectTrigger>
