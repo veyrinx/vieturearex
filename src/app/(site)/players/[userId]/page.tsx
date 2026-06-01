@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Trophy, Swords, Target, TrendingUp, Users, Star, CalendarDays } from "lucide-react";
+import { getRank, getSubRank } from "@/lib/constants/ranks";
 import { getTmsPlayerCareer, getMyTmsTeam } from "@/lib/tms/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -13,13 +15,13 @@ import { vi } from "date-fns/locale";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type UserRow = { id: string; display_name: string | null; avatar_url: string | null; ff_id: string | null; created_at: string };
+type UserRow = { id: string; display_name: string | null; avatar_url: string | null; ff_id: string | null; created_at: string; points?: number | null };
 
 async function getPlayer(userId: string): Promise<UserRow | null> {
   const sb = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!sb) return null;
   const { data } = await untypedFrom(sb, "users")
-    .select("id, display_name, avatar_url, ff_id, created_at")
+    .select("id, display_name, avatar_url, ff_id, created_at, points")
     .eq("id", userId)
     .single() as { data: UserRow | null };
   return data;
@@ -61,6 +63,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const kdRatio      = totalDeaths > 0 ? +(totalKills / totalDeaths).toFixed(2) : totalKills;
 
   const stats = { totalPoints, totalKills, totalWins, totalMatches, kdRatio, totalAssists };
+  const communityPoints = Number(user.points ?? 0);
+  const rankMeta = getRank(communityPoints);
+  const subRank = getSubRank(communityPoints);
 
   return (
     <div className="py-10 space-y-8 max-w-3xl mx-auto">
@@ -68,7 +73,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       {/* Profile header */}
       <div className="rounded-2xl border border-border bg-card p-6 flex flex-col sm:flex-row gap-5 items-start sm:items-center">
         {user.avatar_url
-          ? <img src={user.avatar_url} alt={user.display_name ?? ""} className="size-20 rounded-2xl object-cover border border-border shrink-0" />
+          ? <Image src={user.avatar_url} alt={user.display_name ?? ""} width={80} height={80} unoptimized className="size-20 rounded-2xl object-cover border border-border shrink-0" />
           : <div className="size-20 rounded-2xl bg-primary/10 dark:bg-amber-400/10 flex items-center justify-center text-3xl font-black text-primary dark:text-amber-400 shrink-0">
               {(user.display_name ?? "?").slice(0, 1).toUpperCase()}
             </div>
@@ -84,6 +89,13 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             <CalendarDays className="size-3.5" />
             Tham gia {format(new Date(user.created_at), "dd/MM/yyyy", { locale: vi })}
           </p>
+          {communityPoints > 0 && (
+            <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold", rankMeta.bg, rankMeta.color)}>
+              <span>{rankMeta.icon}</span>
+              {rankMeta.rank} {subRank}
+              <span className="font-normal opacity-60">· {communityPoints.toLocaleString("vi-VN")}đ</span>
+            </span>
+          )}
           {team && (
             <p className="text-xs font-semibold flex items-center gap-1.5">
               <Users className="size-3.5 text-primary dark:text-amber-400" />

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import Image from "next/image";
 import { BookOpenText, PenLine, Eye, Users2, Layers } from "lucide-react";
 
 export const revalidate = 60;
@@ -37,12 +38,13 @@ function ArticleCard({ article }: { article: WikiArticle }) {
       className="group flex flex-col gap-2 rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5"
     >
       {article.cover_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={article.cover_url}
           alt={article.title}
+          width={400}
+          height={128}
+          unoptimized
           className="h-32 w-full rounded-xl object-cover"
-          loading="lazy"
         />
       )}
       <div className="space-y-1">

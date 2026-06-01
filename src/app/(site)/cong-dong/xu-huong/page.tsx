@@ -46,11 +46,12 @@ type NewMember = {
   created_at: string;
 };
 
-const BADGE_LABELS: Record<string, { label: string; cls: string }> = {
-  member:          { label: "Thành viên",    cls: "bg-muted text-muted-foreground" },
-  contributor:     { label: "Đóng góp",      cls: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  top_contributor: { label: "Top CĐ",        cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  legend:          { label: "Huyền Thoại",   cls: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
+const BADGE_LABELS: Record<string, { label: string; cls: string; icon: string }> = {
+  member:   { label: "Thành viên",  cls: "bg-muted text-muted-foreground",                          icon: "👤" },
+  regular:  { label: "Thường xuyên", cls: "bg-blue-500/15 text-blue-600 dark:text-blue-400",        icon: "✨" },
+  veteran:  { label: "Kỳ cựu",      cls: "bg-green-500/15 text-green-600 dark:text-green-400",      icon: "🌿" },
+  expert:   { label: "Chuyên gia",  cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400",      icon: "⭐" },
+  legend:   { label: "Huyền Thoại", cls: "bg-purple-500/15 text-purple-600 dark:text-purple-400",   icon: "👑" },
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -248,8 +249,8 @@ export default async function TrendsPage() {
                     <Avatar src={c.avatar_url} name={c.display_name} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{c.display_name ?? "Ẩn danh"}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.cls}`}>
-                        {badge.label}
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.cls}`}>
+                        {badge.icon} {badge.label}
                       </span>
                     </div>
                     <span className="shrink-0 text-sm font-black tabular-nums text-primary dark:text-amber-400">

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
-  BookOpenText, Users, Swords, MessageSquare, Trophy, ChevronDown,
+  BookOpenText, Users, Swords, MessageSquare, Trophy,
   TrendingUp, Palette,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -85,7 +85,7 @@ function CommunityDropdown({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "relative flex items-center gap-1 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+          "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
           isHomePage
             ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -95,8 +95,21 @@ function CommunityDropdown({
               : "bg-primary/8 text-primary dark:bg-amber-400/8 dark:text-amber-300"),
         )}
       >
-        Cộng Đồng
-        <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")} />
+        <span>Cộng Đồng</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="10" height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className={cn("shrink-0 transition-transform duration-200", open && "rotate-180")}
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
         {isCommunityActive && (
           <motion.span
             layoutId="nav-underline-community"
