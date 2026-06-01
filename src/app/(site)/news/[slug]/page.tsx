@@ -15,7 +15,6 @@ import { FollowCategoryButton } from "@/components/news/follow-category-button";
 import { siteConfig } from "@/lib/constants/site";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 import Link from "next/link";
-import Image from "next/image";
 
 type NewsDetailPageProps = { params: Promise<{ slug: string }> };
 
