@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { ArrowLeft, Eye, PenLine, History } from "lucide-react";
+import { ArrowLeft, Eye, PenLine, History, BookOpen } from "lucide-react";
+import { RichTextRenderer } from "@/components/news/rich-text-renderer";
 
 export const revalidate = 120;
 
@@ -68,6 +70,16 @@ export default async function WikiArticlePage(
     .update({ view_count: article.view_count + 1 } as never)
     .eq("id", article.id);
 
+  // Related articles — same category, not this one
+  const { data: related } = await untypedFrom(db, "wiki_articles")
+    .select("slug, title, excerpt, category, author_name")
+    .eq("status", "published")
+    .eq("category", article.category)
+    .neq("slug", article.slug)
+    .limit(3) as { data: Array<{ slug: string; title: string; excerpt: string | null; category: string; author_name: string }> | null };
+
+  const isHtml = article.content.trimStart().startsWith("<");
+
   return (
     <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-6">
       {/* Back */}
@@ -83,10 +95,12 @@ export default async function WikiArticlePage(
       <article className="rounded-3xl border border-border bg-card overflow-hidden">
         {/* Cover */}
         {article.cover_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={article.cover_url}
             alt={article.title}
+            width={1200}
+            height={400}
+            unoptimized
             className="h-56 w-full object-cover md:h-72"
           />
         )}
@@ -126,8 +140,11 @@ export default async function WikiArticlePage(
           <div className="h-px bg-border" />
 
           {/* Content */}
-          <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90 min-h-[200px]">
-            {article.content}
+          <div className="min-h-[200px]">
+            {isHtml
+              ? <RichTextRenderer html={article.content} />
+              : <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">{article.content}</div>
+            }
           </div>
 
           {/* Divider */}
@@ -151,6 +168,36 @@ export default async function WikiArticlePage(
           </div>
         </div>
       </article>
+
+      {/* Related articles */}
+      {related && related.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="size-4 text-emerald-500" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.15em] text-emerald-600 dark:text-emerald-400">
+              Bài viết liên quan — {article.category}
+            </h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {related.map((r) => (
+              <Link
+                key={r.slug}
+                href={`/wiki/${r.slug}`}
+                className="group rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5 space-y-2"
+              >
+                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{r.category}</p>
+                <h3 className="text-sm font-bold leading-snug text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
+                  {r.title}
+                </h3>
+                {r.excerpt && (
+                  <p className="text-[11px] text-muted-foreground line-clamp-2">{r.excerpt}</p>
+                )}
+                <p className="text-[10px] text-muted-foreground">✍️ {r.author_name}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Bottom back link */}
       <div className="text-center">

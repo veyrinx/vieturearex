@@ -14,6 +14,8 @@ export const FORUM_CATEGORIES = [
 ];
 
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
+import { ForumEditor } from "@/components/forum/forum-editor";
+import { ForumContent } from "@/components/forum/forum-content";
 
 type Post = {
   id: string; title: string; category: string;
@@ -180,8 +182,12 @@ export function ForumPostForm({ onCreated }: { onCreated?: (id: string) => void 
       </div>
       <div>
         <label className={labelCls}>Nội dung <span className="text-destructive">*</span></label>
-        <textarea value={content} onChange={(e) => setContent(e.target.value)} required minLength={20} rows={10} placeholder="Viết nội dung bài đăng..." className={inputCls} />
-        <p className="mt-1 text-[11px] text-muted-foreground/60">{content.length}/20000</p>
+        <ForumEditor
+          value={content}
+          onChange={setContent}
+          placeholder="Viết nội dung bài đăng... (hỗ trợ in đậm, danh sách, trích dẫn...)"
+        />
+        <p className="mt-1 text-[11px] text-muted-foreground/60">{content.replace(/<[^>]*>/g, "").length}/20000 ký tự</p>
       </div>
       {status === "error" && (
         <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-2.5 text-sm text-destructive">
@@ -288,7 +294,7 @@ function ReplyCard({ r, onReply }: { r: Reply; onReply: () => void }) {
           <UserNameWithTitle name={r.display_name} title={r.user_title} titleColor={r.user_title_color} className="text-sm" />
           <span className="text-[11px] text-muted-foreground">{timeAgo(r.created_at)}</span>
         </div>
-        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">{r.content}</p>
+        <ForumContent content={r.content} className="mt-1.5 text-sm" />
         <button onClick={onReply} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors">
           <Reply className="size-3" /> Trả lời
         </button>
@@ -303,10 +309,10 @@ function ReplyForm({ content, setContent, onSubmit, submitting, errMsg, onCancel
 }) {
   return (
     <form onSubmit={onSubmit} className="space-y-2">
-      <textarea
-        value={content} onChange={(e) => setContent(e.target.value)} required minLength={2} rows={3}
+      <ForumEditor
+        value={content}
+        onChange={setContent}
         placeholder="Viết trả lời của bạn..."
-        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
       {errMsg && <p className="text-xs text-destructive">{errMsg}</p>}
       <div className="flex gap-2">

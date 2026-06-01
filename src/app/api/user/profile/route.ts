@@ -64,6 +64,9 @@ type ProfileRow = {
   github_url?: string | null;
   contact_email?: string | null;
   game_profiles?: unknown;
+  selected_frame_id?: string | null;
+  selected_title?: string | null;
+  points?: number | null;
 };
 
 export async function GET() {
@@ -79,7 +82,7 @@ export async function GET() {
 
   const { data: profile } = await roleClient
     .from("users")
-    .select("display_name, role, created_at, views, is_verified, avatar_url, banner_url, bio, phone, ff_id, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles")
+    .select("display_name, role, created_at, views, is_verified, avatar_url, banner_url, bio, phone, ff_id, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, selected_frame_id, selected_title, points")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
 
@@ -113,6 +116,9 @@ export async function GET() {
     github_url: profile?.github_url ?? null,
     contact_email: profile?.contact_email ?? null,
     game_profiles: Array.isArray(profile?.game_profiles) ? profile?.game_profiles : [],
+    selected_frame_id: profile?.selected_frame_id ?? null,
+    selected_title: profile?.selected_title ?? null,
+    points: profile?.points ?? 0,
   });
 }
 

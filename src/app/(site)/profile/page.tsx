@@ -10,6 +10,7 @@ import {
   Bookmark, Bell, X, Trophy,
 } from "lucide-react";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
+import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
 import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import Link from "next/link";
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
@@ -998,6 +999,20 @@ export default function ProfilePage() {
               </div>
               <p className="text-[10px] text-muted-foreground">{rankProgress}% tiến trình đến {rankMeta.rank} {subRank === "III" ? "II" : subRank === "II" ? "I" : pointsToNext != null ? "tier tiếp" : "đỉnh"}</p>
             </div>
+          </div>
+
+          {/* Cosmetics */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+                🎨 Trang Phục & Danh Hiệu
+              </h2>
+            </div>
+            <CosmeticsSelector
+              avatarUrl={avatarPreview}
+              displayName={displayName || profile.display_name || profile.email.split("@")[0]}
+            />
           </div>
 
           {/* Bookmarks */}

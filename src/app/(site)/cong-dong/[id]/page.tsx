@@ -6,6 +6,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumReplies } from "@/components/forum/forum-client";
+import { ForumContent } from "@/components/forum/forum-content";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
 
@@ -55,6 +56,11 @@ export default async function ForumPostPage({ params }: Props) {
     .select("*").eq("id", id).eq("status", "active").single() as { data: Post | null };
   if (!post) notFound();
 
+  // Increment view count (fire-and-forget, no await)
+  void untypedFrom(db, "forum_posts")
+    .update({ view_count: post.view_count + 1 } as never)
+    .eq("id", id);
+
   const cosmetics = post.user_id ? await fetchCosmetics(db, [post.user_id]) : new Map();
   const authorCosmetics = post.user_id ? cosmetics.get(post.user_id) : undefined;
 
@@ -100,9 +106,7 @@ export default async function ForumPostPage({ params }: Props) {
 
         {/* Content */}
         <div className="p-5 md:p-6">
-          <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap leading-relaxed text-foreground/90">
-            {post.content}
-          </div>
+          <ForumContent content={post.content} />
         </div>
       </article>
 
