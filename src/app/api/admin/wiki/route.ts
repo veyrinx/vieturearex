@@ -97,14 +97,26 @@ export async function PATCH(request: NextRequest) {
           const { count } = await untypedFrom(db, "wiki_articles")
             .select("*", { count: "exact", head: true })
             .eq("user_id", article.user_id).eq("status", "published") as { count: number | null };
-          const [{ checkWikiAchievements }, { syncContributorPoints }] = await Promise.all([
+          const [{ checkWikiAchievements }, { syncContributorPoints }, { createNotification }] = await Promise.all([
             import("@/lib/server/award-achievement"),
             import("@/lib/server/contributor-sync"),
+            import("@/lib/server/notifications"),
           ]);
           await checkWikiAchievements(article.user_id, count ?? 1);
           await syncContributorPoints(article.user_id, prev.author_name, null, "wiki");
           await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
             .rpc("increment_user_points", { uid: article.user_id, amount: 30 });
+          // In-app notification to author
+          const siteUrlNotify = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+          await createNotification({
+            user_id: article.user_id,
+            type: "wiki_approved",
+            title: "Bài Wiki của bạn đã được xuất bản! 🎉",
+            body: prev.title,
+            entity_type: "wiki",
+            entity_id: slug,
+            entity_url: `${siteUrlNotify}/wiki/${slug}`,
+          }).catch(() => null);
         }
       } catch { /* non-critical */ }
     })();

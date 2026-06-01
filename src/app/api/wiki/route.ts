@@ -104,13 +104,48 @@ export async function POST(req: NextRequest) {
   } as never);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+
+  // 1. Notify public Telegram + Discord (article is auto-published)
   void import("@/lib/server/user-notify").then(({ notifyUserNewWikiArticle }) =>
     notifyUserNewWikiArticle({
       slug: article!.slug,
-      title: body.data.title,
-      category: body.data.category ?? "Tổng quan",
+      title: parsed.data.title,
+      category: parsed.data.category ?? "Tổng quan",
       author_name: authorName,
     }, siteUrl)
+  );
+
+  // 2. Notify Discord public channel
+  void import("@/lib/server/discord-notify").then(({ sendDiscordPublicNotification, DISCORD_COLORS }) =>
+    sendDiscordPublicNotification({
+      title: "📖 WIKI MỚI ĐƯỢC ĐÓNG GÓP!",
+      sections: [{
+        rows: [
+          { label: "📌 Tiêu đề", value: parsed.data.title, bold: true },
+          { label: "🏷 Danh mục", value: parsed.data.category ?? "Tổng quan" },
+          { label: "✍️ Tác giả", value: authorName },
+        ],
+      }],
+      actions: [{ label: "👉 Đọc Wiki", url: `${siteUrl}/wiki/${article!.slug}` }],
+      footer: `📚 ${new URL(siteUrl).hostname}`,
+    }, DISCORD_COLORS.info)
+  );
+
+  // 3. Notify admin Telegram (internal — new wiki submitted for awareness)
+  void import("@/lib/server/telegram-notify").then(({ sendTelegramNotification, vnNow }) =>
+    sendTelegramNotification({
+      title: "📖 WIKI MỚI",
+      subtitle: vnNow(),
+      sections: [{
+        rows: [
+          { label: "Tiêu đề", value: parsed.data.title, bold: true },
+          { label: "Tác giả", value: authorName },
+          { label: "Danh mục", value: parsed.data.category ?? "Tổng quan" },
+        ],
+      }],
+      actions: [{ label: "Xem Wiki", url: `${siteUrl}/wiki/${article!.slug}` }],
+      footer: "📚 Arex Admin",
+    })
   );
 
   return NextResponse.json({ slug: article!.slug }, { status: 201 });

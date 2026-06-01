@@ -7,7 +7,7 @@ import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
   Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
   Smartphone, Camera, Trash2, Phone, Gamepad2, Plus, ImageIcon,
-  Bookmark, Bell, X, Trophy,
+  Bookmark, Bell, X, Trophy, MessageSquare, BookOpen, ExternalLink, Pin, Lock as LockIcon,
 } from "lucide-react";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
@@ -108,6 +108,8 @@ export default function ProfilePage() {
   const [bookmarks, setBookmarks] = useState<FavoriteItem[]>([]);
   const [follows, setFollows] = useState<string[]>([]);
   const [achievements, setAchievements] = useState<{ achievement: string; earned_at: string }[]>([]);
+  const [myPosts, setMyPosts] = useState<Array<{ id: string; title: string; category: string; view_count: number; reply_count: number; status: string; created_at: string }>>([]);
+  const [myWiki, setMyWiki] = useState<Array<{ id: string; slug: string; title: string; category: string; status: string; view_count: number; created_at: string }>>([]);
 
   // Password change
   const [newPassword, setNewPassword] = useState("");
@@ -148,6 +150,8 @@ export default function ProfilePage() {
           fetch("/api/user/favorites").then((r) => r.json()).then((d: FavoriteItem[]) => setBookmarks(d ?? [])).catch(() => null),
           fetch("/api/user/follows").then((r) => r.json()).then((d: { follows?: string[] }) => setFollows(d.follows ?? [])).catch(() => null),
           fetch("/api/user/achievements").then((r) => r.json()).then((d: { achievement: string; earned_at: string }[]) => setAchievements(d ?? [])).catch(() => null),
+          fetch("/api/user/posts").then((r) => r.json()).then((d: { posts: Array<{ id: string; title: string; category: string; view_count: number; reply_count: number; status: string; created_at: string }> }) => setMyPosts(d.posts ?? [])).catch(() => null),
+          fetch("/api/user/wiki").then((r) => r.json()).then((d: { articles: Array<{ id: string; slug: string; title: string; category: string; status: string; view_count: number; created_at: string }> }) => setMyWiki(d.articles ?? [])).catch(() => null),
         ]);
       })
       .catch(() => router.replace("/login"));
@@ -1071,6 +1075,106 @@ export default function ProfilePage() {
               )}
             </div>
             <AchievementsDisplay earned={achievements} showLocked />
+          </div>
+
+          {/* My Forum Posts */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <MessageSquare className="size-3.5" /> Bài viết diễn đàn
+              </h2>
+              {myPosts.length > 0 && (
+                <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{myPosts.length} bài</span>
+              )}
+            </div>
+            {myPosts.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-6 text-center">
+                <MessageSquare className="size-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Chưa có bài viết nào.</p>
+                <Link href="/cong-dong" className="text-xs text-primary hover:underline dark:text-amber-400">
+                  Đến diễn đàn →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {myPosts.map((post) => (
+                  <Link key={post.id} href={`/cong-dong/${post.id}`}
+                    className="group flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 transition hover:border-primary/30 hover:bg-muted/40">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold uppercase text-muted-foreground">{post.category}</span>
+                        {post.status === "removed" && <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-rose-500">Đã ẩn</span>}
+                      </div>
+                      <p className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-primary dark:group-hover:text-amber-400 transition-colors">{post.title}</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        <Eye className="inline size-2.5 mr-0.5" />{post.view_count}
+                        <span className="mx-1.5 opacity-40">·</span>
+                        <MessageSquare className="inline size-2.5 mr-0.5" />{post.reply_count}
+                        <span className="mx-1.5 opacity-40">·</span>
+                        {new Date(post.created_at).toLocaleDateString("vi-VN")}
+                      </p>
+                    </div>
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary/60 mt-0.5" />
+                  </Link>
+                ))}
+                {myPosts.length >= 50 && (
+                  <Link href="/cong-dong" className="block text-center text-xs text-primary hover:underline dark:text-amber-400 py-1">
+                    Xem tất cả trên diễn đàn →
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* My Wiki Articles */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+              <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                <BookOpen className="size-3.5" /> Wiki đã đóng góp
+              </h2>
+              {myWiki.length > 0 && (
+                <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{myWiki.length} bài</span>
+              )}
+            </div>
+            {myWiki.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-6 text-center">
+                <BookOpen className="size-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Chưa đóng góp bài wiki nào.</p>
+                <Link href="/wiki/tao-bai" className="text-xs text-emerald-600 hover:underline dark:text-emerald-400">
+                  Viết bài wiki đầu tiên →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {myWiki.map((article) => (
+                  <Link key={article.id} href={`/wiki/${article.slug}`}
+                    className="group flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 transition hover:border-emerald-500/30 hover:bg-muted/40">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                        <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400">{article.category}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${article.status === "published" ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                          {article.status === "published" ? "Xuất bản" : "Nháp"}
+                        </span>
+                      </div>
+                      <p className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{article.title}</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        <Eye className="inline size-2.5 mr-0.5" />{article.view_count}
+                        <span className="mx-1.5 opacity-40">·</span>
+                        {new Date(article.created_at).toLocaleDateString("vi-VN")}
+                      </p>
+                    </div>
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-emerald-500/60 mt-0.5" />
+                  </Link>
+                ))}
+                {myWiki.length >= 50 && (
+                  <Link href="/wiki" className="block text-center text-xs text-emerald-600 hover:underline dark:text-emerald-400 py-1">
+                    Xem tất cả trên Wiki →
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Followed categories */}
