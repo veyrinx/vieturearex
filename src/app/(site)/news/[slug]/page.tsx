@@ -127,9 +127,11 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
           {article.title}
         </h1>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {formatVietnamDate(article.created_at)}
-          </p>
+          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <span>{formatVietnamDate(article.created_at)}</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>{Math.max(1, Math.ceil(article.content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200))} phút đọc</span>
+          </div>
           <div className="flex items-center gap-2">
             <ShareButtons url={articleUrl} title={article.title} />
             <BookmarkButton itemId={article.id} itemTitle={article.title} itemImage={article.cover} />

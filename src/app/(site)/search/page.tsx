@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy } from "lucide-react";
+import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy, MessageSquare, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -21,7 +21,7 @@ function saveHistory(q: string) {
 function clearHistory() { localStorage.removeItem(HISTORY_KEY); }
 
 type SearchResult = {
-  type: "event" | "news";
+  type: "event" | "news" | "forum" | "wiki";
   id: string;
   title: string;
   description: string;
@@ -38,7 +38,7 @@ export default function SearchPage() {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<"all" | "event" | "news">("all");
+  const [filter, setFilter] = useState<"all" | "event" | "news" | "forum" | "wiki">("all");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -49,7 +49,7 @@ export default function SearchPage() {
 
   useEffect(() => { setHistory(getHistory()); }, []);
 
-  const doSearch = async (q: string, type: "all" | "event" | "news" = filter) => {
+  const doSearch = async (q: string, type: "all" | "event" | "news" | "forum" | "wiki" = filter) => {
     if (q.trim().length < 2) { setResults([]); return; }
     setLoading(true);
     try {
@@ -155,18 +155,24 @@ export default function SearchPage() {
         {/* Filter */}
         <div className="flex flex-wrap items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
-          {(["all", "event", "news"] as const).map((f) => (
+          {([
+            { key: "all",   label: "Tất cả" },
+            { key: "news",  label: "Tin tức" },
+            { key: "event", label: "Sự kiện" },
+            { key: "forum", label: "Diễn đàn" },
+            { key: "wiki",  label: "Wiki" },
+          ] as const).map(({ key, label }) => (
             <button
-              key={f}
+              key={key}
               type="button"
-              onClick={() => setFilter(f)}
+              onClick={() => setFilter(key)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase transition ${
-                filter === f
+                filter === key
                   ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400"
                   : "text-muted-foreground hover:bg-muted"
               }`}
             >
-              {f === "all" ? "TẤT CẢ" : f === "event" ? "SỰ KIỆN" : "TIN TỨC"}
+              {label}
             </button>
           ))}
           <button
@@ -252,16 +258,27 @@ export default function SearchPage() {
               <div className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-lg">
                 <div className="flex items-start gap-3">
                   <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                    result.type === "event" ? "bg-blue-500/10 text-blue-500" : "bg-green-500/10 text-green-500"
+                    result.type === "event" ? "bg-blue-500/10 text-blue-500" :
+                    result.type === "forum" ? "bg-indigo-500/10 text-indigo-500" :
+                    result.type === "wiki"  ? "bg-emerald-500/10 text-emerald-500" :
+                    "bg-green-500/10 text-green-500"
                   }`}>
-                    {result.type === "event" ? <Calendar className="size-5" /> : <Newspaper className="size-5" />}
+                    {result.type === "event"  ? <Calendar className="size-5" /> :
+                     result.type === "forum"  ? <MessageSquare className="size-5" /> :
+                     result.type === "wiki"   ? <BookOpen className="size-5" /> :
+                     <Newspaper className="size-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                        result.type === "event" ? "bg-blue-500/10 text-blue-500" : "bg-green-500/10 text-green-500"
+                        result.type === "event" ? "bg-blue-500/10 text-blue-500" :
+                        result.type === "forum" ? "bg-indigo-500/10 text-indigo-500" :
+                        result.type === "wiki"  ? "bg-emerald-500/10 text-emerald-500" :
+                        "bg-green-500/10 text-green-500"
                       }`}>
-                        {result.type === "event" ? "SỰ KIỆN" : "TIN TỨC"}
+                        {result.type === "event" ? "SỰ KIỆN" :
+                         result.type === "forum" ? "DIỄN ĐÀN" :
+                         result.type === "wiki"  ? "WIKI" : "TIN TỨC"}
                       </span>
                       {result.status && (
                         <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary dark:text-amber-400">

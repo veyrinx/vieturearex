@@ -3,8 +3,8 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import Image from "next/image";
-import { BookOpenText, PenLine, Eye, Users2, Layers } from "lucide-react";
+import { BookOpenText, PenLine, Users2, Layers } from "lucide-react";
+import { WikiSearch } from "@/components/wiki/wiki-search";
 
 export const revalidate = 60;
 
@@ -27,46 +27,6 @@ type WikiArticle = {
   updated_at: string;
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function ArticleCard({ article }: { article: WikiArticle }) {
-  return (
-    <Link
-      href={`/wiki/${article.slug}`}
-      className="group flex flex-col gap-2 rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5"
-    >
-      {article.cover_url && (
-        <Image
-          src={article.cover_url}
-          alt={article.title}
-          width={400}
-          height={128}
-          unoptimized
-          className="h-32 w-full rounded-xl object-cover"
-        />
-      )}
-      <div className="space-y-1">
-        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-          {article.title}
-        </h3>
-        {article.excerpt && (
-          <p className="line-clamp-2 text-xs text-muted-foreground">{article.excerpt}</p>
-        )}
-      </div>
-      <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-        <span className="text-[10px] text-muted-foreground">{article.author_name}</span>
-        <span className="text-muted-foreground/40">·</span>
-        <span className="text-[10px] text-muted-foreground">{formatDate(article.updated_at)}</span>
-        <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
-          <Eye className="size-3" />
-          {article.view_count.toLocaleString()}
-        </span>
-      </div>
-    </Link>
-  );
-}
 
 export default async function WikiPage() {
   const db = createAdminSupabaseClient();
@@ -82,14 +42,7 @@ export default async function WikiPage() {
     articles = data ?? [];
   }
 
-  // Group by category
-  const grouped = articles.reduce<Record<string, WikiArticle[]>>((acc, a) => {
-    if (!acc[a.category]) acc[a.category] = [];
-    acc[a.category].push(a);
-    return acc;
-  }, {});
-
-  const categories = Object.keys(grouped);
+  const categories = [...new Set(articles.map((a) => a.category))].sort();
   const totalContributors = new Set(articles.map((a) => a.author_id).filter(Boolean)).size;
 
   return (
@@ -133,8 +86,7 @@ export default async function WikiPage() {
         </div>
       </div>
 
-      {/* Empty state */}
-      {articles.length === 0 && (
+      {articles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/30 py-20 text-center">
           <BookOpenText className="mx-auto mb-4 size-12 text-muted-foreground/30" />
           <p className="text-base font-semibold text-muted-foreground">Wiki chưa có bài viết nào</p>
@@ -147,25 +99,10 @@ export default async function WikiPage() {
             Viết bài đầu tiên
           </Link>
         </div>
+      ) : (
+        <WikiSearch articles={articles} categories={categories} />
       )}
 
-      {/* Category sections */}
-      {categories.map((cat) => (
-        <section key={cat} className="space-y-4">
-          <div className="flex items-center gap-3">
-            <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">{cat}</h2>
-            <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              {grouped[cat].length}
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {grouped[cat].map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </section>
-      ))}
     </div>
   );
 }

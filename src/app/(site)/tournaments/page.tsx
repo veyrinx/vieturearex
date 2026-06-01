@@ -61,10 +61,14 @@ const SERVER_TABS: ServerTab[] = [
 
 const ADMIN_ROLES = ["super_admin", "admin", "it", "manager"];
 
+const STATUS_ORDER: Record<string, number> = {
+  ongoing: 0, registering: 1, draft: 2, finished: 3, cancelled: 4,
+};
+
 export default async function TournamentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ server?: string }>;
+  searchParams: Promise<{ server?: string; sort?: string }>;
 }) {
   const [tournaments, auth, sp] = await Promise.all([
     getTmsTournaments(false).catch(() => []),
@@ -73,9 +77,23 @@ export default async function TournamentsPage({
   ]);
 
   const serverFilter = (sp.server ?? "all") as TmsServer | "all";
-  const filtered = serverFilter === "all"
+  const sortBy = sp.sort ?? "status";
+
+  const base = serverFilter === "all"
     ? tournaments
     : tournaments.filter((t) => t.server === serverFilter);
+
+  const filtered = [...base].sort((a, b) => {
+    if (sortBy === "newest") {
+      return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+    }
+    if (sortBy === "name") {
+      return a.name.localeCompare(b.name, "vi");
+    }
+    // Default: by status then newest
+    const so = (STATUS_ORDER[a.status] ?? 5) - (STATUS_ORDER[b.status] ?? 5);
+    return so !== 0 ? so : new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+  });
 
   const isAdmin = ADMIN_ROLES.includes(auth.role ?? "");
   const isLoggedIn = !!auth.userId;
@@ -115,8 +133,9 @@ export default async function TournamentsPage({
         </div>
       </div>
 
-      {/* Server filter tabs */}
-      <div className="flex gap-1.5 flex-wrap">
+      {/* Server filter + Sort */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1.5 flex-wrap">
         {SERVER_TABS.map(({ key, label, flag, icon }) => (
           <Link
             key={key}
@@ -141,6 +160,35 @@ export default async function TournamentsPage({
             )}
           </Link>
         ))}
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sắp xếp:</span>
+          {([
+            { key: "status",  label: "Trạng thái" },
+            { key: "newest",  label: "Mới nhất" },
+            { key: "name",    label: "Tên A-Z" },
+          ] as const).map(({ key, label }) => {
+            const href = serverFilter === "all"
+              ? `/tournaments?sort=${key}`
+              : `/tournaments?server=${serverFilter}&sort=${key}`;
+            return (
+              <Link
+                key={key}
+                href={href}
+                className={cn(
+                  "rounded-lg px-2.5 py-1.5 text-[10px] font-semibold uppercase transition",
+                  sortBy === key
+                    ? "bg-primary/10 text-primary dark:text-amber-400"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
