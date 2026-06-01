@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { BreadcrumbJsonLd } from "next-seo";
 import { getNewsBySlug, getNews } from "@/lib/data/content-service";
 import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-renderer";
@@ -137,8 +138,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
       </div>
       {/* Ảnh bìa */}
       <div className="relative w-full overflow-hidden rounded-2xl border border-border aspect-video md:aspect-[16/7]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={article.cover} alt={article.title} className="absolute inset-0 h-full w-full object-cover" />
+        <Image src={article.cover} alt={article.title} fill unoptimized className="object-cover" sizes="(max-width:768px) 100vw, 80vw" priority />
       </div>
 
       {/* Nội dung + mục lục - chỉ dùng 2 cột khi có heading */}

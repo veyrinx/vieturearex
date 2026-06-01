@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { EventJsonLd, OrganizationJsonLd } from "next-seo";
 import { HeroBanner } from "@/components/home/hero-banner";
 import { FeaturedEvents } from "@/components/home/featured-events";
@@ -138,13 +139,13 @@ export default async function HomePage() {
                   aria-hidden="true"
                 />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={eventsBackdrop.imageUrl}
                   alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="absolute inset-0 size-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  sizes="100vw"
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background" />

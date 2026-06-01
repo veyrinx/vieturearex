@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
+import Image from "next/image";
 import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import Link from "next/link";
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
@@ -1033,8 +1034,7 @@ export default function ProfilePage() {
                 {bookmarks.map((b) => (
                   <div key={b.id} className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-2.5">
                     {b.item_image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={b.item_image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+                      <Image src={b.item_image} alt="" width={40} height={40} unoptimized className="size-10 shrink-0 rounded-lg object-cover" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{b.item_type}</p>

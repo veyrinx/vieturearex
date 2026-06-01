@@ -57,11 +57,14 @@ export function ForumEditor({ value, onChange, placeholder, className }: ForumEd
     immediatelyRender: false,
   });
 
-  // Sync external value reset (e.g. after submit)
+  // Reset editor when parent clears value (e.g. after successful submit)
   useEffect(() => {
-    if (!editor || value === editor.getHTML()) return;
-    if (!value) editor.commands.clearContent();
-  }, [value, editor]);
+    if (!editor) return;
+    if (!value || value === "<p></p>") {
+      editor.commands.clearContent();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   if (!editor) return null;
 

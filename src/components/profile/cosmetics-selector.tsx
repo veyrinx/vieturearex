@@ -189,7 +189,12 @@ export function CosmeticsSelector({ avatarUrl, displayName }: Props) {
                       : "border-border hover:bg-muted/40",
                   )}
                 >
-                  <UserNameWithTitle name="" title={title.name} titleColor={title.color} />
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                    style={{ color: title.color ?? "#6b7280", background: `${title.color ?? "#6b7280"}18` }}
+                  >
+                    {title.name}
+                  </span>
                   <span className={cn("mt-1 inline-block rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase", rMeta.cls)}>
                     {rMeta.label}
                   </span>
