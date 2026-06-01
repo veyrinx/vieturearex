@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Play, Eye, X } from "lucide-react";
 import { buildEmbedUrl, extractYouTubeId } from "@/lib/utils/stream-utils";
 import type { StreamItem } from "@/lib/types/content";
@@ -102,8 +103,7 @@ export function VodGrid({ vods }: Props) {
               className={`group text-left rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${isActive ? "ring-2 ring-primary dark:ring-amber-400" : ""}`}
             >
               <div className="relative aspect-video overflow-hidden bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={thumb} alt={vod.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <Image src={thumb} alt={vod.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="size-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
                     <Play size={20} className="text-white ml-1" fill="white" />

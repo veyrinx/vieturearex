@@ -61,12 +61,14 @@ export default async function LeaderboardPage() {
                     <th className="px-3 py-2 text-right">Điểm</th>
                     <th className="px-3 py-2 text-right hidden sm:table-cell">Kills</th>
                     <th className="px-3 py-2 text-right hidden sm:table-cell">K/D</th>
+                    <th className="px-3 py-2 text-right hidden md:table-cell">Thắng%</th>
                     <th className="px-3 py-2 text-right hidden md:table-cell">Trận</th>
                   </tr>
                 </thead>
                 <tbody>
                   {players.map((p, i) => {
                     const rank = i + 1;
+                    const winRate = p.matches_played > 0 ? Math.round((p.total_wins / p.matches_played) * 100) : 0;
                     return (
                       <tr key={p.user_id}
                         className={cn(
@@ -92,6 +94,11 @@ export default async function LeaderboardPage() {
                           p.kd_ratio >= 3 ? "text-emerald-400" : p.kd_ratio >= 1.5 ? "text-amber-400" : "text-muted-foreground"
                         )}>
                           {p.kd_ratio}
+                        </td>
+                        <td className={cn("px-3 py-2.5 text-right text-xs font-semibold tabular-nums hidden md:table-cell",
+                          winRate >= 60 ? "text-emerald-400" : winRate >= 40 ? "text-amber-400" : "text-muted-foreground"
+                        )}>
+                          {winRate}%
                         </td>
                         <td className="px-3 py-2.5 text-right text-xs text-muted-foreground tabular-nums hidden md:table-cell">{p.matches_played}</td>
                       </tr>

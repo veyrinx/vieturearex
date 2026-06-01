@@ -3,6 +3,7 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import Image from "next/image";
 import { TrendingUp, MessageSquare, FileText, UserPlus, Eye, Reply, ThumbsUp } from "lucide-react";
 
 export const revalidate = 300;
@@ -68,10 +69,10 @@ function getCatColor(cat: string) {
 }
 
 function Avatar({ src, name, size = "md" }: { src?: string | null; name?: string | null; size?: "sm" | "md" }) {
+  const px = size === "sm" ? 32 : 40;
   const sz = size === "sm" ? "size-8" : "size-10";
   if (src) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={name ?? ""} className={`${sz} rounded-full object-cover`} />;
+    return <Image src={src} alt={name ?? ""} width={px} height={px} unoptimized className={`${sz} rounded-full object-cover`} />;
   }
   return (
     <span className={`${sz} flex items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary dark:bg-amber-400/15 dark:text-amber-400`}>
