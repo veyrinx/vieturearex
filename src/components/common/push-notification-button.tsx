@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
@@ -23,9 +24,14 @@ export function PushNotificationButton({ className }: { className?: string }) {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const supabase = createClient();
+    if (supabase) {
+      supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user)).catch(() => null);
+    }
     if ("serviceWorker" in navigator && "PushManager" in window && VAPID_PUBLIC_KEY) {
       setSupported(true);
       navigator.serviceWorker.register("/sw.js").then(async (reg) => {
@@ -35,7 +41,7 @@ export function PushNotificationButton({ className }: { className?: string }) {
     }
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || !isLoggedIn) return null;
 
   const toggle = async () => {
     if (!supported) return;

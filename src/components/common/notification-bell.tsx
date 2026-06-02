@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck, Star, Newspaper, MessageCircle, BookOpen, Users, Lock, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 type Notification = {
   id: string;
@@ -49,7 +50,17 @@ export function NotificationBell({ className }: { className?: string }) {
   const [count, setCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Check auth state first
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) { setIsLoggedIn(false); return; }
+    supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(!!data.user);
+    }).catch(() => setIsLoggedIn(false));
+  }, []);
 
   const fetchCount = useCallback(() => {
     fetch("/api/notifications?count=true", { credentials: "same-origin" })
@@ -58,11 +69,13 @@ export function NotificationBell({ className }: { className?: string }) {
       .catch(() => {});
   }, []);
 
+  // Only poll when logged in
   useEffect(() => {
+    if (!isLoggedIn) return;
     fetchCount();
     const interval = setInterval(fetchCount, 30_000);
     return () => clearInterval(interval);
-  }, [fetchCount]);
+  }, [isLoggedIn, fetchCount]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -90,6 +103,9 @@ export function NotificationBell({ className }: { className?: string }) {
       setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
     }
   };
+
+  // Don't render for guests
+  if (isLoggedIn === false) return null;
 
   return (
     <div ref={ref} className="relative">
