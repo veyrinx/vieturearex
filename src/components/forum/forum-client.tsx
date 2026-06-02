@@ -13,6 +13,15 @@ export const FORUM_CATEGORIES = [
   "Clan & Team", "Free Fire", "Góp ý & Báo lỗi",
 ];
 
+const CATEGORY_META: Record<string, { color: string; border: string; bg: string; dot: string }> = {
+  "Thảo luận":          { color: "text-blue-500",    border: "border-l-blue-500/60",    bg: "bg-blue-500/8 dark:bg-blue-500/10",    dot: "bg-blue-500" },
+  "Hướng dẫn":          { color: "text-emerald-500", border: "border-l-emerald-500/60", bg: "bg-emerald-500/8 dark:bg-emerald-500/10", dot: "bg-emerald-500" },
+  "Sự kiện & Giải đấu": { color: "text-amber-500",   border: "border-l-amber-500/60",   bg: "bg-amber-500/8 dark:bg-amber-500/10",   dot: "bg-amber-500" },
+  "Clan & Team":         { color: "text-violet-500",  border: "border-l-violet-500/60",  bg: "bg-violet-500/8 dark:bg-violet-500/10",  dot: "bg-violet-500" },
+  "Free Fire":           { color: "text-rose-500",    border: "border-l-rose-500/60",    bg: "bg-rose-500/8 dark:bg-rose-500/10",    dot: "bg-rose-500" },
+  "Góp ý & Báo lỗi":    { color: "text-zinc-400",    border: "border-l-zinc-400/60",    bg: "bg-zinc-500/8 dark:bg-zinc-500/10",    dot: "bg-zinc-400" },
+};
+
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
 import { ForumEditor } from "@/components/forum/forum-editor";
 import { ForumContent } from "@/components/forum/forum-content";
@@ -86,20 +95,25 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
       {/* Category tabs + Sort */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2">
-          {["all", ...FORUM_CATEGORIES].map((c) => (
-            <button
-              key={c}
-              onClick={() => changeCategory(c)}
-              className={[
-                "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
-                category === c
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
-              ].join(" ")}
-            >
-              {c === "all" ? "Tất cả" : c}
-            </button>
-          ))}
+          {["all", ...FORUM_CATEGORIES].map((c) => {
+            const meta = c !== "all" ? CATEGORY_META[c] : null;
+            const isActive = category === c;
+            return (
+              <button
+                key={c}
+                onClick={() => changeCategory(c)}
+                className={[
+                  "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm dark:bg-amber-500 dark:text-background"
+                    : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                ].join(" ")}
+              >
+                {meta && <span className={`size-1.5 rounded-full ${isActive ? "bg-white/70" : meta.dot}`} />}
+                {c === "all" ? "Tất cả" : c}
+              </button>
+            );
+          })}
         </div>
         <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
           {SORT_OPTIONS.map(({ key, label, icon: Icon }) => (
@@ -121,30 +135,54 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
             Chưa có bài viết nào trong danh mục này.
           </div>
         )}
-        {posts.map((p) => (
-          <Link
-            key={p.id}
-            href={`/cong-dong/${p.id}`}
-            className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm md:gap-4"
-          >
-            <UserAvatar name={p.display_name} url={p.avatar_url} cssRing={p.css_ring} size={9} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-2 flex-wrap">
-                {p.is_pinned && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary dark:text-amber-400"><Pin className="size-2.5" />Ghim</span>}
-                {p.is_locked && <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground"><Lock className="size-2.5" />Đóng</span>}
-                <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{p.category}</span>
+        {posts.map((p) => {
+          const catMeta = CATEGORY_META[p.category] ?? { color: "text-muted-foreground", border: "border-l-border", bg: "", dot: "bg-muted-foreground" };
+          const isHot = p.reply_count >= 10 || p.view_count >= 200;
+          const isNew = (Date.now() - new Date(p.created_at).getTime()) < 86_400_000;
+          return (
+            <Link
+              key={p.id}
+              href={`/cong-dong/${p.id}`}
+              className={`group flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-px border-l-4 ${catMeta.border} md:gap-4`}
+            >
+              <UserAvatar name={p.display_name} url={p.avatar_url} cssRing={p.css_ring} size={9} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {p.is_pinned && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-primary dark:text-amber-400">
+                      <Pin className="size-2.5" />Ghim
+                    </span>
+                  )}
+                  {p.is_locked && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                      <Lock className="size-2.5" />Đóng
+                    </span>
+                  )}
+                  {isHot && (
+                    <span className="inline-flex items-center gap-0.5 rounded-md bg-orange-500/15 px-1.5 py-0.5 text-[9px] font-black text-orange-500">
+                      <Flame className="size-2.5" />HOT
+                    </span>
+                  )}
+                  {isNew && !isHot && (
+                    <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-black text-emerald-500">MỚI</span>
+                  )}
+                  <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${catMeta.color} ${catMeta.bg}`}>{p.category}</span>
+                </div>
+                <p className="mt-1.5 font-heading text-sm font-bold text-foreground line-clamp-1 group-hover:text-primary dark:group-hover:text-amber-400 transition-colors md:text-base">{p.title}</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  <UserNameWithTitle name={p.display_name} title={p.user_title} titleColor={p.user_title_color} className="text-[11px]" />
+                  <span className="flex items-center gap-1"><Clock className="size-3" />{timeAgo(p.updated_at)}</span>
+                  <span className="flex items-center gap-1"><Eye className="size-3" />{p.view_count.toLocaleString()}</span>
+                </div>
               </div>
-              <p className="mt-1 font-heading text-sm font-bold text-foreground line-clamp-1 md:text-base">{p.title}</p>
-              <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                <UserNameWithTitle name={p.display_name} title={p.user_title} titleColor={p.user_title_color} className="text-[11px]" />
-                <span className="flex items-center gap-1"><Clock className="size-3" />{timeAgo(p.updated_at)}</span>
-                <span className="flex items-center gap-1"><Eye className="size-3" />{p.view_count}</span>
-                <span className="flex items-center gap-1"><MessageSquare className="size-3" />{p.reply_count}</span>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold tabular-nums ${p.reply_count > 0 ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400" : "bg-muted text-muted-foreground"}`}>
+                  <MessageSquare className="size-3" />{p.reply_count}
+                </span>
               </div>
-            </div>
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground/40 mt-1" />
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Pagination */}
