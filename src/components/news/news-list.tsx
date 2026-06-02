@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { isAfter, isBefore, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, ArrowUpRight } from "lucide-react";
+import { Clock, ArrowUpRight, Search, X } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { useNewsQuery } from "@/hooks/use-news-query";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeDate, setActiveDate] = useState<"from" | "to" | null>(null);
   const [displayCount, setDisplayCount] = useState(12);
+  const [searchQuery, setSearchQuery] = useState("");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { data: news } = useNewsQuery("published");
   const safeNews = useMemo(() => news ?? initialNews ?? [], [news, initialNews]);
@@ -62,14 +63,16 @@ export function NewsList({ news: initialNews }: NewsListProps) {
         const matchCategory = category === "all" ? true : item.category === category;
         const matchFrom = from ? !isBefore(createdAt, from) : true;
         const matchTo = to ? !isAfter(createdAt, to) : true;
-        return matchCategory && matchFrom && matchTo;
+        const q = searchQuery.trim().toLowerCase();
+        const matchSearch = !q || item.title.toLowerCase().includes(q) || (item.excerpt ?? "").toLowerCase().includes(q);
+        return matchCategory && matchFrom && matchTo && matchSearch;
       })
       .sort((a, b) => {
         const left = new Date(a.created_at).getTime();
         const right = new Date(b.created_at).getTime();
         return sort === "newest" ? right - left : left - right;
       });
-  }, [category, fromDate, safeNews, sort, toDate]);
+  }, [category, fromDate, safeNews, sort, toDate, searchQuery]);
 
   useEffect(() => { setDisplayCount(12); }, [filteredNews]);
 
@@ -90,6 +93,24 @@ export function NewsList({ news: initialNews }: NewsListProps) {
 
   return (
     <div className="space-y-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Tìm kiếm tin tức..."
+          className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none dark:focus:border-amber-400"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <X className="size-4" />
+          </button>
+        )}
+      </div>
+
       {/* Filter bar */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <button

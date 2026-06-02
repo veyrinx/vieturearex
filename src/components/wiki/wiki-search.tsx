@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Eye, BookOpenText, X } from "lucide-react";
+import { Search, Eye, BookOpenText, X, Clock, TrendingUp, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 type WikiArticle = {
@@ -22,6 +22,12 @@ type Props = {
   articles: WikiArticle[];
   categories: string[];
 };
+
+const SORT_OPTIONS = [
+  { key: "latest",  label: "Mới nhất",   icon: Clock },
+  { key: "views",   label: "Xem nhiều",  icon: TrendingUp },
+] as const;
+type SortKey = "latest" | "views";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -57,12 +63,38 @@ function ArticleCard({ article }: { article: WikiArticle }) {
   );
 }
 
+function TrendingCard({ article, rank }: { article: WikiArticle; rank: number }) {
+  return (
+    <Link href={`/wiki/${article.slug}`}
+      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all hover:border-emerald-500/40 hover:bg-muted/30">
+      <span className={`shrink-0 font-heading text-xl font-black tabular-nums ${
+        rank === 1 ? "text-amber-500" : rank === 2 ? "text-zinc-400" : "text-orange-400"
+      }`}>#{rank}</span>
+      {article.cover_url && (
+        <Image src={article.cover_url} alt={article.title} width={48} height={48} unoptimized className="size-12 shrink-0 rounded-lg object-cover" />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-sm font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{article.title}</p>
+        <p className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+          <Eye className="size-3" />{article.view_count.toLocaleString()} lượt xem · {article.category}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
 export function WikiSearch({ articles, categories }: Props) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [sort, setSort] = useState<SortKey>("latest");
+
+  const trending = useMemo(() =>
+    [...articles].sort((a, b) => b.view_count - a.view_count).slice(0, 3),
+    [articles],
+  );
 
   const filtered = useMemo(() => {
-    return articles.filter((a) => {
+    const result = articles.filter((a) => {
       const matchCat = activeCategory === "all" || a.category === activeCategory;
       const matchQ = !query.trim() ||
         a.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -70,9 +102,11 @@ export function WikiSearch({ articles, categories }: Props) {
         a.author_name.toLowerCase().includes(query.toLowerCase());
       return matchCat && matchQ;
     });
-  }, [articles, query, activeCategory]);
 
-  // Group filtered results by category
+    if (sort === "views") return result.sort((a, b) => b.view_count - a.view_count);
+    return result.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [articles, query, activeCategory, sort]);
+
   const grouped = useMemo(() => {
     if (activeCategory !== "all" || query.trim()) {
       return { [activeCategory !== "all" ? activeCategory : "Kết quả"]: filtered };
@@ -84,38 +118,62 @@ export function WikiSearch({ articles, categories }: Props) {
     }, {});
   }, [filtered, activeCategory, query]);
 
+  const isFiltering = query.trim() || activeCategory !== "all";
+
   return (
     <div className="space-y-6">
-      {/* Search + Filter */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm bài viết, tác giả..."
-            className="pl-10 rounded-xl h-10"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          )}
+      {/* Trending — chỉ hiện khi không filter */}
+      {!isFiltering && trending.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Flame className="size-4 text-orange-500" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.15em] text-foreground">Bài viết nổi bật</h2>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {trending.map((a, i) => <TrendingCard key={a.id} article={a} rank={i + 1} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Search + Filter + Sort */}
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm bài viết, tác giả..."
+              className="pl-10 rounded-xl h-10"
+            />
+            {query && (
+              <button onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+          {/* Sort */}
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-card px-1">
+            {SORT_OPTIONS.map(({ key, label, icon: Icon }) => (
+              <button key={key} onClick={() => setSort(key)}
+                className={[
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all",
+                  sort === key ? "bg-emerald-600 text-white" : "text-muted-foreground hover:text-foreground",
+                ].join(" ")}>
+                <Icon className="size-3" />{label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {["all", ...categories].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
+            <button key={cat} onClick={() => setActiveCategory(cat)}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                 activeCategory === cat
                   ? "bg-emerald-600 text-white"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
+              }`}>
               {cat === "all" ? "Tất cả" : cat}
             </button>
           ))}
