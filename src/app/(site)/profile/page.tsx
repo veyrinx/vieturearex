@@ -131,6 +131,7 @@ export default function ProfilePage() {
   const [removingMfa, setRemovingMfa] = useState(false);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("profile");
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/profile")
@@ -158,7 +159,7 @@ export default function ProfilePage() {
           fetch("/api/user/achievements").then((r) => r.json()).then((d: { achievement: string; earned_at: string }[]) => setAchievements(d ?? [])).catch(() => null),
           fetch("/api/user/posts").then((r) => r.json()).then((d: { posts: Array<{ id: string; title: string; category: string; view_count: number; reply_count: number; status: string; created_at: string }> }) => setMyPosts(d.posts ?? [])).catch(() => null),
           fetch("/api/user/wiki").then((r) => r.json()).then((d: { articles: Array<{ id: string; slug: string; title: string; category: string; status: string; view_count: number; created_at: string }> }) => setMyWiki(d.articles ?? [])).catch(() => null),
-        ]);
+        ]).then(() => setStatsLoaded(true));
       })
       .catch(() => router.replace("/login"));
   }, [router]);
@@ -537,18 +538,18 @@ export default function ProfilePage() {
               className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline dark:text-amber-400">
               <ExternalLink className="size-3" /> Xem hồ sơ công khai
             </Link>
-            <div className="ml-auto flex items-center gap-5 text-[11px] font-semibold text-muted-foreground">
+            <div className="ml-auto flex items-center gap-4 text-[11px] font-semibold text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MessageSquare className="size-3" />
-                <span>{myPosts.length} bài viết</span>
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myPosts.length : "—"} bài viết</span>
               </span>
               <span className="flex items-center gap-1">
                 <BookOpen className="size-3" />
-                <span>{myWiki.length} wiki</span>
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myWiki.length : "—"} wiki</span>
               </span>
               <span className="flex items-center gap-1">
                 <Trophy className="size-3" />
-                <span>{achievements.length} thành tích</span>
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? achievements.length : "—"} thành tích</span>
               </span>
               <span className="flex items-center gap-1 text-primary dark:text-amber-400">
                 <span className="text-base leading-none">{rankMeta.icon}</span>
@@ -778,28 +779,37 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
-              <div className={cn("mt-3 rounded-xl border p-4 space-y-2", rankMeta.bg)}>
-                <div className="flex items-center justify-between">
-                  <span className={cn("flex items-center gap-1.5 text-sm font-bold", rankMeta.color)}>
-                    <span className="text-base">{rankMeta.icon}</span>
-                    {rankMeta.rank} {subRank}
-                    <span className="text-[10px] text-muted-foreground font-normal">
-                      ({userPoints.toLocaleString("vi-VN")} điểm)
-                    </span>
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
+              <div className={cn("mt-3 relative overflow-hidden rounded-2xl border p-5 space-y-3", rankMeta.bg)}>
+                <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
+                  style={{ backgroundImage: "radial-gradient(ellipse at 80% 20%, currentColor 0%, transparent 60%)" }} />
+                <div className="relative flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-3xl leading-none">{rankMeta.icon}</span>
+                    <div>
+                      <p className={cn("font-heading text-lg font-black uppercase leading-tight", rankMeta.color)}>
+                        {rankMeta.rank} {subRank}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {userPoints.toLocaleString("vi-VN")} điểm tích lũy
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={cn("text-2xl font-black tabular-nums", rankMeta.color)}>{rankProgress}%</p>
+                    <p className="text-[10px] text-muted-foreground">tiến trình</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                    <div className={cn("h-full rounded-full transition-all duration-700", rankMeta.color.replace("text-", "bg-"))}
+                      style={{ width: `${rankProgress}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-muted-foreground">
                     {pointsToNext != null
-                      ? `còn ${pointsToNext.toLocaleString("vi-VN")} điểm lên tier tiếp`
-                      : "🏆 Hạng tối đa"}
-                  </span>
+                      ? `Còn ${pointsToNext.toLocaleString("vi-VN")} điểm để lên tier tiếp`
+                      : "🏆 Bạn đã đạt hạng tối đa!"}
+                  </p>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-                  <div className={cn("h-full rounded-full transition-all duration-700", rankMeta.color.replace("text-", "bg-"))}
-                    style={{ width: `${rankProgress}%` }} />
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {rankProgress}% tiến trình đến {rankMeta.rank} {subRank === "III" ? "II" : subRank === "II" ? "I" : pointsToNext != null ? "tier tiếp" : "đỉnh"}
-                </p>
               </div>
             </div>
 

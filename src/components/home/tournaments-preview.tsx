@@ -165,15 +165,15 @@ export function TournamentsPreview({ tournaments, topTeams }: TournamentsPreview
                       href={`/teams/${team.id}`}
                       className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted/50"
                     >
-                      <span className={cn(
-                        "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black tabular-nums",
-                        idx === 0 && "bg-amber-400/20 text-amber-400",
-                        idx === 1 && "bg-zinc-400/20 text-zinc-400",
-                        idx === 2 && "bg-orange-700/20 text-orange-600",
-                        idx > 2 && "bg-muted text-muted-foreground",
-                      )}>
-                        {idx + 1}
-                      </span>
+                      {idx < 3 ? (
+                        <span className="flex size-6 shrink-0 items-center justify-center text-base leading-none">
+                          {["🥇","🥈","🥉"][idx]}
+                        </span>
+                      ) : (
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-black tabular-nums text-muted-foreground">
+                          {idx + 1}
+                        </span>
+                      )}
                       {team.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={team.logo_url} alt={team.tag} className="size-7 rounded-full object-cover" />
