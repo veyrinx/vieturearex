@@ -12,18 +12,18 @@ export function SectionHeading({ eyebrow, title, description, className }: Secti
     <div className={cn("space-y-2", className)}>
       {eyebrow ? (
         <div className="flex items-center gap-2.5">
-          <span className="h-px w-6 bg-primary dark:bg-amber-400" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary dark:text-amber-400">
+          <span className="h-px w-6 bg-gradient-to-r from-primary to-primary/60 dark:from-amber-400 dark:to-amber-400/60" />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">
             {eyebrow}
           </span>
           <span className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent dark:from-amber-400/30" />
         </div>
       ) : null}
-      <h2 className="font-heading text-3xl font-black uppercase tracking-[0.03em] md:text-4xl">
+      <h2 className="font-heading text-3xl font-black uppercase tracking-[0.02em] md:text-4xl">
         <span className="text-foreground">{title}</span>
       </h2>
       {description ? (
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground md:text-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {description}
         </p>
       ) : null}

@@ -122,6 +122,12 @@ export default async function HomePage() {
 
       <NewsTicker news={latestNews.slice(0, 8)} />
 
+      {/* Subtle ambient background for content sections */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+        <div className="absolute left-[10%] top-[30%] size-[600px] rounded-full bg-primary/[0.03] blur-[120px] dark:bg-amber-400/[0.04]" />
+        <div className="absolute right-[5%] top-[60%] size-[500px] rounded-full bg-violet-500/[0.025] blur-[100px]" />
+      </div>
+
       <div className="space-y-12 overflow-x-clip md:space-y-20 lg:space-y-24">
         <div className="relative isolate">
           {(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
