@@ -111,19 +111,29 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6 pt-6 md:pt-8">
-      <SectionHeading title="Tìm kiếm" description="Tìm kiếm sự kiện, tin tức trong hệ thống Arex." />
+      {/* Hero search */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent dark:from-amber-400/4" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+        <div className="relative space-y-1 mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">Arex Search</p>
+          <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+            Tìm kiếm
+          </h1>
+          <p className="text-xs text-muted-foreground">Tìm sự kiện, tin tức, bài diễn đàn và wiki trong hệ thống</p>
+        </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      <div className="relative space-y-4">
         <form onSubmit={(e) => { e.preventDefault(); void doSearch(query); }} className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setShowHistory(true)}
               onBlur={() => setTimeout(() => setShowHistory(false), 150)}
               placeholder="Nhập từ khóa tìm kiếm..."
-              className="h-12 rounded-xl pl-10 text-sm"
+              className="h-14 rounded-2xl pl-12 text-base shadow-sm focus:ring-2 focus:ring-primary/20"
               autoFocus
             />
             {/* Search history dropdown */}
@@ -147,7 +157,7 @@ export default function SearchPage() {
               </div>
             )}
           </div>
-          <Button type="submit" className="h-12 rounded-xl px-6" disabled={loading}>
+          <Button type="submit" className="h-14 rounded-2xl px-7 text-sm font-bold" disabled={loading}>
             {loading ? "Đang tìm..." : "TÌM KIẾM"}
           </Button>
         </form>
@@ -194,7 +204,7 @@ export default function SearchPage() {
         </div>
 
         {showAdvanced && (
-          <div className="grid gap-3 rounded-xl border border-border/40 bg-muted/20 p-3 sm:grid-cols-3">
+          <div className="grid gap-3 rounded-2xl border border-border/40 bg-muted/20 p-4 sm:grid-cols-3">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Từ ngày</label>
               <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 rounded-lg text-xs" />
@@ -218,7 +228,7 @@ export default function SearchPage() {
               <button
                 type="button"
                 onClick={clearAdvanced}
-                className="col-span-full inline-flex items-center justify-center gap-1 self-end rounded-lg border border-border/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                className="col-span-full inline-flex items-center justify-center gap-1 self-end rounded-xl border border-border/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
               >
                 <X className="size-3" />
                 Xóa bộ lọc
@@ -226,6 +236,7 @@ export default function SearchPage() {
             )}
           </div>
         )}
+      </div>
       </div>
 
       {/* Skeleton loading */}
@@ -329,26 +340,29 @@ export default function SearchPage() {
 
       {/* Initial empty state */}
       {!loading && query.trim().length < 2 && (
-        <div className="rounded-2xl border border-border bg-card p-8">
-          <p className="mb-5 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground px-1">
             Gợi ý tìm kiếm
           </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
-              { icon: Flame, label: "Sự kiện đang diễn ra", q: "sự kiện", color: "text-orange-500 bg-orange-500/10" },
-              { icon: Trophy, label: "Giải đấu Free Fire", q: "giải đấu", color: "text-amber-500 bg-amber-500/10" },
-              { icon: TrendingUp, label: "Tin tức mới nhất", q: "update", color: "text-blue-500 bg-blue-500/10" },
-            ].map(({ icon: Icon, label, q, color }) => (
+              { icon: Flame,     label: "Sự kiện đang diễn ra", sub: "Hot events",    q: "sự kiện",  color: "text-orange-500", bg: "bg-orange-500/10", border: "hover:border-orange-500/40" },
+              { icon: Trophy,    label: "Giải đấu Free Fire",   sub: "Tournaments",   q: "giải đấu", color: "text-amber-500",  bg: "bg-amber-500/10",  border: "hover:border-amber-500/40" },
+              { icon: TrendingUp,label: "Tin tức mới nhất",     sub: "Latest news",   q: "update",   color: "text-blue-500",   bg: "bg-blue-500/10",   border: "hover:border-blue-500/40" },
+            ].map(({ icon: Icon, label, sub, q, color, bg, border }) => (
               <button
                 key={q}
                 type="button"
                 onClick={() => { setQuery(q); void doSearch(q); }}
-                className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left transition hover:bg-muted"
+                className={`group flex items-center gap-4 rounded-2xl border border-border bg-card px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${border}`}
               >
-                <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${color}`}>
-                  <Icon className="size-4" />
+                <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${bg} ${color} transition-transform group-hover:scale-110`}>
+                  <Icon className="size-5" />
                 </div>
-                <span className="text-sm font-medium text-foreground">{label}</span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">{label}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{sub}</p>
+                </div>
               </button>
             ))}
           </div>

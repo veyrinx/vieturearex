@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { ArrowLeft, Eye, PenLine, History, BookOpen } from "lucide-react";
+import { ArrowLeft, Eye, PenLine, History, BookOpen, Clock, User } from "lucide-react";
 import { RichTextRenderer } from "@/components/news/rich-text-renderer";
 
 export const revalidate = 120;
@@ -80,60 +80,82 @@ export default async function WikiArticlePage(
 
   const isHtml = article.content.trimStart().startsWith("<");
 
+  const readingTime = Math.max(1, Math.ceil(article.content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200));
+
   return (
     <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-6">
       {/* Back */}
       <Link
         href="/wiki"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-emerald-500/40 hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="size-4" />
+        <ArrowLeft className="size-3.5" />
         Quay lại Wiki
       </Link>
 
       {/* Article card */}
       <article className="rounded-3xl border border-border bg-card overflow-hidden">
-        {/* Cover */}
-        {article.cover_url && (
-          <Image
-            src={article.cover_url}
-            alt={article.title}
-            width={1200}
-            height={400}
-            unoptimized
-            className="h-56 w-full object-cover md:h-72"
-          />
-        )}
+        {/* Cover — with overlay if present */}
+        {article.cover_url ? (
+          <div className="relative h-56 md:h-80 overflow-hidden">
+            <Image
+              src={article.cover_url}
+              alt={article.title}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+            {/* Title overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 space-y-2">
+              <span className="inline-flex rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                {article.category}
+              </span>
+              <h1 className="font-heading text-2xl font-black leading-snug tracking-tight text-white md:text-3xl drop-shadow-md">
+                {article.title}
+              </h1>
+            </div>
+          </div>
+        ) : null}
 
         <div className="p-6 md:p-10 space-y-6">
-          {/* Header */}
-          <div className="space-y-3">
-            <span className="inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              {article.category}
-            </span>
-            <h1 className="font-heading text-2xl font-black leading-snug tracking-tight text-foreground md:text-3xl">
-              {article.title}
-            </h1>
-            {article.excerpt && (
-              <p className="text-base text-muted-foreground leading-relaxed">{article.excerpt}</p>
-            )}
-
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">{article.author_name}</span>
-              <span className="text-muted-foreground/40">·</span>
-              <span>{formatDate(article.created_at)}</span>
-              {article.updated_at !== article.created_at && (
-                <>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span>Cập nhật {formatDate(article.updated_at)}</span>
-                </>
-              )}
-              <span className="ml-auto flex items-center gap-1">
-                <Eye className="size-3" />
-                {article.view_count.toLocaleString()} lượt xem
+          {/* Header — without cover */}
+          {!article.cover_url && (
+            <div className="space-y-3">
+              <span className="inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                {article.category}
               </span>
+              <h1 className="font-heading text-2xl font-black leading-snug tracking-tight text-foreground md:text-3xl">
+                {article.title}
+              </h1>
             </div>
+          )}
+
+          {article.excerpt && (
+            <p className="text-base text-muted-foreground leading-relaxed border-l-2 border-emerald-500/40 pl-4 italic">
+              {article.excerpt}
+            </p>
+          )}
+
+          {/* Meta */}
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-semibold text-foreground">
+              <User className="size-3.5" />
+              {article.author_name}
+            </span>
+            <span className="text-muted-foreground/40">·</span>
+            <span>{formatDate(article.created_at)}</span>
+            {article.updated_at !== article.created_at && (
+              <>
+                <span className="text-muted-foreground/40">·</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Cập nhật {formatDate(article.updated_at)}</span>
+              </>
+            )}
+            <span className="flex items-center gap-1"><Clock className="size-3" />{readingTime} phút đọc</span>
+            <span className="ml-auto flex items-center gap-1">
+              <Eye className="size-3" />
+              {article.view_count.toLocaleString()}
+            </span>
           </div>
 
           {/* Divider */}
@@ -203,9 +225,9 @@ export default async function WikiArticlePage(
       <div className="text-center">
         <Link
           href="/wiki"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground hover:border-emerald-500/40 hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-3.5" />
           Xem tất cả bài Wiki
         </Link>
       </div>
