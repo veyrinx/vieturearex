@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Shield, Users, Trophy, Swords, Target, TrendingUp, Star, CalendarDays, Crown } from "lucide-react";
+import { Shield, Users, Trophy, Swords, Target, TrendingUp, Star, CalendarDays, Crown, ArrowLeft } from "lucide-react";
 import {
   getTmsTeam, getTmsTeamMembers, getTmsTeamMatchHistory,
   getTmsTeamResultsByTournament,
@@ -50,41 +50,71 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
   const totalKills   = (tournamentStats as TeamLeaderboardWithTournament[]).reduce((s, r) => s + r.total_kills, 0);
   const totalPoints  = (tournamentStats as TeamLeaderboardWithTournament[]).reduce((s, r) => s + r.total_points, 0);
 
+  const winRate = totalMatches > 0 ? Math.round((totalWins / totalMatches) * 100) : 0;
+
   return (
-    <div className="py-10 space-y-8">
+    <div className="py-8 space-y-6">
+      {/* Back */}
+      <Link href="/leaderboard"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+        <ArrowLeft className="size-3.5" /> Bảng xếp hạng
+      </Link>
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-6 items-start">
-        {team.logo_url ? (
-          <img src={team.logo_url} alt={team.name} className="size-20 rounded-2xl object-cover border border-border" />
-        ) : (
-          <div className="size-20 rounded-2xl bg-muted border border-border flex items-center justify-center">
-            <Shield className="size-10 text-muted-foreground" />
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/6 via-transparent to-amber-500/4 dark:from-amber-400/5" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+        <div className="relative p-6 md:p-8 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+          {team.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={team.logo_url} alt={team.name} className="size-24 rounded-2xl object-cover border-2 border-border shadow-lg shrink-0" />
+          ) : (
+            <div className="size-24 rounded-2xl bg-gradient-to-br from-primary/15 to-amber-500/10 border-2 border-border shadow-lg flex items-center justify-center shrink-0">
+              <Shield className="size-10 text-primary dark:text-amber-400" />
+            </div>
+          )}
+          <div className="space-y-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="font-mono text-xs font-bold bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2.5 py-1 rounded-lg border border-primary/20 dark:border-amber-400/20">
+                [{team.tag}]
+              </span>
+              <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground md:text-3xl">
+                {team.name}
+              </h1>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <CalendarDays className="size-3.5" />
+                Thành lập {format(new Date(team.created_at), "dd/MM/yyyy", { locale: vi })}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Users className="size-3.5" />
+                {members.length} thành viên
+              </span>
+              {totalMatches > 0 && (
+                <span className={cn("flex items-center gap-1 font-semibold", winRate >= 60 ? "text-emerald-400" : winRate >= 40 ? "text-amber-400" : "text-muted-foreground")}>
+                  <Trophy className="size-3.5" />
+                  {winRate}% tỉ lệ thắng
+                </span>
+              )}
+            </div>
           </div>
-        )}
-        <div className="space-y-1 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">[{team.tag}]</span>
-            <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">{team.name}</h1>
-          </div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <CalendarDays className="size-3" /> Thành lập {format(new Date(team.created_at), "dd/MM/yyyy", { locale: vi })}
-          </p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Tổng điểm",     value: totalPoints,  icon: Star,       color: "text-amber-400" },
-          { label: "Tổng kills",    value: totalKills,   icon: Swords,     color: "text-red-400" },
-          { label: "Chiến thắng",   value: totalWins,    icon: Trophy,     color: "text-emerald-400" },
-          { label: "Trận đã đấu",   value: totalMatches, icon: TrendingUp, color: "text-primary dark:text-amber-400" },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-xl border border-border bg-card p-4 space-y-1">
-            <div className={cn("flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider", color)}>
+          { label: "Tổng điểm",  value: totalPoints,  icon: Star,       color: "text-amber-400",  bg: "bg-amber-400/8" },
+          { label: "Tổng kills", value: totalKills,   icon: Swords,     color: "text-red-400",    bg: "bg-red-400/8" },
+          { label: "Thắng",      value: totalWins,    icon: Trophy,     color: "text-emerald-400",bg: "bg-emerald-400/8" },
+          { label: "Trận đấu",   value: totalMatches, icon: TrendingUp, color: "text-blue-400",   bg: "bg-blue-400/8" },
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className={cn("rounded-xl border border-border bg-card p-4 space-y-1.5", bg)}>
+            <div className={cn("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", color)}>
               <Icon className="size-3.5" />{label}
             </div>
-            <div className="text-2xl font-bold font-heading">{value.toLocaleString()}</div>
+            <div className="text-2xl font-black font-heading tabular-nums">{value.toLocaleString()}</div>
           </div>
         ))}
       </div>
