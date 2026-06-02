@@ -5,7 +5,7 @@ import { ArrowLeft, Eye, MessageSquare, Pin, Lock, Clock } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { ForumReplies } from "@/components/forum/forum-client";
+import { ForumReplies, ForumHelpfulButton } from "@/components/forum/forum-client";
 import { ForumContent } from "@/components/forum/forum-content";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
@@ -14,7 +14,7 @@ type Post = {
   id: string; title: string; content: string; category: string;
   user_id: string | null;
   display_name: string; avatar_url: string | null;
-  view_count: number; reply_count: number;
+  view_count: number; reply_count: number; helpful_count: number;
   is_pinned: boolean; is_locked: boolean;
   created_at: string;
 };
@@ -107,6 +107,11 @@ export default async function ForumPostPage({ params }: Props) {
         {/* Content */}
         <div className="p-5 md:p-6">
           <ForumContent content={post.content} />
+        </div>
+
+        {/* Footer actions */}
+        <div className="border-t border-border px-5 py-3 md:px-6">
+          <ForumHelpfulButton postId={post.id} initialCount={post.helpful_count ?? 0} />
         </div>
       </article>
 

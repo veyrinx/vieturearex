@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   MessageSquare, Eye, Pin, Lock, Plus, ChevronRight,
-  Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2,
+  Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2, ThumbsUp, Pencil,
 } from "lucide-react";
 
 export const FORUM_CATEGORIES = [
@@ -287,12 +287,14 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
             <div key={r.id} className="space-y-2">
               <ReplyCard r={r} postId={postId} currentUserId={currentUserId}
                 onReply={() => setReplyTo(replyTo === r.id ? null : r.id)}
-                onDeleted={() => setReplies((prev) => prev.filter((x) => x.id !== r.id))} />
+                onDeleted={() => setReplies((prev) => prev.filter((x) => x.id !== r.id))}
+                onEdited={(c) => setReplies((prev) => prev.map((x) => x.id === r.id ? { ...x, content: c } : x))} />
               {childrenOf(r.id).map((child) => (
                 <div key={child.id} className="ml-8 border-l-2 border-border pl-4">
                   <ReplyCard r={child} postId={postId} currentUserId={currentUserId}
                     onReply={() => setReplyTo(replyTo === child.id ? null : child.id)}
-                    onDeleted={() => setReplies((prev) => prev.filter((x) => x.id !== child.id))} />
+                    onDeleted={() => setReplies((prev) => prev.filter((x) => x.id !== child.id))}
+                    onEdited={(c) => setReplies((prev) => prev.map((x) => x.id === child.id ? { ...x, content: c } : x))} />
                 </div>
               ))}
               {replyTo === r.id && (
@@ -320,11 +322,15 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
   );
 }
 
-function ReplyCard({ r, postId, currentUserId, onReply, onDeleted }: {
+function ReplyCard({ r, postId, currentUserId, onReply, onDeleted, onEdited }: {
   r: Reply; postId: string; currentUserId: string | null;
   onReply: () => void; onDeleted: () => void;
+  onEdited: (newContent: string) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(r.content);
+  const [saving, setSaving] = useState(false);
   const isOwn = currentUserId && r.user_id === currentUserId;
 
   const handleDelete = async () => {
@@ -335,6 +341,18 @@ function ReplyCard({ r, postId, currentUserId, onReply, onDeleted }: {
     else setDeleting(false);
   };
 
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const res = await fetch(`/api/forum/${postId}/replies/${r.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: editContent }),
+    });
+    if (res.ok) { onEdited(editContent); setEditing(false); }
+    setSaving(false);
+  };
+
   return (
     <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3.5">
       <UserAvatar name={r.display_name} url={r.avatar_url} cssRing={r.css_ring} size={8} />
@@ -343,20 +361,88 @@ function ReplyCard({ r, postId, currentUserId, onReply, onDeleted }: {
           <UserNameWithTitle name={r.display_name} title={r.user_title} titleColor={r.user_title_color} className="text-sm" />
           <span className="text-[11px] text-muted-foreground">{timeAgo(r.created_at)}</span>
         </div>
-        <ForumContent content={r.content} className="mt-1.5 text-sm" />
-        <div className="mt-2 flex items-center gap-3">
-          <button onClick={onReply} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors">
-            <Reply className="size-3" /> Trả lời
-          </button>
-          {isOwn && (
-            <button onClick={handleDelete} disabled={deleting}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40">
-              <Trash2 className="size-3" /> {deleting ? "Đang xóa..." : "Xóa"}
+        {editing ? (
+          <form onSubmit={handleSaveEdit} className="mt-2 space-y-2">
+            <ForumEditor value={editContent} onChange={setEditContent} placeholder="Chỉnh sửa trả lời..." />
+            <div className="flex gap-2">
+              <button type="submit" disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50">
+                {saving ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />} Lưu
+              </button>
+              <button type="button" onClick={() => { setEditing(false); setEditContent(r.content); }}
+                className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground">Hủy</button>
+            </div>
+          </form>
+        ) : (
+          <ForumContent content={r.content} className="mt-1.5 text-sm" />
+        )}
+        {!editing && (
+          <div className="mt-2 flex items-center gap-3">
+            <button onClick={onReply} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+              <Reply className="size-3" /> Trả lời
             </button>
-          )}
-        </div>
+            {isOwn && (
+              <>
+                <button onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+                  <Pencil className="size-3" /> Sửa
+                </button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40">
+                  <Trash2 className="size-3" /> {deleting ? "Đang xóa..." : "Xóa"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+// ─── Helpful Button ───────────────────────────────────────────────────────────
+export function ForumHelpfulButton({ postId, initialCount }: { postId: string; initialCount: number }) {
+  const storageKey = `helpful_${postId}`;
+  const [count, setCount] = useState(initialCount);
+  const [voted, setVoted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setVoted(localStorage.getItem(storageKey) === "1");
+  }, [storageKey]);
+
+  const handleVote = async () => {
+    if (voted || loading) return;
+    setLoading(true);
+    const res = await fetch(`/api/forum/${postId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "helpful" }),
+    });
+    if (res.ok) {
+      const data = await res.json() as { helpful_count: number };
+      setCount(data.helpful_count);
+      setVoted(true);
+      localStorage.setItem(storageKey, "1");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <button
+      onClick={handleVote}
+      disabled={voted || loading}
+      className={[
+        "inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all",
+        voted
+          ? "border-primary/30 bg-primary/10 text-primary dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400 cursor-default"
+          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary dark:hover:border-amber-400/40 dark:hover:text-amber-400",
+      ].join(" ")}
+    >
+      <ThumbsUp className={`size-4 ${voted ? "fill-current" : ""}`} />
+      {voted ? "Đã vote hữu ích" : "Hữu ích"}
+      {count > 0 && <span className="tabular-nums">{count}</span>}
+    </button>
   );
 }
 

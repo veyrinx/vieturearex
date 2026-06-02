@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceRateLimit } from "@/lib/server/api-guard";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type Ctx = { params: Promise<{ postId: string }> };
 
@@ -27,4 +28,37 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     .eq("id", postId);
 
   return NextResponse.json(post);
+}
+
+export async function PATCH(req: NextRequest, { params }: Ctx) {
+  const limited = enforceRateLimit(req, { name: "forum-helpful", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
+
+  const { postId } = await params;
+
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return NextResponse.json({ error: "Đăng nhập để vote." }, { status: 401 });
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  if (!user) return NextResponse.json({ error: "Đăng nhập để vote." }, { status: 401 });
+
+  const body = await req.json().catch(() => ({})) as { action?: string };
+  if (body.action !== "helpful") return NextResponse.json({ error: "Invalid action." }, { status: 400 });
+
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+
+  const { data: post } = await untypedFrom(db, "forum_posts")
+    .select("helpful_count, user_id")
+    .eq("id", postId)
+    .single() as { data: { helpful_count: number; user_id: string } | null };
+
+  if (!post) return NextResponse.json({ error: "Không tìm thấy." }, { status: 404 });
+  if (post.user_id === user.id) return NextResponse.json({ error: "Không thể vote bài của mình." }, { status: 400 });
+
+  const newCount = (post.helpful_count ?? 0) + 1;
+  await untypedFrom(db, "forum_posts")
+    .update({ helpful_count: newCount } as never)
+    .eq("id", postId);
+
+  return NextResponse.json({ helpful_count: newCount });
 }
