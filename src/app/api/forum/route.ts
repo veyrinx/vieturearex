@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const category = url.searchParams.get("category");
+  const sort = url.searchParams.get("sort") ?? "latest";
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1"));
   const limit = 20;
   const from = (page - 1) * limit;
@@ -28,9 +29,13 @@ export async function GET(req: NextRequest) {
   let q = untypedFrom(db, "forum_posts")
     .select("id, title, category, user_id, display_name, avatar_url, view_count, reply_count, is_pinned, is_locked, created_at, updated_at", { count: "exact" })
     .eq("status", "active")
-    .order("is_pinned", { ascending: false })
-    .order("updated_at", { ascending: false })
-    .range(from, from + limit - 1);
+    .order("is_pinned", { ascending: false });
+
+  if (sort === "hot") q = q.order("reply_count", { ascending: false }) as typeof q;
+  else if (sort === "views") q = q.order("view_count", { ascending: false }) as typeof q;
+  else q = q.order("updated_at", { ascending: false }) as typeof q;
+
+  q = q.range(from, from + limit - 1);
 
   if (category && category !== "all") q = q.eq("category", category) as typeof q;
 

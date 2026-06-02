@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   MessageSquare, Eye, Pin, Lock, Plus, ChevronRight,
-  Send, Loader2, AlertCircle, Reply, Clock,
+  Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2,
 } from "lucide-react";
 
 export const FORUM_CATEGORIES = [
@@ -27,7 +27,7 @@ type Post = {
 };
 
 type Reply = {
-  id: string; display_name: string; avatar_url: string | null;
+  id: string; user_id: string | null; display_name: string; avatar_url: string | null;
   css_ring: string | null; user_title: string | null; user_title_color: string | null;
   content: string; parent_id: string | null; created_at: string;
 };
@@ -41,16 +41,24 @@ function timeAgo(iso: string) {
 }
 
 // ─── Forum List ─────────────────────────────────────────────────────────────
+const SORT_OPTIONS = [
+  { key: "latest", label: "Mới nhất", icon: Clock },
+  { key: "hot",    label: "Hot",      icon: Flame },
+  { key: "views",  label: "Xem nhiều", icon: TrendingUp },
+] as const;
+type SortKey = "latest" | "hot" | "views";
+
 export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]; initialTotal: number }) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [total, setTotal] = useState(initialTotal);
   const [category, setCategory] = useState("all");
+  const [sort, setSort] = useState<SortKey>("latest");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const load = useCallback(async (cat: string, pg: number) => {
+  const load = useCallback(async (cat: string, pg: number, s: SortKey) => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(pg) });
+    const params = new URLSearchParams({ page: String(pg), sort: s });
     if (cat !== "all") params.set("category", cat);
     const res = await fetch(`/api/forum?${params}`).catch(() => null);
     if (res?.ok) {
@@ -63,29 +71,47 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
 
   const changeCategory = (cat: string) => {
     setCategory(cat); setPage(1);
-    void load(cat, 1);
+    void load(cat, 1, sort);
+  };
+
+  const changeSort = (s: SortKey) => {
+    setSort(s); setPage(1);
+    void load(category, 1, s);
   };
 
   const totalPages = Math.ceil(total / 20);
 
   return (
     <div className="space-y-4">
-      {/* Category tabs */}
-      <div className="flex flex-wrap gap-2">
-        {["all", ...FORUM_CATEGORIES].map((c) => (
-          <button
-            key={c}
-            onClick={() => changeCategory(c)}
-            className={[
-              "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
-              category === c
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
-            ].join(" ")}
-          >
-            {c === "all" ? "Tất cả" : c}
-          </button>
-        ))}
+      {/* Category tabs + Sort */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {["all", ...FORUM_CATEGORIES].map((c) => (
+            <button
+              key={c}
+              onClick={() => changeCategory(c)}
+              className={[
+                "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
+                category === c
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              ].join(" ")}
+            >
+              {c === "all" ? "Tất cả" : c}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
+          {SORT_OPTIONS.map(({ key, label, icon: Icon }) => (
+            <button key={key} onClick={() => changeSort(key)}
+              className={[
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all",
+                sort === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              ].join(" ")}>
+              <Icon className="size-3" />{label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Posts */}
@@ -127,7 +153,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
             <button
               key={pg}
-              onClick={() => { setPage(pg); void load(category, pg); }}
+              onClick={() => { setPage(pg); void load(category, pg, sort); }}
               className={[
                 "size-8 rounded-lg text-sm font-semibold transition-colors",
                 pg === page ? "bg-primary text-primary-foreground" : "border border-border hover:border-primary/40",
@@ -210,6 +236,11 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user/profile").then((r) => r.json()).then((d: { id?: string }) => setCurrentUserId(d.id ?? null)).catch(() => null);
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/forum/${postId}/replies`).catch(() => null);
@@ -254,10 +285,14 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
         <div className="space-y-3">
           {topLevel.map((r) => (
             <div key={r.id} className="space-y-2">
-              <ReplyCard r={r} onReply={() => setReplyTo(replyTo === r.id ? null : r.id)} />
+              <ReplyCard r={r} postId={postId} currentUserId={currentUserId}
+                onReply={() => setReplyTo(replyTo === r.id ? null : r.id)}
+                onDeleted={() => setReplies((prev) => prev.filter((x) => x.id !== r.id))} />
               {childrenOf(r.id).map((child) => (
                 <div key={child.id} className="ml-8 border-l-2 border-border pl-4">
-                  <ReplyCard r={child} onReply={() => setReplyTo(replyTo === child.id ? null : child.id)} />
+                  <ReplyCard r={child} postId={postId} currentUserId={currentUserId}
+                    onReply={() => setReplyTo(replyTo === child.id ? null : child.id)}
+                    onDeleted={() => setReplies((prev) => prev.filter((x) => x.id !== child.id))} />
                 </div>
               ))}
               {replyTo === r.id && (
@@ -285,7 +320,21 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
   );
 }
 
-function ReplyCard({ r, onReply }: { r: Reply; onReply: () => void }) {
+function ReplyCard({ r, postId, currentUserId, onReply, onDeleted }: {
+  r: Reply; postId: string; currentUserId: string | null;
+  onReply: () => void; onDeleted: () => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const isOwn = currentUserId && r.user_id === currentUserId;
+
+  const handleDelete = async () => {
+    if (!confirm("Xóa trả lời này?")) return;
+    setDeleting(true);
+    const res = await fetch(`/api/forum/${postId}/replies/${r.id}`, { method: "DELETE" });
+    if (res.ok) onDeleted();
+    else setDeleting(false);
+  };
+
   return (
     <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3.5">
       <UserAvatar name={r.display_name} url={r.avatar_url} cssRing={r.css_ring} size={8} />
@@ -295,9 +344,17 @@ function ReplyCard({ r, onReply }: { r: Reply; onReply: () => void }) {
           <span className="text-[11px] text-muted-foreground">{timeAgo(r.created_at)}</span>
         </div>
         <ForumContent content={r.content} className="mt-1.5 text-sm" />
-        <button onClick={onReply} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors">
-          <Reply className="size-3" /> Trả lời
-        </button>
+        <div className="mt-2 flex items-center gap-3">
+          <button onClick={onReply} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+            <Reply className="size-3" /> Trả lời
+          </button>
+          {isOwn && (
+            <button onClick={handleDelete} disabled={deleting}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40">
+              <Trash2 className="size-3" /> {deleting ? "Đang xóa..." : "Xóa"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
