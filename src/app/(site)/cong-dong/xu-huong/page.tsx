@@ -193,8 +193,13 @@ export default async function TrendsPage() {
 
       {/* Hot Posts */}
       <section className="space-y-4">
-        <h2 className="font-heading text-xl font-black uppercase tracking-tight text-foreground">
-          🔥 Bài Viết Hot Tuần Này
+        <div className="flex items-center gap-2.5">
+          <span className="h-px w-6 bg-gradient-to-r from-orange-500 to-orange-500/60" />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Hot</span>
+          <span className="h-px flex-1 bg-gradient-to-r from-orange-500/30 to-transparent" />
+        </div>
+        <h2 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground -mt-1">
+          Bài Viết Hot Tuần Này
         </h2>
         {hotPosts.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
@@ -202,25 +207,30 @@ export default async function TrendsPage() {
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {hotPosts.map((post) => (
+            {hotPosts.map((post, idx) => (
               <Link
                 key={post.id}
                 href={`/cong-dong/${post.id}`}
-                className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md dark:hover:border-amber-400/20"
+                className="group flex gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-px dark:hover:border-amber-400/20"
               >
-                <div className="flex items-start gap-2">
-                  <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${getCatColor(post.category)}`}>
+                <span className={`shrink-0 mt-0.5 font-heading text-2xl font-black leading-none tabular-nums ${
+                  idx === 0 ? "text-amber-400" : idx === 1 ? "text-zinc-400" : idx === 2 ? "text-orange-500" : "text-muted-foreground/40"
+                }`}>
+                  {idx < 3 ? ["🥇","🥈","🥉"][idx] : `${idx + 1}`}
+                </span>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <span className={`inline-flex rounded-md px-2 py-0.5 text-[9px] font-bold ${getCatColor(post.category)}`}>
                     {post.category}
                   </span>
-                </div>
-                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary dark:group-hover:text-amber-400 transition-colors">
-                  {post.title}
-                </h3>
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                  <span className="font-semibold text-foreground/80">{post.display_name}</span>
-                  <span className="flex items-center gap-1"><Eye className="size-3" />{post.view_count.toLocaleString()}</span>
-                  <span className="flex items-center gap-1"><Reply className="size-3" />{post.reply_count}</span>
-                  <span className="flex items-center gap-1"><ThumbsUp className="size-3" />{post.helpful_count}</span>
+                  <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary dark:group-hover:text-amber-400 transition-colors">
+                    {post.title}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                    <span className="font-semibold text-foreground/70">{post.display_name}</span>
+                    <span className="flex items-center gap-1"><Eye className="size-3" />{post.view_count.toLocaleString()}</span>
+                    <span className="flex items-center gap-1"><Reply className="size-3" />{post.reply_count}</span>
+                    {post.helpful_count > 0 && <span className="flex items-center gap-1 text-emerald-500"><ThumbsUp className="size-3" />{post.helpful_count}</span>}
+                  </div>
                 </div>
               </Link>
             ))}
@@ -243,9 +253,9 @@ export default async function TrendsPage() {
               {topContribs.map((c, i) => {
                 const badge = BADGE_LABELS[c.badge] ?? BADGE_LABELS.member;
                 return (
-                  <div key={c.user_id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-                    <span className="w-5 shrink-0 text-center text-xs font-black text-muted-foreground">
-                      {i + 1}
+                  <div key={c.user_id} className={`flex items-center gap-3 rounded-xl border bg-card p-3 transition-colors hover:border-primary/30 dark:hover:border-amber-400/20 ${i < 3 ? "border-primary/20 dark:border-amber-400/15" : "border-border"}`}>
+                    <span className="w-6 shrink-0 text-center text-base leading-none">
+                      {i < 3 ? ["🥇","🥈","🥉"][i] : <span className="text-xs font-black text-muted-foreground">{i + 1}</span>}
                     </span>
                     <Avatar src={c.avatar_url} name={c.display_name} size="sm" />
                     <div className="min-w-0 flex-1">

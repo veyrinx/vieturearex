@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { isAfter, isBefore } from "date-fns";
-import { ArrowRight, ArrowUpRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
@@ -203,77 +203,104 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         />
       ) : !isFetching ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {events.map((event) => (
-            <article key={event.id}
-              onClick={() => setSelectedEvent(event)}
-              className={cn(
-                "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5",
-                statusCardClassMap[event.status],
-                selectedEvent && "opacity-40 scale-[0.98]",
-              )}
-            >
-              <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
-              <div className="relative overflow-hidden">
-                <MediaFrame
-                  src={event.image_url}
-                  alt={event.title}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  aspectClassName="aspect-[16/9]"
-                  imageClassName="object-cover transition duration-500 group-hover:scale-105"
-                />
-                <StatusBadge
-                  status={event.status}
-                  className="absolute right-0 top-0 z-30 rounded-[6px] px-[7px] py-3 text-[0.8rem] shadow-sm uppercase font-bold"
-                />
-                {event.server_region && (
-                  <ServerBadge
-                    serverKey={event.server_region}
-                    className="absolute left-2 top-2 z-30 shadow-sm"
-                  />
-                )}
-              </div>
+          {events.map((event) => {
+            const isActive = event.status === "active";
+            const isUpcoming = event.status === "upcoming";
+            const accentColor = isActive ? "#ff9800" : isUpcoming ? "#4CAF50" : undefined;
+            const glowStyle = accentColor
+              ? { boxShadow: `0 0 0 1px ${accentColor}22, 0 8px 32px ${accentColor}18` }
+              : undefined;
 
-              <div className="flex flex-1 flex-col gap-2 p-3 text-center">
-                <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 leading-snug transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
-                  {event.title}
-                </h3>
-                {event.link && (
-                  <a
-                    href={event.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
+            return (
+              <article key={event.id}
+                onClick={() => setSelectedEvent(event)}
+                className={cn(
+                  "group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-all duration-300 hover:-translate-y-1",
+                  statusCardClassMap[event.status],
+                  "hover:shadow-xl",
+                  selectedEvent && selectedEvent.id !== event.id && "opacity-40 scale-[0.97]",
+                )}
+                style={glowStyle}
+              >
+                <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
+
+                {/* Image with overlay */}
+                <div className="relative overflow-hidden">
+                  <MediaFrame
+                    src={event.image_url}
+                    alt={event.title}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    aspectClassName="aspect-[16/9]"
+                    imageClassName="object-cover transition duration-700 group-hover:scale-110 group-hover:brightness-90"
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  {/* Status badge */}
+                  <StatusBadge
+                    status={event.status}
+                    className="absolute right-3 top-3 z-30 rounded-lg px-2.5 py-1 text-[10px] shadow-lg uppercase font-bold"
+                  />
+                  {event.server_region && (
+                    <ServerBadge serverKey={event.server_region} className="absolute left-3 top-3 z-30 shadow-sm" />
+                  )}
+
+                  {/* Title overlay on image */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 z-30">
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-[0.04em] text-white line-clamp-2 leading-snug drop-shadow-md group-hover:text-white transition-colors md:text-base">
+                      {event.title}
+                    </h3>
+                    <div className="mt-1.5 flex items-center gap-2 text-[11px] text-white/70">
+                      <CalendarDays className="size-3 shrink-0" />
+                      <span>{new Date(event.start_date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                      {event.end_date && event.end_date !== event.start_date && (
+                        <>
+                          <span className="opacity-50">→</span>
+                          <span>{new Date(event.end_date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 p-3">
+                  {event.link && (
+                    <a
+                      href={event.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
+                        isActive
+                          ? "border border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20"
+                          : isUpcoming
+                            ? "border border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20"
+                            : "border border-border bg-muted/50 text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      <ExternalLink className="size-3 shrink-0" /> Tham gia
+                    </a>
+                  )}
+                  <Link
+                    href={`/events/${event.id}`}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
-                      event.status === "active"
-                        ? "border border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20"
-                        : event.status === "upcoming"
-                          ? "border border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20"
-                          : "border border-border bg-muted/50 text-muted-foreground hover:bg-muted",
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
+                      isActive
+                        ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
+                        : isUpcoming
+                          ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
+                          : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
                     )}
                   >
-                    <ExternalLink className="size-3 shrink-0" />
-                    Tham gia sự kiện
-                  </a>
-                )}
-                <Link
-                  href={`/events/${event.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
-                    event.status === "active"
-                      ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
-                      : event.status === "upcoming"
-                        ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
-                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  <ArrowRight className="size-3 shrink-0" />
-                  Truy cập sự kiện
-                </Link>
-              </div>
-            </article>
-          ))}
+                    <ArrowRight className="size-3 shrink-0" /> Chi tiết
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
       ) : null}
 
