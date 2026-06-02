@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Trophy, Users, CalendarDays, Swords, Shield, Plus, UserPlus, Zap, Globe } from "lucide-react";
+import { Shield, Plus, UserPlus, Globe } from "lucide-react";
 import { SectionHeading } from "@/components/common/section-heading";
-import { TmsServerBadge } from "@/components/tms/server-badge";
+
 import { getTmsTournaments } from "@/lib/tms/data";
-import { STATUS_LABELS, FORMAT_LABELS, MODE_LABELS, SERVER_LABELS } from "@/lib/tms/types";
+import { SERVER_LABELS } from "@/lib/tms/types";
 import type { TmsServer } from "@/lib/tms/types";
 import { cn } from "@/lib/utils";
 import { getAuthContext } from "@/lib/server/auth";
-import { TournamentBanner } from "@/components/common/safe-image";
+import { TournamentListClient } from "@/components/tms/tournament-list-client";
 
 export const metadata: Metadata = {
   title: "Giải Đấu | Arex",
@@ -34,13 +34,6 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const statusColor: Record<string, string> = {
-  registering: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
-  ongoing:     "border-amber-500/40 bg-amber-500/10 text-amber-400",
-  finished:    "border-muted-foreground/30 bg-muted text-muted-foreground",
-  cancelled:   "border-red-500/30 bg-red-500/10 text-red-400",
-  draft:       "border-border bg-muted text-muted-foreground",
-};
 
 type ServerTab = {
   key: TmsServer | "all";
@@ -191,45 +184,10 @@ export default async function TournamentsPage({
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-16 text-center text-muted-foreground">
-          {serverFilter === "all" ? "Chưa có giải đấu nào." : `Chưa có giải đấu ${SERVER_LABELS[serverFilter as TmsServer] ?? ""} nào.`}
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((t) => (
-            <Link key={t.id} href={`/tournaments/${t.slug}`}
-              className="group rounded-2xl border border-border bg-card hover:border-primary/40 transition-colors overflow-hidden flex flex-col">
-              <div className="aspect-[16/7] overflow-hidden bg-muted">
-                <TournamentBanner src={t.banner_url} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-4 flex flex-col gap-2 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="font-heading font-bold text-base leading-tight group-hover:text-primary transition-colors">{t.name}</h2>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider border rounded-md px-1.5 py-0.5", statusColor[t.status])}>
-                      {STATUS_LABELS[t.status]}
-                    </span>
-                    {t.auto_approve_registrations && t.status === "registering" && (
-                      <span className="flex items-center gap-0.5 text-[9px] font-bold text-emerald-400">
-                        <Zap className="size-2.5" /> Tự duyệt
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {t.description && <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>}
-                <div className="mt-auto pt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                  <TmsServerBadge server={t.server} variant="full" />
-                  <span className="flex items-center gap-1"><Swords className="size-3" />{MODE_LABELS[t.mode]}</span>
-                  <span className="flex items-center gap-1"><Users className="size-3" />Max {t.max_teams}</span>
-                  <span className="flex items-center gap-1"><CalendarDays className="size-3" />{FORMAT_LABELS[t.format]}</span>
-                </div>
-                {t.prize_pool && <p className="text-xs font-bold text-amber-400">🏆 {t.prize_pool}</p>}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <TournamentListClient
+        tournaments={filtered}
+        emptyMessage={serverFilter === "all" ? "Chưa có giải đấu nào." : `Chưa có giải đấu ${SERVER_LABELS[serverFilter as TmsServer] ?? ""} nào.`}
+      />
     </div>
   );
 }
