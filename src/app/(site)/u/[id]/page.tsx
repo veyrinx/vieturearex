@@ -149,7 +149,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
           {/* Avatar */}
           <div className="relative mx-auto size-28 sm:mx-0 sm:size-32">
-            <div className="size-full overflow-hidden rounded-full ring-4 ring-card shadow-xl">
+            <div className="relative size-full overflow-hidden rounded-full ring-4 ring-card shadow-xl">
               {profile.avatar_url ? (
                 <Image src={profile.avatar_url} alt={name} fill className="object-cover" unoptimized />
               ) : (
@@ -221,8 +221,8 @@ export default async function PublicProfilePage({ params }: Props) {
 
           {/* Stats grid */}
           <div className="mt-3 grid grid-cols-3 gap-2.5">
-            <Stat icon={Sparkles} label="Điểm" value={points.toLocaleString("vi-VN")} accent="text-amber-500" />
-            <Stat icon={Eye}      label="Lượt xem" value={views.toLocaleString("vi-VN")} accent="text-blue-500" />
+            <Stat icon={Sparkles} label="Điểm" value={points > 999999 ? `${(points/1000000).toFixed(1)}M` : points > 9999 ? `${(points/1000).toFixed(1)}K` : points.toLocaleString("vi-VN")} accent="text-amber-500" />
+            <Stat icon={Eye} label="Xem" value={views > 999999 ? `${(views/1000000).toFixed(1)}M` : views > 9999 ? `${(views/1000).toFixed(1)}K` : views.toLocaleString("vi-VN")} accent="text-blue-500" />
             <Stat icon={CalendarDays} label="Tham gia" value={joinDate} accent="text-emerald-500" small />
           </div>
 
@@ -333,7 +333,7 @@ function Stat({
       <div className={cn("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground", accent)}>
         <Icon className="size-3" /> {label}
       </div>
-      <p className={cn("font-bold text-foreground", small ? "text-xs" : "text-base")}>{value}</p>
+      <p className={cn("font-bold text-foreground truncate", small ? "text-xs leading-snug" : "text-sm leading-snug")}>{value}</p>
     </div>
   );
 }

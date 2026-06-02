@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, ExternalLink, Eye, UserCircle2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, Eye, UserCircle2, Clock } from "lucide-react";
 import { getEventById } from "@/lib/data/content-service";
 import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 import { StatusBadge } from "@/components/common/status-badge";
@@ -113,83 +113,106 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         }}
       />
 
+      {/* Back */}
       <Link
         href="/events"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground transition hover:text-foreground"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
       >
         <ArrowLeft className="size-3.5" />
         Tất cả sự kiện
       </Link>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <StatusBadge status={event.status} />
-        </div>
-        <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground md:text-3xl">
-          {event.title}
-        </h1>
+      {/* Hero card */}
+      <div className="overflow-hidden rounded-3xl border border-border bg-card">
+        {/* Image with overlay */}
+        {event.image_url ? (
+          <div className="relative h-56 overflow-hidden md:h-80">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={event.image_url} alt={event.title} className="absolute inset-0 size-full object-cover" loading="lazy" />
+            <div className={cn(
+              "absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent",
+            )} />
+            {/* Status badge on image */}
+            <div className="absolute left-4 top-4">
+              <StatusBadge status={event.status} />
+            </div>
+            {/* Title overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+              <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-white drop-shadow-md md:text-3xl">
+                {event.title}
+              </h1>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 pb-0">
+            <StatusBadge status={event.status} />
+            <h1 className="mt-3 font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground md:text-3xl">
+              {event.title}
+            </h1>
+          </div>
+        )}
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <CalendarDays className="size-4 shrink-0" />
-            <span className="font-semibold">
-              {formatEventDate(event.start_date)}
-              {event.end_date && event.end_date !== event.start_date && (
-                <> → {formatEventDate(event.end_date)}</>
-              )}
-            </span>
+        {/* Meta bar */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border bg-muted/30 px-5 py-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5 font-semibold">
+            <CalendarDays className="size-3.5 shrink-0 text-primary dark:text-amber-400" />
+            {formatEventDate(event.start_date)}
+            {event.end_date && event.end_date !== event.start_date && (
+              <><span className="opacity-50">→</span>{formatEventDate(event.end_date)}</>
+            )}
           </span>
-
           {event.view_count > 0 && (
             <span className="flex items-center gap-1.5">
-              <Eye className="size-4 shrink-0" />
-              <span>{event.view_count.toLocaleString("vi-VN")} lượt xem</span>
+              <Eye className="size-3.5 shrink-0" />
+              {event.view_count.toLocaleString("vi-VN")} lượt xem
             </span>
           )}
-
           {authorName && (
             <span className="flex items-center gap-1.5">
-              <UserCircle2 className="size-4 shrink-0" />
-              <span>
-                Đăng bởi{" "}
-                <span className="font-semibold text-foreground">{authorName}</span>
-              </span>
+              <UserCircle2 className="size-3.5 shrink-0" />
+              <span className="font-semibold text-foreground">{authorName}</span>
+            </span>
+          )}
+          {event.server_region && (
+            <span className="flex items-center gap-1.5 ml-auto font-bold uppercase tracking-wider text-[10px]">
+              <Clock className="size-3.5" /> {event.server_region.toUpperCase()}
             </span>
           )}
         </div>
+
+        {/* Description */}
+        {event.description && (
+          <div className="p-5 md:p-7">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+              {event.description}
+            </p>
+          </div>
+        )}
+
+        {/* Join button */}
+        {event.link && (
+          <div className="border-t border-border p-4 md:px-7">
+            <a
+              href={event.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition-all hover:shadow-lg",
+                event.status === "active"
+                  ? "border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20 hover:shadow-[0_4px_20px_rgba(255,152,0,0.2)]"
+                  : event.status === "upcoming"
+                    ? "border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20 hover:shadow-[0_4px_20px_rgba(76,175,80,0.2)]"
+                    : "border-border bg-muted/50 text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <ExternalLink className="size-4 shrink-0" />
+              Tham gia sự kiện
+            </a>
+          </div>
+        )}
       </div>
 
-      <EventImageDisplay src={event.image_url} alt={event.title} />
       <EventImageEditor event={event} />
-
-      {event.description && (
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
-            {event.description}
-          </p>
-        </div>
-      )}
-
-      {event.link && (
-        <div className="pt-2">
-          <a
-            href={event.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "inline-flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold uppercase tracking-[0.1em] transition-all",
-              event.status === "active"
-                ? "border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20"
-                : event.status === "upcoming"
-                  ? "border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20"
-                  : "border-border bg-muted/50 text-muted-foreground hover:bg-muted",
-            )}
-          >
-            <ExternalLink className="size-4 shrink-0" />
-            Tham gia sự kiện
-          </a>
-        </div>
-      )}
 
       {poll && (
         <PollWidget

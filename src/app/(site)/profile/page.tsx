@@ -523,12 +523,40 @@ export default function ProfilePage() {
                 <span className="flex items-center gap-1.5">
                   <Eye className="size-3.5" /> {Number(profile.views ?? 0).toLocaleString("vi-VN")} lượt xem
                 </span>
+                {ffId && /^\d{6,12}$/.test(ffId) && (
+                  <span className="flex items-center gap-1.5 text-amber-500 font-mono font-semibold">
+                    <Gamepad2 className="size-3.5" /> {ffId}
+                  </span>
+                )}
                 {has2FA && (
                   <span className="flex items-center gap-1.5 text-green-500">
                     <ShieldCheck className="size-3.5" /> 2FA đang bật
                   </span>
                 )}
               </div>
+
+              {/* Bio */}
+              {bio.trim() && (
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground line-clamp-2 text-center sm:text-left">
+                  {bio.trim()}
+                </p>
+              )}
+
+              {/* Social links */}
+              {SOCIAL_DEFS.some((s) => (socials[s.field] ?? "").trim()) && (
+                <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 sm:justify-start">
+                  {SOCIAL_DEFS.filter((s) => (socials[s.field] ?? "").trim()).map((s) => {
+                    const Icon = s.icon;
+                    return (
+                      <a key={s.field} href={socials[s.field]} target="_blank" rel="noopener noreferrer"
+                        title={s.label}
+                        className={cn("flex size-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors", s.brand)}>
+                        <Icon className="size-3.5" />
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -538,22 +566,35 @@ export default function ProfilePage() {
               className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline dark:text-amber-400">
               <ExternalLink className="size-3" /> Xem hồ sơ công khai
             </Link>
-            <div className="ml-auto flex items-center gap-4 text-[11px] font-semibold text-muted-foreground">
+            <div className="ml-auto flex flex-wrap items-center gap-3 text-[11px] font-semibold text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MessageSquare className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myPosts.length : "—"} bài viết</span>
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myPosts.length : "—"}</span>
+                <span className="hidden sm:inline">bài</span>
               </span>
               <span className="flex items-center gap-1">
                 <BookOpen className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myWiki.length : "—"} wiki</span>
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myWiki.length : "—"}</span>
+                <span className="hidden sm:inline">wiki</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Bookmark className="size-3" />
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? bookmarks.length : "—"}</span>
+                <span className="hidden sm:inline">đã lưu</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Bell className="size-3" />
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? follows.length : "—"}</span>
+                <span className="hidden sm:inline">theo dõi</span>
               </span>
               <span className="flex items-center gap-1">
                 <Trophy className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? achievements.length : "—"} thành tích</span>
+                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? achievements.length : "—"}</span>
+                <span className="hidden sm:inline">thành tích</span>
               </span>
-              <span className="flex items-center gap-1 text-primary dark:text-amber-400">
+              <span className="flex items-center gap-1 text-primary dark:text-amber-400 border-l border-border/50 pl-3">
                 <span className="text-base leading-none">{rankMeta.icon}</span>
-                <span>{rankMeta.rank}</span>
+                <span>{rankMeta.rank} {subRank}</span>
               </span>
             </div>
           </div>
@@ -591,6 +632,34 @@ export default function ProfilePage() {
         {/* ── Tab: Hồ sơ ── */}
         {activeTab === "profile" && (
           <div className="space-y-5">
+
+            {/* Activity overview */}
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center gap-2.5">
+                <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+                <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+                  Tổng quan hoạt động
+                </h2>
+              </div>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                {[
+                  { icon: MessageSquare, label: "Bài viết",   value: statsLoaded ? myPosts.length    : null, color: "text-blue-500",   bg: "bg-blue-500/10" },
+                  { icon: BookOpen,      label: "Wiki",        value: statsLoaded ? myWiki.length     : null, color: "text-emerald-500",bg: "bg-emerald-500/10" },
+                  { icon: Trophy,        label: "Thành tích",  value: statsLoaded ? achievements.length : null, color: "text-amber-500", bg: "bg-amber-500/10" },
+                  { icon: Bookmark,      label: "Đã lưu",      value: statsLoaded ? bookmarks.length  : null, color: "text-purple-500", bg: "bg-purple-500/10" },
+                  { icon: Bell,          label: "Theo dõi",    value: statsLoaded ? follows.length    : null, color: "text-pink-500",   bg: "bg-pink-500/10" },
+                  { icon: Eye,           label: "Lượt xem",    value: Number(profile.views ?? 0),              color: "text-cyan-500",   bg: "bg-cyan-500/10" },
+                ].map(({ icon: Icon, label, value, color, bg }) => (
+                  <div key={label} className={cn("flex flex-col items-center gap-1.5 rounded-xl p-3 text-center", bg)}>
+                    <Icon className={cn("size-4", color)} />
+                    <span className="text-lg font-black tabular-nums text-foreground leading-none">
+                      {value === null ? "—" : value.toLocaleString("vi-VN")}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
             {/* Thông tin cá nhân */}
             <div className="rounded-2xl border border-border bg-card p-6">
               <div className="mb-5 flex items-center gap-2.5">
