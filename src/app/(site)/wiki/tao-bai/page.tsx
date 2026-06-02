@@ -17,9 +17,9 @@ export default function CreateWikiPage() {
       {/* Back */}
       <Link
         href="/wiki"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-emerald-500/40 hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="size-4" />
+        <ArrowLeft className="size-3.5" />
         Quay lại Wiki
       </Link>
 
