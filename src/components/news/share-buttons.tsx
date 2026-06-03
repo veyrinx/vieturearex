@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, Check, Send, Facebook } from "lucide-react";
+import { Link2, Check, Send, Facebook, Share2 } from "lucide-react";
 
-type Props = { url: string; title: string };
+type Props = {
+  url: string;
+  title: string;
+  /** show only icons, no label */
+  compact?: boolean;
+  /** show "Chia sẻ:" label (default true) */
+  showLabel?: boolean;
+};
 
-export function ShareButtons({ url, title }: Props) {
+export function ShareButtons({ url, title, compact = false, showLabel = true }: Props) {
   const [copied, setCopied] = useState(false);
 
   const encodedUrl = encodeURIComponent(url);
@@ -18,9 +25,19 @@ export function ShareButtons({ url, title }: Props) {
     }).catch(() => null);
   };
 
+  const handleNativeShare = () => {
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      navigator.share({ title, url }).catch(() => null);
+    } else {
+      copy();
+    }
+  };
+
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-xs text-muted-foreground mr-1">Chia sẻ:</span>
+      {showLabel && !compact && (
+        <span className="text-xs text-muted-foreground mr-1">Chia sẻ:</span>
+      )}
 
       {/* Telegram */}
       <a
@@ -43,6 +60,18 @@ export function ShareButtons({ url, title }: Props) {
       >
         <Facebook size={14} className="text-[#1877f2]" />
       </a>
+
+      {/* Native share (mobile) */}
+      {typeof navigator !== "undefined" && "share" in navigator && (
+        <button
+          type="button"
+          onClick={handleNativeShare}
+          className="inline-flex items-center justify-center size-8 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors dark:bg-amber-400/10 dark:hover:bg-amber-400/20"
+          title="Chia sẻ"
+        >
+          <Share2 size={14} className="text-primary dark:text-amber-400" />
+        </button>
+      )}
 
       {/* Copy link */}
       <button
