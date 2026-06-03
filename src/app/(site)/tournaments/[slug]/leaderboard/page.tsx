@@ -27,31 +27,41 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
   const imageBase = `/api/tms/tournaments/${tournament.id}/image`;
 
   return (
-    <div className="py-10 space-y-8">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Link href={`/tournaments/${slug}`} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-4" />
-          </Link>
-          <div>
-            <h1 className="font-heading text-xl font-black uppercase tracking-[0.06em] flex items-center gap-2">
-              <Trophy className="size-5 text-amber-400" /> Bảng Xếp Hạng
-            </h1>
-            <p className="text-xs text-muted-foreground">{tournament.name}</p>
+    <div className="py-8 space-y-6">
+      {/* Back */}
+      <Link href={`/tournaments/${slug}`}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+        <ArrowLeft className="size-3.5" /> {tournament.name}
+      </Link>
+
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-5 md:p-7">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15">
+              <Trophy className="size-5 text-amber-500" />
+            </span>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">TMS</p>
+              <h1 className="font-heading text-xl font-black uppercase tracking-tight text-foreground">Bảng Xếp Hạng</h1>
+              <p className="text-xs text-muted-foreground">{tournament.name}</p>
+            </div>
           </div>
-        </div>
-        {/* Image download buttons */}
-        <div className="flex flex-wrap gap-2">
-          {[
-            { href: `${imageBase}/standings`, label: "BXH Đội", icon: Download },
-            { href: `${imageBase}/players`,   label: "BXH Cá nhân", icon: Download },
-            { href: `${imageBase}/bracket`,   label: "Lịch đấu", icon: ImageIcon },
-          ].map(({ href, label, icon: Icon }) => (
-            <a key={label} href={href} target="_blank" rel="noopener noreferrer" download
-              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
-              <Icon className="size-3.5" /> {label}
-            </a>
-          ))}
+          {/* Image download buttons */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { href: `${imageBase}/standings`, label: "BXH Đội",    icon: Download },
+              { href: `${imageBase}/players`,   label: "Cá nhân",    icon: Download },
+              { href: `${imageBase}/bracket`,   label: "Lịch đấu",   icon: ImageIcon },
+            ].map(({ href, label, icon: Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" download
+                className="flex items-center gap-1.5 rounded-xl border border-border bg-background/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-amber-500/40 hover:text-foreground transition-colors">
+                <Icon className="size-3.5" /> {label}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
 
