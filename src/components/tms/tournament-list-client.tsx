@@ -6,6 +6,7 @@ import { Search, X, Swords, Users, CalendarDays, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TmsServerBadge } from "@/components/tms/server-badge";
 import { TournamentBanner } from "@/components/common/safe-image";
+import type { TmsServer } from "@/lib/tms/types";
 
 type Tournament = {
   id: string;
@@ -101,8 +102,8 @@ export function TournamentListClient({
           {filtered.map((t) => (
             <Link key={t.id} href={`/tournaments/${t.slug}`}
               className="group rounded-2xl border border-border bg-card hover:border-primary/40 transition-colors overflow-hidden flex flex-col">
-              <div className="aspect-[16/7] overflow-hidden bg-muted">
-                <TournamentBanner src={t.banner_url} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="relative aspect-[16/7] overflow-hidden bg-muted">
+                <TournamentBanner src={t.banner_url} alt={t.name} className="object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
               <div className="p-4 flex flex-col gap-2 flex-1">
                 <div className="flex items-start justify-between gap-2">
@@ -120,7 +121,7 @@ export function TournamentListClient({
                 </div>
                 {t.description && <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>}
                 <div className="mt-auto pt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                  <TmsServerBadge server={t.server as never} variant="full" />
+                  <TmsServerBadge server={t.server as TmsServer} variant="full" />
                   <span className="flex items-center gap-1"><Swords className="size-3" />{MODE_LABELS[t.mode] ?? t.mode}</span>
                   <span className="flex items-center gap-1"><Users className="size-3" />Max {t.max_teams}</span>
                   <span className="flex items-center gap-1"><CalendarDays className="size-3" />{FORMAT_LABELS[t.format] ?? t.format}</span>
