@@ -7,7 +7,8 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { ArrowLeft, Eye, PenLine, History, BookOpen, Clock, User } from "lucide-react";
 import { RichTextRenderer } from "@/components/news/rich-text-renderer";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type WikiArticle = {
   id: string;
@@ -154,7 +155,7 @@ export default async function WikiArticlePage(
             <span className="flex items-center gap-1"><Clock className="size-3" />{readingTime} phút đọc</span>
             <span className="ml-auto flex items-center gap-1">
               <Eye className="size-3" />
-              {article.view_count.toLocaleString()}
+              {(article.view_count + 1).toLocaleString()} lượt xem
             </span>
           </div>
 

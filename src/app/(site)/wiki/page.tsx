@@ -6,7 +6,7 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { BookOpenText, PenLine, Users2, Layers } from "lucide-react";
 import { WikiSearch } from "@/components/wiki/wiki-search";
 
-export const revalidate = 60;
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: "Wiki Cộng Đồng | Arex",
