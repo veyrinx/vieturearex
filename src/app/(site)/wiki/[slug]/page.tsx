@@ -206,30 +206,50 @@ export default async function WikiArticlePage(
         </div>
       </article>
 
+      {/* Author card */}
+      <div className="rounded-2xl border border-border bg-card p-5 flex items-center gap-4">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10">
+          <User className="size-6 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tác giả đóng góp</p>
+          <p className="font-bold text-foreground">{article.author_name}</p>
+        </div>
+        <Link href={`/wiki?author=${encodeURIComponent(article.author_name)}`}
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+          Xem bài khác
+        </Link>
+      </div>
+
       {/* Related articles */}
       {related && related.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="size-4 text-emerald-500" />
-            <h2 className="font-heading text-sm font-black uppercase tracking-[0.15em] text-emerald-600 dark:text-emerald-400">
-              Bài viết liên quan — {article.category}
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-emerald-500" />
+            <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <BookOpen className="size-3.5" /> Bài viết liên quan
             </h2>
+            <span className="ml-auto text-[10px] text-muted-foreground font-semibold">{article.category}</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {related.map((r) => (
               <Link
                 key={r.slug}
                 href={`/wiki/${r.slug}`}
-                className="group rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5 space-y-2"
+                className="group rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5 space-y-2 border-l-4 border-l-emerald-500/30"
               >
-                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{r.category}</p>
+                <span className="inline-flex rounded-md bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+                  {r.category}
+                </span>
                 <h3 className="text-sm font-bold leading-snug text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
                   {r.title}
                 </h3>
                 {r.excerpt && (
                   <p className="text-[11px] text-muted-foreground line-clamp-2">{r.excerpt}</p>
                 )}
-                <p className="text-[10px] text-muted-foreground">✍️ {r.author_name}</p>
+                <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <User className="size-2.5" /> {r.author_name}
+                </p>
               </Link>
             ))}
           </div>
