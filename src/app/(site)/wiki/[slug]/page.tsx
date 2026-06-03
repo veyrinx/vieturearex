@@ -7,6 +7,7 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { ArrowLeft, Eye, PenLine, History, BookOpen, Clock, User } from "lucide-react";
 import { RichTextRenderer } from "@/components/news/rich-text-renderer";
 import { ShareButtons } from "@/components/news/share-buttons";
+import { BookmarkButton } from "@/components/news/bookmark-button";
 import { siteConfig } from "@/lib/constants/site";
 
 export const dynamic = "force-dynamic";
@@ -175,9 +176,15 @@ export default async function WikiArticlePage(
           {/* Divider */}
           <div className="h-px bg-border" />
 
-          {/* Share */}
+          {/* Share + Bookmark */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
             <ShareButtons url={`${siteConfig.url}/wiki/${article.slug}`} title={article.title} />
+            <BookmarkButton
+              itemId={article.slug}
+              itemTitle={article.title}
+              itemImage={article.cover_url ?? undefined}
+              itemType="wiki"
+            />
           </div>
 
           {/* Footer */}

@@ -1017,7 +1017,12 @@ export default function ProfilePage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{b.item_type}</p>
-                        <Link href={b.item_type === "news" ? `/news/${b.item_id}` : `/esports/events/${b.item_id}`}
+                        <Link href={
+                          b.item_type === "news"  ? `/news/${b.item_id}` :
+                          b.item_type === "wiki"  ? `/wiki/${b.item_id}` :
+                          b.item_type === "forum" ? `/cong-dong/${b.item_id}` :
+                          `/esports/events/${b.item_id}`
+                        }
                           className="text-sm font-semibold text-foreground hover:text-primary line-clamp-1">
                           {b.item_title ?? b.item_id}
                         </Link>

@@ -7,6 +7,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumReplies, ForumHelpfulButton, ForumPostEditButton } from "@/components/forum/forum-client";
 import { ShareButtons } from "@/components/news/share-buttons";
+import { BookmarkButton } from "@/components/news/bookmark-button";
 import { ForumContent } from "@/components/forum/forum-content";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
@@ -111,9 +112,14 @@ export default async function ForumPostPage({ params }: Props) {
         </div>
 
         {/* Footer actions */}
-        <div className="border-t border-border px-5 py-3 md:px-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="border-t border-border px-5 py-3 md:px-6 space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <ForumHelpfulButton postId={post.id} initialCount={post.helpful_count ?? 0} />
+            <BookmarkButton
+              itemId={post.id}
+              itemTitle={post.title}
+              itemType="forum"
+            />
             <ForumPostEditButton
               postId={post.id}
               initialTitle={post.title}
@@ -121,12 +127,14 @@ export default async function ForumPostPage({ params }: Props) {
               postUserId={post.user_id}
               onSaved={() => {}}
             />
+            <div className="ml-auto">
+              <ShareButtons
+                url={`${siteConfig.url}/cong-dong/${post.id}`}
+                title={post.title}
+                showLabel={false}
+              />
+            </div>
           </div>
-          <ShareButtons
-            url={`${siteConfig.url}/cong-dong/${post.id}`}
-            title={post.title}
-            showLabel={false}
-          />
         </div>
       </article>
 
