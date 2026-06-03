@@ -8,6 +8,7 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumReplies, ForumHelpfulButton, ForumPostEditButton } from "@/components/forum/forum-client";
 import { ShareButtons } from "@/components/news/share-buttons";
 import { BookmarkButton } from "@/components/news/bookmark-button";
+import { ReadingProgress } from "@/components/news/reading-progress";
 import { ForumContent } from "@/components/forum/forum-content";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
@@ -68,6 +69,7 @@ export default async function ForumPostPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl py-8 md:py-12 space-y-6">
+      <ReadingProgress />
       {/* Back */}
       <Link href="/cong-dong" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="size-4" /> Diễn đàn

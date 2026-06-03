@@ -8,6 +8,7 @@ import { ArrowLeft, Eye, PenLine, History, BookOpen, Clock, User } from "lucide-
 import { RichTextRenderer } from "@/components/news/rich-text-renderer";
 import { ShareButtons } from "@/components/news/share-buttons";
 import { BookmarkButton } from "@/components/news/bookmark-button";
+import { ReadingProgress } from "@/components/news/reading-progress";
 import { siteConfig } from "@/lib/constants/site";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +89,7 @@ export default async function WikiArticlePage(
 
   return (
     <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-6">
+      <ReadingProgress />
       {/* Back */}
       <Link
         href="/wiki"
