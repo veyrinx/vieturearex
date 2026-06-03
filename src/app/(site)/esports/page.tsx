@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SectionHeading } from "@/components/common/section-heading";
+import { Radio } from "lucide-react";
 import { StreamsGrid } from "@/components/esports/streams-grid";
 import { getStreams, getStreamCategories } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
@@ -60,11 +60,27 @@ export default async function EsportsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(videoList) }}
       />
-      <SectionHeading
-        eyebrow="Esports"
-        title="PHÁT TRỰC TIẾP"
-        description="Theo dõi các buổi phát trực tiếp và sự kiện của cộng đồng"
-      />
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-red-500/8 via-transparent to-orange-500/5" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+        <div className="relative flex items-center gap-4">
+          <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/15">
+            <Radio className="size-6 text-red-500" />
+            <span className="absolute -top-0.5 -right-0.5 flex size-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex size-3 rounded-full bg-red-500" />
+            </span>
+          </span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">Live · Esports</p>
+            <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+              Phát Trực Tiếp
+            </h1>
+            <p className="text-sm text-muted-foreground">Theo dõi các buổi phát trực tiếp và sự kiện của cộng đồng</p>
+          </div>
+        </div>
+      </div>
       <StreamsGrid initialStreams={streams} categories={categories} />
     </div>
   );

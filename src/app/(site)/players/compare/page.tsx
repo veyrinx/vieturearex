@@ -96,21 +96,28 @@ export default async function PlayerComparePage({
 
   return (
     <div className="py-10 space-y-8 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/tournaments"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground transition hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Giải đấu
-        </Link>
-      </div>
+      {/* Back */}
+      <Link href="/leaderboard"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+        <ArrowLeft className="size-3.5" /> Bảng xếp hạng
+      </Link>
 
-      <div className="space-y-1">
-        <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">
-          So Sánh Tuyển Thủ
-        </h1>
-        <p className="text-sm text-muted-foreground">Tìm 2 tuyển thủ để so sánh thống kê.</p>
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/8 via-transparent to-primary/5 dark:from-amber-400/5" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+        <div className="relative flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15">
+            <Users className="size-6 text-violet-500" />
+          </span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-500">TMS</p>
+            <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+              So Sánh Tuyển Thủ
+            </h1>
+            <p className="text-sm text-muted-foreground">Tìm 2 tuyển thủ để so sánh thống kê thi đấu</p>
+          </div>
+        </div>
       </div>
 
       {/* Search form */}
@@ -122,12 +129,10 @@ export default async function PlayerComparePage({
           {/* Player headers */}
           <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
             {/* Player A */}
-            <div className="text-center space-y-2">
+            <div className="rounded-2xl border border-border bg-card p-4 text-center space-y-2">
               <PlayerAvatar user={playerA.user} />
-              <Link
-                href={`/players/${playerA.user.id}`}
-                className="block font-heading text-base font-bold uppercase tracking-[0.06em] hover:text-primary dark:hover:text-amber-400 transition-colors"
-              >
+              <Link href={`/players/${playerA.user.id}`}
+                className="block font-heading text-base font-bold uppercase tracking-[0.04em] hover:text-primary dark:hover:text-amber-400 transition-colors">
                 {playerA.user.display_name ?? "—"}
               </Link>
               {playerA.user.ff_id && (
@@ -135,17 +140,17 @@ export default async function PlayerComparePage({
               )}
             </div>
 
-            <div className="text-center">
-              <span className="font-heading text-lg font-black text-muted-foreground/50 uppercase tracking-widest">VS</span>
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex size-10 items-center justify-center rounded-full border-2 border-border bg-card">
+                <span className="font-heading text-sm font-black text-muted-foreground uppercase">VS</span>
+              </div>
             </div>
 
             {/* Player B */}
-            <div className="text-center space-y-2">
+            <div className="rounded-2xl border border-border bg-card p-4 text-center space-y-2">
               <PlayerAvatar user={playerB.user} />
-              <Link
-                href={`/players/${playerB.user.id}`}
-                className="block font-heading text-base font-bold uppercase tracking-[0.06em] hover:text-primary dark:hover:text-amber-400 transition-colors"
-              >
+              <Link href={`/players/${playerB.user.id}`}
+                className="block font-heading text-base font-bold uppercase tracking-[0.04em] hover:text-primary dark:hover:text-amber-400 transition-colors">
                 {playerB.user.display_name ?? "—"}
               </Link>
               {playerB.user.ff_id && (
