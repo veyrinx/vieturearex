@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Heart, Bell, CalendarDays, ArrowRight } from "lucide-react";
+import { Heart, Bell, CalendarDays, ArrowRight, CalendarCheck } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventModal } from "@/components/timeline/event-modal";
@@ -82,7 +82,16 @@ function Section({
       </div>
 
       {events.length === 0 ? (
-        <EmptyState title="TRỐNG" description={emptyText.toUpperCase()} />
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-12 text-center">
+          <CalendarCheck className="size-10 text-muted-foreground/30" />
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground">{title === "Đã yêu thích" ? "Chưa có sự kiện yêu thích" : "Chưa theo dõi sự kiện nào"}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/70">{emptyText}</p>
+          </div>
+          <Link href="/events" className="rounded-xl border border-border px-4 py-1.5 text-xs font-semibold hover:border-primary/40 hover:text-foreground transition-colors text-muted-foreground">
+            Xem sự kiện →
+          </Link>
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((e) => (
