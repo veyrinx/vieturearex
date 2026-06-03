@@ -5,7 +5,7 @@ import { ArrowLeft, Eye, MessageSquare, Pin, Lock, Clock } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { ForumReplies, ForumHelpfulButton } from "@/components/forum/forum-client";
+import { ForumReplies, ForumHelpfulButton, ForumPostEditButton } from "@/components/forum/forum-client";
 import { ForumContent } from "@/components/forum/forum-content";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
@@ -110,8 +110,15 @@ export default async function ForumPostPage({ params }: Props) {
         </div>
 
         {/* Footer actions */}
-        <div className="border-t border-border px-5 py-3 md:px-6">
+        <div className="border-t border-border px-5 py-3 md:px-6 flex items-center gap-3">
           <ForumHelpfulButton postId={post.id} initialCount={post.helpful_count ?? 0} />
+          <ForumPostEditButton
+            postId={post.id}
+            initialTitle={post.title}
+            initialContent={post.content}
+            postUserId={post.user_id}
+            onSaved={() => {}}
+          />
         </div>
       </article>
 

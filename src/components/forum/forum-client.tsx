@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   MessageSquare, Eye, Pin, Lock, Plus, ChevronRight,
-  Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2, ThumbsUp, Pencil,
+  Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2, ThumbsUp, Pencil, X,
 } from "lucide-react";
 
 export const FORUM_CATEGORIES = [
@@ -505,6 +505,81 @@ function ReplyForm({ content, setContent, onSubmit, submitting, errMsg, onCancel
         {onCancel && <button type="button" onClick={onCancel} className="px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground">Hủy</button>}
       </div>
     </form>
+  );
+}
+
+// ─── Post Edit Button ─────────────────────────────────────────────────────────
+export function ForumPostEditButton({
+  postId, initialTitle, initialContent, postUserId,
+  onSaved,
+}: {
+  postId: string; initialTitle: string; initialContent: string;
+  postUserId: string | null; onSaved: (title: string, content: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(initialTitle);
+  const [content, setContent] = useState(initialContent);
+  const [saving, setSaving] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user/profile").then((r) => r.json()).then((d: { id?: string }) => setCurrentUserId(d.id ?? null)).catch(() => null);
+  }, []);
+
+  if (!currentUserId || currentUserId !== postUserId) return null;
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim()) return;
+    setSaving(true);
+    const res = await fetch(`/api/forum/${postId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title.trim(), content }),
+    });
+    if (res.ok) { onSaved(title.trim(), content); setEditing(false); }
+    setSaving(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="border-t border-border px-5 py-4 md:px-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
+            <Pencil className="size-3.5" /> Chỉnh sửa bài viết
+          </p>
+          <button onClick={() => { setEditing(false); setTitle(initialTitle); setContent(initialContent); }}
+            className="text-muted-foreground hover:text-foreground">
+            <X className="size-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSave} className="space-y-3">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={200}
+            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <ForumEditor value={content} onChange={setContent} placeholder="Nội dung bài viết..." />
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50">
+              {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+              {saving ? "Đang lưu..." : "Lưu"}
+            </button>
+            <button type="button" onClick={() => { setEditing(false); setTitle(initialTitle); setContent(initialContent); }}
+              className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Hủy</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={() => setEditing(true)}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors dark:hover:text-amber-400">
+      <Pencil className="size-3.5" /> Sửa bài
+    </button>
   );
 }
 

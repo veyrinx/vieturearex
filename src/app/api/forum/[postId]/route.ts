@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+const editPostSchema = z.object({
+  title:   z.string().min(5).max(200),
+  content: z.string().min(20).max(20000),
+});
 
 type Ctx = { params: Promise<{ postId: string }> };
 
@@ -28,6 +34,39 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     .eq("id", postId);
 
   return NextResponse.json(post);
+}
+
+export async function PUT(req: NextRequest, { params }: Ctx) {
+  const limited = enforceRateLimit(req, { name: "forum-post-edit", limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
+
+  const { postId } = await params;
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
+
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  if (!user) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  const parsed = editPostSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
+
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+
+  const { data: post } = await untypedFrom(db, "forum_posts")
+    .select("user_id")
+    .eq("id", postId)
+    .single() as { data: { user_id: string } | null };
+
+  if (!post) return NextResponse.json({ error: "Không tìm thấy." }, { status: 404 });
+  if (post.user_id !== user.id) return NextResponse.json({ error: "Không có quyền." }, { status: 403 });
+
+  await untypedFrom(db, "forum_posts")
+    .update({ title: parsed.data.title, content: parsed.data.content } as never)
+    .eq("id", postId);
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
