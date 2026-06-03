@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Users, Trophy, AlertTriangle, Shield, Plus, Check, Copy,
-  Pencil, LogOut, X, UserMinus, Crown, ExternalLink, Clock, CheckCircle2, XCircle,
+  Pencil, LogOut, X, UserMinus, Crown, ExternalLink, Clock, CheckCircle2, XCircle, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -177,12 +177,28 @@ export default function MyTeamPage() {
   const isCaptain = t?.captain_id === p.id;
 
   return (
-    <div className="py-10 space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-3">
-        <Users className="size-7 text-primary dark:text-amber-400" />
-        <div>
-          <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">Team của tôi</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Quản lý team thi đấu của bạn</p>
+    <div className="py-8 space-y-6 max-w-2xl mx-auto">
+      {/* Back */}
+      <Link href="/tournaments"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+        <ArrowLeft className="size-3.5" /> Giải đấu
+      </Link>
+
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-7">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-amber-500/5 dark:from-amber-400/6" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <div className="relative flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-amber-400/10">
+            <Users className="size-6 text-primary dark:text-amber-400" />
+          </span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">TMS</p>
+            <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+              Team Của Tôi
+            </h1>
+            <p className="text-sm text-muted-foreground">Quản lý team thi đấu của bạn</p>
+          </div>
         </div>
       </div>
 

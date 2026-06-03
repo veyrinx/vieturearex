@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { getTmsTournament } from "@/lib/tms/data";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -79,20 +79,29 @@ export default async function TournamentRegisterPage({ params }: PageProps) {
   const existingReg = team ? await getExistingRegistration(tournament.id, team.id) : null;
 
   return (
-    <div className="py-10 max-w-2xl mx-auto space-y-8">
-      <Link
-        href={`/tournaments/${slug}`}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground transition hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" />
-        {tournament.name}
+    <div className="py-8 max-w-2xl mx-auto space-y-6">
+      {/* Back */}
+      <Link href={`/tournaments/${slug}`}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+        <ArrowLeft className="size-3.5" /> {tournament.name}
       </Link>
 
-      <div className="space-y-1">
-        <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em]">
-          Đăng Ký Tham Dự
-        </h1>
-        <p className="text-sm text-muted-foreground">{tournament.name}</p>
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-7">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/8 via-transparent to-primary/4 dark:from-emerald-400/6" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+        <div className="relative flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15">
+            <UserPlus className="size-6 text-emerald-500" />
+          </span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500">TMS</p>
+            <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+              Đăng Ký Tham Dự
+            </h1>
+            <p className="text-sm text-muted-foreground line-clamp-1">{tournament.name}</p>
+          </div>
+        </div>
       </div>
 
       <RegistrationForm
