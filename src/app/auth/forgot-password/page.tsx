@@ -52,8 +52,11 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-4 py-10">
-        <section className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-[0_20px_60px_rgba(2,6,23,0.15)] text-center">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-1/4 top-1/4 size-[400px] rounded-full bg-emerald-500/8 blur-[120px]" />
+        </div>
+        <section className="relative w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl text-center">
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-green-500/10">
             <CheckCircle2 className="size-7 text-green-500" />
           </div>
@@ -96,8 +99,12 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-[0_20px_60px_rgba(2,6,23,0.15)] relative">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/4 top-1/4 size-[400px] rounded-full bg-primary/8 blur-[120px] dark:bg-amber-400/6" />
+        <div className="absolute right-1/4 bottom-1/4 size-[300px] rounded-full bg-blue-500/5 blur-[100px]" />
+      </div>
+      <section className="relative w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <Link
           href="/auth/login"
           className="absolute top-6 left-6 text-muted-foreground hover:text-foreground transition-colors"
@@ -146,12 +153,13 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
 
-        <div className="mt-5 text-center">
-          <Link
-            href="/login"
-            className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Chưa có tài khoản? Đăng ký miễn phí
+        <div className="mt-5 flex items-center justify-center gap-3 text-xs">
+          <Link href="/login" className="font-medium uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground transition-colors">
+            Đăng nhập
+          </Link>
+          <span className="text-muted-foreground/30">·</span>
+          <Link href="/register" className="font-medium uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground transition-colors">
+            Đăng ký
           </Link>
         </div>
       </section>
