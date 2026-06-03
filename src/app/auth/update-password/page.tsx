@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -119,37 +119,70 @@ export default function UpdatePasswordPage() {
     }, 1000);
   };
 
+  const passwordsMatch = password === confirmPassword && password.length > 0;
+  const passwordValid = password.length >= 6;
+  const canSubmit = passwordValid && passwordsMatch;
+
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-[0_20px_60px_rgba(2,6,23,0.15)] relative">
-        <div className="mb-6 text-center mt-2">
-          <div className="flex flex-col items-center">
-            <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.08em] text-foreground">
-              ĐỔI MẬT KHẨU
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/4 top-1/4 size-[400px] rounded-full bg-primary/8 blur-[120px] dark:bg-amber-400/6" />
+        <div className="absolute right-1/4 bottom-1/4 size-[300px] rounded-full bg-violet-500/5 blur-[100px]" />
+      </div>
+
+      <section className="relative w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
+        <div className="mb-6 text-center space-y-3">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-amber-400/10">
+            <KeyRound className="size-7 text-primary dark:text-amber-400" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">Bảo mật</p>
+            <h1 className="mt-1 font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground">
+              Đổi Mật Khẩu
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              NHẬP MẬT KHẨU BẢO MẬT MỚI CHO TÀI KHOẢN CỦA BẠN
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Nhập mật khẩu bảo mật mới cho tài khoản của bạn
             </p>
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4 mt-8">
-          <PasswordInput
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="MẬT KHẨU MỚI"
-            showPassword={showPassword}
-            onToggleShowPassword={() => setShowPassword(!showPassword)}
-          />
-          <PasswordInput
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="NHẬP LẠI MẬT KHẨU MỚI"
-            showPassword={showConfirmPassword}
-            onToggleShowPassword={() => setShowConfirmPassword(!showConfirmPassword)}
-          />
-          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl uppercase tracking-[0.08em] font-bold">
-            {loading ? "ĐANG LƯU..." : "MỞ KHÓA VÀ LƯU"}
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mật khẩu mới</label>
+            <PasswordInput
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Tối thiểu 6 ký tự"
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
+            />
+            {password && (
+              <p className={`text-[11px] font-semibold ${passwordValid ? "text-emerald-500" : "text-red-400"}`}>
+                {passwordValid ? "✓ Mật khẩu đủ mạnh" : `Cần thêm ${6 - password.length} ký tự`}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Xác nhận mật khẩu</label>
+            <PasswordInput
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Nhập lại mật khẩu"
+              showPassword={showConfirmPassword}
+              onToggleShowPassword={() => setShowConfirmPassword(!showConfirmPassword)}
+            />
+            {confirmPassword && (
+              <p className={`flex items-center gap-1 text-[11px] font-semibold ${passwordsMatch ? "text-emerald-500" : "text-red-400"}`}>
+                {passwordsMatch ? <><CheckCircle2 className="size-3" /> Mật khẩu khớp</> : "✗ Mật khẩu không khớp"}
+              </p>
+            )}
+          </div>
+
+          <Button type="submit" disabled={loading || !canSubmit}
+            className="h-12 w-full rounded-xl uppercase tracking-[0.08em] font-bold gap-2 shadow-lg shadow-primary/20 dark:shadow-amber-400/15">
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+            {loading ? "Đang lưu..." : "Mở khóa và lưu"}
           </Button>
         </form>
       </section>

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Loader2, MailCheck } from "lucide-react";
 
 export default function VerifyOtpPage() {
   const router = useRouter();
@@ -68,41 +68,64 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-[0_20px_60px_rgba(2,6,23,0.15)] relative">
-        <Link
-          href="/auth/forgot-password"
-          className="absolute top-6 left-6 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Quay lại"
-        >
-          <ArrowLeft className="size-5" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/4 top-1/4 size-[400px] rounded-full bg-blue-500/8 blur-[120px]" />
+        <div className="absolute right-1/4 bottom-1/4 size-[300px] rounded-full bg-primary/5 blur-[100px] dark:bg-amber-400/4" />
+      </div>
+
+      <section className="relative w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
+        <Link href="/auth/forgot-password" aria-label="Quay lại"
+          className="absolute top-5 left-5 flex size-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors">
+          <ArrowLeft className="size-4" />
         </Link>
 
-        <div className="mb-6 text-center mt-2">
-          <div className="flex flex-col items-center">
-            <h1 className="font-heading text-2xl font-bold uppercase tracking-[0.08em] text-foreground">
-              NHẬP MÃ XÁC NHẬN
+        <div className="mb-6 text-center mt-4 space-y-3">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-blue-500/10">
+            <ShieldCheck className="size-7 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500">Xác thực</p>
+            <h1 className="mt-1 font-heading text-2xl font-bold uppercase tracking-[0.06em] text-foreground">
+              Nhập Mã OTP
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              MÃ ĐÃ ĐƯỢC GỬI TỚI {email ? email.toUpperCase() : "EMAIL CỦA BẠN"}
-            </p>
+            {email && (
+              <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+                <MailCheck className="size-3.5 shrink-0" />
+                Mã đã gửi tới <span className="font-semibold text-foreground">{email}</span>
+              </p>
+            )}
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4 mt-8">
-          <Input
-            value={otp}
-            onChange={(event) => setOtp(event.target.value.trim().replace(/\D/g, "").slice(0, 6))}
-            type="text"
-            required
-            maxLength={6}
-            placeholder="MÃ SỐ BÍ MẬT GỒM 6 SỐ"
-            className="h-14 font-mono text-center text-3xl font-bold tracking-[0.5em] rounded-xl placeholder:text-sm placeholder:tracking-[0.1em] placeholder:font-sans placeholder:font-semibold"
-          />
-          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl uppercase tracking-[0.08em] font-bold">
-            {loading ? "ĐANG XÁC NHẬN..." : "XÁC NHẬN OTP"}
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mã 6 chữ số</label>
+            <Input
+              value={otp}
+              onChange={(event) => setOtp(event.target.value.trim().replace(/\D/g, "").slice(0, 6))}
+              type="text"
+              required
+              maxLength={6}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="• • • • • •"
+              className="h-16 font-mono text-center text-3xl font-bold tracking-[0.5em] rounded-2xl placeholder:text-3xl placeholder:tracking-[0.5em] placeholder:text-muted-foreground/30"
+            />
+          </div>
+          <Button type="submit" disabled={loading || otp.length !== 6}
+            className="h-12 w-full rounded-xl uppercase tracking-[0.08em] font-bold gap-2 shadow-lg shadow-blue-500/20">
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+            {loading ? "Đang xác nhận..." : "Xác nhận"}
           </Button>
         </form>
+
+        <p className="mt-5 text-center text-xs text-muted-foreground">
+          Không nhận được mã?{" "}
+          <Link href="/auth/forgot-password" className="font-semibold text-blue-500 hover:underline">
+            Gửi lại
+          </Link>
+        </p>
       </section>
     </main>
   );
