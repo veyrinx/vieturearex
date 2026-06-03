@@ -6,7 +6,7 @@ import {
   TiktokBrandIcon,
   YoutubeBrandIcon,
 } from "@/components/common/brand-icons";
-import { SectionHeading } from "@/components/common/section-heading";
+import { Mail } from "lucide-react";
 import { ContactForm } from "@/components/contact/contact-form";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap, resolveSocialLinks } from "@/lib/utils/site-settings";
@@ -41,12 +41,26 @@ export default async function ContactPage() {
   ];
 
   return (
-    <div className="space-y-8 pt-6 md:pt-8">
-      <SectionHeading
-        eyebrow="Liên hệ"
-        title="KẾT NỐI CỘNG ĐỒNG"
-        description="Gửi câu hỏi, góp ý hoặc đề xuất hợp tác với đội ngũ Arex."
-      />
+    <div className="space-y-6 pt-6 md:pt-8">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/8 via-transparent to-primary/5 dark:from-amber-400/5" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+        <div className="relative flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15">
+            <Mail className="size-6 text-blue-500" />
+          </span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500">Liên hệ</p>
+            <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+              Kết Nối Cộng Đồng
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Gửi câu hỏi, góp ý hoặc đề xuất hợp tác với đội ngũ Arex
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr,1.1fr]">
         <aside className="rounded-[24px] border border-border bg-card space-y-5 p-5">
