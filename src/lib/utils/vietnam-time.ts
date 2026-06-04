@@ -118,22 +118,25 @@ export function getEventStatusInVietnam(
   endDate: Date | string,
   now: Date = new Date(),
 ): EventStatus {
-  const nowMs = now.getTime();
-  const startMs = new Date(startDate).getTime();
-  const endMs = new Date(endDate).getTime();
+  // Primary: compare by Vietnam date-keys (user thinks in dates, not exact timestamps)
+  // Event "M1 → M3" should be active for the entire day of M1, M2, and M3 in Vietnam time
+  const todayKey = getVietnamDateKey(now);
+  const startKey = getVietnamDateKey(startDate);
+  const endKey = getVietnamDateKey(endDate);
 
-  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
-    // Fallback to date-key comparison when input is malformed
-    const todayKey = getVietnamDateKey(now);
-    const startKey = getVietnamDateKey(startDate);
-    const endKey = getVietnamDateKey(endDate);
-    if (todayKey < startKey) return "upcoming";
-    if (todayKey > endKey) return "expired";
+  if (!todayKey || !startKey || !endKey) {
+    // Fallback to timestamp comparison if date-keys can't be derived
+    const nowMs = now.getTime();
+    const startMs = new Date(startDate).getTime();
+    const endMs = new Date(endDate).getTime();
+    if (Number.isNaN(startMs) || Number.isNaN(endMs)) return "upcoming";
+    if (nowMs < startMs) return "upcoming";
+    if (nowMs > endMs) return "expired";
     return "active";
   }
 
-  if (nowMs < startMs) return "upcoming";
-  if (nowMs > endMs) return "expired";
+  if (todayKey < startKey) return "upcoming";
+  if (todayKey > endKey) return "expired";
   return "active";
 }
 
