@@ -15,6 +15,7 @@ import { FollowCategoryButton } from "@/components/news/follow-category-button";
 import { siteConfig } from "@/lib/constants/site";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 type NewsDetailPageProps = { params: Promise<{ slug: string }> };
 
@@ -75,6 +76,12 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     <div className="mx-auto max-w-7xl pt-6 md:pt-8 space-y-6">
       <ReadingProgress />
       <AwardViewPoints newsId={article.id} />
+
+      {/* Back */}
+      <Link href="/news"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors w-fit">
+        <ArrowLeft className="size-3.5" /> Tin tức
+      </Link>
       <BreadcrumbJsonLd
         items={[
           { name: "Trang chủ", item: siteConfig.url },
