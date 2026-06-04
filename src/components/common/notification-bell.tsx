@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck, Star, Newspaper, MessageCircle, BookOpen, Users, Lock, ShieldAlert } from "lucide-react";
+import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck, Star, Newspaper, MessageCircle, BookOpen, Users, Lock, ShieldAlert, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -33,6 +33,7 @@ const TYPE_META: Record<string, { icon: React.ElementType; color: string }> = {
   wiki_approved:          { icon: BookOpen,             color: "text-emerald-400" },
   forum_locked:           { icon: Lock,                 color: "text-muted-foreground" },
   account_warning:        { icon: ShieldAlert,          color: "text-rose-400" },
+  user_follow:            { icon: UserPlus,             color: "text-pink-500" },
 };
 
 function timeAgo(date: string) {

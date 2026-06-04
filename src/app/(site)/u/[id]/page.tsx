@@ -11,7 +11,7 @@ import { getUserPublicProfile } from "@/lib/data/content-service";
 import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 import { GAME_META_BY_KEY } from "@/lib/constants/game-list";
-import { ShareButtons } from "@/components/news/share-buttons";
+import { ProfileActions } from "@/components/profile/profile-actions";
 import { siteConfig } from "@/lib/constants/site";
 import type { GameProfile } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -198,10 +198,8 @@ export default async function PublicProfilePage({ params }: Props) {
             )}
           </div>
 
-          {/* Share */}
-          <div className="mt-4 flex justify-end">
-            <ShareButtons url={profileUrl} title={`Hồ sơ ${name} — Arex`} />
-          </div>
+          {/* Follow + Share */}
+          <ProfileActions targetUserId={profile.id} profileUrl={profileUrl} title={`Hồ sơ ${name} — Arex`} />
 
           {/* Rank progress */}
           <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">

@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Bell, BellDot, Trophy, Swords, Calendar, X, MessageCircleCheck,
+  Bell, Trophy, Swords, Calendar, X, MessageCircleCheck,
   Star, Newspaper, MessageCircle, CheckCheck, Loader2, BookOpen,
-  Users, Lock, ShieldAlert,
+  Users, Lock, ShieldAlert, UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ const TYPE_META: Record<string, { icon: React.ElementType; color: string; label:
   wiki_approved:         { icon: BookOpen,           color: "text-emerald-500", label: "Wiki" },
   forum_locked:          { icon: Lock,               color: "text-muted-foreground", label: "Diễn đàn" },
   account_warning:       { icon: ShieldAlert,        color: "text-rose-500",    label: "Tài khoản" },
+  user_follow:           { icon: UserPlus,           color: "text-pink-500",    label: "Follow" },
 };
 
 const TYPE_FILTERS = [
