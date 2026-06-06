@@ -9,6 +9,7 @@ import { ForumReplies, ForumHelpfulButton, ForumPostEditButton } from "@/compone
 import { ShareButtons } from "@/components/news/share-buttons";
 import { BookmarkButton } from "@/components/news/bookmark-button";
 import { ReadingProgress } from "@/components/news/reading-progress";
+import { ForumViewTracker } from "@/components/forum/forum-view-tracker";
 import { ForumContent } from "@/components/forum/forum-content";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
@@ -59,10 +60,7 @@ export default async function ForumPostPage({ params }: Props) {
     .select("*").eq("id", id).eq("status", "active").single() as { data: Post | null };
   if (!post) notFound();
 
-  // Increment view count (fire-and-forget, no await)
-  void untypedFrom(db, "forum_posts")
-    .update({ view_count: post.view_count + 1 } as never)
-    .eq("id", id);
+  // View tracking handled client-side by ForumViewTracker (more reliable)
 
   const cosmetics = post.user_id ? await fetchCosmetics(db, [post.user_id]) : new Map();
   const authorCosmetics = post.user_id ? cosmetics.get(post.user_id) : undefined;
@@ -70,6 +68,7 @@ export default async function ForumPostPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-3xl py-8 md:py-12 space-y-6">
       <ReadingProgress />
+      <ForumViewTracker postId={post.id} />
       {/* Back */}
       <Link href="/cong-dong" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="size-4" /> Diễn đàn

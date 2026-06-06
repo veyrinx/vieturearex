@@ -9,6 +9,7 @@ import { RichTextRenderer } from "@/components/news/rich-text-renderer";
 import { ShareButtons } from "@/components/news/share-buttons";
 import { BookmarkButton } from "@/components/news/bookmark-button";
 import { ReadingProgress } from "@/components/news/reading-progress";
+import { WikiViewTracker } from "@/components/wiki/wiki-view-tracker";
 import { siteConfig } from "@/lib/constants/site";
 
 export const dynamic = "force-dynamic";
@@ -71,9 +72,7 @@ export default async function WikiArticlePage(
 
   if (!article) notFound();
 
-  void untypedFrom(db, "wiki_articles")
-    .update({ view_count: article.view_count + 1 } as never)
-    .eq("id", article.id);
+  // View tracking handled client-side by WikiViewTracker (more reliable)
 
   // Related articles — same category, not this one
   const { data: related } = await untypedFrom(db, "wiki_articles")
@@ -90,6 +89,7 @@ export default async function WikiArticlePage(
   return (
     <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-6">
       <ReadingProgress />
+      <WikiViewTracker slug={article.slug} />
       {/* Back */}
       <Link
         href="/wiki"
