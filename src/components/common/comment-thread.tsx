@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { MentionedText } from "@/components/common/mentioned-text";
 
 export type Comment = {
   id: string;
@@ -87,7 +88,7 @@ function ReplyItem({ reply }: { reply: Comment }) {
           )}
           <span className="text-[11px] text-muted-foreground">{timeAgo(reply.created_at)}</span>
         </div>
-        <p className="mt-0.5 text-sm leading-relaxed text-foreground/85">{reply.content}</p>
+        <MentionedText text={reply.content} className="mt-0.5 block text-sm leading-relaxed text-foreground/85" />
       </div>
     </div>
   );
@@ -146,7 +147,7 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
             )}
             <span className="text-[11px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
           </div>
-          <p className="text-sm leading-relaxed text-foreground/90">{comment.content}</p>
+          <MentionedText text={comment.content} className="block text-sm leading-relaxed text-foreground/90" />
         </div>
 
         {/* Action row */}

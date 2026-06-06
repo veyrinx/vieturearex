@@ -5,9 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  Rss, MessageSquare, BookOpen, Loader2, Users, ArrowRight, Clock,
+  Rss, MessageSquare, BookOpen, Users, ArrowRight, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SuggestedUsers } from "@/components/profile/suggested-users";
 
 type FeedItem = {
   type: "forum_post" | "wiki_article";
@@ -102,6 +103,9 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
+
+      {/* Suggested users */}
+      {!loading && <SuggestedUsers />}
 
       {/* Loading */}
       {loading && (

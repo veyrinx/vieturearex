@@ -17,11 +17,13 @@ export async function GET(request: NextRequest) {
   const settings = await getSettings();
   const dailyRaw = settings.find((s) => s.key === "analytics.daily_views")?.value ?? "{}";
   const archived = Number(settings.find((s) => s.key === "analytics.views")?.value ?? 0) || 0;
+  const lifetime = Number(settings.find((s) => s.key === "analytics.lifetime_views")?.value ?? 0) || 0;
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }
 
   const dailyTotal = Object.values(daily).reduce((s, v) => s + (Number(v) || 0), 0);
-  const totalViews = archived + dailyTotal;
+  // Take the max to never show a drop if any counter was reset
+  const totalViews = Math.max(lifetime, archived + dailyTotal);
 
   const chart: { date: string; views: number }[] = [];
   for (let i = 29; i >= 0; i--) {

@@ -1220,11 +1220,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const viewsSetting = settings.find((item) => item.key === "analytics.views");
   const dailySetting = settings.find((item) => item.key === "analytics.daily_views");
+  const lifetimeSetting = settings.find((item) => item.key === "analytics.lifetime_views");
   const fallbackViews = users.reduce((acc, user) => acc + user.views, 0);
 
-  // Total = archived (out-of-window) + sum(daily_views still in window)
-  // analytics.views giờ chỉ chứa phần lịch sử đã rơi ra khỏi cửa sổ daily,
-  // nên cộng với daily_views ra tổng tích luỹ thật, không bị reset hằng tuần.
+  // Take the MAX of all available counters to never show a drop if any one
+  // counter was accidentally reset. analytics.lifetime_views is monotonic
+  // and is the most reliable source going forward.
   const archived = viewsSetting ? Number(viewsSetting.value) || 0 : 0;
   let dailyTotal = 0;
   if (dailySetting?.value) {
@@ -1233,9 +1234,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       dailyTotal = Object.values(daily).reduce((sum, v) => sum + (Number(v) || 0), 0);
     } catch { /* ignore */ }
   }
+  const lifetime = lifetimeSetting ? Number(lifetimeSetting.value) || 0 : 0;
+  const archivedPlusDaily = archived + dailyTotal;
 
-  let views = archived + dailyTotal;
-  if (!views) views = fallbackViews;
+  // Use whichever is the largest — protects against accidental data loss
+  let views = Math.max(lifetime, archivedPlusDaily, fallbackViews);
 
   return {
     users: users.length,

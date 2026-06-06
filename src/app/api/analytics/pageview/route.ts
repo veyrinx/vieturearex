@@ -5,6 +5,7 @@ import { shouldLogVisitor, mergeVisitorEntry, VISITOR_IPS_KEY, type VisitorEntry
 
 const VIEWS_KEY = "analytics.views";
 const DAILY_KEY = "analytics.daily_views";
+const LIFETIME_KEY = "analytics.lifetime_views";
 const MAX_DAYS = 90;
 
 function todayKey() {
@@ -48,6 +49,15 @@ export async function POST(request: NextRequest) {
     const archivedCurrent = Number(settings.find((s) => s.key === VIEWS_KEY)?.value ?? 0);
     await updateSetting(VIEWS_KEY, String(archivedCurrent + archivedDelta));
   }
+
+  // Always bump lifetime counter — never resets, never decreases.
+  // If lifetime is lower than archived+daily (e.g. just introduced), bootstrap it.
+  const lifetimeCurrent = Number(settings.find((s) => s.key === LIFETIME_KEY)?.value ?? 0) || 0;
+  const archivedNow = Number(settings.find((s) => s.key === VIEWS_KEY)?.value ?? 0) || 0;
+  const newDailyTotal = Object.values(daily).reduce((s, v) => s + (Number(v) || 0), 0);
+  const baseline = archivedNow + newDailyTotal;
+  const nextLifetime = Math.max(lifetimeCurrent + 1, baseline);
+  await updateSetting(LIFETIME_KEY, String(nextLifetime));
 
   // Log visitor IP
   if (shouldLogVisitor(ip)) {
