@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import {
   House, BookOpenText, MessageSquare, MonitorPlay, User, LayoutDashboard,
   TrendingUp, Trophy, Swords, Users, Palette, X, Grid2x2,
-  CalendarDays, Flame, BookOpen,
+  CalendarDays, Flame, BookOpen, Rss,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ const EXPLORE_ITEMS = [
 // ── Section: Cộng đồng ─────────────────────────────────────────────────────
 const COMMUNITY_ITEMS = [
   { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, color: "blue"    },
+  { title: "Feed",            href: "/feed",                  icon: Rss,           color: "orange"  },
   { title: "Wiki",            href: "/wiki",                  icon: BookOpen,      color: "emerald" },
   { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    color: "orange"  },
   { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        color: "yellow"  },
