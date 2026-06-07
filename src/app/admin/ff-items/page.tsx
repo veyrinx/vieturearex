@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import {
   Search, Copy, Check, X, Image as ImageIcon, ExternalLink,
   Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
   Tag as TagIcon, Swords, User, PawPrint, Shirt, Sparkles, Package,
-  Database, RefreshCw, ChevronLeft, ChevronRight,
+  Database, RefreshCw, ChevronLeft, ChevronRight, Server, CloudDownload, Pause,
 } from "lucide-react";
 
 const ICON_BASE = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
@@ -88,6 +88,13 @@ export default function FFItemsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkTagModal, setBulkTagModal] = useState(false);
 
+  // Sync to Supabase Storage
+  const [syncedIds, setSyncedIds] = useState<Set<string>>(new Set());
+  const [syncBaseUrl, setSyncBaseUrl] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; failed: number } | null>(null);
+  const [syncRunning, setSyncRunning] = useState(false);
+  const syncAbort = useRef(false);
+
   // Load saved data
   useEffect(() => {
     try {
@@ -131,6 +138,99 @@ export default function FFItemsPage() {
       else next.add(itemId);
       return next;
     });
+  };
+
+  // ── Load synced IDs from Supabase ──
+  const loadSynced = async () => {
+    try {
+      const res = await fetch("/api/admin/ff-items/list-synced");
+      if (!res.ok) return;
+      const data = await res.json() as { ids?: string[]; baseUrl?: string | null };
+      setSyncedIds(new Set(data.ids ?? []));
+      setSyncBaseUrl(data.baseUrl ?? null);
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => { void loadSynced(); }, []);
+
+  // ── Sync items to Supabase Storage in batches ──
+  const SYNC_BATCH = 20;
+  const startSync = async (ids: string[], overwrite = false) => {
+    if (syncRunning) return;
+    syncAbort.current = false;
+    setSyncRunning(true);
+    setSyncProgress({ current: 0, total: ids.length, failed: 0 });
+
+    let current = 0;
+    let failed = 0;
+    for (let i = 0; i < ids.length; i += SYNC_BATCH) {
+      if (syncAbort.current) {
+        toast.info("Đã hủy đồng bộ");
+        break;
+      }
+      const batch = ids.slice(i, i + SYNC_BATCH);
+      try {
+        const res = await fetch("/api/admin/ff-items/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: batch, overwrite }),
+        });
+        const data = await res.json() as {
+          results?: Array<{ id: string; ok: boolean }>;
+          summary?: { success: number; failed: number };
+        };
+        if (res.ok && data.results) {
+          for (const r of data.results) {
+            if (r.ok) {
+              setSyncedIds((prev) => new Set(prev).add(r.id));
+            } else {
+              failed++;
+            }
+          }
+          current += batch.length;
+          setSyncProgress({ current, total: ids.length, failed });
+        } else {
+          failed += batch.length;
+          current += batch.length;
+          setSyncProgress({ current, total: ids.length, failed });
+        }
+      } catch {
+        failed += batch.length;
+        current += batch.length;
+        setSyncProgress({ current, total: ids.length, failed });
+      }
+    }
+
+    setSyncRunning(false);
+    toast.success(`Hoàn tất! ${current - failed}/${ids.length} icon đã đồng bộ`);
+    // Refresh base URL
+    if (!syncBaseUrl) void loadSynced();
+  };
+
+  const syncAllFromLibrary = (overwrite = false) => {
+    if (allIds.length === 0) {
+      toast.error("Hãy tải thư viện trước");
+      return;
+    }
+    const toSync = overwrite ? allIds : allIds.filter((id) => !syncedIds.has(id));
+    if (toSync.length === 0) {
+      toast.success("Tất cả đã được đồng bộ");
+      return;
+    }
+    void startSync(toSync, overwrite);
+  };
+
+  const syncFavorites = () => {
+    if (favorites.length === 0) {
+      toast.error("Chưa có icon nào trong yêu thích");
+      return;
+    }
+    const toSync = favorites.map((f) => f.id).filter((id) => !syncedIds.has(id));
+    if (toSync.length === 0) {
+      toast.success("Tất cả đã được đồng bộ");
+      return;
+    }
+    void startSync(toSync);
   };
 
   const bulkAddToFavorites = (category: CategoryKey) => {
@@ -295,6 +395,89 @@ export default function FFItemsPage() {
           Tra cứu icon Free Fire bằng Item ID. URL theo định dạng{" "}
           <code className="font-mono text-[11px] text-primary dark:text-amber-400">{ICON_BASE}/{"{id}"}.png</code>
         </p>
+      </div>
+
+      {/* Sync to Supabase Storage */}
+      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+              <Server className="size-5 text-emerald-600 dark:text-emerald-400" />
+            </span>
+            <div>
+              <h2 className="font-heading text-sm font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                Đồng bộ về server
+              </h2>
+              <p className="text-[10px] text-muted-foreground">
+                Tải toàn bộ icon từ GitHub về Supabase Storage để không phụ thuộc CDN bên ngoài
+              </p>
+              {syncedIds.size > 0 && (
+                <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  ✓ Đã đồng bộ {syncedIds.size.toLocaleString()} icon
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => syncAllFromLibrary(false)}
+              disabled={syncRunning || allIds.length === 0}
+              title={allIds.length === 0 ? "Hãy tải thư viện trước" : "Đồng bộ những icon chưa có"}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+            >
+              {syncRunning ? <Loader2 className="size-3.5 animate-spin" /> : <CloudDownload className="size-3.5" />}
+              Đồng bộ toàn bộ ({allIds.length > 0 ? `${(allIds.length - syncedIds.size).toLocaleString()} mới` : "—"})
+            </button>
+            <button
+              onClick={() => syncFavorites()}
+              disabled={syncRunning || favorites.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+            >
+              <Star className="size-3.5" />
+              Chỉ đồng bộ yêu thích
+            </button>
+            {syncRunning && (
+              <button
+                onClick={() => { syncAbort.current = true; }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/20"
+              >
+                <Pause className="size-3.5" /> Dừng
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        {syncProgress && syncRunning && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-mono text-foreground tabular-nums">
+                {syncProgress.current.toLocaleString()} / {syncProgress.total.toLocaleString()}
+              </span>
+              <span className="text-muted-foreground">
+                {syncProgress.failed > 0 && <span className="text-rose-500">{syncProgress.failed} lỗi · </span>}
+                {Math.round((syncProgress.current / syncProgress.total) * 100)}%
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-500/10">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-300"
+                style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Public URL info */}
+        {syncBaseUrl && (
+          <div className="rounded-xl border border-border bg-background/60 p-3 space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">URL từ server</p>
+            <p className="font-mono text-[11px] break-all text-foreground">
+              {syncBaseUrl}<span className="text-emerald-500">{"{id}"}.png</span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Search section */}
