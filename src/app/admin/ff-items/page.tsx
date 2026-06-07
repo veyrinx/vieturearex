@@ -155,16 +155,29 @@ export default function FFItemsPage() {
     setAllError(null);
     try {
       const res = await fetch(`/api/admin/ff-items${force ? "?force=1" : ""}`);
-      const data = await res.json() as { ids?: string[]; cached?: boolean; error?: string };
+      const data = await res.json() as {
+        ids?: string[];
+        cached?: boolean;
+        source?: string;
+        error?: string;
+        details?: Array<{ endpoint: string; status?: number; error: string }>;
+      };
       if (!res.ok) {
-        setAllError(data.error ?? "Không thể tải");
+        const detail = data.details?.[0]
+          ? `${data.error}: ${data.details.map((d) => `${d.endpoint} (${d.status ?? "—"})`).join(", ")}`
+          : (data.error ?? "Không thể tải");
+        setAllError(detail);
+        toast.error(data.error ?? "Lỗi tải thư viện");
         return;
       }
       setAllIds(data.ids ?? []);
       setAllCached(data.cached ?? false);
-      if (data.ids?.length) toast.success(`Đã tải ${data.ids.length.toLocaleString()} items${data.cached ? " (cache)" : ""}`);
-    } catch {
-      setAllError("Lỗi mạng");
+      if (data.ids?.length) {
+        const src = data.source ? ` qua ${data.source}` : "";
+        toast.success(`Đã tải ${data.ids.length.toLocaleString()} items${data.cached ? " (cache)" : src}`);
+      }
+    } catch (err) {
+      setAllError(`Lỗi mạng: ${String(err).slice(0, 100)}`);
     } finally {
       setAllLoading(false);
     }
