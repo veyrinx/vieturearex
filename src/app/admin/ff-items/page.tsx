@@ -100,6 +100,14 @@ export default function FFItemsPage() {
   const [renameModal, setRenameModal] = useState<{ id: string; label: string } | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
+  // Catalog (DB-backed, shared between admins)
+  type CatalogItem = { id: string; label: string | null; category: string | null; is_public: boolean; ob_version?: string };
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [addCatalogModal, setAddCatalogModal] = useState(false);
+  const [catalogForm, setCatalogForm] = useState({ id: "", label: "", category: "weapon" as CategoryKey, ob_version: "", is_public: true });
+  const [catalogSaving, setCatalogSaving] = useState(false);
+
   // Load saved data
   useEffect(() => {
     try {
@@ -156,7 +164,84 @@ export default function FFItemsPage() {
     } catch { /* ignore */ }
   };
 
-  useEffect(() => { void loadSynced(); }, []);
+  useEffect(() => { void loadSynced(); void loadCatalog(); }, []);
+
+  const loadCatalog = async () => {
+    setCatalogLoading(true);
+    try {
+      const res = await fetch("/api/admin/ff-items/catalog");
+      if (!res.ok) return;
+      const data = await res.json() as { items?: CatalogItem[] };
+      setCatalog(data.items ?? []);
+    } finally {
+      setCatalogLoading(false);
+    }
+  };
+
+  const saveCatalogItem = async () => {
+    if (!catalogForm.id.trim()) { toast.error("ID là bắt buộc"); return; }
+    setCatalogSaving(true);
+    try {
+      const res = await fetch("/api/admin/ff-items/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [{
+            id: catalogForm.id.trim(),
+            label: catalogForm.label.trim() || null,
+            category: catalogForm.category,
+            is_public: catalogForm.is_public,
+          }],
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(data.error ?? "Không thể lưu");
+        return;
+      }
+      toast.success("Đã lưu vào catalog");
+      setCatalogForm({ id: "", label: "", category: "weapon", ob_version: "", is_public: true });
+      setAddCatalogModal(false);
+      void loadCatalog();
+    } finally {
+      setCatalogSaving(false);
+    }
+  };
+
+  const deleteCatalogItem = async (id: string) => {
+    if (!confirm(`Xóa "${id}" khỏi catalog?`)) return;
+    const res = await fetch("/api/admin/ff-items/catalog", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [id] }),
+    });
+    if (res.ok) {
+      toast.success("Đã xóa");
+      void loadCatalog();
+    }
+  };
+
+  // Push selected library items to catalog
+  const pushSelectedToCatalog = async (category: CategoryKey) => {
+    if (selectedIds.size === 0) return;
+    const items = [...selectedIds].map((id) => ({
+      id,
+      label: null,
+      category,
+      is_public: true,
+    }));
+    const res = await fetch("/api/admin/ff-items/catalog", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
+    if (res.ok) {
+      toast.success(`Đã thêm ${items.length} item vào catalog`);
+      setSelectedIds(new Set());
+      setSelectMode(false);
+      void loadCatalog();
+    }
+  };
 
   // ── Sync items to Supabase Storage in batches ──
   const SYNC_BATCH = 20;
@@ -632,6 +717,89 @@ export default function FFItemsPage() {
         )}
       </div>
 
+      {/* Catalog Manager */}
+      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 sm:p-5 space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <span className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15">
+              <Database className="size-4 sm:size-5 text-blue-600 dark:text-blue-400" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-xs sm:text-sm font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                Catalog Công Khai
+              </h2>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground">
+                Items hiển thị cho người dùng tại /items · {catalog.length.toLocaleString()} items
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setAddCatalogModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="size-3.5" /> Thêm item
+          </button>
+        </div>
+
+        {catalogLoading && (
+          <div className="flex items-center justify-center py-6 text-muted-foreground">
+            <Loader2 className="size-4 animate-spin mr-2" /> Đang tải...
+          </div>
+        )}
+
+        {!catalogLoading && catalog.length > 0 && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+              {catalog.slice(0, 24).map((item) => {
+                const cat = item.category ? CAT_MAP.get(item.category as CategoryKey) : null;
+                return (
+                  <div key={item.id} className="group relative rounded-xl border border-border bg-card p-2 space-y-1">
+                    <div className="relative aspect-square overflow-hidden rounded-lg bg-background flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={syncBaseUrl ? `${syncBaseUrl}${item.id}.png` : buildUrl(item.id)}
+                        alt={item.label ?? item.id}
+                        className="size-full object-contain p-1"
+                        loading="lazy"
+                      />
+                      {cat && (
+                        <span className={`absolute left-1 top-1 flex size-5 items-center justify-center rounded ${cat.bg} ${cat.color}`} title={cat.label}>
+                          <cat.icon className="size-3" />
+                        </span>
+                      )}
+                      {!item.is_public && (
+                        <span className="absolute right-1 top-1 rounded bg-rose-500/20 text-rose-500 px-1 py-0.5 text-[8px] font-bold">RIÊNG</span>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                        <button onClick={() => deleteCatalogItem(item.id)} title="Xóa"
+                          className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-destructive/40 hover:text-destructive">
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    </div>
+                    {item.label && <p className="truncate text-[10px] font-bold text-foreground">{item.label}</p>}
+                    <p className="truncate font-mono text-[9px] text-muted-foreground">{item.id}</p>
+                  </div>
+                );
+              })}
+            </div>
+            {catalog.length > 24 && (
+              <p className="text-[10px] text-muted-foreground text-center pt-1">
+                ... và {(catalog.length - 24).toLocaleString()} items khác
+              </p>
+            )}
+          </div>
+        )}
+
+        {!catalogLoading && catalog.length === 0 && (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <Database className="size-10 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">Chưa có item nào trong catalog</p>
+            <p className="text-[11px] text-muted-foreground/70">Bấm &quot;Thêm item&quot; hoặc chọn từ Library bên dưới</p>
+          </div>
+        )}
+      </div>
+
       {/* Library — Toàn bộ items từ jsDelivr */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-3">
         <div className="space-y-1 min-w-0">
@@ -1101,6 +1269,117 @@ export default function FFItemsPage() {
         </div>
       </div>
 
+      {/* Add to catalog modal */}
+      {addCatalogModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setAddCatalogModal(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-500">Catalog</p>
+                <p className="text-sm font-bold text-foreground">Thêm item vào danh mục công khai</p>
+              </div>
+              <button onClick={() => setAddCatalogModal(false)}
+                className="flex size-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Preview */}
+              {catalogForm.id.trim() && (
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-background flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={buildUrl(catalogForm.id.trim())} alt={catalogForm.id} className="size-full object-contain p-1" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{catalogForm.label || "(chưa đặt tên)"}</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{catalogForm.id}</p>
+                    <span className={`mt-1 inline-flex rounded-md px-1.5 py-0.5 text-[9px] font-bold ${CAT_MAP.get(catalogForm.category)?.bg} ${CAT_MAP.get(catalogForm.category)?.color}`}>
+                      {CAT_MAP.get(catalogForm.category)?.label}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Item ID *</label>
+                <input
+                  type="text"
+                  value={catalogForm.id}
+                  onChange={(e) => setCatalogForm({ ...catalogForm, id: e.target.value })}
+                  placeholder="VD: 211000234"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tên hiển thị</label>
+                <input
+                  type="text"
+                  value={catalogForm.label}
+                  onChange={(e) => setCatalogForm({ ...catalogForm, label: e.target.value })}
+                  placeholder="VD: AWM Skull Cleaver, Alok, Bom keo..."
+                  maxLength={80}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Loại</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    const isActive = catalogForm.category === cat.key;
+                    return (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setCatalogForm({ ...catalogForm, category: cat.key })}
+                        className={`flex items-center gap-1.5 rounded-lg border-2 px-2.5 py-2 text-left text-[11px] font-bold transition-all ${
+                          isActive ? `${cat.bg} ${cat.border} ${cat.color}` : "border-border bg-card hover:border-foreground/30"
+                        }`}
+                      >
+                        <Icon className={`size-3.5 ${isActive ? "" : cat.color}`} />
+                        <span className="truncate">{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={catalogForm.is_public}
+                  onChange={(e) => setCatalogForm({ ...catalogForm, is_public: e.target.checked })}
+                  className="size-4 rounded border-border"
+                />
+                <span className="text-xs font-semibold">Hiển thị công khai tại <code className="font-mono text-[10px]">/items</code></span>
+              </label>
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setAddCatalogModal(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-muted">
+                  Hủy
+                </button>
+                <button
+                  onClick={saveCatalogItem}
+                  disabled={catalogSaving || !catalogForm.id.trim()}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                >
+                  {catalogSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+                  Lưu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rename modal */}
       {renameModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -1161,29 +1440,57 @@ export default function FFItemsPage() {
             <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Phân loại hàng loạt</p>
-                <p className="text-sm font-bold text-foreground">Chọn loại cho {selectedIds.size} icon</p>
+                <p className="text-sm font-bold text-foreground">{selectedIds.size} icon đã chọn</p>
               </div>
               <button onClick={() => setBulkTagModal(false)}
                 className="flex size-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
                 <X className="size-4" />
               </button>
             </div>
-            <div className="p-4 grid grid-cols-2 gap-2">
-              {CATEGORIES.map((cat) => {
-                const Icon = cat.icon;
-                return (
-                  <button
-                    key={cat.key}
-                    onClick={() => bulkAddToFavorites(cat.key)}
-                    className="flex items-center gap-2.5 rounded-xl border-2 border-border bg-muted/30 p-3 text-left transition-all hover:scale-[1.02] hover:border-foreground/30"
-                  >
-                    <span className={`flex size-9 items-center justify-center rounded-lg ${cat.bg}`}>
-                      <Icon className={`size-4 ${cat.color}`} />
-                    </span>
-                    <span className="text-xs font-bold text-foreground">{cat.label}</span>
-                  </button>
-                );
-              })}
+            <div className="p-4 space-y-4">
+              {/* Catalog public actions */}
+              <div className="space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-500">
+                  <Database className="size-3" /> Lưu vào Catalog Công Khai (DB)
+                </p>
+                <p className="text-[10px] text-muted-foreground">Hiển thị tại /items cho mọi người dùng</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <button
+                        key={`cat-${cat.key}`}
+                        onClick={() => pushSelectedToCatalog(cat.key)}
+                        className={`flex items-center gap-1.5 rounded-lg border ${cat.border} bg-card p-2 text-left transition-all hover:scale-[1.02]`}
+                      >
+                        <Icon className={`size-3.5 shrink-0 ${cat.color}`} />
+                        <span className="text-[10px] font-bold truncate">{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-3 space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-amber-500">
+                  <Star className="size-3" /> Hoặc lưu vào Favorites (chỉ của bạn)
+                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <button
+                        key={`fav-${cat.key}`}
+                        onClick={() => bulkAddToFavorites(cat.key)}
+                        className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/30 p-2 text-left transition-all hover:scale-[1.02] hover:border-foreground/30"
+                      >
+                        <Icon className={`size-3.5 shrink-0 ${cat.color}`} />
+                        <span className="text-[10px] font-bold truncate">{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

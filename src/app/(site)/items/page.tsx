@@ -24,19 +24,60 @@ export default function ItemsPublicPage() {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [activeDigit, setActiveDigit] = useState<string>("all");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+
+  // Catalog metadata (id → label, category)
+  type CatalogEntry = { id: string; label: string | null; category: string | null };
+  const [catalog, setCatalog] = useState<Map<string, CatalogEntry>>(new Map());
 
   useEffect(() => {
-    fetch("/api/ff-items")
-      .then((r) => r.json())
-      .then((d: { ids?: string[]; baseUrl?: string | null; bucketMissing?: boolean; error?: string }) => {
-        if (d.bucketMissing) setBucketMissing(true);
-        setIds(d.ids ?? []);
-        setBaseUrl(d.baseUrl ?? null);
-        if (d.error) setError(d.error);
-      })
-      .catch(() => setError("Không thể tải"))
-      .finally(() => setLoading(false));
+    // Load both storage list and catalog in parallel
+    Promise.all([
+      fetch("/api/ff-items").then((r) => r.json()).catch(() => null),
+      fetch("/api/ff-items/catalog").then((r) => r.json()).catch(() => null),
+    ]).then(([storage, cat]) => {
+      const d = storage as { ids?: string[]; baseUrl?: string | null; bucketMissing?: boolean; error?: string } | null;
+      if (d?.bucketMissing) setBucketMissing(true);
+      setIds(d?.ids ?? []);
+      setBaseUrl(d?.baseUrl ?? null);
+      if (d?.error) setError(d.error);
+
+      const c = cat as { items?: CatalogEntry[] } | null;
+      if (c?.items) {
+        setCatalog(new Map(c.items.map((it) => [it.id, it])));
+      }
+    }).finally(() => setLoading(false));
   }, []);
+
+  const CATEGORY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+    weapon:    { label: "Súng / Vũ khí",  color: "text-red-500",     bg: "bg-red-500/10" },
+    character: { label: "Nhân vật",        color: "text-blue-500",    bg: "bg-blue-500/10" },
+    pet:       { label: "Pet",             color: "text-pink-500",    bg: "bg-pink-500/10" },
+    outfit:    { label: "Trang phục",      color: "text-purple-500",  bg: "bg-purple-500/10" },
+    skin:      { label: "Skin",            color: "text-amber-500",   bg: "bg-amber-500/10" },
+    accessory: { label: "Phụ kiện",        color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    emote:     { label: "Emote",           color: "text-violet-500",  bg: "bg-violet-500/10" },
+    vehicle:   { label: "Xe",              color: "text-cyan-500",    bg: "bg-cyan-500/10" },
+    other:     { label: "Khác",            color: "text-muted-foreground", bg: "bg-muted" },
+  };
+
+  // Get category counts from catalog
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const it of catalog.values()) {
+      const c = it.category ?? "other";
+      counts[c] = (counts[c] ?? 0) + 1;
+    }
+    return counts;
+  }, [catalog]);
+
+  const categoriesWithCounts = useMemo(() =>
+    Object.entries(CATEGORY_LABELS)
+      .filter(([key]) => (categoryCounts[key] ?? 0) > 0)
+      .map(([key, meta]) => ({ key, ...meta, count: categoryCounts[key] ?? 0 })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [categoryCounts]
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
@@ -101,11 +142,19 @@ export default function ItemsPublicPage() {
 
   const filtered = useMemo(() => {
     let list = ids;
+    if (activeCategory !== "all") {
+      list = list.filter((x) => catalog.get(x)?.category === activeCategory);
+    }
     if (activeDigit !== "all") list = list.filter((x) => x.startsWith(activeDigit));
     if (activePrefix !== "all") list = list.filter((x) => x.startsWith(activePrefix));
-    if (debouncedSearch) list = list.filter((x) => x.toLowerCase().includes(debouncedSearch));
+    if (debouncedSearch) {
+      list = list.filter((x) =>
+        x.toLowerCase().includes(debouncedSearch) ||
+        (catalog.get(x)?.label?.toLowerCase().includes(debouncedSearch) ?? false),
+      );
+    }
     return list;
-  }, [ids, activeDigit, activePrefix, debouncedSearch]);
+  }, [ids, activeCategory, activeDigit, activePrefix, debouncedSearch, catalog]);
 
   // Search autocomplete suggestions
   const suggestions = useMemo(() => {
@@ -205,6 +254,39 @@ export default function ItemsPublicPage() {
             </div>
           )}
         </div>
+
+        {/* Category filter (Vietnamese) — only when catalog has data */}
+        {categoriesWithCounts.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Theo loại</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActiveCategory("all")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                  activeCategory === "all"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tất cả loại
+              </button>
+              {categoriesWithCounts.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => setActiveCategory(cat.key)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                    activeCategory === cat.key
+                      ? `${cat.bg} ${cat.color}`
+                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {cat.label}
+                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{cat.count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Level 1: Digit groups (first character) */}
         {digitGroups.length > 0 && (
@@ -356,16 +438,20 @@ export default function ItemsPublicPage() {
           ) : (
             <>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
-                {slice.map((id, idx) => (
-                  <ItemCard
-                    key={id}
-                    id={id}
-                    url={buildUrl(id)}
-                    onCopy={() => copyUrl(id)}
-                    onOpen={() => setLightboxIdx(idx)}
-                    copied={copiedId === id}
-                  />
-                ))}
+                {slice.map((id, idx) => {
+                  const meta = catalog.get(id);
+                  return (
+                    <ItemCard
+                      key={id}
+                      id={id}
+                      label={meta?.label ?? null}
+                      url={buildUrl(id)}
+                      onCopy={() => copyUrl(id)}
+                      onOpen={() => setLightboxIdx(idx)}
+                      copied={copiedId === id}
+                    />
+                  );
+                })}
               </div>
 
               {/* Lightbox */}
@@ -411,8 +497,9 @@ export default function ItemsPublicPage() {
   );
 }
 
-function ItemCard({ id, url, onCopy, onOpen, copied }: {
+function ItemCard({ id, label, url, onCopy, onOpen, copied }: {
   id: string;
+  label?: string | null;
   url: string;
   onCopy: () => void;
   onOpen: () => void;
@@ -453,7 +540,14 @@ function ItemCard({ id, url, onCopy, onOpen, copied }: {
         </div>
       </button>
       <div className="flex items-center justify-between gap-1">
-        <p className="truncate font-mono text-[10px] text-muted-foreground flex-1">{id}</p>
+        <div className="flex-1 min-w-0">
+          {label && (
+            <p className="truncate text-[10px] font-bold text-foreground leading-tight">{label}</p>
+          )}
+          <p className={`truncate font-mono text-[10px] leading-tight ${label ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
+            {id}
+          </p>
+        </div>
         <button onClick={onCopy} title="Copy URL"
           className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 size-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground">
           {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
