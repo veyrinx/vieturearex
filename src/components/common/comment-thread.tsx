@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { MentionedText } from "@/components/common/mentioned-text";
+import { MentionAutocomplete } from "@/components/common/mention-autocomplete";
 
 export type Comment = {
   id: string;
@@ -106,6 +107,7 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
 
   const handleReply = async () => {
     if (!replyContent.trim()) return;
@@ -183,14 +185,16 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
         {replyOpen && (
           <div className="mt-2 space-y-2 pl-1">
             <Textarea
+              ref={replyRef}
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-              placeholder={`Trả lời ${comment.display_name}...`}
+              placeholder={`Trả lời ${comment.display_name}... (gõ @ để gắn thẻ)`}
               rows={2}
               maxLength={500}
               className="resize-none text-sm rounded-xl"
               autoFocus
             />
+            <MentionAutocomplete textareaRef={replyRef} value={replyContent} onChange={setReplyContent} />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{replyContent.length}/500</span>
               <div className="flex gap-2">
@@ -240,6 +244,7 @@ export function CommentThread({ apiPath, realtimeTable, realtimeFilter, realtime
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [newCount, setNewCount] = useState(0);
+  const composeRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -363,13 +368,15 @@ export function CommentThread({ apiPath, realtimeTable, realtimeFilter, realtime
           </div>
           <div className="flex-1 space-y-2">
             <Textarea
+              ref={composeRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Viết bình luận của bạn..."
+              placeholder="Viết bình luận của bạn... (gõ @ để gắn thẻ)"
               rows={3}
               maxLength={500}
               className="resize-none text-sm rounded-xl"
             />
+            <MentionAutocomplete textareaRef={composeRef} value={content} onChange={setContent} />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{content.length}/500</span>
               <Button size="sm" onClick={onSubmit} disabled={submitting || !content.trim()} className="gap-1.5 rounded-xl">
