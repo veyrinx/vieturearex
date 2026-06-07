@@ -126,48 +126,52 @@ function CommunityDropdown({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute left-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl"
+            className="absolute left-0 top-full z-[60] w-72 pt-2"
           >
-            {/* Header strip */}
-            <div className="border-b border-border/50 px-4 py-2.5">
-              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground">
-                Cộng Đồng Arex
-              </p>
-            </div>
-            <div className="p-1.5 space-y-0.5">
-              {COMMUNITY_ITEMS.map(({ title, href, icon: Icon, desc }) => {
-                const active = pathname.startsWith(href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => { setOpen(false); onNavigate?.(); }}
-                    className={cn(
-                      "group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-300"
-                        : "text-foreground hover:bg-muted",
-                    )}
-                  >
-                    <span className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
-                      active
-                        ? "bg-primary/15 dark:bg-amber-400/15"
-                        : "bg-muted group-hover:bg-primary/10 dark:group-hover:bg-amber-400/10",
-                    )}>
-                      <Icon className={cn("size-4", active ? "text-primary dark:text-amber-400" : "text-muted-foreground group-hover:text-primary dark:group-hover:text-amber-400")} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold leading-tight">{title}</p>
-                      <p className="text-[10px] leading-tight text-muted-foreground">{desc}</p>
-                    </div>
-                  </Link>
-                );
-              })}
+            {/* Inner card — pt-2 above creates the invisible bridge so mouse can move
+                from trigger to dropdown without triggering mouseLeave */}
+            <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl">
+              {/* Header strip */}
+              <div className="border-b border-border/50 px-4 py-2.5">
+                <p className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground">
+                  Cộng Đồng Arex Network
+                </p>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto p-1.5 space-y-0.5">
+                {COMMUNITY_ITEMS.map(({ title, href, icon: Icon, desc }) => {
+                  const active = pathname.startsWith(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => { setOpen(false); onNavigate?.(); }}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                        active
+                          ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-300"
+                          : "text-foreground hover:bg-muted",
+                      )}
+                    >
+                      <span className={cn(
+                        "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
+                        active
+                          ? "bg-primary/15 dark:bg-amber-400/15"
+                          : "bg-muted group-hover:bg-primary/10 dark:group-hover:bg-amber-400/10",
+                      )}>
+                        <Icon className={cn("size-4", active ? "text-primary dark:text-amber-400" : "text-muted-foreground group-hover:text-primary dark:group-hover:text-amber-400")} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold leading-tight truncate">{title}</p>
+                        <p className="text-[10px] leading-tight text-muted-foreground truncate">{desc}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
         )}
