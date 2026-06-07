@@ -83,6 +83,10 @@ export default function FFItemsPage() {
   const [debouncedLibSearch, setDebouncedLibSearch] = useState("");
   const [libraryPage, setLibraryPage] = useState(1);
   const PAGE_SIZE = 60;
+  const [activePrefix, setActivePrefix] = useState<string>("all");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTagModal, setBulkTagModal] = useState(false);
 
   // Load saved data
   useEffect(() => {
@@ -104,7 +108,47 @@ export default function FFItemsPage() {
     return () => clearTimeout(t);
   }, [librarySearch]);
 
-  useEffect(() => { setLibraryPage(1); }, [debouncedLibSearch]);
+  useEffect(() => { setLibraryPage(1); }, [debouncedLibSearch, activePrefix]);
+
+  // Compute prefix groups (first 3 digits) from library
+  const prefixGroups = useMemo(() => {
+    if (allIds.length === 0) return [] as Array<{ prefix: string; count: number }>;
+    const map = new Map<string, number>();
+    for (const idStr of allIds) {
+      const m = idStr.match(/^(\d{3})/);
+      const key = m ? m[1] : "other";
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([prefix, count]) => ({ prefix, count }));
+  }, [allIds]);
+
+  const toggleSelected = (itemId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
+  const bulkAddToFavorites = (category: CategoryKey) => {
+    if (selectedIds.size === 0) return;
+    setFavorites((prev) => {
+      const existingIds = new Set(prev.map((f) => f.id));
+      const toAdd = [...selectedIds]
+        .filter((id) => !existingIds.has(id))
+        .map((id) => ({ id, category }));
+      const next = [...toAdd, ...prev];
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      return next;
+    });
+    toast.success(`Đã thêm ${selectedIds.size} icon vào ${CAT_MAP.get(category)?.label}`);
+    setSelectedIds(new Set());
+    setSelectMode(false);
+    setBulkTagModal(false);
+  };
 
   const loadLibrary = async (force = false) => {
     setAllLoading(true);
@@ -374,28 +418,98 @@ export default function FFItemsPage() {
 
         {allIds.length > 0 && (
           <>
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={librarySearch}
-                onChange={(e) => setLibrarySearch(e.target.value)}
-                placeholder="Tìm trong thư viện theo ID (vd: 211, 203000...)"
-                className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-9 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              {librarySearch && (
-                <button onClick={() => setLibrarySearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <X className="size-4" />
-                </button>
-              )}
+            {/* Search + Bulk Mode toggle */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={librarySearch}
+                  onChange={(e) => setLibrarySearch(e.target.value)}
+                  placeholder="Tìm trong thư viện theo ID (vd: 211, 203000...)"
+                  className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-9 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                {librarySearch && (
+                  <button onClick={() => setLibrarySearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => { setSelectMode(!selectMode); setSelectedIds(new Set()); }}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                  selectMode
+                    ? "border-primary/40 bg-primary/10 text-primary dark:text-amber-400"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                <Check className="size-3.5" />
+                {selectMode ? "Hủy chọn" : "Chọn nhiều"}
+              </button>
             </div>
 
+            {/* Prefix group tabs */}
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActivePrefix("all")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                  activePrefix === "all"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Database className="size-3" />
+                Tất cả
+                <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] tabular-nums">{allIds.length.toLocaleString()}</span>
+              </button>
+              {prefixGroups.map(({ prefix, count }) => (
+                <button
+                  key={prefix}
+                  onClick={() => setActivePrefix(prefix)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                    activePrefix === prefix
+                      ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
+                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className="font-mono">{prefix}xxx</span>
+                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Bulk action bar */}
+            {selectMode && selectedIds.size > 0 && (
+              <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 dark:border-amber-400/30 dark:bg-amber-400/5">
+                <p className="text-sm font-bold text-primary dark:text-amber-400">
+                  Đã chọn {selectedIds.size} icon
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+                  >
+                    Bỏ chọn
+                  </button>
+                  <button
+                    onClick={() => setBulkTagModal(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90"
+                  >
+                    <TagIcon className="size-3.5" /> Lưu & gắn nhãn
+                  </button>
+                </div>
+              </div>
+            )}
+
             {(() => {
+              let base = allIds;
+              if (activePrefix !== "all") {
+                base = base.filter((x) => x.startsWith(activePrefix));
+              }
               const filtered = debouncedLibSearch
-                ? allIds.filter((x) => x.toLowerCase().includes(debouncedLibSearch))
-                : allIds;
+                ? base.filter((x) => x.toLowerCase().includes(debouncedLibSearch))
+                : base;
               const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
               const page = Math.min(libraryPage, totalPages);
               const slice = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -425,6 +539,9 @@ export default function FFItemsPage() {
                         id={itemId}
                         isFavorited={isFavorited(itemId)}
                         category={getFavoriteCategory(itemId)}
+                        selectMode={selectMode}
+                        selected={selectedIds.has(itemId)}
+                        onToggleSelect={() => toggleSelected(itemId)}
                         onCopy={() => copyUrl(itemId)}
                         onCopyId={() => copyId(itemId)}
                         onFavorite={() => toggleFavorite(itemId)}
@@ -696,6 +813,43 @@ export default function FFItemsPage() {
         </div>
       </div>
 
+      {/* Bulk tag modal */}
+      {bulkTagModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setBulkTagModal(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Phân loại hàng loạt</p>
+                <p className="text-sm font-bold text-foreground">Chọn loại cho {selectedIds.size} icon</p>
+              </div>
+              <button onClick={() => setBulkTagModal(false)}
+                className="flex size-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-2">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <button
+                    key={cat.key}
+                    onClick={() => bulkAddToFavorites(cat.key)}
+                    className="flex items-center gap-2.5 rounded-xl border-2 border-border bg-muted/30 p-3 text-left transition-all hover:scale-[1.02] hover:border-foreground/30"
+                  >
+                    <span className={`flex size-9 items-center justify-center rounded-lg ${cat.bg}`}>
+                      <Icon className={`size-4 ${cat.color}`} />
+                    </span>
+                    <span className="text-xs font-bold text-foreground">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tag modal */}
       {tagModalId && (
         <TagModal
@@ -781,11 +935,15 @@ function TagModal({
 // Item thumbnail with category badge
 // ───────────────────────────────────────────────────────────────────────────
 function ItemThumb({
-  id, isFavorited, category, onCopy, onCopyId, onFavorite, onTag, onRemove, onSelect, copied,
+  id, isFavorited, category, selectMode, selected, onToggleSelect,
+  onCopy, onCopyId, onFavorite, onTag, onRemove, onSelect, copied,
 }: {
   id: string;
   isFavorited: boolean;
   category?: CategoryKey;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   onCopy: () => void;
   onCopyId: () => void;
   onFavorite: () => void;
@@ -798,8 +956,22 @@ function ItemThumb({
   const url = buildUrl(id);
   const cat = category ? CAT_MAP.get(category) : null;
 
+  // In select mode, clicking the thumb toggles selection
+  const handleThumbClick = () => {
+    if (selectMode && onToggleSelect) onToggleSelect();
+  };
+
   return (
-    <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
+    <div
+      onClick={handleThumbClick}
+      className={`group relative rounded-xl border bg-muted/30 p-2 space-y-1.5 transition-colors ${
+        selectMode ? "cursor-pointer" : ""
+      } ${
+        selected
+          ? "border-primary bg-primary/10 dark:border-amber-400 dark:bg-amber-400/10"
+          : "border-border hover:border-primary/40"
+      }`}
+    >
       <div className="relative aspect-square overflow-hidden rounded-lg bg-background flex items-center justify-center">
         {status === "fail" ? (
           <X className="size-6 text-destructive/60" />
@@ -820,14 +992,26 @@ function ItemThumb({
           </>
         )}
 
+        {/* Selection checkbox */}
+        {selectMode && (
+          <span className={`absolute right-1 top-1 z-10 flex size-5 items-center justify-center rounded-full border-2 ${
+            selected
+              ? "border-primary bg-primary text-primary-foreground dark:border-amber-400 dark:bg-amber-400"
+              : "border-border bg-card"
+          }`}>
+            {selected && <Check className="size-3" />}
+          </span>
+        )}
+
         {/* Category badge */}
-        {cat && (
+        {cat && !selectMode && (
           <span className={`absolute left-1 top-1 flex size-5 items-center justify-center rounded ${cat.bg} ${cat.color}`} title={cat.label}>
             <cat.icon className="size-3" />
           </span>
         )}
 
-        {/* Hover actions */}
+        {/* Hover actions — disabled in select mode */}
+        {!selectMode && (
         <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
           <button onClick={onCopy} title="Copy URL"
             className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-primary/40">
@@ -850,6 +1034,7 @@ function ItemThumb({
             </button>
           )}
         </div>
+        )}
       </div>
       <button
         onClick={onCopyId}
