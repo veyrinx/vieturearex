@@ -7,6 +7,7 @@ import {
   Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
   Tag as TagIcon, Swords, User, PawPrint, Shirt, Sparkles, Package,
   Database, RefreshCw, ChevronLeft, ChevronRight, Server, CloudDownload, Pause,
+  Pencil, Download, Upload,
 } from "lucide-react";
 
 const ICON_BASE = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
@@ -94,6 +95,10 @@ export default function FFItemsPage() {
   const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; failed: number } | null>(null);
   const [syncRunning, setSyncRunning] = useState(false);
   const syncAbort = useRef(false);
+
+  // Rename modal
+  const [renameModal, setRenameModal] = useState<{ id: string; label: string } | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Load saved data
   useEffect(() => {
@@ -322,6 +327,55 @@ export default function FFItemsPage() {
     });
   };
 
+  const renameFavorite = (itemId: string, newLabel: string) => {
+    setFavorites((prev) => {
+      const next = prev.map((f) => f.id === itemId ? { ...f, label: newLabel.trim() || undefined } : f);
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      return next;
+    });
+    toast.success(newLabel.trim() ? `Đã đặt tên: ${newLabel}` : "Đã xóa tên");
+  };
+
+  const exportFavorites = () => {
+    if (favorites.length === 0) { toast.error("Chưa có favorites để export"); return; }
+    const data = JSON.stringify(favorites, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ff-items-favorites-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Đã export ${favorites.length} favorites`);
+  };
+
+  const importFavorites = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = String(e.target?.result ?? "");
+        const data = JSON.parse(text) as Favorite[];
+        if (!Array.isArray(data)) throw new Error("Invalid format");
+        // Validate items
+        const valid = data.filter((f): f is Favorite =>
+          typeof f === "object" && f !== null && typeof f.id === "string");
+        if (valid.length === 0) throw new Error("No valid items");
+
+        setFavorites((prev) => {
+          const existingIds = new Set(prev.map((f) => f.id));
+          const newOnes = valid.filter((f) => !existingIds.has(f.id));
+          const next = [...newOnes, ...prev];
+          localStorage.setItem(FAV_KEY, JSON.stringify(next));
+          return next;
+        });
+        toast.success(`Đã import ${valid.length} items (${valid.length - favorites.length} mới)`);
+      } catch (err) {
+        toast.error(`File không hợp lệ: ${String(err).slice(0, 50)}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const updateFavoriteCategory = (itemId: string, category: CategoryKey) => {
     setFavorites((prev) => {
       const next = prev.map((f) => f.id === itemId ? { ...f, category } : f);
@@ -361,7 +415,10 @@ export default function FFItemsPage() {
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      list = list.filter((f) => f.id.toLowerCase().includes(q));
+      list = list.filter((f) =>
+        f.id.toLowerCase().includes(q) ||
+        (f.label?.toLowerCase().includes(q) ?? false),
+      );
     }
     const arr = [...list];
     if (sort === "id_asc") arr.sort((a, b) => a.id.localeCompare(b.id));
@@ -838,11 +895,38 @@ export default function FFItemsPage() {
 
       {/* Favorites with filter */}
       {favorites.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-heading text-sm font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
               <Star className="size-3.5 fill-current" /> Đã lưu ({favorites.length})
             </h2>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={exportFavorites}
+                title="Export ra file JSON"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+              >
+                <Download className="size-3" /> Export
+              </button>
+              <button
+                onClick={() => importInputRef.current?.click()}
+                title="Import từ file JSON"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+              >
+                <Upload className="size-3" /> Import
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) importFavorites(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
           </div>
 
           {/* Filter + search + sort bar */}
@@ -896,7 +980,7 @@ export default function FFItemsPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Tìm theo ID..."
+                  placeholder="Tìm theo ID hoặc tên..."
                   className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-7 text-xs font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
                 />
                 {search && (
@@ -953,10 +1037,12 @@ export default function FFItemsPage() {
                   id={fav.id}
                   isFavorited={true}
                   category={fav.category}
+                  label={fav.label}
                   onCopy={() => copyUrl(fav.id)}
                   onCopyId={() => copyId(fav.id)}
                   onFavorite={() => toggleFavorite(fav.id)}
                   onTag={() => setTagModalId(fav.id)}
+                  onRename={() => setRenameModal({ id: fav.id, label: fav.label ?? "" })}
                   onSelect={() => setId(fav.id)}
                   copied={copiedId === fav.id}
                 />
@@ -1014,6 +1100,57 @@ export default function FFItemsPage() {
           </ul>
         </div>
       </div>
+
+      {/* Rename modal */}
+      {renameModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setRenameModal(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Đặt tên icon</p>
+                <p className="text-sm font-bold text-foreground">Tên tùy chỉnh</p>
+                <p className="font-mono text-[10px] text-muted-foreground/70 mt-0.5 truncate">{renameModal.id}</p>
+              </div>
+              <button onClick={() => setRenameModal(null)}
+                className="flex size-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <input
+                type="text"
+                value={renameModal.label}
+                onChange={(e) => setRenameModal({ ...renameModal, label: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    renameFavorite(renameModal.id, renameModal.label);
+                    setRenameModal(null);
+                  }
+                }}
+                placeholder="VD: AWM Skull Cleaver, Alok, Drop Box..."
+                maxLength={60}
+                autoFocus
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Tên này sẽ hiển thị thay vì ID. Bỏ trống để xóa tên.
+              </p>
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setRenameModal(null)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold hover:bg-muted">
+                  Hủy
+                </button>
+                <button onClick={() => { renameFavorite(renameModal.id, renameModal.label); setRenameModal(null); }}
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90">
+                  Lưu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bulk tag modal */}
       {bulkTagModal && (
@@ -1137,12 +1274,13 @@ function TagModal({
 // Item thumbnail with category badge
 // ───────────────────────────────────────────────────────────────────────────
 function ItemThumb({
-  id, isFavorited, category, selectMode, selected, onToggleSelect,
-  onCopy, onCopyId, onFavorite, onTag, onRemove, onSelect, copied,
+  id, isFavorited, category, label, selectMode, selected, onToggleSelect,
+  onCopy, onCopyId, onFavorite, onTag, onRename, onRemove, onSelect, copied,
 }: {
   id: string;
   isFavorited: boolean;
   category?: CategoryKey;
+  label?: string;
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -1150,6 +1288,7 @@ function ItemThumb({
   onCopyId: () => void;
   onFavorite: () => void;
   onTag?: () => void;
+  onRename?: () => void;
   onRemove?: () => void;
   onSelect?: () => void;
   copied: boolean;
@@ -1229,6 +1368,12 @@ function ItemThumb({
               <TagIcon className="size-3" />
             </button>
           )}
+          {onRename && (
+            <button onClick={onRename} title="Đặt tên"
+              className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-blue-500/40 hover:text-blue-500">
+              <Pencil className="size-3" />
+            </button>
+          )}
           {onRemove && (
             <button onClick={onRemove} title="Xóa khỏi gần đây"
               className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-destructive/40 hover:text-destructive">
@@ -1242,9 +1387,14 @@ function ItemThumb({
         onClick={onCopyId}
         title="Click để copy ID — double click để chọn"
         onDoubleClick={onSelect}
-        className="block w-full text-center font-mono text-[10px] text-muted-foreground hover:text-foreground transition-colors truncate"
+        className="block w-full text-left transition-colors hover:text-foreground"
       >
-        {id}
+        {label && (
+          <p className="truncate text-[10px] font-bold text-foreground leading-tight">{label}</p>
+        )}
+        <p className={`truncate font-mono text-[10px] leading-tight ${label ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
+          {id}
+        </p>
       </button>
     </div>
   );
