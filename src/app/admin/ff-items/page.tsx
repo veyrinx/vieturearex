@@ -385,67 +385,71 @@ export default function FFItemsPage() {
   }, [favorites]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="font-heading text-xl font-black uppercase tracking-tight text-foreground flex items-center gap-2">
-          <ImageIcon className="size-5 text-primary dark:text-amber-400" /> Free Fire Items Lookup
+      <div className="space-y-1 min-w-0">
+        <h1 className="font-heading text-lg sm:text-xl font-black uppercase tracking-tight text-foreground flex items-center gap-2">
+          <ImageIcon className="size-5 text-primary dark:text-amber-400 shrink-0" />
+          <span className="truncate">Free Fire Items Lookup</span>
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Tra cứu icon Free Fire bằng Item ID. URL theo định dạng{" "}
-          <code className="font-mono text-[11px] text-primary dark:text-amber-400">{ICON_BASE}/{"{id}"}.png</code>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Tra cứu icon Free Fire bằng Item ID
         </p>
       </div>
 
       {/* Sync to Supabase Storage */}
-      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 space-y-3">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
-              <Server className="size-5 text-emerald-600 dark:text-emerald-400" />
-            </span>
-            <div>
-              <h2 className="font-heading text-sm font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                Đồng bộ về server
-              </h2>
-              <p className="text-[10px] text-muted-foreground">
-                Tải toàn bộ icon từ GitHub về Supabase Storage để không phụ thuộc CDN bên ngoài
+      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5 space-y-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+            <Server className="size-4 sm:size-5 text-emerald-600 dark:text-emerald-400" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-heading text-xs sm:text-sm font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+              Đồng bộ về server
+            </h2>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground">
+              Tải icon từ GitHub về Supabase Storage
+            </p>
+            {syncedIds.size > 0 && (
+              <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                ✓ Đã đồng bộ {syncedIds.size.toLocaleString()} icon
               </p>
-              {syncedIds.size > 0 && (
-                <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                  ✓ Đã đồng bộ {syncedIds.size.toLocaleString()} icon
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => syncAllFromLibrary(false)}
-              disabled={syncRunning || allIds.length === 0}
-              title={allIds.length === 0 ? "Hãy tải thư viện trước" : "Đồng bộ những icon chưa có"}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-            >
-              {syncRunning ? <Loader2 className="size-3.5 animate-spin" /> : <CloudDownload className="size-3.5" />}
-              Đồng bộ toàn bộ ({allIds.length > 0 ? `${(allIds.length - syncedIds.size).toLocaleString()} mới` : "—"})
-            </button>
-            <button
-              onClick={() => syncFavorites()}
-              disabled={syncRunning || favorites.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
-            >
-              <Star className="size-3.5" />
-              Chỉ đồng bộ yêu thích
-            </button>
-            {syncRunning && (
-              <button
-                onClick={() => { syncAbort.current = true; }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/20"
-              >
-                <Pause className="size-3.5" /> Dừng
-              </button>
             )}
           </div>
+        </div>
+
+        {/* Action buttons — full row to allow proper wrapping on mobile */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => syncAllFromLibrary(false)}
+            disabled={syncRunning || allIds.length === 0}
+            title={allIds.length === 0 ? "Hãy tải thư viện trước" : "Đồng bộ những icon chưa có"}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+          >
+            {syncRunning ? <Loader2 className="size-3.5 animate-spin" /> : <CloudDownload className="size-3.5" />}
+            <span>Đồng bộ toàn bộ</span>
+            {allIds.length > 0 && (
+              <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] tabular-nums">
+                {(allIds.length - syncedIds.size).toLocaleString()}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => syncFavorites()}
+            disabled={syncRunning || favorites.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+          >
+            <Star className="size-3.5" />
+            <span>Yêu thích</span>
+          </button>
+          {syncRunning && (
+            <button
+              onClick={() => { syncAbort.current = true; }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/20"
+            >
+              <Pause className="size-3.5" /> Dừng
+            </button>
+          )}
         </div>
 
         {/* Progress bar */}
@@ -507,42 +511,45 @@ export default function FFItemsPage() {
 
         {/* Preview */}
         {previewUrl && debouncedId && (
-          <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-4">
-            <div className="relative size-24 shrink-0 overflow-hidden rounded-xl border border-border bg-background flex items-center justify-center">
-              {loaded[debouncedId] === "fail" ? (
-                <X className="size-8 text-destructive" />
-              ) : (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewUrl}
-                    alt={debouncedId}
-                    onLoad={() => handleImageLoad(debouncedId)}
-                    onError={() => handleImageError(debouncedId)}
-                    className="size-full object-contain p-2"
-                  />
-                  {!loaded[debouncedId] && (
-                    <Loader2 className="absolute size-6 animate-spin text-muted-foreground" />
-                  )}
-                </>
-              )}
+          <div className="rounded-xl border border-border bg-muted/30 p-3 sm:p-4 space-y-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="relative size-16 sm:size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-background flex items-center justify-center">
+                {loaded[debouncedId] === "fail" ? (
+                  <X className="size-6 text-destructive" />
+                ) : (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl}
+                      alt={debouncedId}
+                      onLoad={() => handleImageLoad(debouncedId)}
+                      onError={() => handleImageError(debouncedId)}
+                      className="size-full object-contain p-2"
+                    />
+                    {!loaded[debouncedId] && (
+                      <Loader2 className="absolute size-5 animate-spin text-muted-foreground" />
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {loaded[debouncedId] === "fail" ? "Không tìm thấy" : "Item ID"}
+                </p>
+                <p className="font-mono font-bold text-sm break-all">{debouncedId}</p>
+                <p className="font-mono text-[10px] text-muted-foreground break-all line-clamp-2">{previewUrl}</p>
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0 space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {loaded[debouncedId] === "fail" ? "Không tìm thấy" : "Item ID"}
-              </p>
-              <p className="font-mono font-bold text-sm break-all">{debouncedId}</p>
-              <p className="font-mono text-[10px] text-muted-foreground break-all">{previewUrl}</p>
-            </div>
-
-            <div className="flex flex-col gap-2 shrink-0">
+            {/* Actions — full row, wrap on mobile */}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => copyUrl(debouncedId)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold hover:border-primary/40 hover:bg-primary/5 transition-colors"
               >
                 {copiedId === debouncedId ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-                {copiedId === debouncedId ? "Đã copy" : "Copy URL"}
+                <span>{copiedId === debouncedId ? "Đã copy" : "Copy URL"}</span>
               </button>
               <button
                 onClick={() => toggleFavorite(debouncedId)}
@@ -553,7 +560,7 @@ export default function FFItemsPage() {
                 }`}
               >
                 <Star className={`size-3.5 ${isFavorited(debouncedId) ? "fill-current" : ""}`} />
-                {isFavorited(debouncedId) ? "Đã lưu" : "Lưu"}
+                <span>{isFavorited(debouncedId) ? "Đã lưu" : "Lưu"}</span>
               </button>
               <a
                 href={previewUrl}
@@ -569,41 +576,40 @@ export default function FFItemsPage() {
       </div>
 
       {/* Library — Toàn bộ items từ jsDelivr */}
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="space-y-0.5">
-            <h2 className="font-heading text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
-              <Database className="size-4 text-primary dark:text-amber-400" /> Thư viện Items
-            </h2>
-            <p className="text-[10px] text-muted-foreground">
-              Toàn bộ icon có trong CDN jsDelivr
-              {allIds.length > 0 && (
-                <> · <span className="font-semibold text-foreground">{allIds.length.toLocaleString()} items</span>
-                {allCached && <span className="ml-1 text-amber-500">(cache)</span>}
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-3">
+        <div className="space-y-1 min-w-0">
+          <h2 className="font-heading text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
+            <Database className="size-4 text-primary dark:text-amber-400 shrink-0" />
+            <span className="truncate">Thư viện Items</span>
+          </h2>
+          <p className="text-[10px] text-muted-foreground">
+            Toàn bộ icon có trong CDN jsDelivr
             {allIds.length > 0 && (
-              <button
-                onClick={() => void loadLibrary(true)}
-                disabled={allLoading}
-                title="Tải lại từ jsDelivr (bỏ qua cache)"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`size-3.5 ${allLoading ? "animate-spin" : ""}`} /> Tải lại
-              </button>
+              <> · <span className="font-semibold text-foreground">{allIds.length.toLocaleString()} items</span>
+              {allCached && <span className="ml-1 text-amber-500">(cache)</span>}
+              </>
             )}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => void loadLibrary(false)}
+            disabled={allLoading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {allLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Database className="size-3.5" />}
+            {allLoading ? "Đang tải..." : allIds.length > 0 ? "Đã tải" : "Tải thư viện"}
+          </button>
+          {allIds.length > 0 && (
             <button
-              onClick={() => void loadLibrary(false)}
+              onClick={() => void loadLibrary(true)}
               disabled={allLoading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              title="Tải lại từ jsDelivr (bỏ qua cache)"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-50"
             >
-              {allLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Database className="size-3.5" />}
-              {allLoading ? "Đang tải..." : allIds.length > 0 ? "Đã tải" : "Tải thư viện"}
+              <RefreshCw className={`size-3.5 ${allLoading ? "animate-spin" : ""}`} /> Tải lại
             </button>
-          </div>
+          )}
         </div>
 
         {allError && (
