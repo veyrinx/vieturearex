@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
   BookOpenText, Users, Swords, MessageSquare, Trophy,
-  TrendingUp, Palette, Rss,
+  TrendingUp, Palette, Rss, Image as ImageIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -40,6 +40,7 @@ const COMMUNITY_ITEMS = [
   { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
   { title: "Feed",            href: "/feed",                  icon: Rss,           desc: "Hoạt động từ người bạn theo dõi" },
   { title: "Wiki CĐ",        href: "/wiki",                  icon: BookOpenText,  desc: "Kiến thức do cộng đồng đóng góp" },
+  { title: "Thư Viện Icon",  href: "/items",                 icon: ImageIcon,     desc: "Icon Free Fire (vũ khí, nhân vật, skin...)" },
   { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    desc: "Hot posts & top contributors" },
   { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
   { title: "Giải Đấu CĐ",    href: "/giai-dau-cong-dong",   icon: Swords,        desc: "Tổ chức & tham gia giải" },
