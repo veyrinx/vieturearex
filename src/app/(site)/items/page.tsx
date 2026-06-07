@@ -22,6 +22,8 @@ export default function ItemsPublicPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bucketMissing, setBucketMissing] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [activeDigit, setActiveDigit] = useState<string>("all");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetch("/api/ff-items")
@@ -41,7 +43,14 @@ export default function ItemsPublicPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, activePrefix]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, activePrefix, activeDigit]);
+
+  // When activeDigit changes, reset prefix if it doesn't match
+  useEffect(() => {
+    if (activeDigit !== "all" && activePrefix !== "all" && !activePrefix.startsWith(activeDigit)) {
+      setActivePrefix("all");
+    }
+  }, [activeDigit, activePrefix]);
 
   // Lightbox keyboard nav
   useEffect(() => {
@@ -66,23 +75,45 @@ export default function ItemsPublicPage() {
 
   const buildUrl = (id: string) => baseUrl ? `${baseUrl}${id}.png` : `${FALLBACK_CDN}/${id}.png`;
 
+  // Top-level digit groups (first character)
+  const digitGroups = useMemo(() => {
+    if (ids.length === 0) return [] as Array<{ digit: string; count: number }>;
+    const map = new Map<string, number>();
+    for (const idStr of ids) {
+      const d = idStr.charAt(0);
+      if (/\d/.test(d)) map.set(d, (map.get(d) ?? 0) + 1);
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([digit, count]) => ({ digit, count }));
+  }, [ids]);
+
+  // Sub-prefix groups (3 chars) — only show those matching active digit
   const prefixGroups = useMemo(() => {
     if (ids.length === 0) return [] as Array<{ prefix: string; count: number }>;
     const map = new Map<string, number>();
     for (const idStr of ids) {
+      if (activeDigit !== "all" && !idStr.startsWith(activeDigit)) continue;
       const m = idStr.match(/^(\d{3})/);
       const key = m ? m[1] : "other";
       map.set(key, (map.get(key) ?? 0) + 1);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([prefix, count]) => ({ prefix, count }));
-  }, [ids]);
+  }, [ids, activeDigit]);
 
   const filtered = useMemo(() => {
     let list = ids;
+    if (activeDigit !== "all") list = list.filter((x) => x.startsWith(activeDigit));
     if (activePrefix !== "all") list = list.filter((x) => x.startsWith(activePrefix));
     if (debouncedSearch) list = list.filter((x) => x.toLowerCase().includes(debouncedSearch));
     return list;
-  }, [ids, activePrefix, debouncedSearch]);
+  }, [ids, activeDigit, activePrefix, debouncedSearch]);
+
+  // Search autocomplete suggestions
+  const suggestions = useMemo(() => {
+    if (!debouncedSearch || !showSuggestions) return [];
+    return ids
+      .filter((x) => x.toLowerCase().startsWith(debouncedSearch))
+      .slice(0, 8);
+  }, [ids, debouncedSearch, showSuggestions]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -133,14 +164,17 @@ export default function ItemsPublicPage() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search + Filters */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-3">
+        {/* Search with autocomplete */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             placeholder="Tìm theo Item ID (vd: 211, 203000234...)"
             className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-9 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
@@ -150,37 +184,130 @@ export default function ItemsPublicPage() {
               <X className="size-4" />
             </button>
           )}
+
+          {/* Autocomplete dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+              <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border">
+                Gợi ý ({suggestions.length})
+              </p>
+              {suggestions.map((sug) => (
+                <button
+                  key={sug}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); setSearch(sug); setShowSuggestions(false); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <Search className="size-3 text-muted-foreground" />
+                  <span className="font-mono text-sm">{sug}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Prefix tabs */}
-        {prefixGroups.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              onClick={() => setActivePrefix("all")}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                activePrefix === "all"
-                  ? "bg-foreground text-background"
-                  : "border border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Filter className="size-3" />
-              Tất cả
-              <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] tabular-nums">{ids.length.toLocaleString()}</span>
-            </button>
-            {prefixGroups.map(({ prefix, count }) => (
+        {/* Level 1: Digit groups (first character) */}
+        {digitGroups.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nhóm chính</p>
+            <div className="flex flex-wrap gap-1.5">
               <button
-                key={prefix}
-                onClick={() => setActivePrefix(prefix)}
+                onClick={() => { setActiveDigit("all"); setActivePrefix("all"); }}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                  activePrefix === prefix
-                    ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
+                  activeDigit === "all"
+                    ? "bg-foreground text-background"
                     : "border border-border bg-card text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span className="font-mono">{prefix}xxx</span>
-                <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count}</span>
+                <Filter className="size-3" />
+                Tất cả
+                <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] tabular-nums">{ids.length.toLocaleString()}</span>
               </button>
-            ))}
+              {digitGroups.map(({ digit, count }) => (
+                <button
+                  key={digit}
+                  onClick={() => setActiveDigit(digit)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                    activeDigit === digit
+                      ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
+                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className="font-mono">{digit}xxxxxxxx</span>
+                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count.toLocaleString()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Level 2: Prefix groups (3-char) - only when a digit is selected */}
+        {activeDigit !== "all" && prefixGroups.length > 1 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nhóm con (3 số)</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActivePrefix("all")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                  activePrefix === "all"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tất cả {activeDigit}
+              </button>
+              {prefixGroups.map(({ prefix, count }) => (
+                <button
+                  key={prefix}
+                  onClick={() => setActivePrefix(prefix)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                    activePrefix === prefix
+                      ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
+                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className="font-mono">{prefix}xxxxxx</span>
+                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Active filter pill — easy clear */}
+        {(activeDigit !== "all" || activePrefix !== "all" || debouncedSearch) && (
+          <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đang lọc:</span>
+            {activeDigit !== "all" && (
+              <button
+                onClick={() => { setActiveDigit("all"); setActivePrefix("all"); }}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-mono font-bold hover:opacity-70"
+              >
+                {activeDigit}xxx <X className="size-2.5" />
+              </button>
+            )}
+            {activePrefix !== "all" && (
+              <button
+                onClick={() => setActivePrefix("all")}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-mono font-bold hover:opacity-70"
+              >
+                {activePrefix}xxxxxx <X className="size-2.5" />
+              </button>
+            )}
+            {debouncedSearch && (
+              <button
+                onClick={() => setSearch("")}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-mono font-bold hover:opacity-70"
+              >
+                &quot;{debouncedSearch}&quot; <X className="size-2.5" />
+              </button>
+            )}
+            <button
+              onClick={() => { setActiveDigit("all"); setActivePrefix("all"); setSearch(""); }}
+              className="ml-auto text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+            >
+              Xóa tất cả
+            </button>
           </div>
         )}
       </div>
