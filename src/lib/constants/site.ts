@@ -75,6 +75,7 @@ export const adminNavItems = [
   { title: "DANH HIỆU", href: "/admin/danh-hieu" },
   { title: "COSMETICS", href: "/admin/cosmetics" },
   { title: "WIKI", href: "/admin/wiki" },
+  { title: "FF ITEMS", href: "/admin/ff-items" },
   { title: "CONTRIBUTORS", href: "/admin/contributors" },
   { title: "BROADCAST", href: "/admin/broadcast" },
   { title: "CSKH", href: "/admin/cskh" },
