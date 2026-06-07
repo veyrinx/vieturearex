@@ -138,7 +138,7 @@ function CommunityDropdown({
               {/* Header strip */}
               <div className="border-b border-border/50 px-4 py-2.5">
                 <p className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground">
-                  Cộng Đồng Arex Network
+                  Cộng Đồng Arex Network 
                 </p>
               </div>
               <div className="max-h-[70vh] overflow-y-auto p-1.5 space-y-0.5">
@@ -218,7 +218,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
       <motion.div
         animate={{ height: compact ? 44 : 64 }}
         transition={{ type: "spring", stiffness: 420, damping: 38 }}
-        className="mx-auto flex w-full max-w-7xl items-center gap-4 overflow-hidden px-4 md:px-6"
+        className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 md:px-6"
       >
 
         {/* ── Logo ── */}
