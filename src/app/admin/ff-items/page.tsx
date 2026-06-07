@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Search, Copy, Check, X, Image as ImageIcon, ExternalLink,
-  Star, Trash2, Plus, Loader2,
+  Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
+  Tag as TagIcon, Swords, User, PawPrint, Shirt, Sparkles, Package,
 } from "lucide-react";
 
 const ICON_BASE = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
@@ -13,23 +14,66 @@ function buildUrl(id: string) {
   return `${ICON_BASE}/${encodeURIComponent(id.trim())}.png`;
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Categories — Vietnamese labels with color + icon
+// ───────────────────────────────────────────────────────────────────────────
+type CategoryKey =
+  | "weapon" | "character" | "pet" | "outfit" | "skin"
+  | "accessory" | "emote" | "vehicle" | "other";
+
+type Category = {
+  key: CategoryKey;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  border: string;
+};
+
+const CATEGORIES: Category[] = [
+  { key: "weapon",    label: "Súng / Vũ khí", icon: Swords,    color: "text-red-500",     bg: "bg-red-500/10",     border: "border-red-500/30" },
+  { key: "character", label: "Nhân vật",       icon: User,      color: "text-blue-500",    bg: "bg-blue-500/10",    border: "border-blue-500/30" },
+  { key: "pet",       label: "Pet",            icon: PawPrint,  color: "text-pink-500",    bg: "bg-pink-500/10",    border: "border-pink-500/30" },
+  { key: "outfit",    label: "Trang phục",     icon: Shirt,     color: "text-purple-500",  bg: "bg-purple-500/10",  border: "border-purple-500/30" },
+  { key: "skin",      label: "Skin",           icon: Sparkles,  color: "text-amber-500",   bg: "bg-amber-500/10",   border: "border-amber-500/30" },
+  { key: "accessory", label: "Phụ kiện",       icon: Package,   color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/30" },
+  { key: "emote",     label: "Emote",          icon: Sparkles,  color: "text-violet-500",  bg: "bg-violet-500/10",  border: "border-violet-500/30" },
+  { key: "vehicle",   label: "Xe",             icon: Package,   color: "text-cyan-500",    bg: "bg-cyan-500/10",    border: "border-cyan-500/30" },
+  { key: "other",     label: "Khác",           icon: TagIcon,   color: "text-muted-foreground", bg: "bg-muted", border: "border-border" },
+];
+
+const CAT_MAP = new Map<CategoryKey, Category>(CATEGORIES.map((c) => [c.key, c]));
+
 type Recent = { id: string; ts: number };
-type Favorite = { id: string; label?: string };
+type Favorite = { id: string; label?: string; category?: CategoryKey };
 
 const RECENT_KEY = "ff-items:recent";
 const FAV_KEY = "ff-items:favorites";
 
+type SortMode = "newest" | "oldest" | "id_asc" | "id_desc";
+
+const SORT_LABELS: Record<SortMode, { label: string; icon: React.ElementType }> = {
+  newest:  { label: "Mới nhất",  icon: Clock },
+  oldest:  { label: "Cũ nhất",   icon: Clock },
+  id_asc:  { label: "ID A-Z",    icon: ArrowDownAZ },
+  id_desc: { label: "ID Z-A",    icon: ArrowUpAZ },
+};
+
 export default function FFItemsPage() {
   const [id, setId] = useState("");
   const [debouncedId, setDebouncedId] = useState("");
-  const [loaded, setLoaded] = useState<Record<string, "ok" | "fail" | "loading">>({});
+  const [loaded, setLoaded] = useState<Record<string, "ok" | "fail">>({});
   const [recents, setRecents] = useState<Recent[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [bulkInput, setBulkInput] = useState("");
   const [bulkIds, setBulkIds] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<CategoryKey | "all">("all");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortMode>("newest");
+  const [tagModalId, setTagModalId] = useState<string | null>(null);
 
-  // Load saved data from localStorage
+  // Load saved data
   useEffect(() => {
     try {
       const r = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as Recent[];
@@ -39,17 +83,15 @@ export default function FFItemsPage() {
     } catch { /* ignore */ }
   }, []);
 
-  // Debounce input
   useEffect(() => {
     const t = setTimeout(() => setDebouncedId(id.trim()), 300);
     return () => clearTimeout(t);
   }, [id]);
 
-  // Add to recents when ID loads successfully
   const handleImageLoad = (itemId: string) => {
     setLoaded((prev) => ({ ...prev, [itemId]: "ok" }));
     setRecents((prev) => {
-      const next = [{ id: itemId, ts: Date.now() }, ...prev.filter((r) => r.id !== itemId)].slice(0, 20);
+      const next = [{ id: itemId, ts: Date.now() }, ...prev.filter((r) => r.id !== itemId)].slice(0, 30);
       localStorage.setItem(RECENT_KEY, JSON.stringify(next));
       return next;
     });
@@ -73,14 +115,25 @@ export default function FFItemsPage() {
     });
   };
 
-  const toggleFavorite = (itemId: string) => {
+  const toggleFavorite = (itemId: string, category?: CategoryKey) => {
     setFavorites((prev) => {
       const exists = prev.some((f) => f.id === itemId);
-      const next = exists ? prev.filter((f) => f.id !== itemId) : [{ id: itemId }, ...prev];
+      const next = exists
+        ? prev.filter((f) => f.id !== itemId)
+        : [{ id: itemId, category: category ?? "other" }, ...prev];
       localStorage.setItem(FAV_KEY, JSON.stringify(next));
       toast.success(exists ? "Đã bỏ yêu thích" : "Đã thêm yêu thích");
       return next;
     });
+  };
+
+  const updateFavoriteCategory = (itemId: string, category: CategoryKey) => {
+    setFavorites((prev) => {
+      const next = prev.map((f) => f.id === itemId ? { ...f, category } : f);
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      return next;
+    });
+    toast.success(`Đã gắn nhãn: ${CAT_MAP.get(category)?.label}`);
   };
 
   const removeRecent = (itemId: string) => {
@@ -102,8 +155,39 @@ export default function FFItemsPage() {
   };
 
   const isFavorited = (itemId: string) => favorites.some((f) => f.id === itemId);
+  const getFavoriteCategory = (itemId: string): CategoryKey | undefined =>
+    favorites.find((f) => f.id === itemId)?.category;
+
+  // ── Filter & sort favorites ──
+  const filteredFavorites = useMemo(() => {
+    let list = favorites;
+    if (activeCategory !== "all") {
+      list = list.filter((f) => (f.category ?? "other") === activeCategory);
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((f) => f.id.toLowerCase().includes(q));
+    }
+    const arr = [...list];
+    if (sort === "id_asc") arr.sort((a, b) => a.id.localeCompare(b.id));
+    else if (sort === "id_desc") arr.sort((a, b) => b.id.localeCompare(a.id));
+    // newest/oldest based on insertion order (newest first by default in favorites array)
+    else if (sort === "oldest") arr.reverse();
+    return arr;
+  }, [favorites, activeCategory, search, sort]);
 
   const previewUrl = useMemo(() => debouncedId ? buildUrl(debouncedId) : null, [debouncedId]);
+
+  // Counts per category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: favorites.length };
+    for (const c of CATEGORIES) counts[c.key] = 0;
+    for (const f of favorites) {
+      const k = f.category ?? "other";
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    return counts;
+  }, [favorites]);
 
   return (
     <div className="space-y-6">
@@ -124,24 +208,22 @@ export default function FFItemsPage() {
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             Item ID
           </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                placeholder="VD: 211000000, 203000234..."
-                className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-9 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                autoFocus
-              />
-              {id && (
-                <button onClick={() => setId("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              placeholder="VD: 211000000, 203000234..."
+              className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-9 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              autoFocus
+            />
+            {id && (
+              <button onClick={() => setId("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="size-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -249,9 +331,11 @@ export default function FFItemsPage() {
                 key={itemId}
                 id={itemId}
                 isFavorited={isFavorited(itemId)}
+                category={getFavoriteCategory(itemId)}
                 onCopy={() => copyUrl(itemId)}
                 onCopyId={() => copyId(itemId)}
                 onFavorite={() => toggleFavorite(itemId)}
+                onTag={() => setTagModalId(itemId)}
                 copied={copiedId === itemId}
               />
             ))}
@@ -259,28 +343,133 @@ export default function FFItemsPage() {
         )}
       </div>
 
-      {/* Favorites */}
+      {/* Favorites with filter */}
       {favorites.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-sm font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
               <Star className="size-3.5 fill-current" /> Đã lưu ({favorites.length})
             </h2>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-            {favorites.map((fav) => (
-              <ItemThumb
-                key={fav.id}
-                id={fav.id}
-                isFavorited={true}
-                onCopy={() => copyUrl(fav.id)}
-                onCopyId={() => copyId(fav.id)}
-                onFavorite={() => toggleFavorite(fav.id)}
-                onSelect={() => setId(fav.id)}
-                copied={copiedId === fav.id}
-              />
-            ))}
+
+          {/* Filter + search + sort bar */}
+          <div className="space-y-3 rounded-xl bg-muted/30 p-3">
+            {/* Category pills */}
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActiveCategory("all")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                  activeCategory === "all"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Filter className="size-3" />
+                Tất cả
+                <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] tabular-nums">{categoryCounts.all}</span>
+              </button>
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const count = categoryCounts[cat.key] ?? 0;
+                const isActive = activeCategory === cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    onClick={() => setActiveCategory(cat.key)}
+                    disabled={count === 0 && !isActive}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                      isActive
+                        ? `${cat.bg} ${cat.color} border ${cat.border}`
+                        : count > 0
+                          ? "border border-border bg-card text-muted-foreground hover:text-foreground"
+                          : "border border-border bg-card text-muted-foreground/40 cursor-not-allowed"
+                    }`}
+                  >
+                    <Icon className="size-3" />
+                    {cat.label}
+                    {count > 0 && (
+                      <span className="rounded-full bg-current/10 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search + sort */}
+            <div className="flex flex-wrap gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm theo ID..."
+                  className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-7 text-xs font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
+                {(Object.keys(SORT_LABELS) as SortMode[]).map((s) => {
+                  const { label, icon: Icon } = SORT_LABELS[s];
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setSort(s)}
+                      title={label}
+                      className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase transition-all ${
+                        sort === s
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="size-3" />
+                      <span className="hidden md:inline">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+
+          {/* Results count */}
+          {(activeCategory !== "all" || search) && (
+            <p className="text-[11px] text-muted-foreground">
+              Hiển thị {filteredFavorites.length} / {favorites.length} icon
+              {activeCategory !== "all" && (
+                <> · loại <span className="font-semibold text-foreground">{CAT_MAP.get(activeCategory as CategoryKey)?.label}</span></>
+              )}
+            </p>
+          )}
+
+          {/* Grid */}
+          {filteredFavorites.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <Filter className="size-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Không có icon nào phù hợp bộ lọc</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+              {filteredFavorites.map((fav) => (
+                <ItemThumb
+                  key={fav.id}
+                  id={fav.id}
+                  isFavorited={true}
+                  category={fav.category}
+                  onCopy={() => copyUrl(fav.id)}
+                  onCopyId={() => copyId(fav.id)}
+                  onFavorite={() => toggleFavorite(fav.id)}
+                  onTag={() => setTagModalId(fav.id)}
+                  onSelect={() => setId(fav.id)}
+                  copied={copiedId === fav.id}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -304,9 +493,11 @@ export default function FFItemsPage() {
                 key={r.id}
                 id={r.id}
                 isFavorited={isFavorited(r.id)}
+                category={getFavoriteCategory(r.id)}
                 onCopy={() => copyUrl(r.id)}
                 onCopyId={() => copyId(r.id)}
                 onFavorite={() => toggleFavorite(r.id)}
+                onTag={() => setTagModalId(r.id)}
                 onRemove={() => removeRecent(r.id)}
                 onSelect={() => setId(r.id)}
                 copied={copiedId === r.id}
@@ -323,30 +514,115 @@ export default function FFItemsPage() {
           <p className="font-semibold text-foreground">Hướng dẫn nhanh</p>
           <ul className="list-disc pl-4 text-xs space-y-0.5">
             <li>Item ID là 9 chữ số, ví dụ: <code className="font-mono">203000234</code></li>
-            <li>Click ngôi sao để lưu icon yêu thích vào danh sách</li>
-            <li>Click Copy URL để dán vào bài viết / wiki / cosmetics</li>
+            <li>Click ngôi sao để lưu icon vào danh sách yêu thích</li>
+            <li>Click icon thẻ (Tag) để phân loại icon thành: Súng, Nhân vật, Pet, Trang phục...</li>
+            <li>Dùng bộ lọc theo loại để tìm nhanh icon đã lưu</li>
             <li>Dùng &quot;Tra cứu hàng loạt&quot; để preview nhiều icon cùng lúc</li>
           </ul>
+        </div>
+      </div>
+
+      {/* Tag modal */}
+      {tagModalId && (
+        <TagModal
+          itemId={tagModalId}
+          currentCategory={getFavoriteCategory(tagModalId)}
+          isFavorited={isFavorited(tagModalId)}
+          onSelect={(cat) => {
+            if (!isFavorited(tagModalId)) {
+              toggleFavorite(tagModalId, cat);
+            } else {
+              updateFavoriteCategory(tagModalId, cat);
+            }
+            setTagModalId(null);
+          }}
+          onClose={() => setTagModalId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Tag selection modal
+// ───────────────────────────────────────────────────────────────────────────
+function TagModal({
+  itemId, currentCategory, isFavorited, onSelect, onClose,
+}: {
+  itemId: string;
+  currentCategory?: CategoryKey;
+  isFavorited: boolean;
+  onSelect: (cat: CategoryKey) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Phân loại</p>
+            <p className="text-sm font-bold text-foreground">
+              {isFavorited ? "Đổi loại icon" : "Lưu & phân loại"}
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">{itemId}</p>
+          </div>
+          <button onClick={onClose}
+            className="flex size-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="p-4 grid grid-cols-2 gap-2">
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = currentCategory === cat.key;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => onSelect(cat.key)}
+                className={`flex items-center gap-2.5 rounded-xl border-2 p-3 text-left transition-all hover:scale-[1.02] ${
+                  isActive
+                    ? `${cat.bg} ${cat.border}`
+                    : "border-border bg-muted/30 hover:border-foreground/30"
+                }`}
+              >
+                <span className={`flex size-9 items-center justify-center rounded-lg ${cat.bg}`}>
+                  <Icon className={`size-4 ${cat.color}`} />
+                </span>
+                <span className={`text-xs font-bold ${isActive ? cat.color : "text-foreground"}`}>
+                  {cat.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Item thumbnail with category badge
+// ───────────────────────────────────────────────────────────────────────────
 function ItemThumb({
-  id, isFavorited, onCopy, onCopyId, onFavorite, onRemove, onSelect, copied,
+  id, isFavorited, category, onCopy, onCopyId, onFavorite, onTag, onRemove, onSelect, copied,
 }: {
   id: string;
   isFavorited: boolean;
+  category?: CategoryKey;
   onCopy: () => void;
   onCopyId: () => void;
   onFavorite: () => void;
+  onTag?: () => void;
   onRemove?: () => void;
   onSelect?: () => void;
   copied: boolean;
 }) {
   const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
   const url = buildUrl(id);
+  const cat = category ? CAT_MAP.get(category) : null;
 
   return (
     <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
@@ -369,8 +645,16 @@ function ItemThumb({
             )}
           </>
         )}
+
+        {/* Category badge */}
+        {cat && (
+          <span className={`absolute left-1 top-1 flex size-5 items-center justify-center rounded ${cat.bg} ${cat.color}`} title={cat.label}>
+            <cat.icon className="size-3" />
+          </span>
+        )}
+
         {/* Hover actions */}
-        <div className="absolute inset-0 flex items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+        <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
           <button onClick={onCopy} title="Copy URL"
             className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-primary/40">
             {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
@@ -379,6 +663,12 @@ function ItemThumb({
             className={`flex size-7 items-center justify-center rounded-lg border ${isFavorited ? "border-amber-500/40 bg-amber-500/10 text-amber-500" : "border-border bg-card"}`}>
             <Star className={`size-3 ${isFavorited ? "fill-current" : ""}`} />
           </button>
+          {onTag && (
+            <button onClick={onTag} title="Phân loại"
+              className={`flex size-7 items-center justify-center rounded-lg border ${cat ? `${cat.bg} ${cat.border} ${cat.color}` : "border-border bg-card hover:border-primary/40"}`}>
+              <TagIcon className="size-3" />
+            </button>
+          )}
           {onRemove && (
             <button onClick={onRemove} title="Xóa khỏi gần đây"
               className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-destructive/40 hover:text-destructive">
@@ -389,7 +679,7 @@ function ItemThumb({
       </div>
       <button
         onClick={onCopyId}
-        title={`Click để copy ID — ${onSelect ? "double click để chọn" : ""}`}
+        title="Click để copy ID — double click để chọn"
         onDoubleClick={onSelect}
         className="block w-full text-center font-mono text-[10px] text-muted-foreground hover:text-foreground transition-colors truncate"
       >
