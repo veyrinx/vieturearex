@@ -6,6 +6,7 @@ import {
   Search, Copy, Check, X, Image as ImageIcon, ExternalLink,
   Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
   Tag as TagIcon, Swords, User, PawPrint, Shirt, Sparkles, Package,
+  Database, RefreshCw, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 const ICON_BASE = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
@@ -73,6 +74,16 @@ export default function FFItemsPage() {
   const [sort, setSort] = useState<SortMode>("newest");
   const [tagModalId, setTagModalId] = useState<string | null>(null);
 
+  // All items from API
+  const [allIds, setAllIds] = useState<string[]>([]);
+  const [allLoading, setAllLoading] = useState(false);
+  const [allError, setAllError] = useState<string | null>(null);
+  const [allCached, setAllCached] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [debouncedLibSearch, setDebouncedLibSearch] = useState("");
+  const [libraryPage, setLibraryPage] = useState(1);
+  const PAGE_SIZE = 60;
+
   // Load saved data
   useEffect(() => {
     try {
@@ -87,6 +98,33 @@ export default function FFItemsPage() {
     const t = setTimeout(() => setDebouncedId(id.trim()), 300);
     return () => clearTimeout(t);
   }, [id]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedLibSearch(librarySearch.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [librarySearch]);
+
+  useEffect(() => { setLibraryPage(1); }, [debouncedLibSearch]);
+
+  const loadLibrary = async (force = false) => {
+    setAllLoading(true);
+    setAllError(null);
+    try {
+      const res = await fetch(`/api/admin/ff-items${force ? "?force=1" : ""}`);
+      const data = await res.json() as { ids?: string[]; cached?: boolean; error?: string };
+      if (!res.ok) {
+        setAllError(data.error ?? "Không thể tải");
+        return;
+      }
+      setAllIds(data.ids ?? []);
+      setAllCached(data.cached ?? false);
+      if (data.ids?.length) toast.success(`Đã tải ${data.ids.length.toLocaleString()} items${data.cached ? " (cache)" : ""}`);
+    } catch {
+      setAllError("Lỗi mạng");
+    } finally {
+      setAllLoading(false);
+    }
+  };
 
   const handleImageLoad = (itemId: string) => {
     setLoaded((prev) => ({ ...prev, [itemId]: "ok" }));
@@ -287,6 +325,142 @@ export default function FFItemsPage() {
               </a>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Library — Toàn bộ items từ jsDelivr */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="space-y-0.5">
+            <h2 className="font-heading text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
+              <Database className="size-4 text-primary dark:text-amber-400" /> Thư viện Items
+            </h2>
+            <p className="text-[10px] text-muted-foreground">
+              Toàn bộ icon có trong CDN jsDelivr
+              {allIds.length > 0 && (
+                <> · <span className="font-semibold text-foreground">{allIds.length.toLocaleString()} items</span>
+                {allCached && <span className="ml-1 text-amber-500">(cache)</span>}
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {allIds.length > 0 && (
+              <button
+                onClick={() => void loadLibrary(true)}
+                disabled={allLoading}
+                title="Tải lại từ jsDelivr (bỏ qua cache)"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`size-3.5 ${allLoading ? "animate-spin" : ""}`} /> Tải lại
+              </button>
+            )}
+            <button
+              onClick={() => void loadLibrary(false)}
+              disabled={allLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {allLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Database className="size-3.5" />}
+              {allLoading ? "Đang tải..." : allIds.length > 0 ? "Đã tải" : "Tải thư viện"}
+            </button>
+          </div>
+        </div>
+
+        {allError && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-2.5 text-sm text-destructive">
+            {allError}
+          </div>
+        )}
+
+        {allIds.length > 0 && (
+          <>
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={librarySearch}
+                onChange={(e) => setLibrarySearch(e.target.value)}
+                placeholder="Tìm trong thư viện theo ID (vd: 211, 203000...)"
+                className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-9 text-sm font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              {librarySearch && (
+                <button onClick={() => setLibrarySearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+
+            {(() => {
+              const filtered = debouncedLibSearch
+                ? allIds.filter((x) => x.toLowerCase().includes(debouncedLibSearch))
+                : allIds;
+              const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+              const page = Math.min(libraryPage, totalPages);
+              const slice = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="flex flex-col items-center gap-2 py-8 text-center">
+                    <Search className="size-10 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">Không có ID khớp với &quot;{librarySearch}&quot;</p>
+                  </div>
+                );
+              }
+
+              return (
+                <>
+                  <p className="text-[11px] text-muted-foreground">
+                    {debouncedLibSearch
+                      ? <>Tìm thấy <span className="font-semibold text-foreground">{filtered.length.toLocaleString()}</span> ID</>
+                      : <>Hiển thị {(page - 1) * PAGE_SIZE + 1} – {Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length.toLocaleString()}</>}
+                    {" "}· Trang {page} / {totalPages}
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10">
+                    {slice.map((itemId) => (
+                      <ItemThumb
+                        key={itemId}
+                        id={itemId}
+                        isFavorited={isFavorited(itemId)}
+                        category={getFavoriteCategory(itemId)}
+                        onCopy={() => copyUrl(itemId)}
+                        onCopyId={() => copyId(itemId)}
+                        onFavorite={() => toggleFavorite(itemId)}
+                        onTag={() => setTagModalId(itemId)}
+                        onSelect={() => setId(itemId)}
+                        copied={copiedId === itemId}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-2">
+                      <button
+                        onClick={() => setLibraryPage((p) => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-30"
+                      >
+                        <ChevronLeft className="size-3.5" /> Trước
+                      </button>
+                      <span className="text-xs font-mono tabular-nums">
+                        {page} / {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setLibraryPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-30"
+                      >
+                        Sau <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </>
         )}
       </div>
 
