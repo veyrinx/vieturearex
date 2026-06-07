@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Search, X, Image as ImageIcon, Copy, Check, ChevronLeft, ChevronRight,
-  Loader2, Database, ExternalLink, Filter, Server, AlertCircle,
+  Loader2, Database, ExternalLink, Filter, Server, AlertCircle, Download,
 } from "lucide-react";
 
 const FALLBACK_CDN = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
@@ -21,6 +21,7 @@ export default function ItemsPublicPage() {
   const [page, setPage] = useState(1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bucketMissing, setBucketMissing] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/ff-items")
@@ -41,6 +42,27 @@ export default function ItemsPublicPage() {
   }, [search]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, activePrefix]);
+
+  // Lightbox keyboard nav
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+      else if (e.key === "ArrowRight") setLightboxIdx((i) => (i ?? 0) + 1 < slice.length ? (i ?? 0) + 1 : i);
+      else if (e.key === "ArrowLeft") setLightboxIdx((i) => (i ?? 0) - 1 >= 0 ? (i ?? 0) - 1 : i);
+      else if (e.key === "c" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const cur = slice[lightboxIdx];
+        if (cur) {
+          navigator.clipboard.writeText(buildUrl(cur));
+          toast.success("Đã copy URL");
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxIdx]);
 
   const buildUrl = (id: string) => baseUrl ? `${baseUrl}${id}.png` : `${FALLBACK_CDN}/${id}.png`;
 
@@ -207,16 +229,32 @@ export default function ItemsPublicPage() {
           ) : (
             <>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
-                {slice.map((id) => (
+                {slice.map((id, idx) => (
                   <ItemCard
                     key={id}
                     id={id}
                     url={buildUrl(id)}
                     onCopy={() => copyUrl(id)}
+                    onOpen={() => setLightboxIdx(idx)}
                     copied={copiedId === id}
                   />
                 ))}
               </div>
+
+              {/* Lightbox */}
+              {lightboxIdx !== null && slice[lightboxIdx] && (
+                <Lightbox
+                  id={slice[lightboxIdx]}
+                  url={buildUrl(slice[lightboxIdx])}
+                  idx={lightboxIdx}
+                  total={slice.length}
+                  onClose={() => setLightboxIdx(null)}
+                  onPrev={() => setLightboxIdx((i) => (i ?? 0) - 1 >= 0 ? (i ?? 0) - 1 : i)}
+                  onNext={() => setLightboxIdx((i) => (i ?? 0) + 1 < slice.length ? (i ?? 0) + 1 : i)}
+                  onCopy={() => copyUrl(slice[lightboxIdx])}
+                  copied={copiedId === slice[lightboxIdx]}
+                />
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -246,12 +284,21 @@ export default function ItemsPublicPage() {
   );
 }
 
-function ItemCard({ id, url, onCopy, copied }: { id: string; url: string; onCopy: () => void; copied: boolean }) {
+function ItemCard({ id, url, onCopy, onOpen, copied }: {
+  id: string;
+  url: string;
+  onCopy: () => void;
+  onOpen: () => void;
+  copied: boolean;
+}) {
   const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
 
   return (
     <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-background flex items-center justify-center">
+      <button
+        onClick={onOpen}
+        className="relative aspect-square w-full overflow-hidden rounded-lg bg-background flex items-center justify-center cursor-zoom-in"
+      >
         {status === "fail" ? (
           <X className="size-6 text-destructive/60" />
         ) : (
@@ -271,21 +318,128 @@ function ItemCard({ id, url, onCopy, copied }: { id: string; url: string; onCopy
           </>
         )}
 
-        {/* Hover actions */}
-        <div className="absolute inset-0 flex items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-          <button onClick={onCopy} title="Copy URL"
-            className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-primary/40">
-            {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
-          </button>
-          <a href={url} target="_blank" rel="noopener noreferrer" title="Mở ảnh"
-            className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-primary/40">
-            <ExternalLink className="size-3" />
-          </a>
+        {/* Hover overlay — show copy button */}
+        <div className="absolute inset-0 flex items-center justify-center bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+          <span className="flex items-center gap-1.5 rounded-lg bg-card border border-border px-3 py-1 text-[10px] font-bold">
+            <ImageIcon className="size-3" /> Xem
+          </span>
+        </div>
+      </button>
+      <div className="flex items-center justify-between gap-1">
+        <p className="truncate font-mono text-[10px] text-muted-foreground flex-1">{id}</p>
+        <button onClick={onCopy} title="Copy URL"
+          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 size-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground">
+          {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Lightbox({
+  id, url, idx, total, onClose, onPrev, onNext, onCopy, copied,
+}: {
+  id: string;
+  url: string;
+  idx: number;
+  total: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onCopy: () => void;
+  copied: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+      onClick={onClose}
+    >
+      {/* Top toolbar */}
+      <div className="absolute left-0 right-0 top-0 p-4 flex items-center justify-between gap-3 pointer-events-none">
+        <div className="rounded-xl bg-white/10 backdrop-blur-md px-3 py-1.5 text-xs font-mono text-white pointer-events-auto">
+          {idx + 1} / {total}
+        </div>
+        <button onClick={onClose}
+          className="pointer-events-auto flex size-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 backdrop-blur-md transition-colors">
+          <X className="size-5" />
+        </button>
+      </div>
+
+      {/* Prev / Next */}
+      {idx > 0 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+          className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 flex size-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md transition-colors"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+      )}
+      {idx < total - 1 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+          className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 flex size-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md transition-colors"
+        >
+          <ChevronRight className="size-5" />
+        </button>
+      )}
+
+      {/* Content */}
+      <div
+        className="relative max-w-2xl w-full rounded-3xl bg-card overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative aspect-square bg-gradient-to-br from-muted/50 to-background flex items-center justify-center p-6 sm:p-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={id} className="max-h-full max-w-full object-contain" />
+        </div>
+
+        <div className="border-t border-border p-4 sm:p-5 space-y-3">
+          {/* ID */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Item ID</p>
+            <p className="font-mono font-bold text-base sm:text-lg break-all">{id}</p>
+          </div>
+
+          {/* URL */}
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">URL</p>
+            <p className="font-mono text-[11px] text-muted-foreground break-all line-clamp-2">{url}</p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              onClick={onCopy}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+              {copied ? "Đã copy" : "Copy URL"}
+            </button>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:border-primary/40 transition-colors"
+            >
+              <ExternalLink className="size-3.5" /> Mở ảnh
+            </a>
+            <a
+              href={url}
+              download={`${id}.png`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:border-primary/40 transition-colors"
+            >
+              <Download className="size-3.5" /> Tải xuống
+            </a>
+            <div className="ml-auto hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground">
+              <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">←</kbd>
+              <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">→</kbd>
+              <span>điều hướng</span>
+              <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono ml-1">Esc</kbd>
+              <span>đóng</span>
+            </div>
+          </div>
         </div>
       </div>
-      <p className="block w-full truncate text-center font-mono text-[10px] text-muted-foreground">
-        {id}
-      </p>
     </div>
   );
 }
