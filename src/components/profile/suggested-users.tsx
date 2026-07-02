@@ -6,12 +6,14 @@ import Image from "next/image";
 import { Sparkles, Loader2, UserPlus, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/common/user-badges";
 
 type SuggestedUser = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
   role: string | null;
+  is_verified?: boolean | null;
   total_points: number;
   badge: string | null;
 };
@@ -136,10 +138,11 @@ export function SuggestedUsers() {
 
               {/* Info */}
               <div className="min-w-0 flex-1">
-                <Link href={`/u/${user.id}`} className="block">
+                <Link href={`/u/${user.id}`} className="flex items-center gap-1">
                   <p className="text-sm font-bold text-foreground hover:text-primary dark:hover:text-amber-400 transition-colors truncate">
                     {name}
                   </p>
+                  <VerifiedBadge role={user.role} isVerified={user.is_verified} size="sm" />
                 </Link>
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   {badge && (

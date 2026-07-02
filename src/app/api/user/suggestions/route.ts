@@ -8,6 +8,7 @@ type SuggestedUser = {
   display_name: string | null;
   avatar_url: string | null;
   role: string | null;
+  is_verified: boolean;
   total_points: number;
   badge: string | null;
 };
@@ -45,9 +46,9 @@ export async function GET() {
 
   // Get role for each
   const { data: users } = await untypedFrom(db, "users")
-    .select("id, role")
-    .in("id", candidateIds) as { data: Array<{ id: string; role: string | null }> | null };
-  const roleMap = new Map((users ?? []).map((u) => [u.id, u.role]));
+    .select("id, role, is_verified")
+    .in("id", candidateIds) as { data: Array<{ id: string; role: string | null; is_verified: boolean | null }> | null };
+  const userMap = new Map((users ?? []).map((u) => [u.id, u]));
 
   // Take top 6
   const result: SuggestedUser[] = contribs
@@ -57,7 +58,8 @@ export async function GET() {
       id: c.user_id,
       display_name: c.display_name,
       avatar_url: c.avatar_url,
-      role: roleMap.get(c.user_id) ?? null,
+      role: userMap.get(c.user_id)?.role ?? null,
+      is_verified: userMap.get(c.user_id)?.is_verified ?? false,
       total_points: c.total_points,
       badge: c.badge,
     }));

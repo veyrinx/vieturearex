@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CalendarDays, BadgeCheck, ShieldCheck, Phone, Mail, Eye, Trophy, Sparkles, Gamepad2,
+  CalendarDays, Phone, Mail, Eye, Trophy, Sparkles, Gamepad2,
 } from "lucide-react";
+import { getRoleMeta } from "@/lib/constants/roles";
+import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getUserPublicProfile } from "@/lib/data/content-service";
@@ -20,16 +22,6 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 
 type Props = { params: Promise<{ id: string }> };
-
-const ROLE_META: Record<string, { label: string; color: string; gradient: string }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30",       gradient: "from-red-950 via-rose-900 to-pink-950" },
-  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", gradient: "from-amber-950 via-orange-900 to-yellow-950" },
-  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", gradient: "from-violet-950 via-purple-900 to-fuchsia-950" },
-  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30",    gradient: "from-blue-950 via-indigo-900 to-blue-950" },
-  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", gradient: "from-green-950 via-emerald-900 to-teal-950" },
-  team_member: { label: "Team",        color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/30",    gradient: "from-cyan-950 via-sky-900 to-blue-950" },
-  user:        { label: "Thành Viên",  color: "text-muted-foreground bg-muted border-border",        gradient: "from-slate-800 via-slate-700 to-slate-800" },
-};
 
 const AVATAR_COLORS = [
   "from-blue-500 to-indigo-600", "from-purple-500 to-pink-600",
@@ -102,7 +94,7 @@ export default async function PublicProfilePage({ params }: Props) {
   if (!profile) notFound();
 
   const name = profile.display_name || "Ẩn danh";
-  const meta = ROLE_META[profile.role] ?? ROLE_META.user;
+  const meta = getRoleMeta(profile.role);
   const joinDate = format(new Date(profile.created_at), "dd 'tháng' MM, yyyy", { locale: vi });
   const profileUrl = `${siteConfig.url}/u/${profile.id}`;
   const points = Number(profile.points ?? 0);
@@ -172,14 +164,10 @@ export default async function PublicProfilePage({ params }: Props) {
               <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground">
                 {name}
               </h1>
-              {profile.is_verified && (
-                <BadgeCheck aria-label="Đã được xác minh" className="size-6 text-blue-500 dark:text-amber-400" />
-              )}
+              <VerifiedBadge role={profile.role} isVerified={profile.is_verified} size="lg" className="size-6" />
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", meta.color)}>
-                <ShieldCheck className="size-3" /> {meta.label}
-              </span>
+              <RoleBadge role={profile.role} size="lg" showMember bordered className="tracking-[0.06em]" />
               <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", rankMeta.bg, rankMeta.color)}>
                 <span className="text-sm leading-none">{rankMeta.icon}</span>
                 {rankLabel}

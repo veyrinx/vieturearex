@@ -122,6 +122,7 @@ export function TournamentsPreview({ tournaments, topTeams }: TournamentsPreview
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
           eyebrow="TMS"
+          icon={Trophy}
           title="GIẢI ĐẤU & ĐỘI TUYỂN"
           description="Các giải đấu đang diễn ra và top đội mạnh nhất cộng đồng"
         />

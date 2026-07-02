@@ -5,40 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { BadgeCheck, CalendarDays } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { PublicUserProfile, UserRole } from "@/lib/types/content";
+import type { PublicUserProfile } from "@/lib/types/content";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
-
-const ROLE_META: Record<string, { label: string; color: string; ring: string }> = {
-  super_admin: {
-    label: "Super Admin",
-    color: "bg-red-500/10 text-red-500 border-red-500/30",
-    ring: "ring-red-500/30",
-  },
-  admin: {
-    label: "Admin",
-    color: "bg-amber-500/10 text-amber-500 border-amber-500/30",
-    ring: "ring-amber-500/30",
-  },
-  it: {
-    label: "IT",
-    color: "bg-violet-500/10 text-violet-500 border-violet-500/30",
-    ring: "ring-violet-500/30",
-  },
-  manager: {
-    label: "Quản Lý",
-    color: "bg-blue-500/10 text-blue-500 border-blue-500/30",
-    ring: "ring-blue-500/30",
-  },
-  support: {
-    label: "CSKH",
-    color: "bg-green-500/10 text-green-500 border-green-500/30",
-    ring: "ring-green-500/30",
-  },
-};
-
-const ROLE_ORDER: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
+import { getRoleMeta, ROLE_ORDER } from "@/lib/constants/roles";
+import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
 
 const AVATAR_GRADIENTS = [
   "from-blue-500 to-indigo-600",
@@ -88,7 +60,7 @@ export function TeamGrid({ profiles }: Props) {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {sorted.map((profile) => {
-        const meta = ROLE_META[profile.role] ?? ROLE_META.support;
+        const meta = getRoleMeta(profile.role);
         const online = isOnline(profile.last_seen_at);
         const gradient = getGradient(profile.id);
         const name = profile.display_name ?? "Thành viên";
@@ -157,20 +129,11 @@ export function TeamGrid({ profiles }: Props) {
                 <h3 className="font-heading text-base font-bold tracking-[0.02em] text-foreground">
                   {name}
                 </h3>
-                {profile.is_verified && (
-                  <BadgeCheck className="size-4 shrink-0 text-primary dark:text-amber-400" />
-                )}
+                <VerifiedBadge role={profile.role} isVerified={profile.is_verified} size="md" />
               </div>
 
               {/* Role badge */}
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full border px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]",
-                  meta.color,
-                )}
-              >
-                {meta.label}
-              </span>
+              <RoleBadge role={profile.role} size="md" bordered showMember className="px-3 tracking-[0.1em]" />
 
               {/* Online status text */}
               {online ? (

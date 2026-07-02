@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
-type UserLite = { id: string; display_name: string | null; avatar_url: string | null; role: string | null };
+type UserLite = { id: string; display_name: string | null; avatar_url: string | null; role: string | null; is_verified: boolean | null };
 
 // GET ?target=<uuid>&type=followers|following
 // Returns list of users
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   if (ids.length === 0) return NextResponse.json({ users: [] });
 
   const { data: users } = await untypedFrom(db, "users")
-    .select("id, display_name, avatar_url, role")
+    .select("id, display_name, avatar_url, role, is_verified")
     .in("id", ids) as { data: UserLite[] | null };
 
   // Preserve order from rows

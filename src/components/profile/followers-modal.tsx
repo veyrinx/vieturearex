@@ -3,21 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { X, Users, Loader2, BadgeCheck } from "lucide-react";
+import { X, Users, Loader2 } from "lucide-react";
+import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
 
 type UserLite = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
   role: string | null;
-};
-
-const ROLE_BADGE: Record<string, { label: string; color: string }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10" },
-  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10" },
-  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10" },
-  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10" },
-  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10" },
+  is_verified?: boolean | null;
 };
 
 const AVATAR_GRADIENTS = [
@@ -114,7 +108,6 @@ export function FollowersModal({ targetUserId, type, open, onClose }: Props) {
               {users.map((user) => {
                 const name = user.display_name ?? "Ẩn danh";
                 const initial = name.charAt(0).toUpperCase();
-                const badge = user.role ? ROLE_BADGE[user.role] : null;
                 const gradient = getGradient(user.id);
 
                 return (
@@ -139,15 +132,9 @@ export function FollowersModal({ targetUserId, type, open, onClose }: Props) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-bold text-foreground truncate">{name}</p>
-                          {user.role === "super_admin" && (
-                            <BadgeCheck className="size-3.5 shrink-0 text-blue-500 dark:text-amber-400" />
-                          )}
+                          <VerifiedBadge role={user.role} isVerified={user.is_verified} size="sm" />
                         </div>
-                        {badge && (
-                          <span className={`inline-flex rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider mt-0.5 ${badge.color}`}>
-                            {badge.label}
-                          </span>
-                        )}
+                        <RoleBadge role={user.role} size="sm" className="mt-0.5" />
                       </div>
                     </Link>
                   </li>

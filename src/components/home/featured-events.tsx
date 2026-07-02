@@ -92,6 +92,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
           eyebrow="Sự kiện"
+          icon={CalendarDays}
           title="SỰ KIỆN NỔI BẬT"
           description="Theo dõi nhanh các hoạt động đang chạy và sắp mở trong cộng đồng"
         />

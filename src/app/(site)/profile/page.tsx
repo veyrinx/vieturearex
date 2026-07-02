@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   User, Mail, Shield, CalendarDays, Eye, Save, LogOut,
-  Lock, KeyRound, CheckCircle2, BadgeCheck, QrCode, ShieldCheck,
+  Lock, KeyRound, CheckCircle2, QrCode, ShieldCheck,
   Smartphone, Camera, Trash2, Phone, Gamepad2, Plus, ImageIcon,
   Bookmark, Bell, X, Trophy, MessageSquare, BookOpen, ExternalLink,
 } from "lucide-react";
+import { getRoleMeta } from "@/lib/constants/roles";
+import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
 import Image from "next/image";
@@ -21,15 +23,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const ROLE_META: Record<string, { label: string; color: string; banner: string }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500 bg-red-500/10 border-red-500/30",       banner: "from-red-950 via-rose-900 to-pink-950" },
-  admin:       { label: "Admin",       color: "text-amber-500 bg-amber-500/10 border-amber-500/30", banner: "from-amber-950 via-orange-900 to-yellow-950" },
-  it:          { label: "IT",          color: "text-violet-500 bg-violet-500/10 border-violet-500/30", banner: "from-violet-950 via-purple-900 to-fuchsia-950" },
-  manager:     { label: "Quản Lý",     color: "text-blue-500 bg-blue-500/10 border-blue-500/30",    banner: "from-blue-950 via-indigo-900 to-blue-950" },
-  support:     { label: "CSKH",        color: "text-green-500 bg-green-500/10 border-green-500/30", banner: "from-green-950 via-emerald-900 to-teal-950" },
-  user:        { label: "Người Dùng",  color: "text-muted-foreground bg-muted border-border",        banner: "from-slate-800 via-slate-700 to-slate-800" },
-};
 
 const AVATAR_COLORS = [
   "from-blue-500 to-indigo-600",
@@ -414,7 +407,7 @@ export default function ProfilePage() {
   const label = displayName.trim() || profile.display_name || profile.email.split("@")[0];
   const initial = label.charAt(0).toUpperCase();
   const avatarGradient = getAvatarColor(profile.email);
-  const roleMeta = ROLE_META[profile.role] ?? ROLE_META.user;
+  const roleMeta = getRoleMeta(profile.role);
   const userPoints = Number((profile as unknown as { points?: number }).points ?? 0);
   const rankMeta = getRank(userPoints);
   const subRank = getSubRank(userPoints);
@@ -448,7 +441,7 @@ export default function ProfilePage() {
             <img src={bannerPreview} alt="Banner" className="size-full object-cover" />
           ) : (
             <>
-              <div className={cn("absolute inset-0 bg-gradient-to-br", roleMeta.banner)} />
+              <div className={cn("absolute inset-0 bg-gradient-to-br", roleMeta.gradient)} />
               <div className="pointer-events-none absolute inset-0 opacity-[0.15]"
                 style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }}
               />
@@ -508,12 +501,8 @@ export default function ProfilePage() {
             <div className="min-w-0 flex-1 pb-1">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">{label}</h1>
-                {profile.is_verified && (
-                  <BadgeCheck aria-label="Đã được xác minh" className="size-6 shrink-0 text-blue-500 dark:text-amber-400" />
-                )}
-                <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide", roleMeta.color)}>
-                  {roleMeta.label}
-                </span>
+                <VerifiedBadge role={profile.role} isVerified={profile.is_verified} size="lg" className="size-6" />
+                <RoleBadge role={profile.role} size="lg" showMember bordered className="text-[11px] tracking-wide" />
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
               <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:justify-start">

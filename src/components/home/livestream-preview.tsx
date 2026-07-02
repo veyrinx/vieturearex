@@ -27,6 +27,7 @@ export function LivestreamPreview({ streams }: LivestreamPreviewProps) {
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
           eyebrow="Trực tiếp"
+          icon={Radio}
           title="PHÁT TRỰC TIẾP"
           description="Các kênh đang live và sắp phát trong cộng đồng"
         />

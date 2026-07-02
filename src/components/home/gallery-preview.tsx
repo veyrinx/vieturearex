@@ -78,6 +78,7 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
           eyebrow="Gallery"
+          icon={Images}
           title="KHOẢNH KHẮC CỘNG ĐỒNG"
           description="Ảnh đẹp từ cộng đồng — nhấn để xem full"
         />

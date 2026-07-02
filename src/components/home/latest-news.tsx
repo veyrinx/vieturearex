@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, ArrowRight, MessageSquare, Pencil, Trash2, Plus, User } from "lucide-react";
+import { Clock, ArrowRight, MessageSquare, Pencil, Trash2, Plus, User, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -219,6 +219,7 @@ export function LatestNews({ news }: LatestNewsProps) {
       <div className="flex items-end justify-between gap-4">
         <SectionHeading
           eyebrow="Tin tức"
+          icon={Newspaper}
           title="TIN TỨC MỚI NHẤT"
           description="Bài viết mới nhất được cập nhật theo chuyên mục"
         />
