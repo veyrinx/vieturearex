@@ -17,7 +17,6 @@ const EXPLORE_ITEMS = [
   { title: "Lịch",          href: "/calendar",             icon: CalendarDays, color: "sky"     },
   { title: "Sự Kiện",       href: "/events",               icon: Flame,        color: "orange"  },
   { title: "Đội Ngũ",       href: "/team",                 icon: Users,        color: "blue"    },
-  { title: "Giải Đấu",      href: "/tournaments",          icon: Swords,       color: "red"     },
 ];
 
 // ── Section: Cộng đồng ─────────────────────────────────────────────────────
