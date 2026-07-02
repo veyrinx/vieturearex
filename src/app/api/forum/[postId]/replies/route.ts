@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
   const enriched = replies.map((r) => {
     const c = r.user_id ? cosmetics.get(r.user_id) : undefined;
-    return { ...r, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null };
+    return { ...r, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null, role: c?.role ?? null, is_verified: c?.is_verified ?? false };
   });
 
   return NextResponse.json({ replies: enriched });

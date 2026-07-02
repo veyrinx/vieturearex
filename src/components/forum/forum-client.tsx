@@ -30,6 +30,7 @@ type Post = {
   id: string; title: string; category: string;
   display_name: string; avatar_url: string | null;
   css_ring: string | null; user_title: string | null; user_title_color: string | null;
+  role?: string | null; is_verified?: boolean;
   view_count: number; reply_count: number;
   is_pinned: boolean; is_locked: boolean;
   created_at: string; updated_at: string;
@@ -38,6 +39,7 @@ type Post = {
 type Reply = {
   id: string; user_id: string | null; display_name: string; avatar_url: string | null;
   css_ring: string | null; user_title: string | null; user_title_color: string | null;
+  role?: string | null; is_verified?: boolean;
   content: string; parent_id: string | null; created_at: string;
 };
 
@@ -170,7 +172,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
                 </div>
                 <p className="mt-1.5 font-heading text-sm font-bold text-foreground line-clamp-1 group-hover:text-primary dark:group-hover:text-amber-400 transition-colors md:text-base">{p.title}</p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                  <UserNameWithTitle name={p.display_name} title={p.user_title} titleColor={p.user_title_color} className="text-[11px]" />
+                  <UserNameWithTitle name={p.display_name} title={p.user_title} titleColor={p.user_title_color} role={p.role} isVerified={p.is_verified} className="text-[11px]" />
                   <span className="flex items-center gap-1"><Clock className="size-3" />{timeAgo(p.updated_at)}</span>
                   <span className="flex items-center gap-1"><Eye className="size-3" />{p.view_count.toLocaleString()}</span>
                 </div>
@@ -403,7 +405,7 @@ function ReplyCard({ r, postId, currentUserId, onReply, onDeleted, onEdited }: {
       <UserAvatar name={r.display_name} url={r.avatar_url} cssRing={r.css_ring} size={8} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <UserNameWithTitle name={r.display_name} title={r.user_title} titleColor={r.user_title_color} className="text-sm" />
+          <UserNameWithTitle name={r.display_name} title={r.user_title} titleColor={r.user_title_color} role={r.role} isVerified={r.is_verified} className="text-sm" />
           <span className="text-[11px] text-muted-foreground">{timeAgo(r.created_at)}</span>
         </div>
         {editing ? (

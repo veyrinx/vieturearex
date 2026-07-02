@@ -96,6 +96,8 @@ export default async function ForumPostPage({ params }: Props) {
                 name={post.display_name}
                 title={authorCosmetics?.title}
                 titleColor={authorCosmetics?.title_color}
+                role={authorCosmetics?.role}
+                isVerified={authorCosmetics?.is_verified}
                 className="text-sm"
               />
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">

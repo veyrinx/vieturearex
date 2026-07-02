@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
   const enriched = posts.map((p) => {
     const c = p.user_id ? cosmetics.get(p.user_id) : undefined;
-    return { ...p, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null };
+    return { ...p, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null, role: c?.role ?? null, is_verified: c?.is_verified ?? false };
   });
 
   return NextResponse.json({ posts: enriched, total: count ?? 0, page, limit });

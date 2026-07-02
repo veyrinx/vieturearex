@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/common/user-badges";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,7 @@ export function UserNavButton({ className }: Props) {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"];
@@ -56,12 +58,13 @@ export function UserNavButton({ className }: Props) {
       if (userEmail) {
         const { data: profile } = await supabase
           .from("users")
-          .select("display_name, avatar_url, role")
+          .select("display_name, avatar_url, role, is_verified")
           .eq("id", data.user!.id)
-          .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null; role: string | null } | null };
+          .maybeSingle() as { data: { display_name: string | null; avatar_url: string | null; role: string | null; is_verified: boolean | null } | null };
         setDisplayName(profile?.display_name ?? null);
         setAvatarUrl(profile?.avatar_url ?? null);
         setRole(profile?.role ?? null);
+        setIsVerified(Boolean(profile?.is_verified));
       }
       setLoading(false);
     });
@@ -153,6 +156,7 @@ export function UserNavButton({ className }: Props) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <p className="truncate text-sm font-bold text-foreground">{label}</p>
+              <VerifiedBadge role={role} isVerified={isVerified} size="sm" />
               {role && roleLabel[role] && (
                 <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-primary dark:bg-amber-400/15 dark:text-amber-400">
                   {roleLabel[role]}

@@ -11,12 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { MentionedText } from "@/components/common/mentioned-text";
 import { MentionAutocomplete } from "@/components/common/mention-autocomplete";
+import { VerifiedBadge } from "@/components/common/user-badges";
 
 export type Comment = {
   id: string;
   user_id: string | null;
   display_name: string;
   avatar_url: string | null;
+  role?: string | null;
+  is_verified?: boolean;
   content: string;
   created_at: string;
   status: "pending" | "approved" | "rejected";
@@ -81,8 +84,9 @@ function ReplyItem({ reply }: { reply: Comment }) {
       <div className="min-w-0 flex-1 rounded-xl bg-muted/40 px-3 py-2">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           {reply.user_id ? (
-            <Link href={`/u/${reply.user_id}`} className="text-[13px] font-semibold text-foreground hover:text-primary transition-colors">
+            <Link href={`/u/${reply.user_id}`} className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:text-primary transition-colors">
               {reply.display_name}
+              <VerifiedBadge role={reply.role} isVerified={reply.is_verified} size="sm" />
             </Link>
           ) : (
             <span className="text-[13px] font-semibold text-foreground">{reply.display_name}</span>
@@ -141,8 +145,9 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
         <div className="rounded-2xl rounded-tl-sm bg-card border border-border/60 px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1.5">
             {comment.user_id ? (
-              <Link href={`/u/${comment.user_id}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
+              <Link href={`/u/${comment.user_id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors">
                 {comment.display_name}
+                <VerifiedBadge role={comment.role} isVerified={comment.is_verified} size="sm" />
               </Link>
             ) : (
               <span className="text-sm font-semibold text-foreground">{comment.display_name}</span>

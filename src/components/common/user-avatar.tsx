@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/common/user-badges";
 
 type UserAvatarProps = {
   name: string;
@@ -81,16 +82,21 @@ export function UserNameWithTitle({
   name,
   title,
   titleColor,
+  role,
+  isVerified,
   className,
 }: {
   name: string;
   title?: string | null;
   titleColor?: string | null;
+  role?: string | null;
+  isVerified?: boolean | null;
   className?: string;
 }) {
   return (
     <span className={cn("flex flex-wrap items-center gap-1.5", className)}>
       <span className="font-bold text-foreground">{name}</span>
+      <VerifiedBadge role={role} isVerified={isVerified} size="sm" />
       {title && (
         <span
           className="rounded-full px-2 py-0.5 text-[9px] font-black leading-none tracking-tight"
