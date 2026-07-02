@@ -25,6 +25,10 @@
     {
       "path": "/api/cron/digest",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/hide-expired",
+      "schedule": "0 3 * * *"
     }
   ],
   "functions": {
@@ -38,7 +42,8 @@
     "src/app/api/admin/upload/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/ff-version-check/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/publish-scheduled/route.ts": { "maxDuration": 30 },
-    "src/app/api/cron/digest/route.ts": { "maxDuration": 30 }
+    "src/app/api/cron/digest/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/hide-expired/route.ts": { "maxDuration": 30 }
   },
   "headers": [
     {
