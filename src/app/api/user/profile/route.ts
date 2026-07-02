@@ -37,6 +37,7 @@ const schema = z.object({
   zalo_url: urlOrEmpty,
   threads_url: urlOrEmpty,
   github_url: urlOrEmpty,
+  privacy: z.record(z.string(), z.boolean()).optional(),
 });
 
 type ProfileRow = {
@@ -67,6 +68,7 @@ type ProfileRow = {
   selected_frame_id?: string | null;
   selected_title?: string | null;
   points?: number | null;
+  privacy?: Record<string, boolean> | null;
 };
 
 export async function GET() {
@@ -85,6 +87,13 @@ export async function GET() {
     .select("display_name, role, created_at, views, is_verified, avatar_url, banner_url, bio, phone, ff_id, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, selected_frame_id, selected_title, points")
     .eq("id", user.id)
     .maybeSingle() as { data: ProfileRow | null };
+
+  // Fetch privacy separately so a missing column (pre-migration) doesn't break the whole GET
+  const { data: privRow } = await roleClient
+    .from("users")
+    .select("privacy")
+    .eq("id", user.id)
+    .maybeSingle() as { data: { privacy?: Record<string, boolean> | null } | null };
 
   // Fallback role from app_metadata if DB query was blocked
   const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
@@ -119,6 +128,7 @@ export async function GET() {
     selected_frame_id: profile?.selected_frame_id ?? null,
     selected_title: profile?.selected_title ?? null,
     points: profile?.points ?? 0,
+    privacy: privRow?.privacy ?? null,
   });
 }
 
@@ -166,6 +176,7 @@ export async function PATCH(request: NextRequest) {
   if (d.zalo_url !== undefined) updates.zalo_url = d.zalo_url;
   if (d.threads_url !== undefined) updates.threads_url = d.threads_url;
   if (d.github_url !== undefined) updates.github_url = d.github_url;
+  if (d.privacy !== undefined) updates.privacy = d.privacy;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Không có thông tin nào để cập nhật." }, { status: 400 });

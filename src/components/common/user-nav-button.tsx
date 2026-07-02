@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  LogOut, UserCircle, UserPlus, User, LayoutDashboard,
-  Bookmark, Trophy, CalendarDays, BarChart2, Swords, Settings,
+  LogOut, UserPlus, User, LayoutDashboard,
+  Bookmark, CalendarDays, BarChart2, Swords, Settings,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -78,40 +78,31 @@ export function UserNavButton({ className }: Props) {
     return <div className="size-9 animate-pulse rounded-xl bg-muted" />;
   }
 
-  // ── Logged out: show Login + Register buttons ──
+  // ── Logged out: single "Tham Gia" button ──
   if (!email) {
     return (
       <>
         <Link
           href="/login"
           className={cn(
-            "hidden sm:inline-flex items-center justify-center rounded-xl px-3 h-9 text-[0.7rem] font-bold uppercase tracking-[0.08em] transition-colors",
-            "border border-border bg-background text-foreground hover:bg-muted",
-            className,
-          )}
-        >
-          Đăng nhập
-        </Link>
-        <Link
-          href="/login"
-          className={cn(
-            "sm:hidden inline-flex size-9 items-center justify-center rounded-xl transition-colors border border-border bg-background text-muted-foreground hover:bg-muted",
-            className,
-          )}
-          aria-label="Đăng nhập"
-        >
-          <UserCircle className="size-[17px]" />
-        </Link>
-        <Link
-          href="/register"
-          className={cn(
-            "hidden md:inline-flex items-center justify-center rounded-xl px-3 h-9 text-[0.7rem] font-bold uppercase tracking-[0.08em] transition-colors",
+            "hidden sm:inline-flex items-center justify-center rounded-xl px-4 h-9 text-[0.7rem] font-bold uppercase tracking-[0.08em] transition-colors",
             "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300",
             className,
           )}
         >
           <UserPlus className="mr-1.5 size-3.5" />
-          Đăng ký
+          Tham Gia
+        </Link>
+        <Link
+          href="/login"
+          className={cn(
+            "sm:hidden inline-flex size-9 items-center justify-center rounded-xl transition-colors",
+            "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300",
+            className,
+          )}
+          aria-label="Tham gia"
+        >
+          <UserPlus className="size-[17px]" />
         </Link>
       </>
     );
@@ -234,23 +225,6 @@ export function UserNavButton({ className }: Props) {
                 <Swords className="size-3.5 text-violet-500" />
               </span>
               <span className="text-sm font-medium">So sánh tuyển thủ</span>
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-
-        <DropdownMenuSeparator className="mx-1 my-1" />
-
-        {/* Giải đấu */}
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
-            Giải đấu
-          </DropdownMenuLabel>
-          <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-            <Link href="/tournaments/my-team" className="flex w-full items-center gap-2.5 px-2.5 py-2">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10">
-                <Trophy className="size-3.5 text-amber-500" />
-              </span>
-              <span className="text-sm font-medium">Team của tôi</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>

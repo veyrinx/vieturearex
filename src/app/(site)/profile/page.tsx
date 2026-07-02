@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getRoleMeta } from "@/lib/constants/roles";
 import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
+import { PRIVACY_SECTIONS, type PrivacyMap, isSectionVisible } from "@/lib/constants/profile-privacy";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
 import Image from "next/image";
@@ -53,6 +54,7 @@ type ProfileData = {
   phone?: string | null;
   ff_id?: string | null;
   game_profiles?: GameProfile[];
+  privacy?: PrivacyMap | null;
   contact_email?: string | null;
 } & Partial<Record<`${SocialKey}_url` & string, string | null>>;
 
@@ -96,6 +98,7 @@ export default function ProfilePage() {
     Object.fromEntries(SOCIAL_DEFS.map((s) => [s.field, ""])),
   );
   const [games, setGames] = useState<GameProfile[]>([]);
+  const [privacy, setPrivacy] = useState<PrivacyMap>({});
   const [saving, setSaving] = useState(false);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -143,6 +146,7 @@ export default function ProfilePage() {
         }
         setSocials(next);
         setGames(Array.isArray(data.game_profiles) ? data.game_profiles : []);
+        setPrivacy(data.privacy ?? {});
         setAvatarPreview(data.avatar_url ?? null);
         setBannerPreview(data.banner_url ?? null);
         setLoading(false);
@@ -282,6 +286,7 @@ export default function ProfilePage() {
         ff_id: ffId.trim(),
         contact_email: contactEmail.trim(),
         game_profiles: cleanGames,
+        privacy,
         ...trimmedSocials,
       };
       const res = await fetch("/api/user/profile", {
@@ -427,7 +432,8 @@ export default function ProfilePage() {
       (socials[s.field] ?? "").trim() !==
       (((profile as unknown as Record<string, string | null | undefined>)[s.field]) ?? ""),
     ) ||
-    JSON.stringify(games) !== JSON.stringify(profile.game_profiles ?? []);
+    JSON.stringify(games) !== JSON.stringify(profile.game_profiles ?? []) ||
+    JSON.stringify(privacy) !== JSON.stringify(profile.privacy ?? {});
   const has2FA = mfaFactors.some((f) => f.status === "verified");
 
   return (
@@ -549,43 +555,16 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Stats bar */}
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/50 pt-4">
+          {/* Public profile link + rank */}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
             <Link href={`/u/${profile.id}`}
               className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline dark:text-amber-400">
               <ExternalLink className="size-3" /> Xem hồ sơ công khai
             </Link>
-            <div className="ml-auto flex flex-wrap items-center gap-3 text-[11px] font-semibold text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <MessageSquare className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myPosts.length : "—"}</span>
-                <span className="hidden sm:inline">bài</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <BookOpen className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? myWiki.length : "—"}</span>
-                <span className="hidden sm:inline">wiki</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Bookmark className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? bookmarks.length : "—"}</span>
-                <span className="hidden sm:inline">đã lưu</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Bell className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? follows.length : "—"}</span>
-                <span className="hidden sm:inline">theo dõi</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Trophy className="size-3" />
-                <span className={!statsLoaded ? "opacity-40" : ""}>{statsLoaded ? achievements.length : "—"}</span>
-                <span className="hidden sm:inline">thành tích</span>
-              </span>
-              <span className="flex items-center gap-1 text-primary dark:text-amber-400 border-l border-border/50 pl-3">
-                <span className="text-base leading-none">{rankMeta.icon}</span>
-                <span>{rankMeta.rank} {subRank}</span>
-              </span>
-            </div>
+            <span className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-1 text-[11px] font-bold text-primary dark:border-amber-400/25 dark:bg-amber-400/8 dark:text-amber-400">
+              <span className="text-sm leading-none">{rankMeta.icon}</span>
+              {rankMeta.rank} {subRank}
+            </span>
           </div>
         </div>
 
@@ -812,6 +791,57 @@ export default function ProfilePage() {
                   <Save className="size-4" />
                   {saving ? "Đang lưu..." : "Lưu thay đổi"}
                 </Button>
+              </div>
+            </div>
+
+            {/* Hiển thị công khai — bật/tắt từng phần trên hồ sơ /u/... */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="mb-1 flex items-center gap-2.5">
+                <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+                <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+                  Hiển thị công khai
+                </h2>
+              </div>
+              <p className="mb-4 ml-3 text-[11px] text-muted-foreground">
+                Chọn phần nào hiển thị trên hồ sơ công khai của bạn. Tắt = ẩn với người khác.
+              </p>
+              <div className="space-y-2">
+                {PRIVACY_SECTIONS.map(({ key, label, desc, icon: Icon }) => {
+                  const visible = isSectionVisible(privacy, key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setPrivacy((p) => ({ ...p, [key]: !isSectionVisible(p, key) }))}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
+                        visible ? "border-border bg-background hover:bg-muted/50" : "border-dashed border-border/70 bg-muted/30",
+                      )}
+                    >
+                      <span className={cn(
+                        "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                        visible ? "bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400" : "bg-muted text-muted-foreground",
+                      )}>
+                        <Icon className="size-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("text-sm font-bold", visible ? "text-foreground" : "text-muted-foreground")}>{label}</p>
+                        <p className="text-[11px] text-muted-foreground">{desc}</p>
+                      </div>
+                      {/* Switch */}
+                      <span className={cn(
+                        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                        visible ? "bg-primary dark:bg-amber-400" : "bg-muted-foreground/30",
+                      )}>
+                        <span className={cn(
+                          "inline-block size-4 rounded-full bg-white shadow transition-transform",
+                          visible ? "translate-x-4" : "translate-x-0.5",
+                        )} />
+                      </span>
+                      <span className="sr-only">{visible ? "Đang hiện" : "Đang ẩn"}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

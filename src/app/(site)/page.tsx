@@ -9,7 +9,6 @@ import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
 import { NewsTicker } from "@/components/home/news-ticker";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
-import { TournamentsPreview } from "@/components/home/tournaments-preview";
 import {
   getEvents,
   getGalleryItems,
@@ -17,7 +16,6 @@ import {
   getSettings,
 } from "@/lib/data/content-service";
 import { getStreams } from "@/lib/server/stream-service";
-import { getTmsTournaments, getTmsTeams } from "@/lib/tms/data";
 import { siteConfig } from "@/lib/constants/site";
 import { SideAds } from "@/components/home/side-ads";
 import {
@@ -37,14 +35,12 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [events, news, gallery, settings, streams, tournaments, tmsTeams] = await Promise.all([
+  const [events, news, gallery, settings, streams] = await Promise.all([
     getEvents(),
     getNews("published"),
     getGalleryItems(),
     getSettings(),
     getStreams(),
-    getTmsTournaments().catch(() => []),
-    getTmsTeams().catch(() => []),
   ]);
 
   const settingsMap = buildSettingsMap(settings);
@@ -169,10 +165,6 @@ export default async function HomePage() {
         {liveAndUpcomingStreams.length > 0 && (
           <LivestreamPreview streams={liveAndUpcomingStreams} />
         )}
-        <TournamentsPreview
-          tournaments={tournaments}
-          topTeams={tmsTeams.slice(0, 5)}
-        />
         <LatestNews news={latestNews} />
         <GalleryPreview gallery={latestGallery} />
       </div>

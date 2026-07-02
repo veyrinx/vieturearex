@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants/site";
+import { Info, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const NAV_ICONS: Record<string, LucideIcon> = {
@@ -33,8 +34,13 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/esports":       MonitorPlay,
   "/news":          BookOpenText,
   "/team":          Users,
-  "/tournaments":   Swords,
 };
+
+const ABOUT_ITEMS = [
+  { title: "Đội Ngũ",       href: "/team",    icon: Users, desc: "Thành viên vận hành Arex" },
+  { title: "Về Chúng Tôi",  href: "/about",   icon: Info,  desc: "Câu chuyện & sứ mệnh" },
+  { title: "Liên Hệ",       href: "/contact", icon: Mail,  desc: "Gửi phản hồi & hợp tác" },
+];
 
 const COMMUNITY_ITEMS = [
   { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
@@ -61,13 +67,24 @@ type SiteNavbarProps = {
   siteName?: string;
 };
 
-// ── Community dropdown (desktop) ────────────────────────────────────────────
-function CommunityDropdown({
-  pathname, isHomePage, onNavigate,
-}: { pathname: string; isHomePage: boolean; onNavigate?: () => void }) {
+// ── Generic nav dropdown (desktop) ──────────────────────────────────────────
+type NavDropdownItem = { title: string; href: string; icon: LucideIcon; desc: string };
+
+function NavDropdown({
+  label, items, headerLabel, layoutId, panelClassName, pathname, isHomePage, onNavigate,
+}: {
+  label: string;
+  items: NavDropdownItem[];
+  headerLabel: string;
+  layoutId: string;
+  panelClassName?: string;
+  pathname: string;
+  isHomePage: boolean;
+  onNavigate?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const isCommunityActive = COMMUNITY_ITEMS.some((item) => pathname.startsWith(item.href));
+  const isCommunityActive = items.some((item) => pathname.startsWith(item.href));
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -97,7 +114,7 @@ function CommunityDropdown({
               : "bg-primary/8 text-primary dark:bg-amber-400/8 dark:text-amber-300"),
         )}
       >
-        <span>Cộng Đồng</span>
+        <span>{label}</span>
         {/* CSS border chevron — clearly an icon, not a letter */}
         <span
           aria-hidden="true"
@@ -117,7 +134,7 @@ function CommunityDropdown({
         />
         {isCommunityActive && (
           <motion.span
-            layoutId="nav-underline-community"
+            layoutId={layoutId}
             className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-400"
           />
         )}
@@ -130,7 +147,7 @@ function CommunityDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute left-0 top-full z-[60] w-72 pt-2"
+            className={cn("absolute left-0 top-full z-[60] pt-2", panelClassName ?? "w-72")}
           >
             {/* Inner card — pt-2 above creates the invisible bridge so mouse can move
                 from trigger to dropdown without triggering mouseLeave */}
@@ -138,11 +155,11 @@ function CommunityDropdown({
               {/* Header strip */}
               <div className="border-b border-border/50 px-4 py-2.5">
                 <p className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground">
-                  Cộng Đồng Arex Network 
+                  {headerLabel}
                 </p>
               </div>
               <div className="max-h-[70vh] overflow-y-auto p-1.5 space-y-0.5">
-                {COMMUNITY_ITEMS.map(({ title, href, icon: Icon, desc }) => {
+                {items.map(({ title, href, icon: Icon, desc }) => {
                   const active = pathname.startsWith(href);
                   return (
                     <Link
@@ -265,8 +282,8 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
 
         {/* ── Nav links (desktop center) ── */}
         <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex">
-          {/* First 5: TRANG CHỦ → TIN TỨC */}
-          {navItems.slice(0, 5).map((item) => {
+          {/* TRANG CHỦ → TIN TỨC */}
+          {navItems.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
@@ -295,36 +312,25 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           })}
 
           {/* Community dropdown */}
-          <CommunityDropdown pathname={pathname} isHomePage={isHomePage} />
+          <NavDropdown
+            label="Cộng Đồng"
+            items={COMMUNITY_ITEMS}
+            headerLabel="Cộng Đồng Arex Network"
+            layoutId="nav-underline-community"
+            pathname={pathname}
+            isHomePage={isHomePage}
+          />
 
-          {/* Last 2: ĐỘI NGŨ, GIẢI ĐẤU */}
-          {navItems.slice(5).map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "relative rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
-                  isHomePage
-                    ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  active &&
-                    (isHomePage
-                      ? "text-primary dark:text-amber-300"
-                      : "bg-primary/8 text-primary dark:bg-amber-400/8 dark:text-amber-300"),
-                )}
-              >
-                {item.title}
-                {active && (
-                  <motion.span
-                    layoutId="nav-underline"
-                    className="absolute -bottom-[1px] left-2.5 right-2.5 h-[2px] rounded-full bg-gradient-to-r from-[#0052FF] to-[#4D7CFF] dark:from-amber-400 dark:to-orange-400"
-                  />
-                )}
-              </Link>
-            );
-          })}
+          {/* Giới thiệu dropdown (Đội Ngũ / Về Chúng Tôi / Liên Hệ) */}
+          <NavDropdown
+            label="Giới Thiệu"
+            items={ABOUT_ITEMS}
+            headerLabel="Về Arex Network"
+            layoutId="nav-underline-about"
+            panelClassName="w-64"
+            pathname={pathname}
+            isHomePage={isHomePage}
+          />
         </nav>
 
         {/* ── Controls ── */}
@@ -463,6 +469,37 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                           {title}
                         </Link>
                       </motion.div>
+                    );
+                  })}
+                </div>
+
+                {/* Giới thiệu section */}
+                <div className="pt-3">
+                  <p className="px-3.5 pb-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
+                    Giới Thiệu
+                  </p>
+                  {ABOUT_ITEMS.map(({ href, icon: Icon, title }) => {
+                    const active = pathname.startsWith(href);
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setSheetOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
+                          active
+                            ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
+                            : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
+                        )}
+                      >
+                        <span className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-lg",
+                          active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
+                        )}>
+                          <Icon className="size-3.5" />
+                        </span>
+                        {title}
+                      </Link>
                     );
                   })}
                 </div>

@@ -179,4 +179,5 @@ export type PublicUserProfile = {
   points?: number;
   rank?: string;
   views?: number;
+  privacy?: Record<string, boolean> | null;
 };

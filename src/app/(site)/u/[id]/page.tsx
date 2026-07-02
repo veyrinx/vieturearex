@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { getRoleMeta } from "@/lib/constants/roles";
 import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
+import { isSectionVisible } from "@/lib/constants/profile-privacy";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getUserPublicProfile } from "@/lib/data/content-service";
@@ -107,6 +108,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const isOnline = profile.last_seen_at
     ? Date.now() - new Date(profile.last_seen_at).getTime() < ONLINE_MS
     : false;
+  const show = (key: Parameters<typeof isSectionVisible>[1]) => isSectionVisible(profile.privacy, key);
 
   const profileRecord = profile as unknown as Record<string, string | null | undefined>;
   const socials = SOCIAL_DEFS
@@ -179,7 +181,7 @@ export default async function PublicProfilePage({ params }: Props) {
               )}
             </div>
 
-            {profile.bio && (
+            {profile.bio && show("bio") && (
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {profile.bio}
               </p>
@@ -213,7 +215,7 @@ export default async function PublicProfilePage({ params }: Props) {
           </div>
 
           {/* Contact rows */}
-          {(profile.phone || profile.contact_email) && (
+          {show("contact") && (profile.phone || profile.contact_email) && (
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {profile.phone && (
                 <a
@@ -237,7 +239,7 @@ export default async function PublicProfilePage({ params }: Props) {
           )}
 
           {/* Games */}
-          {games.length > 0 && (
+          {show("games") && games.length > 0 && (
             <div className="mt-5">
               <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 <Gamepad2 className="size-3" /> Game đang chơi
@@ -266,7 +268,7 @@ export default async function PublicProfilePage({ params }: Props) {
           )}
 
           {/* Socials */}
-          {socials.length > 0 && (
+          {show("socials") && socials.length > 0 && (
             <div className="mt-4">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Kênh liên kết
@@ -291,7 +293,7 @@ export default async function PublicProfilePage({ params }: Props) {
           )}
 
           {/* Achievements */}
-          {achievements.length > 0 && (
+          {show("achievements") && achievements.length > 0 && (
             <div className="mt-5">
               <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 <Trophy className="size-3" /> Thành tích ({achievements.length})

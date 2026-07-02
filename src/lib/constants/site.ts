@@ -60,8 +60,6 @@ export const navItems = [
   { title: "SỰ KIỆN", href: "/events" },
   { title: "PHÁT TRỰC TIẾP", href: "/esports" },
   { title: "TIN TỨC", href: "/news" },
-  { title: "ĐỘI NGŨ", href: "/team" },
-  { title: "GIẢI ĐẤU", href: "/tournaments" },
 ] as const;
 
 export const adminNavItems = [

@@ -217,13 +217,20 @@ export function ForumPostForm({ onCreated }: { onCreated?: (id: string) => void 
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Client-side validation so users get a clear message instead of a generic API error
+    const plain = content.replace(/<[^>]*>/g, "").trim();
+    if (title.trim().length < 5) { setStatus("error"); setErrMsg("Tiêu đề cần ít nhất 5 ký tự."); return; }
+    if (plain.length < 20) { setStatus("error"); setErrMsg("Nội dung cần ít nhất 20 ký tự."); return; }
+
     setStatus("loading"); setErrMsg("");
     const res = await fetch("/api/forum", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, content, category }),
-    });
-    const data = await res.json() as { id?: string; error?: string };
+    }).catch(() => null);
+    if (!res) { setStatus("error"); setErrMsg("Lỗi kết nối. Vui lòng thử lại."); return; }
+    const data = await res.json().catch(() => ({})) as { id?: string; error?: string };
+    if (res.status === 401) { setStatus("error"); setErrMsg("Phiên đăng nhập đã hết. Vui lòng đăng nhập lại."); return; }
     if (!res.ok) { setStatus("error"); setErrMsg(data.error ?? "Lỗi không xác định."); return; }
     if (onCreated && data.id) { onCreated(data.id); return; }
     router.push(`/cong-dong/${data.id}`);
@@ -586,6 +593,17 @@ export function ForumPostEditButton({
 // ─── Create Post Button ───────────────────────────────────────────────────────
 export function CreatePostButton() {
   const [open, setOpen] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { id?: string } | null) => setAuthed(Boolean(d?.id)))
+      .catch(() => setAuthed(false));
+  }, []);
+
+  const loggedOut = authed === false;
+
   return (
     <>
       <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow hover:opacity-90">
@@ -595,10 +613,29 @@ export function CreatePostButton() {
         <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-10 backdrop-blur-sm">
           <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="font-heading text-lg font-black uppercase tracking-wide text-foreground">Tạo bài viết mới</h2>
+              <h2 className="font-heading text-lg font-black uppercase tracking-wide text-foreground">
+                {loggedOut ? "Đăng nhập để đăng bài" : "Tạo bài viết mới"}
+              </h2>
               <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground text-xl font-bold">×</button>
             </div>
-            <ForumPostForm onCreated={() => { setOpen(false); window.location.reload(); }} />
+            {loggedOut ? (
+              <div className="flex flex-col items-center gap-4 py-6 text-center">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 dark:bg-amber-400/10">
+                  <MessageSquare className="size-6 text-primary dark:text-amber-400" />
+                </span>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Bạn cần tham gia cộng đồng để tạo bài viết, thảo luận và tích điểm.
+                </p>
+                <Link
+                  href={`/login?next=${encodeURIComponent("/cong-dong")}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-90"
+                >
+                  Tham Gia Ngay
+                </Link>
+              </div>
+            ) : (
+              <ForumPostForm onCreated={() => { setOpen(false); window.location.reload(); }} />
+            )}
           </div>
         </div>
       )}
