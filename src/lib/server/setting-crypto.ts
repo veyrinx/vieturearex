@@ -17,6 +17,8 @@ export const SENSITIVE_KEYS = new Set([
   "site.discord_webhook",
   "zalo.webhook_url",
   "zalo.group_id",
+  "zalo.oa_access_token",
+  "zalo.recipient_user_id",
   "ads.google_adsense_id",
   "ads.slot_header",
   "ads.slot_sidebar",

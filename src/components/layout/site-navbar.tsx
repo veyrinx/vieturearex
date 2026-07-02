@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/common/theme-toggle";
+import { LanguageToggle } from "@/components/common/language-toggle";
 import { PushNotificationButton } from "@/components/common/push-notification-button";
 import { UserNavButton } from "@/components/common/user-nav-button";
 import { NotificationBell } from "@/components/common/notification-bell";
@@ -348,6 +349,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           <UserNavButton className={isHomePage ? ctrlClass : undefined} />
           {/* Hide extra icons on mobile — moved into sheet */}
           <span className="hidden md:contents">
+            <LanguageToggle className={isHomePage ? ctrlClass : "theme-control-surface"} />
             <NotificationBell className={isHomePage ? ctrlClass : undefined} />
             <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
             <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
@@ -509,6 +511,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
                 <div className="flex items-center gap-1.5">
+                  <LanguageToggle className="theme-control-surface" />
                   <NotificationBell />
                   <PushNotificationButton />
                   <ThemeToggle />

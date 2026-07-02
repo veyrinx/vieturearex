@@ -1169,13 +1169,21 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       <div className="space-y-5">
         <Card>
           <div className="py-4">
-            <SectionHeader icon={Plug} title="Zalo" desc="Tích hợp thông báo qua Zalo OA" />
+            <SectionHeader icon={Plug} title="Zalo" desc="Tích hợp thông báo qua Zalo OA. Ưu tiên OA API; nếu trống sẽ dùng Webhook." />
           </div>
-          <Field label="Zalo Webhook" hint="Gửi thông báo bài mới">
+          <Field label="Zalo OA Access Token" hint="Token OA chính thức (openapi.zalo.me). Ưu tiên hơn Webhook.">
+            <Input value={v("zalo.oa_access_token")} onChange={(e) => set("zalo.oa_access_token", e.target.value)} placeholder="Access token OA..." />
+            <SensitiveHint hint={sensitiveHint("zalo.oa_access_token")} />
+          </Field>
+          <Field label="Zalo User/Recipient ID" hint="user_id người/nhóm nhận qua OA API">
+            <Input value={v("zalo.recipient_user_id")} onChange={(e) => set("zalo.recipient_user_id", e.target.value)} placeholder="user_id..." />
+            <SensitiveHint hint={sensitiveHint("zalo.recipient_user_id")} />
+          </Field>
+          <Field label="Zalo Webhook (dự phòng)" hint="Chỉ dùng khi không có OA token">
             <Input value={v("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://..." />
             <SensitiveHint hint={sensitiveHint("zalo.webhook_url")} />
           </Field>
-          <Field label="Zalo Group ID" hint="ID nhóm nhận thông báo">
+          <Field label="Zalo Group ID" hint="Dùng làm recipient nếu chưa đặt User ID ở trên">
             <Input value={v("zalo.group_id")} onChange={(e) => set("zalo.group_id", e.target.value)} placeholder="0123456789" />
             <SensitiveHint hint={sensitiveHint("zalo.group_id")} />
           </Field>
@@ -1852,6 +1860,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           onSave={() => save(
             [
               "zalo.webhook_url", "zalo.group_id",
+              "zalo.oa_access_token", "zalo.recipient_user_id",
               "integrations.lark_webhook_url",
               "integrations.lark_alerts_webhook_url",
               "integrations.lark_bot_name",

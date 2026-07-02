@@ -1,21 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const COOKIE_NAME = "googtrans";
-
-function setLangCookie(value: string) {
-  document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${60 * 60 * 24 * 365}`;
-  // Some setups also need cookie at parent domain
-  document.cookie = `${COOKIE_NAME}=${value}; path=/; domain=${location.hostname}; max-age=${60 * 60 * 24 * 365}`;
-}
-
-function getLangCookie(): string | null {
-  const m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
+import { useEffect } from "react";
+import { setLangCookie, getLangCookie } from "@/lib/utils/lang-cookie";
 
 declare global {
   interface Window {
@@ -25,29 +11,20 @@ declare global {
 }
 
 /**
- * Auto-translate widget powered by Google Translate.
+ * Loads the Google Translate engine once and auto-detects language.
  * - Default site language is Vietnamese.
  * - If the visitor's timezone is NOT Asia/Ho_Chi_Minh and they have not
  *   previously chosen a language, switch to English automatically.
- * - A small floating toggle button lets anyone flip VI ↔ EN.
+ * The visible VI ↔ EN switch lives in the navbar (see <LanguageToggle/>).
  */
 export function AutoTranslate() {
-  const [lang, setLang] = useState<"vi" | "en">("vi");
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
-    // Decide initial language
-    const cookie = getLangCookie();
-    if (cookie?.includes("/vi/en")) {
-      setLang("en");
-    } else if (cookie?.includes("/vi/vi") || cookie === "/vi/vi") {
-      setLang("vi");
-    } else {
+    // Auto-detect: non-Vietnam visitors default to English (first visit only)
+    if (!getLangCookie()) {
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (tz && tz !== "Asia/Ho_Chi_Minh" && !tz.startsWith("Asia/Saigon")) {
-          setLangCookie("/vi/en");
-          setLang("en");
+          setLangCookie("en");
         }
       } catch { /* ignore */ }
     }
@@ -62,14 +39,9 @@ export function AutoTranslate() {
       window.googleTranslateElementInit = () => {
         try {
           new window.google!.translate!.TranslateElement!(
-            {
-              pageLanguage: "vi",
-              includedLanguages: "vi,en",
-              autoDisplay: false,
-            },
+            { pageLanguage: "vi", includedLanguages: "vi,en", autoDisplay: false },
             "google_translate_element",
           );
-          setReady(true);
         } catch { /* ignore */ }
       };
 
@@ -78,32 +50,8 @@ export function AutoTranslate() {
       s.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
       s.async = true;
       document.body.appendChild(s);
-    } else {
-      setReady(true);
     }
   }, []);
 
-  const toggle = () => {
-    const next = lang === "vi" ? "en" : "vi";
-    setLangCookie(next === "en" ? "/vi/en" : "/vi/vi");
-    setLang(next);
-    // Easiest reliable way to apply cookie change: full reload.
-    window.location.reload();
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      title={lang === "vi" ? "Switch to English" : "Đổi sang tiếng Việt"}
-      aria-label="Toggle language"
-      className={cn(
-        "fixed bottom-4 right-4 z-40 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-2 text-xs font-bold uppercase tracking-wider shadow-lg backdrop-blur-md transition hover:border-primary/40 hover:bg-card",
-        !ready && "opacity-70",
-      )}
-    >
-      <Globe className="size-3.5" />
-      {lang === "vi" ? "EN" : "VI"}
-    </button>
-  );
+  return null;
 }
