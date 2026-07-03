@@ -1169,21 +1169,21 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       <div className="space-y-5">
         <Card>
           <div className="py-4">
-            <SectionHeader icon={Plug} title="Zalo" desc="Tích hợp thông báo qua Zalo OA. Ưu tiên OA API; nếu trống sẽ dùng Webhook." />
+            <SectionHeader icon={Plug} title="Zalo" desc="Gửi thông báo tới Zalo cá nhân/nhóm qua webhook relay. OA API chỉ là dự phòng." />
           </div>
-          <Field label="Zalo OA Access Token" hint="Token OA chính thức (openapi.zalo.me). Ưu tiên hơn Webhook.">
+          <Field label="Zalo cá nhân — Webhook relay" hint="URL bot cá nhân của bạn (relay vào nhóm Zalo cá nhân). Đây là kênh chính.">
+            <Input value={v("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://... (bot cá nhân)" />
+            <SensitiveHint hint={sensitiveHint("zalo.webhook_url")} />
+          </Field>
+          <Field label="OA Access Token (dự phòng)" hint="Chỉ dùng cho Official Account doanh nghiệp. Bỏ trống nếu dùng Zalo cá nhân.">
             <Input value={v("zalo.oa_access_token")} onChange={(e) => set("zalo.oa_access_token", e.target.value)} placeholder="Access token OA..." />
             <SensitiveHint hint={sensitiveHint("zalo.oa_access_token")} />
           </Field>
-          <Field label="Zalo User/Recipient ID" hint="user_id người/nhóm nhận qua OA API">
+          <Field label="OA Recipient / Group ID (dự phòng)" hint="user_id người/nhóm nhận qua OA API (chỉ khi dùng OA)">
             <Input value={v("zalo.recipient_user_id")} onChange={(e) => set("zalo.recipient_user_id", e.target.value)} placeholder="user_id..." />
             <SensitiveHint hint={sensitiveHint("zalo.recipient_user_id")} />
           </Field>
-          <Field label="Zalo Webhook (dự phòng)" hint="Chỉ dùng khi không có OA token">
-            <Input value={v("zalo.webhook_url")} onChange={(e) => set("zalo.webhook_url", e.target.value)} placeholder="https://..." />
-            <SensitiveHint hint={sensitiveHint("zalo.webhook_url")} />
-          </Field>
-          <Field label="Zalo Group ID" hint="Dùng làm recipient nếu chưa đặt User ID ở trên">
+          <Field label="Zalo Group ID" hint="Dùng làm recipient OA nếu chưa đặt ID ở trên">
             <Input value={v("zalo.group_id")} onChange={(e) => set("zalo.group_id", e.target.value)} placeholder="0123456789" />
             <SensitiveHint hint={sensitiveHint("zalo.group_id")} />
           </Field>

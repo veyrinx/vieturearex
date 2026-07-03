@@ -6,9 +6,12 @@ const ZALO_OA_MESSAGE_API = "https://openapi.zalo.me/v3.0/oa/message";
 /**
  * Send a Zalo notification.
  *
- * Prefers the official Zalo Official Account API (access token + recipient
- * user_id) over the legacy generic webhook. Falls back to the webhook when the
- * OA API isn't configured, so existing setups keep working.
+ * PRIMARY: personal Zalo via a self-hosted relay webhook (`zalo.webhook_url`).
+ * Personal Zalo accounts/groups have no official API, so a bot the user runs
+ * (which posts into their personal group) is the only way to reach them.
+ *
+ * FALLBACK: official OA API (`zalo.oa_access_token` + recipient) — only used
+ * when no personal webhook is configured. Kept for business Official Accounts.
  */
 export async function sendZaloNotification(title: string, body: string, url?: string) {
   const settings = await getSettings();
@@ -16,47 +19,43 @@ export async function sendZaloNotification(title: string, body: string, url?: st
 
   const message = `🔔 ${title}\n\n${body}${url ? `\n\n👉 ${url}` : ""}`;
 
-  // ── Official OA API (preferred) ──
+  // ── Personal Zalo relay webhook (preferred) ──
+  const webhookUrl = get("zalo.webhook_url");
+  if (webhookUrl) {
+    try {
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: message, content: message }),
+      });
+      if (res.ok) return { sent: true, via: "personal_webhook" as const, status: res.status };
+      console.warn("[zalo-notify] Personal webhook returned", res.status);
+    } catch (err) {
+      console.error("[zalo-notify] Personal webhook failed:", err);
+    }
+  }
+
+  // ── OA API (fallback, business Official Account only) ──
   const accessToken = get("zalo.oa_access_token") || (process.env.ZALO_OA_ACCESS_TOKEN ?? "");
   const recipientId = get("zalo.recipient_user_id") || get("zalo.group_id");
-
   if (accessToken && recipientId) {
     try {
       const res = await fetch(ZALO_OA_MESSAGE_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", access_token: accessToken },
-        body: JSON.stringify({
-          recipient: { user_id: recipientId },
-          message: { text: message },
-        }),
+        body: JSON.stringify({ recipient: { user_id: recipientId }, message: { text: message } }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: number; message?: string };
-      // Zalo returns { error: 0 } on success; non-zero error means failure.
       if (res.ok && (data.error === undefined || data.error === 0)) {
         return { sent: true, via: "oa_api" as const };
       }
-      // Fall through to webhook on API error
       console.warn("[zalo-notify] OA API error:", data.error, data.message);
     } catch (err) {
       console.error("[zalo-notify] OA API failed:", err);
     }
   }
 
-  // ── Legacy webhook (fallback) ──
-  const webhookUrl = get("zalo.webhook_url");
-  if (!webhookUrl) return { sent: false, reason: "not_configured" as const };
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: message, content: message }),
-    });
-    return { sent: res.ok, via: "webhook" as const, status: res.status };
-  } catch (err) {
-    console.error("[zalo-notify] Webhook failed:", err);
-    return { sent: false, reason: "fetch_error" as const };
-  }
+  return { sent: false, reason: "not_configured" as const };
 }
 
 export async function notifyNewEvent(title: string, startDate: string, url?: string) {
