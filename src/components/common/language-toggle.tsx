@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLangCookie, setLangCookie, type SiteLang } from "@/lib/utils/lang-cookie";
 
@@ -10,9 +11,11 @@ import { getLangCookie, setLangCookie, type SiteLang } from "@/lib/utils/lang-co
  */
 export function LanguageToggle({ className }: { className?: string }) {
   const [lang, setLang] = useState<SiteLang>("vi");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setLang(getLangCookie() ?? "vi");
+    setMounted(true);
   }, []);
 
   const toggle = () => {
@@ -27,17 +30,16 @@ export function LanguageToggle({ className }: { className?: string }) {
     <button
       type="button"
       onClick={toggle}
+      translate="no"
       title={lang === "vi" ? "Switch to English" : "Đổi sang tiếng Việt"}
       aria-label="Đổi ngôn ngữ"
       className={cn(
-        "inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-xl px-2 text-[11px] font-black uppercase tracking-wider transition-colors",
+        "notranslate inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[11px] font-black uppercase tracking-wider transition-colors",
         className,
       )}
     >
-      {/* Current language highlighted */}
-      <span className={lang === "vi" ? "text-primary dark:text-amber-400" : "opacity-40"}>VI</span>
-      <span className="opacity-30">/</span>
-      <span className={lang === "en" ? "text-primary dark:text-amber-400" : "opacity-40"}>EN</span>
+      <Languages className="size-4 shrink-0" />
+      <span className="tabular-nums">{mounted ? (lang === "vi" ? "VI" : "EN") : "VI"}</span>
     </button>
   );
 }
