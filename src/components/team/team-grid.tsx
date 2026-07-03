@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PublicUserProfile } from "@/lib/types/content";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
@@ -51,8 +51,11 @@ export function TeamGrid({ profiles }: Props) {
 
   if (sorted.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed p-16 text-center text-sm text-muted-foreground">
-        Chưa có thành viên nào.
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed p-16 text-center">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 motion-safe:animate-[soft-float_3s_ease-in-out_infinite]">
+          <Users className="size-7" />
+        </span>
+        <p className="text-sm font-semibold text-muted-foreground">Chưa có thành viên nào.</p>
       </div>
     );
   }

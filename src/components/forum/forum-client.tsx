@@ -133,8 +133,12 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
       {/* Posts */}
       <div className={`space-y-2 transition-opacity ${loading ? "opacity-50 pointer-events-none" : ""}`}>
         {posts.length === 0 && (
-          <div className="rounded-2xl border border-border bg-card p-12 text-center text-muted-foreground">
-            Chưa có bài viết nào trong danh mục này.
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 motion-safe:animate-[soft-float_3s_ease-in-out_infinite]">
+              <MessageSquare className="size-7" />
+            </span>
+            <p className="text-sm font-semibold text-muted-foreground">Chưa có bài viết nào trong danh mục này.</p>
+            <p className="text-xs text-muted-foreground/60">Hãy là người đầu tiên bắt đầu cuộc trò chuyện!</p>
           </div>
         )}
         {posts.map((p) => {
@@ -145,7 +149,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
             <Link
               key={p.id}
               href={`/cong-dong/${p.id}`}
-              className={`group flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-px border-l-4 ${catMeta.border} md:gap-4`}
+              className={`group flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 dark:hover:shadow-amber-400/10 border-l-4 ${catMeta.border} md:gap-4`}
             >
               <UserAvatar name={p.display_name} url={p.avatar_url} cssRing={p.css_ring} size={9} />
               <div className="min-w-0 flex-1">
