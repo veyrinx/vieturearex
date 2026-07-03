@@ -130,7 +130,8 @@
       "Bash(curl -s \"http://localhost:3000/team\" --max-time 90 -o /tmp/team.html)",
       "Bash(curl -s \"http://localhost:3000/\" --max-time 60 -o /tmp/h.html -w \"home -> HTTP %{http_code} bytes=%{size_download}\\\\n\")",
       "Bash(curl -s \"http://localhost:3000/\" --max-time 60 -o /tmp/h.html -w \"HTTP %{http_code}\\\\n\")",
-      "Bash(curl -s \"http://localhost:3000/cong-dong\" --max-time 60 -o /tmp/c.html -w \"cong-dong HTTP %{http_code}\\\\n\")"
+      "Bash(curl -s \"http://localhost:3000/cong-dong\" --max-time 60 -o /tmp/c.html -w \"cong-dong HTTP %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:3000/api/support/session/test-dummy-id/messages\" --max-time 60 -w \"\\\\nHTTP %{http_code}\\\\n\" --max-time 90)"
     ]
   }
 }
