@@ -68,8 +68,13 @@ export async function SiteFooter() {
 
   return (
     <footer className="relative mt-16 border-t border-border bg-card">
-      {/* Top accent line */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent dark:via-amber-400/50" />
+      {/* Top accent line with a slow traveling glint */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden bg-gradient-to-r from-transparent via-primary/45 to-transparent dark:via-amber-400/45">
+        <div
+          className="h-full w-1/4 bg-gradient-to-r from-transparent via-white/80 to-transparent motion-reduce:hidden"
+          style={{ animation: "shimmer 5s ease-in-out infinite" }}
+        />
+      </div>
 
       {/* ── Main grid ── */}
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
@@ -117,7 +122,7 @@ export async function SiteFooter() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={link.label}
-                    className="flex size-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:hover:border-amber-400/40 dark:hover:bg-amber-400/10 dark:hover:text-amber-400"
+                    className="flex size-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:scale-105 hover:border-primary/40 hover:bg-primary/10 hover:text-primary hover:shadow-lg hover:shadow-primary/15 dark:hover:border-amber-400/40 dark:hover:bg-amber-400/10 dark:hover:text-amber-400 dark:hover:shadow-amber-400/15"
                   >
                     <Icon className="size-[17px]" />
                   </Link>
@@ -136,8 +141,9 @@ export async function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="group inline-flex items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
+                    <span className="h-px w-0 bg-primary transition-all duration-200 group-hover:mr-2 group-hover:w-3 dark:bg-amber-400" />
                     {link.label}
                   </Link>
                 </li>
