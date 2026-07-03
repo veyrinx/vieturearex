@@ -8,6 +8,7 @@ import { getTmsPlayerCareer, getMyTmsTeam } from "@/lib/tms/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { VerifiedBadge } from "@/components/common/user-badges";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -15,13 +16,13 @@ import { vi } from "date-fns/locale";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type UserRow = { id: string; display_name: string | null; avatar_url: string | null; ff_id: string | null; created_at: string; points?: number | null };
+type UserRow = { id: string; display_name: string | null; avatar_url: string | null; ff_id: string | null; created_at: string; points?: number | null; role?: string | null; is_verified?: boolean | null };
 
 async function getPlayer(userId: string): Promise<UserRow | null> {
   const sb = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!sb) return null;
   const { data } = await untypedFrom(sb, "users")
-    .select("id, display_name, avatar_url, ff_id, created_at, points")
+    .select("id, display_name, avatar_url, ff_id, created_at, points, role, is_verified")
     .eq("id", userId)
     .single() as { data: UserRow | null };
   return data;
@@ -115,8 +116,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           {/* Info */}
           <div className="flex-1 min-w-0 space-y-2">
             <div>
-              <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] leading-tight text-foreground md:text-3xl">
+              <h1 className="flex items-center gap-2 font-heading text-2xl font-black uppercase tracking-[0.04em] leading-tight text-foreground md:text-3xl">
                 {user.display_name ?? "Chưa đặt tên"}
+                <VerifiedBadge role={user.role} isVerified={user.is_verified} size="lg" className="size-6" />
               </h1>
               {user.ff_id && (
                 <p className="mt-0.5 font-mono text-sm text-amber-400 font-semibold">FF ID: {user.ff_id}</p>

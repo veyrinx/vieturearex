@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   House, BookOpenText, MessageSquare, MonitorPlay, User, LayoutDashboard,
-  TrendingUp, Trophy, Swords, Users, Palette, X, Grid2x2,
+  TrendingUp, Trophy, Users, Palette, X, Grid2x2,
   CalendarDays, Flame, BookOpen, Rss, Image as ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +27,6 @@ const COMMUNITY_ITEMS = [
   { title: "Icon FF",         href: "/items",                 icon: ImageIcon,     color: "yellow"  },
   { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    color: "orange"  },
   { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        color: "yellow"  },
-  { title: "Giải Đấu CĐ",   href: "/giai-dau-cong-dong",   icon: Swords,        color: "red"     },
   { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         color: "violet"  },
   { title: "Trang Cá Nhân",  href: "/cong-dong/cosmetics",   icon: Palette,       color: "pink"    },
 ];
