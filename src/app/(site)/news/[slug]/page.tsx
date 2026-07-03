@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { BreadcrumbJsonLd } from "next-seo";
-import { getNewsBySlug, getNews } from "@/lib/data/content-service";
+import { getNewsBySlug, getNews, getSettings } from "@/lib/data/content-service";
+import { AdSense } from "@/components/common/adsense";
 import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-renderer";
 import { NewsToc } from "@/components/news/news-toc";
 import { NewsComments } from "@/components/news/news-comments";
@@ -55,11 +56,14 @@ export const revalidate = 60;
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
   const { slug } = await params;
-  const [article, allNews] = await Promise.all([
+  const [article, allNews, settings] = await Promise.all([
     getNewsBySlug(slug),
     getNews("published"),
+    getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>),
   ]);
   if (!article) notFound();
+
+  const adSlotArticle = settings.find((s) => s.key === "ads.slot_article")?.value?.trim() || null;
 
   const related = allNews
     .filter((n) => n.slug !== slug && n.category === article.category)
@@ -195,6 +199,14 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
             <NewsReactions newsId={article.id} />
           </div>
           <NewsComments newsId={article.id} />
+        </div>
+      )}
+
+      {/* In-article ad (only renders when a slot is configured in Settings) */}
+      {adSlotArticle && (
+        <div className="overflow-hidden rounded-2xl border border-dashed border-border/60 bg-card/40 p-2">
+          <p className="mb-1 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">Quảng cáo</p>
+          <AdSense slot={adSlotArticle} />
         </div>
       )}
 

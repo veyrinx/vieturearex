@@ -148,7 +148,10 @@ export default async function RootLayout({
                 inLanguage: "vi-VN",
                 potentialAction: {
                   "@type": "SearchAction",
-                  target: `${activeSite.url}/news?q={search_term_string}`,
+                  target: {
+                    "@type": "EntryPoint",
+                    urlTemplate: `${activeSite.url}/search?q={search_term_string}`,
+                  },
                   "query-input": "required name=search_term_string",
                 },
               },
