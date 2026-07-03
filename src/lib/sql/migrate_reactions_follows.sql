@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS news_reactions (
   UNIQUE(news_id, user_id)
 );
 
-CREATE INDEX IF NOT EXISTS news_reactions_news_idx ON news_reactions (news_id);
+CREATE INDEX IF NOT EXISTS news_reactions_news_idx ON 
+news_reactions (news_id);
 
 ALTER TABLE news_reactions ENABLE ROW LEVEL SECURITY;
 

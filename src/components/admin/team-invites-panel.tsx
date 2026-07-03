@@ -330,7 +330,7 @@ function PendingSection({
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="outline" 
                   disabled={busy === p.id || !canApprove}
                   onClick={() => onApprove(p.id, approveAction)}
                   className="gap-1 rounded-lg border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-40"
