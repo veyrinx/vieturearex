@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -78,13 +79,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     footer: "💬 Arex CSKH",
   }).catch(() => null);
 
-  // Trigger AI auto-reply in background (fire and forget)
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
-  const secret = process.env.CRON_SECRET || process.env.APP_SECRET || "";
-  void fetch(`${baseUrl}/api/support/session/${sessionId}/ai-reply`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-internal-secret": secret },
-  }).catch(() => null);
+  // Generate the AI reply in-process AFTER the response (Next.js `after` keeps
+  // it alive on serverless). Replaces the old self-fetch to an absolute URL,
+  // which silently 403'd when CRON_SECRET/APP_SECRET were unset and could hit
+  // the wrong port in dev — so the AI never replied.
+  after(async () => {
+    try {
+      const { processAiReplyForSession } = await import("@/lib/server/support-ai-runner");
+      await processAiReplyForSession(sessionId);
+    } catch { /* non-critical */ }
+  });
 
   return NextResponse.json({ ok: true });
 }
