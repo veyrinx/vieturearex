@@ -6,6 +6,7 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { AutoTranslate } from "@/components/common/auto-translate";
+import { TranslateGuard } from "@/components/common/translate-guard";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { AnnouncementBanner } from "@/components/common/announcement-banner";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
@@ -68,6 +69,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <SiteFooter />
       <MobileBottomNav />
       <ScrollToTop />
+      <TranslateGuard />
       <AutoTranslate />
       <DailyCheckinTrigger />
       <CskhChat />
