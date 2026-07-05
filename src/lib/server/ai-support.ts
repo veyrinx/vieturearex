@@ -115,7 +115,12 @@ export async function generateAiReply(
 
     return { reply, refused, category };
   } catch (err) {
-    console.error("[ai-support] OpenAI error:", err);
+    // Surface the real cause in logs (bad/expired key, quota, wrong model, etc.)
+    const detail =
+      err && typeof err === "object"
+        ? `${(err as { status?: number }).status ?? ""} ${(err as { message?: string }).message ?? String(err)}`.trim()
+        : String(err);
+    console.error("[ai-support] OpenAI error:", detail);
     return { reply: "", refused: false, category: "error" };
   }
 }

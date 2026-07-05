@@ -41,7 +41,10 @@ export async function processAiReplyForSession(
   const result = await generateAiReply(messages, siteName);
 
   if (!result.reply) {
-    const fallbackCategories = ["refused", "error", "no_user_message", "unknown"];
+    // Always leave a friendly reply instead of silence — covers empty API key,
+    // refusals, provider errors, etc. (Only truly skip when disabled / no DB,
+    // which are handled earlier.)
+    const fallbackCategories = ["refused", "error", "no_user_message", "unknown", "no_api_key"];
     if (fallbackCategories.includes(result.category)) {
       await db.from("support_messages").insert({
         session_id: sessionId,
