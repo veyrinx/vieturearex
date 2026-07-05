@@ -8,6 +8,8 @@ async function fetchNews(status: "published" | "draft" | "all") {
   if (status !== "published") {
     query.set("status", status);
   }
+  // List views only render cards — skip the heavy article body in the refetch.
+  query.set("content", "0");
   const response = await fetch(`/api/news?${query.toString()}`, {
     cache: "no-store",
   });
