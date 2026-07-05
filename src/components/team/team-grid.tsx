@@ -37,11 +37,12 @@ function isOnline(lastSeen?: string | null) {
 type Props = { profiles: PublicUserProfile[] };
 
 export function TeamGrid({ profiles }: Props) {
-  const [tick, setTick] = useState(0);
+  // Bump state every 30s to re-render and refresh online status.
+  // The value itself is unused — it only triggers a re-render.
+  const [, bump] = useState(0);
 
-  // Re-check online status every 30s
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    const id = setInterval(() => bump((t) => t + 1), 30_000);
     return () => clearInterval(id);
   }, []);
 
@@ -78,7 +79,7 @@ export function TeamGrid({ profiles }: Props) {
 
         return (
           <Link
-            key={`${profile.id}-${tick}`}
+            key={profile.id}
             href={`/u/${profile.id}`}
             aria-label={`Xem hồ sơ ${name}`}
             className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 hover:border-primary/40 dark:hover:border-amber-400/40"
@@ -129,7 +130,7 @@ export function TeamGrid({ profiles }: Props) {
             <div className="flex flex-1 flex-col items-center gap-2 px-5 pb-5 pt-3 text-center">
               {/* Name + verified */}
               <div className="flex items-center gap-1.5">
-                <h3 className="font-heading text-base font-bold tracking-[0.02em] text-foreground">
+                <h3 translate="no" className="notranslate font-heading text-base font-bold tracking-[0.02em] text-foreground">
                   {name}
                 </h3>
                 <VerifiedBadge role={profile.role} isVerified={profile.is_verified} size="md" />
