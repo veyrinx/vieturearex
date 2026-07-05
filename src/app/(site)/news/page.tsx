@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function NewsPage() {
-  const news = await getNews("published");
+  const news = await getNews("published", { includeContent: false });
   const categories = Array.from(new Set(news.map((item) => item.category)));
   // Cards/sidebar only need title/slug/cover/excerpt/meta — strip the heavy `content`
   // HTML body so the SSR payload isn't bloated by every article's full text.

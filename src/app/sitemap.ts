@@ -42,7 +42,7 @@ function newsPriority(days: number): number {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [news, events, tournaments, wiki] = await Promise.all([
-    getNews("published").catch(() => []),
+    getNews("published", { includeContent: false }).catch(() => []),
     getEvents().catch(() => []),
     getTmsTournaments().catch(() => []),
     getPublishedWiki(),

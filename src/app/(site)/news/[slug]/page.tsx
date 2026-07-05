@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { BreadcrumbJsonLd } from "next-seo";
-import { getNewsBySlug, getNews, getSettings } from "@/lib/data/content-service";
+import { getNewsBySlug, getRelatedNews, getSettings } from "@/lib/data/content-service";
 import { AdSense } from "@/components/common/adsense";
 import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-renderer";
 import { NewsToc } from "@/components/news/news-toc";
@@ -56,18 +56,15 @@ export const revalidate = 60;
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
   const { slug } = await params;
-  const [article, allNews, settings] = await Promise.all([
-    getNewsBySlug(slug),
-    getNews("published"),
-    getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>),
-  ]);
+  const article = await getNewsBySlug(slug);
   if (!article) notFound();
 
-  const adSlotArticle = settings.find((s) => s.key === "ads.slot_article")?.value?.trim() || null;
+  const [related, settings] = await Promise.all([
+    getRelatedNews(article.category, slug, 3),
+    getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>),
+  ]);
 
-  const related = allNews
-    .filter((n) => n.slug !== slug && n.category === article.category)
-    .slice(0, 3);
+  const adSlotArticle = settings.find((s) => s.key === "ads.slot_article")?.value?.trim() || null;
 
   const processedHtml = injectHeadingIds(article.content);
 

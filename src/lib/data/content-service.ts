@@ -378,23 +378,87 @@ export async function deleteEvent(id: string): Promise<void> {
   }
 }
 
-export async function getNews(status: "all" | "published" | "draft" = "published") {
+// All NewsItem columns except the heavy `content` HTML body — used by list/ticker
+// views that never render the body, so we avoid transferring it from the DB.
+const NEWS_LIST_COLUMNS =
+  "id, slug, title, excerpt, cover, category, status, created_at, created_by_name, scheduled_at";
+
+export async function getNews(
+  status: "all" | "published" | "draft" = "published",
+  opts?: { includeContent?: boolean },
+) {
+  // Callers that only render cards/tickers pass includeContent:false to skip the
+  // large `content` body (both from the DB query and the serialized payload).
+  const includeContent = opts?.includeContent !== false;
   return withSupabaseReadFallback(
     "getNews",
     () =>
-      applyNewsVisibility(getDemoStore().news, status).sort((a, b) =>
-        compareDesc(new Date(a.created_at), new Date(b.created_at)),
-      ),
+      applyNewsVisibility(getDemoStore().news, status)
+        .map((item) => (includeContent ? item : { ...item, content: "" }))
+        .sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at))),
     async () => {
       const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
-      const query = supabase.from("news").select("*").order("created_at", { ascending: false });
+      const query = supabase
+        .from("news")
+        .select(includeContent ? "*" : NEWS_LIST_COLUMNS)
+        .order("created_at", { ascending: false });
       const { data, error } =
         status === "all" ? await query : await query.eq("status", status as "draft" | "published");
 
       if (error) {
         throw new Error(error.message);
       }
-      return data ?? [];
+      const rows = (data ?? []) as unknown as NewsItem[];
+      return includeContent ? rows : rows.map((row) => ({ ...row, content: "" }));
+    },
+  );
+}
+
+type RelatedNews = Pick<
+  NewsItem,
+  "id" | "slug" | "title" | "cover" | "category" | "created_at" | "created_by_name" | "excerpt"
+>;
+
+// Fetches a few same-category published articles for the "related" rail on a news
+// detail page — avoids loading every published article just to pick 3.
+export async function getRelatedNews(
+  category: string,
+  excludeSlug: string,
+  limit = 3,
+): Promise<RelatedNews[]> {
+  return withSupabaseReadFallback(
+    "getRelatedNews",
+    () =>
+      getDemoStore()
+        .news.filter(
+          (n) => n.status === "published" && n.category === category && n.slug !== excludeSlug,
+        )
+        .sort((a, b) => compareDesc(new Date(a.created_at), new Date(b.created_at)))
+        .slice(0, limit)
+        .map(({ id, slug, title, cover, category, created_at, created_by_name, excerpt }) => ({
+          id,
+          slug,
+          title,
+          cover,
+          category,
+          created_at,
+          created_by_name,
+          excerpt,
+        })),
+    async () => {
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await supabase
+        .from("news")
+        .select("id, slug, title, cover, category, created_at, created_by_name, excerpt")
+        .eq("status", "published")
+        .eq("category", category)
+        .neq("slug", excludeSlug)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) {
+        throw new Error(error.message);
+      }
+      return (data ?? []) as unknown as RelatedNews[];
     },
   );
 }

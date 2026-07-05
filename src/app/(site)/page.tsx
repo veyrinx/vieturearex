@@ -37,7 +37,7 @@ export const revalidate = 60;
 export default async function HomePage() {
   const [events, news, gallery, settings, streams] = await Promise.all([
     getEvents(),
-    getNews("published"),
+    getNews("published", { includeContent: false }),
     getGalleryItems(),
     getSettings(),
     getStreams(),
