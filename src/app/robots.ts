@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: [
           "/", "/news/", "/tin-tuc/", "/events", "/su-kien",
           "/esports", "/calendar", "/lich", "/gallery",
+          "/wiki", "/wiki/",
           "/contact", "/lien-he",
           "/about", "/gui-bai-viet",
           "/privacy-policy", "/terms-of-use", "/cookie-policy",
@@ -49,7 +50,7 @@ export default function robots(): MetadataRoute.Robots {
       // ── All others: public pages only, no crawl of admin/api/source ──────
       {
         userAgent: "*",
-        allow: ["/", "/news/", "/tin-tuc/", "/events", "/esports", "/calendar", "/contact", "/about", "/gui-bai-viet", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
+        allow: ["/", "/news/", "/tin-tuc/", "/events", "/esports", "/calendar", "/wiki", "/wiki/", "/contact", "/about", "/gui-bai-viet", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
         disallow: [
           "/admin", "/admin/",
           "/api/", "/api/admin/", "/api/auth/",

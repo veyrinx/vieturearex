@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { isAfter, isBefore, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, ArrowUpRight, Search, X } from "lucide-react";
+import { Clock, ArrowUpRight, Search, X, User } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { useNewsQuery } from "@/hooks/use-news-query";
 import { Button } from "@/components/ui/button";
@@ -192,30 +192,41 @@ export function NewsList({ news: initialNews }: NewsListProps) {
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {visibleNews.map((item) => {
+          {visibleNews.map((item, idx) => {
             const ago = timeAgo(item.created_at);
+            // Lead article gets a wide, magazine-style treatment (image + text side by side)
+            const isFeatured = idx === 0;
             return (
               <article
                 key={item.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 dark:hover:border-amber-400/20"
+                className={cn(
+                  "group relative flex overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 dark:hover:border-amber-400/20",
+                  isFeatured ? "flex-col md:col-span-2 md:flex-row" : "flex-col",
+                )}
               >
                 <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
                 <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
 
                 {/* Cover */}
-                <div className="relative overflow-hidden">
+                <div className={cn("relative overflow-hidden", isFeatured && "md:w-[54%] md:shrink-0")}>
                   {item.cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.cover}
                       alt={item.title}
-                      loading="lazy"
+                      loading={isFeatured ? "eager" : "lazy"}
                       decoding="async"
-                      className="aspect-[16/9] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                      className={cn(
+                        "w-full object-cover transition duration-500 group-hover:scale-[1.03]",
+                        isFeatured ? "aspect-[16/9] md:aspect-auto md:h-full md:min-h-[240px]" : "aspect-[16/9]",
+                      )}
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="flex aspect-[16/9] items-center justify-center border-b border-dashed border-border bg-muted">
+                    <div className={cn(
+                      "flex items-center justify-center border-b border-dashed border-border bg-muted",
+                      isFeatured ? "aspect-[16/9] md:h-full md:min-h-[240px]" : "aspect-[16/9]",
+                    )}>
                       <span className="text-xs font-bold uppercase text-muted-foreground/40">ĐANG CẬP NHẬT</span>
                     </div>
                   )}
@@ -225,20 +236,47 @@ export function NewsList({ news: initialNews }: NewsListProps) {
                       {item.category}
                     </span>
                   )}
+                  {isFeatured && (
+                    <span className="absolute right-3 top-3 z-30 rounded-md bg-black/55 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-white backdrop-blur-sm">
+                      Nổi bật
+                    </span>
+                  )}
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-1 flex-col gap-2 p-4">
-                  <h3 className="font-heading text-[0.9rem] font-bold uppercase leading-snug tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
+                <div className={cn("flex flex-1 flex-col gap-2 p-4", isFeatured && "md:justify-center md:p-6")}>
+                  <h3 className={cn(
+                    "font-heading font-bold uppercase leading-snug tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary dark:group-hover:text-amber-400",
+                    isFeatured ? "text-lg md:text-2xl" : "text-[0.9rem]",
+                  )}>
                     {item.title}
                   </h3>
-                  <div className="mt-auto flex items-center justify-between gap-2">
-                    {ago && (
-                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Clock className="size-3 shrink-0" />
-                        <span>{ago}</span>
-                      </div>
-                    )}
+                  {item.excerpt && (
+                    <p className={cn(
+                      "text-muted-foreground",
+                      isFeatured ? "line-clamp-3 text-sm md:text-base" : "line-clamp-2 text-[13px]",
+                    )}>
+                      {item.excerpt}
+                    </p>
+                  )}
+                  <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                      {ago && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3 shrink-0" />
+                          {ago}
+                        </span>
+                      )}
+                      {item.created_by_name && (
+                        <>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span className="flex items-center gap-1">
+                            <User className="size-3 shrink-0" />
+                            {item.created_by_name}
+                          </span>
+                        </>
+                      )}
+                    </div>
                     <ArrowUpRight className="size-4 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 dark:group-hover:text-amber-400" />
                   </div>
                 </div>

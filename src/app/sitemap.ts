@@ -1,9 +1,26 @@
 import type { MetadataRoute } from "next";
 import { getEvents, getNews } from "@/lib/data/content-service";
 import { getTmsTournaments } from "@/lib/tms/data";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
 import { siteConfig } from "@/lib/constants/site";
 
 const BASE = siteConfig.url;
+
+async function getPublishedWiki(): Promise<{ slug: string; updated_at: string }[]> {
+  const db = createAdminSupabaseClient();
+  if (!db) return [];
+  try {
+    const { data } = await untypedFrom(db, "wiki_articles")
+      .select("slug, updated_at")
+      .eq("status", "published")
+      .order("updated_at", { ascending: false })
+      .limit(1000) as { data: { slug: string; updated_at: string }[] | null };
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
 
 function ageInDays(dateStr: string) {
   return (Date.now() - new Date(dateStr).getTime()) / 86_400_000;
@@ -24,10 +41,11 @@ function newsPriority(days: number): number {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [news, events, tournaments] = await Promise.all([
+  const [news, events, tournaments, wiki] = await Promise.all([
     getNews("published").catch(() => []),
     getEvents().catch(() => []),
     getTmsTournaments().catch(() => []),
+    getPublishedWiki(),
   ]);
 
   const now = new Date();
@@ -213,6 +231,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: t.status === "ongoing" ? 0.85 : t.status === "registering" ? 0.78 : 0.60,
   }));
 
+  // ── Wiki ─────────────────────────────────────────────────────────────────
+  const wikiRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${BASE}/wiki`,
+      lastModified: wiki[0] ? new Date(wiki[0].updated_at) : now,
+      changeFrequency: "weekly",
+      priority: 0.70,
+    },
+    ...wiki.map((a) => ({
+      url: `${BASE}/wiki/${a.slug}`,
+      lastModified: new Date(a.updated_at),
+      changeFrequency: "monthly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+      priority: 0.60,
+    })),
+  ];
+
   return [
     ...coreRoutes,
     ...viRoutes,
@@ -222,5 +256,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Ghi đè /events và /su-kien với lastModified chính xác hơn từ DB
     ...eventRoutes,
     ...tournamentRoutes,
+    ...wikiRoutes,
   ];
 }

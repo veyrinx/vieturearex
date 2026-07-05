@@ -35,6 +35,9 @@ export const revalidate = 60;
 export default async function NewsPage() {
   const news = await getNews("published");
   const categories = Array.from(new Set(news.map((item) => item.category)));
+  // Cards/sidebar only need title/slug/cover/excerpt/meta — strip the heavy `content`
+  // HTML body so the SSR payload isn't bloated by every article's full text.
+  const newsForList = news.map((item) => ({ ...item, content: "" }));
 
   const itemList = {
     "@context": "https://schema.org",
@@ -60,8 +63,8 @@ export default async function NewsPage() {
         description="Sự kiện in-game, cập nhật patch, esports và hoạt động cộng đồng"
       />
       <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
-        <NewsList news={news} />
-        <NewsSidebar categories={categories} recentPosts={news.slice(0, 4)} />
+        <NewsList news={newsForList} />
+        <NewsSidebar categories={categories} recentPosts={newsForList.slice(0, 4)} />
       </div>
     </div>
   );

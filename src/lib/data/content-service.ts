@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { decryptSetting, encryptSetting, isSensitiveKey } from "@/lib/server/setting-crypto";
 import { createClient } from "@supabase/supabase-js";
 import { compareDesc } from "date-fns";
@@ -836,7 +837,11 @@ export async function resetUserPassword(id: string): Promise<{ tempPassword: str
   return { tempPassword };
 }
 
-export async function getSettings(): Promise<SiteSetting[]> {
+// Wrapped in React cache() so multiple callers within one request/render
+// (e.g. the homepage's own getSettings() + getStreams()/getStreamCategories()
+// which call it internally) share a single fetch + decrypt pass instead of
+// hitting Supabase and decrypting sensitive keys once per call.
+export const getSettings = cache(async function getSettings(): Promise<SiteSetting[]> {
   return withSupabaseReadFallback(
     "getSettings",
     () => getDemoStore().settings,
@@ -860,7 +865,7 @@ export async function getSettings(): Promise<SiteSetting[]> {
       );
     },
   );
-}
+});
 
 export async function getInvitedEmails(): Promise<InvitedEmailItem[]> {
   const settings = await getSettings();

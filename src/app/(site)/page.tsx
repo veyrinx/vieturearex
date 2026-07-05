@@ -51,9 +51,12 @@ export default async function HomePage() {
   const communityStats = resolveCommunityStats(settingsMap);
 
   const firstHeroImage = heroSlider.desktopImages[0];
-  const latestEvents = [...events].sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
-  const latestNews = [...news].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  const latestGallery = [...gallery].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // The data layer already returns events/news/gallery sorted by descending date,
+  // so no client-side re-sort is needed here.
+  // Strip the heavy news `content` HTML body before handing news to client components:
+  // the ticker and cards only read title/slug/cover/category/date, so serializing every
+  // published article's full body into the RSC/HTML payload is pure waste.
+  const newsForDisplay = news.map((item) => ({ ...item, content: "" }));
 
   const popupEnabled = settingsMap["popup.enabled"] === "true";
   const popupTitle = settingsMap["popup.title"] ?? "";
@@ -61,9 +64,9 @@ export default async function HomePage() {
   const popupImageUrl = settingsMap["popup.image_url"] ?? "";
   const popupLinkUrl = settingsMap["popup.link_url"] ?? "";
   const heroTitle = settingsMap["home.hero.title"];
-  const activeEvent = latestEvents.find((e) => e.status === "active");
+  const activeEvent = events.find((e) => e.status === "active");
 
-  const nextUpcomingEvent = latestEvents
+  const nextUpcomingEvent = events
     .filter((e) => e.status === "upcoming")
     .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0];
 
@@ -116,7 +119,7 @@ export default async function HomePage() {
         nextEventDate={nextUpcomingEvent?.start_date ?? null}
       />
 
-      <NewsTicker news={latestNews.slice(0, 8)} />
+      <NewsTicker news={newsForDisplay.slice(0, 8)} />
 
       {/* Subtle ambient background for content sections */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
@@ -159,14 +162,14 @@ export default async function HomePage() {
                 {eventsBackdrop.caption}
               </p>
             )}
-            <FeaturedEvents events={latestEvents} />
+            <FeaturedEvents events={events} />
           </div>
         </div>
         {liveAndUpcomingStreams.length > 0 && (
           <LivestreamPreview streams={liveAndUpcomingStreams} />
         )}
-        <LatestNews news={latestNews} />
-        <GalleryPreview gallery={latestGallery} />
+        <LatestNews news={newsForDisplay.slice(0, 6)} />
+        <GalleryPreview gallery={gallery.slice(0, 6)} />
       </div>
 
       <JoinCommunityCta
