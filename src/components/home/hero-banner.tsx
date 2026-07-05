@@ -148,9 +148,23 @@ export function HeroBanner({
               animate={variants.animate}
               exit={variants.exit}
               transition={{ duration: transitionSecs, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${currentImage})` }}
-            />
+              className="absolute inset-0"
+            >
+              {/* Real <img> (not a CSS background) so it's a proper, high-priority LCP
+                  element that pairs with the <link rel="preload"> on the homepage.
+                  Raw img (not next/image) because hero URLs are admin-set and may point
+                  to hosts outside next.config's allowlist. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentImage}
+                alt=""
+                aria-hidden
+                fetchPriority="high"
+                decoding="async"
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 size-full object-cover"
+              />
+            </motion.div>
           )}
         </AnimatePresence>
 
