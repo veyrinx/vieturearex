@@ -128,7 +128,6 @@ export default async function ForumPostPage({ params }: Props) {
               initialTitle={post.title}
               initialContent={post.content}
               postUserId={post.user_id}
-              onSaved={() => {}}
             />
             <div className="ml-auto">
               <ShareButtons

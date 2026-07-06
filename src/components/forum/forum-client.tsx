@@ -527,8 +527,12 @@ export function ForumPostEditButton({
   onSaved,
 }: {
   postId: string; initialTitle: string; initialContent: string;
-  postUserId: string | null; onSaved: (title: string, content: string) => void;
+  postUserId: string | null;
+  // Optional — a Server Component parent cannot pass a function across the
+  // server/client boundary, so this component refreshes on save by itself.
+  onSaved?: (title: string, content: string) => void;
 }) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -550,7 +554,7 @@ export function ForumPostEditButton({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: title.trim(), content }),
     });
-    if (res.ok) { onSaved(title.trim(), content); setEditing(false); }
+    if (res.ok) { onSaved?.(title.trim(), content); setEditing(false); router.refresh(); }
     setSaving(false);
   };
 
