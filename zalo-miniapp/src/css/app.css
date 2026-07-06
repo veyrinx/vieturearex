@@ -1,0 +1,179 @@
+:root {
+  --accent: #ff7a00;
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --muted: #767a7f;
+}
+
+/* zmp-ui đã reset cơ bản; chỉ bổ sung phần tuỳ biến. */
+.page {
+  background: var(--bg);
+  padding: 12px 16px calc(72px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+img {
+  max-width: 100%;
+}
+
+/* ── Home ───────────────────────────────────────────── */
+.hero {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px;
+  gap: 12px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.feature-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transition: opacity 0.15s;
+}
+
+.feature-card:active {
+  opacity: 0.6;
+}
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.cta {
+  background: var(--accent);
+  border-radius: 16px;
+  padding: 16px;
+  transition: opacity 0.15s;
+}
+
+.cta:active {
+  opacity: 0.85;
+}
+
+/* ── Danh sách ──────────────────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 12px;
+  gap: 12px;
+  transition: opacity 0.15s;
+}
+
+.row:active {
+  opacity: 0.6;
+}
+
+.row-thumb {
+  width: 92px;
+  height: 68px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #e6e8eb;
+  flex-shrink: 0;
+}
+
+.row-title {
+  font-weight: 600;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Bảng xếp hạng ──────────────────────────────────── */
+.rank {
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.rank-row.top .rank {
+  font-size: 22px;
+}
+
+.rank-row.top {
+  border: 1px solid rgba(255, 122, 0, 0.25);
+}
+
+/* ── Badge trạng thái ───────────────────────────────── */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.badge-active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #0f9d68;
+}
+
+.badge-upcoming {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.badge-expired {
+  background: rgba(148, 163, 184, 0.2);
+  color: #64748b;
+}
+
+/* ── Trạng thái tải ─────────────────────────────────── */
+.center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 48px 0;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

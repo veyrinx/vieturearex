@@ -15,7 +15,20 @@ export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "tms-tournaments", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
   const tournaments = await getTmsTournaments(false).catch(() => []);
+  // CORS is applied centrally in middleware.ts for all /api/* routes.
   return NextResponse.json(tournaments);
+}
+
+// Cho phép Zalo Mini App (origin khác) fetch danh sách giải đấu.
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Accept",
+    },
+  });
 }
 
 export async function POST(req: Request) {

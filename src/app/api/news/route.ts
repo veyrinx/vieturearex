@@ -19,5 +19,18 @@ export async function GET(request: NextRequest) {
   const includeContent = searchParams.get("content") !== "0";
   const news = await getNews(status, { includeContent });
 
+  // CORS is applied centrally in middleware.ts for all /api/* routes.
   return NextResponse.json({ news });
+}
+
+// Cho phép Zalo Mini App (origin khác) fetch danh sách tin.
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Accept",
+    },
+  });
 }
