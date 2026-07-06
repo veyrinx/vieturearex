@@ -73,7 +73,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   } as never).select("id, display_name, avatar_url, content, parent_id, created_at").single() as
     { data: unknown; error: unknown };
 
-  if (error || !reply) return NextResponse.json({ error: "Không thể gửi trả lời." }, { status: 500 });
+  if (error || !reply) {
+    console.error("[forum] create reply failed:", error);
+    return NextResponse.json({ error: "Không thể gửi trả lời." }, { status: 500 });
+  }
 
   // Notify the post author (if different from replier)
   const { data: post } = await untypedFrom(db, "forum_posts")

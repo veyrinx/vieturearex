@@ -84,7 +84,12 @@ export async function POST(req: NextRequest) {
     avatar_url:   profile?.avatar_url ?? null,
   } as never).select("id").single() as { data: { id: string } | null; error: unknown };
 
-  if (error || !post) return NextResponse.json({ error: "Không thể tạo bài." }, { status: 500 });
+  if (error || !post) {
+    // Surface the real DB cause in server logs so failures are diagnosable
+    // (missing migration, column mismatch, etc.) instead of a silent generic 500.
+    console.error("[forum] create post failed:", error);
+    return NextResponse.json({ error: "Không thể tạo bài." }, { status: 500 });
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
   void import("@/lib/server/user-notify").then(({ notifyUserNewForumPost }) =>

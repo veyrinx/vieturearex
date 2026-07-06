@@ -86,8 +86,14 @@ export function TeamGrid({ profiles }: Props) {
           >
             <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-10" />
 
-            {/* Top gradient band */}
-            <div className={cn("h-20 bg-gradient-to-br opacity-80", gradient)} />
+            {/* Top role-themed band */}
+            <div className={cn("relative h-24 overflow-hidden bg-gradient-to-br", meta.gradient)}>
+              <div
+                className="pointer-events-none absolute inset-0 opacity-40"
+                style={{ backgroundImage: "radial-gradient(circle at 30% 15%, rgba(255,255,255,0.35), transparent 55%)" }}
+              />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" />
+            </div>
 
             {/* Avatar */}
             <div className="relative -mt-10 flex justify-center">
