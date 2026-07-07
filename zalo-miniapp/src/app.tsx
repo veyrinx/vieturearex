@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { App, ZMPRouter, AnimationRoutes, SnackbarProvider, Route } from "zmp-ui";
 import { AuthProvider } from "./hooks/useAuth";
 import { NavBar } from "./components/navbar";
@@ -14,9 +14,30 @@ import AccountPage from "./pages/account";
 import EditProfilePage from "./pages/edit-profile";
 import NotificationsPage from "./pages/notifications";
 
+// Theo dõi chế độ sáng/tối của hệ thống để đổi theme zmp-ui tương ứng.
+function useSystemTheme(): "light" | "dark" {
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!mq) return;
+    const onChange = (e: MediaQueryListEvent) => setTheme(e.matches ? "dark" : "light");
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return theme;
+}
+
 export default function MyApp() {
+  const theme = useSystemTheme();
   return (
-    <App>
+    <App theme={theme}>
       <SnackbarProvider>
         <AuthProvider>
           <ZMPRouter>
