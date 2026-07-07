@@ -150,6 +150,19 @@ const nextConfig = {
         source: "/:path*.map",
         headers: [{ key: "X-Robots-Tag", value: "none" }],
       },
+      // CORS for ALL /api/* — lets the Zalo/Telegram Mini App (different origin)
+      // call our API (incl. Authorization: Bearer). Applied at the framework level
+      // so it covers every route + Next's auto OPTIONS preflight, without relying
+      // on middleware (which doesn't run on /api in this deployment).
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,DELETE,OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "authorization, content-type, accept, x-telegram-init-data" },
+          { key: "Access-Control-Max-Age", value: "86400" },
+        ],
+      },
       // Admin + auth routes: no indexing, no cache
       {
         source: "/(admin|auth)/:path*",

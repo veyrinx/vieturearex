@@ -19,19 +19,6 @@ export async function GET(request: NextRequest) {
   const includeContent = searchParams.get("content") !== "0";
   const news = await getNews(status, { includeContent });
 
-  // ACAO set on the GET response so the Zalo Mini App can fetch cross-origin
-  // even if the middleware isn't applying CORS at the edge.
-  return NextResponse.json({ news }, { headers: { "Access-Control-Allow-Origin": "*" } });
-}
-
-// Cho phép Zalo Mini App (origin khác) fetch danh sách tin.
-export function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Accept",
-    },
-  });
+  // CORS for /api/* is set centrally in next.config.mjs headers().
+  return NextResponse.json({ news });
 }
