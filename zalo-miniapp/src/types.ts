@@ -26,15 +26,6 @@ export type EventItem = {
   view_count: number;
 };
 
-export type TournamentItem = {
-  id: string;
-  name: string;
-  mode: string;
-  max_teams: number;
-  prize_pool?: string | null;
-  status: string;
-};
-
 export type PlayerRank = {
   user_id: string;
   display_name: string;

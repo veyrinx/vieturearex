@@ -16,7 +16,6 @@ type Feature = {
 const FEATURES: Feature[] = [
   { key: "/news", icon: "zi-list-1", label: "Tin tức", desc: "Cập nhật mới nhất", color: "#3b82f6" },
   { key: "/events", icon: "zi-calendar", label: "Sự kiện", desc: "Sự kiện in-game", color: "#10b981" },
-  { key: "/tournaments", icon: "zi-star", label: "Giải đấu", desc: "Bracket & kết quả", color: "#f59e0b" },
   { key: "/forum", icon: "zi-chat", label: "Diễn đàn", desc: "Thảo luận cộng đồng", color: "#ec4899" },
   { key: "/leaderboard", icon: "zi-poll", label: "Xếp hạng", desc: "Top tuyển thủ", color: "#8b5cf6" },
   { key: "__community", icon: "zi-group", label: "Cộng đồng", desc: "Nhóm Zalo Arex", color: "#ef4444" },

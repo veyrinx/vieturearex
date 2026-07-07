@@ -6,7 +6,6 @@ import HomePage from "./pages/home";
 import NewsPage from "./pages/news";
 import EventsPage from "./pages/events";
 import EventDetailPage from "./pages/event-detail";
-import TournamentsPage from "./pages/tournaments";
 import LeaderboardPage from "./pages/leaderboard";
 import ForumPage from "./pages/forum";
 import ForumPostPage from "./pages/forum-post";
@@ -26,7 +25,6 @@ export default function MyApp() {
               <Route path="/news" element={<NewsPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
-              <Route path="/tournaments" element={<TournamentsPage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/forum" element={<ForumPage />} />
               <Route path="/forum/:id" element={<ForumPostPage />} />

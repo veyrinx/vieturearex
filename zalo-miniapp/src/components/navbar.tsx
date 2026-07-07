@@ -5,7 +5,7 @@ const TABS = [
   { key: "/", label: "Trang chủ", icon: "zi-home" },
   { key: "/news", label: "Tin tức", icon: "zi-list-1" },
   { key: "/forum", label: "Diễn đàn", icon: "zi-chat" },
-  { key: "/tournaments", label: "Giải đấu", icon: "zi-star" },
+  { key: "/leaderboard", label: "BXH", icon: "zi-poll" },
   { key: "/account", label: "Tài khoản", icon: "zi-user" },
 ] as const;
 

@@ -1,6 +1,8 @@
 node_modules
 www
+src/www
 .DS_Store
 *.log
 .zmp
+.env
 dist

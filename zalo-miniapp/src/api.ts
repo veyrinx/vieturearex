@@ -10,7 +10,6 @@ import type {
   Notification,
   PlayerRank,
   ProfileUpdate,
-  TournamentItem,
 } from "./types";
 
 async function getJson<T>(path: string): Promise<T> {
@@ -47,11 +46,6 @@ export async function fetchEvents(): Promise<EventItem[]> {
   return data.events ?? [];
 }
 
-// Danh sách giải đấu (TMS trả về mảng trực tiếp).
-export async function fetchTournaments(): Promise<TournamentItem[]> {
-  const data = await getJson<TournamentItem[]>("/api/tms/tournaments");
-  return Array.isArray(data) ? data : [];
-}
 
 // Bảng xếp hạng tuyển thủ (top 20 theo điểm).
 export async function fetchLeaderboard(): Promise<PlayerRank[]> {
