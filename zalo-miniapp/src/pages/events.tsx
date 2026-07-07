@@ -1,11 +1,9 @@
 import React from "react";
-import { Page, Header, Box } from "zmp-ui";
-import { openWebview } from "zmp-sdk/apis";
+import { Page, Header, Box, useNavigate } from "zmp-ui";
 import { fetchEvents } from "../api";
 import { useAsync } from "../hooks/useAsync";
 import { Loading, ErrorState, Empty } from "../components/states";
 import { Row } from "../components/row";
-import { SITE_URL } from "../config";
 import type { EventStatus } from "../types";
 
 const STATUS_LABEL: Record<EventStatus, string> = {
@@ -17,12 +15,8 @@ const STATUS_LABEL: Record<EventStatus, string> = {
 const ORDER: Record<EventStatus, number> = { active: 0, upcoming: 1, expired: 2 };
 
 export default function EventsPage() {
+  const navigate = useNavigate();
   const { data, loading, error, reload } = useAsync(fetchEvents);
-
-  const open = (id: string) => {
-    const url = `${SITE_URL}/events/${id}`;
-    openWebview({ url }).catch(() => window.open(url, "_blank"));
-  };
 
   const events = data ? [...data].sort((a, b) => ORDER[a.status] - ORDER[b.status]) : [];
 
@@ -48,7 +42,7 @@ export default function EventsPage() {
                   {new Date(e.start_date).toLocaleDateString("vi-VN")}
                 </>
               }
-              onClick={() => open(e.id)}
+              onClick={() => navigate(`/events/${e.id}`)}
             />
           ))}
         </Box>

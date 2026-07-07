@@ -5,14 +5,13 @@ import { getGlobalPlayerLeaderboard, getGlobalTeamLeaderboard } from "@/lib/tms/
 // Zalo Mini App. CORS-enabled like /api/news, /api/events, /api/tms/tournaments.
 export const dynamic = "force-dynamic";
 
-const CORS = { "Access-Control-Allow-Origin": "*" };
-
+// CORS is applied centrally in middleware.ts for all /api/* routes.
 export async function GET() {
   const [players, teams] = await Promise.all([
     getGlobalPlayerLeaderboard(20).catch(() => []),
     getGlobalTeamLeaderboard(20).catch(() => []),
   ]);
-  return NextResponse.json({ players, teams }, { headers: CORS });
+  return NextResponse.json({ players, teams });
 }
 
 export function OPTIONS() {

@@ -72,7 +72,6 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_MAX_AGE}, immutable`,
-        "Access-Control-Allow-Origin": "*",
         "X-Content-Type-Options": "nosniff",
       },
     });

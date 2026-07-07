@@ -47,10 +47,30 @@ function notFound(): NextResponse {
   return new NextResponse(null, { status: 404 });
 }
 
+// ── CORS for /api/* — lets the Zalo/Telegram Mini App (different origin) call
+// our API with an Authorization: Bearer token. No cookies are used cross-origin,
+// so a wildcard origin is safe. Centralised here instead of per-route.
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, content-type, accept, x-telegram-init-data",
+  "Access-Control-Max-Age": "86400",
+};
+
+function applyCors(res: NextResponse): NextResponse {
+  for (const [k, v] of Object.entries(CORS_HEADERS)) res.headers.set(k, v);
+  return res;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const siteHostname = request.headers.get("host") ?? "";
   const siteHeaders = { "x-site-hostname": siteHostname };
+
+  // ── CORS preflight for the Mini App — answer OPTIONS before any auth work ──
+  if (pathname.startsWith("/api/") && request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  }
 
   // ── Sitemap / robots — Googlebot or internal token only ──────────────
   if (CRAWLER_ONLY_PATHS.includes(pathname)) {
@@ -68,7 +88,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/sw.js") ||
     pathname.startsWith("/fonts")
   ) {
-    return await updateSession(request, siteHeaders);
+    const res = await updateSession(request, siteHeaders);
+    return pathname.startsWith("/api/") ? applyCors(res) : res;
   }
 
   const response = await updateSession(request, siteHeaders);

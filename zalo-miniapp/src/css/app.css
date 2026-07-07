@@ -177,3 +177,208 @@ img {
     transform: rotate(360deg);
   }
 }
+
+/* ── Đăng nhập ──────────────────────────────────────── */
+.auth-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px 16px;
+  margin-top: 8px;
+}
+
+.auth-title {
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.login-cta {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px;
+  gap: 12px;
+  border: 1px solid rgba(255, 122, 0, 0.25);
+}
+
+/* ── Tài khoản ──────────────────────────────────────── */
+.profile-hero {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px 16px;
+  gap: 2px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Diễn đàn ───────────────────────────────────────── */
+.post-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.reply {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.reply-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--card);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 20;
+}
+
+/* Nút tạo bài nổi (FAB) — nằm trên thanh điều hướng. */
+.fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(255, 122, 0, 0.4);
+  z-index: 15;
+  transition: opacity 0.15s;
+}
+
+.fab:active {
+  opacity: 0.8;
+}
+
+/* ── Home: hero gradient (bản sắc riêng, khác mini app Telegram) ── */
+.home-hero {
+  margin: -12px -16px 6px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 20px;
+  background: linear-gradient(135deg, #ff7a00 0%, #ff3d00 55%, #c026d3 130%);
+  border-radius: 0 0 22px 22px;
+  color: #fff;
+}
+
+.home-hero-top {
+  margin-bottom: 14px;
+}
+
+.brand {
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.home-hero-user {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 12px;
+  gap: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bell-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #fff;
+  color: #ff3d00;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin: 4px 2px -2px;
+}
+
+/* ── Nút đăng nhập Zalo ──────────────────────────────── */
+.btn-zalo {
+  background: #0068ff !important;
+  margin-bottom: 12px;
+}
+
+.divider {
+  margin: 4px 0 12px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* ── Thông báo ──────────────────────────────────────── */
+.notif {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 12px;
+  gap: 10px;
+  transition: opacity 0.15s;
+}
+
+.notif:active {
+  opacity: 0.6;
+}
+
+.notif.unread {
+  background: rgba(255, 122, 0, 0.07);
+}
+
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.empty-box {
+  padding: 56px 0;
+}
+
+/* ── Ảnh bìa chi tiết ───────────────────────────────── */
+.detail-cover {
+  width: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+  max-height: 220px;
+}
