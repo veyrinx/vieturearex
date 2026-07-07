@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "tms-tournaments", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
   const tournaments = await getTmsTournaments(false).catch(() => []);
-  // CORS is applied centrally in middleware.ts for all /api/* routes.
-  return NextResponse.json(tournaments);
+  // ACAO on the GET response so cross-origin clients (Zalo Mini App) work even
+  // if the middleware isn't applying CORS at the edge.
+  return NextResponse.json(tournaments, { headers: { "Access-Control-Allow-Origin": "*" } });
 }
 
 // Cho phép Zalo Mini App (origin khác) fetch danh sách giải đấu.

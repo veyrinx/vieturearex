@@ -21,10 +21,11 @@ export async function GET(request: NextRequest) {
     status,
   });
 
-  // CORS is applied centrally in middleware.ts for all /api/* routes.
+  // ACAO on the GET response so the Zalo Mini App can fetch cross-origin even
+  // if the middleware isn't applying CORS at the edge.
   return NextResponse.json(
     { events },
-    { headers: { "Cache-Control": "no-store" } },
+    { headers: { "Cache-Control": "no-store", "Access-Control-Allow-Origin": "*" } },
   );
 }
 
