@@ -1,20 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function ReadingProgress() {
   const [progress, setProgress] = useState(0);
+  const animationFrameId = useRef<number | null>(null);
 
   useEffect(() => {
     const update = () => {
       const el = document.documentElement;
       const scrolled = el.scrollTop;
       const total = el.scrollHeight - el.clientHeight;
-      setProgress(total > 0 ? Math.min(100, (scrolled / total) * 100) : 0);
+      const newProgress = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0;
+      setProgress(newProgress);
+      animationFrameId.current = requestAnimationFrame(update);
     };
-    window.addEventListener("scroll", update, { passive: true });
-    update();
-    return () => window.removeEventListener("scroll", update);
+
+    animationFrameId.current = requestAnimationFrame(update);
+
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
   }, []);
 
   if (progress <= 0) return null;

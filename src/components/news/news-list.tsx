@@ -121,9 +121,9 @@ export function NewsList({ news: initialNews }: NewsListProps) {
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">BỘ LỌC</span>
           <span className="text-xs text-muted-foreground">{filterOpen ? "▲ Thu gọn" : "▼ Mở rộng"}</span>
         </button>
-        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-4", filterOpen ? "mt-3" : "hidden md:grid")}>
+        <div className={cn("grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4", filterOpen ? "mt-3" : "hidden md:grid")}>
           <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">CHUYÊN MỤC</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">CHUYÊN MỤC</p>
             <Select value={category} onValueChange={(value) => setCategory(value ?? "all")}>
               <SelectTrigger className="h-10 w-full border-border bg-background text-foreground uppercase tracking-[0.08em]">
                 <SelectValue />
@@ -139,7 +139,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">SẮP XẾP</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">SẮP XẾP</p>
             <Select value={sort} onValueChange={(value) => setSort(value as (typeof sortOptions)[number]["value"])}>
               <SelectTrigger className="h-10 w-full border-border bg-background text-foreground uppercase tracking-[0.08em]">
                 <SelectValue />
@@ -155,7 +155,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">TỪ NGÀY</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">TỪ NGÀY</p>
             <DatePickerInput
               value={fromDate}
               onChange={(v) => { setFromDate(v); setActiveDate(null); }}
@@ -166,7 +166,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">ĐẾN NGÀY</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">ĐẾN NGÀY</p>
             <DatePickerInput
               value={toDate}
               onChange={(v) => { setToDate(v); setActiveDate(null); }}
@@ -200,24 +200,30 @@ export function NewsList({ news: initialNews }: NewsListProps) {
               <article
                 key={item.id}
                 className={cn(
-                  "group relative flex overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 dark:hover:border-amber-400/20",
-                  isFeatured ? "flex-col md:col-span-2 md:flex-row" : "flex-col",
+                  "group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300",
+                  isFeatured
+                    ? "md:col-span-2 md:flex-row hover:shadow-primary/10 dark:hover:shadow-amber-400/10 hover:shadow-2xl"
+                    : "hover:-translate-y-0.5 hover:shadow-lg",
+                  "hover:border-primary/30 dark:hover:border-amber-400/20",
                 )}
               >
                 <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
                 <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
 
                 {/* Cover */}
-                <div className={cn("relative overflow-hidden", isFeatured && "md:w-[54%] md:shrink-0")}>
+                <div className={cn(
+                  "relative overflow-hidden bg-muted",
+                  isFeatured ? "md:w-[54%] md:shrink-0" : "",
+                )}>
                   {item.cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.cover}
                       alt={item.title}
                       loading={isFeatured ? "eager" : "lazy"}
-                      decoding="async"
                       className={cn(
-                        "w-full object-cover transition duration-500 group-hover:scale-[1.03]",
+                        "w-full object-cover transition-opacity duration-500 group-hover:scale-[1.03]",
+                        !isFeatured && "opacity-0 [:not([data-loaded='false'])]:opacity-100",
                         isFeatured ? "aspect-[16/9] md:aspect-auto md:h-full md:min-h-[240px]" : "aspect-[16/9]",
                       )}
                       referrerPolicy="no-referrer"
@@ -230,7 +236,7 @@ export function NewsList({ news: initialNews }: NewsListProps) {
                       <span className="text-xs font-bold uppercase text-muted-foreground/40">ĐANG CẬP NHẬT</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent transition-opacity duration-300" />
                   {item.category && (
                     <span className="absolute left-3 top-3 z-30 rounded-md bg-primary px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-primary-foreground shadow">
                       {item.category}
@@ -246,15 +252,15 @@ export function NewsList({ news: initialNews }: NewsListProps) {
                 {/* Body */}
                 <div className={cn("flex flex-1 flex-col gap-2 p-4", isFeatured && "md:justify-center md:p-6")}>
                   <h3 className={cn(
-                    "font-heading font-bold uppercase leading-snug tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary dark:group-hover:text-amber-400",
-                    isFeatured ? "text-lg md:text-2xl" : "text-[0.9rem]",
+                    "font-heading font-bold uppercase leading-snug tracking-[0.03em] text-foreground line-clamp-2 transition-colors duration-300 group-hover:text-primary dark:group-hover:text-amber-400",
+                    isFeatured ? "text-base md:text-2xl" : "text-[0.9rem]",
                   )}>
                     {item.title}
                   </h3>
                   {item.excerpt && (
                     <p className={cn(
                       "text-muted-foreground",
-                      isFeatured ? "line-clamp-3 text-sm md:text-base" : "line-clamp-2 text-[13px]",
+                      isFeatured ? "line-clamp-3 text-sm" : "line-clamp-2 text-[13px]",
                     )}>
                       {item.excerpt}
                     </p>

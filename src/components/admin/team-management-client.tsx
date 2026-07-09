@@ -66,7 +66,7 @@ export function TeamManagementClient({ initialProfiles }: { initialProfiles: Pub
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-black uppercase tracking-[0.08em]">QUẢN LÝ ĐỘI NGŨ</h1>
+        <h1 className="font-heading text-xl font-bold uppercase tracking-[0.08em]">QUẢN LÝ ĐỘI NGŨ</h1>
         <p className="text-sm text-muted-foreground">
           Bật/tắt hiển thị thành viên trên trang /team. Hiện đang hiển thị{" "}
           <span className="font-semibold text-foreground">{shown}</span> / {profiles.length} thành viên.

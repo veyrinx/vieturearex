@@ -167,8 +167,26 @@ export const settingsFormFieldOrder = [
   "appearance.show_author",
 ] as const;
 
+// Recruitment (team join) settings — stored with the "team_join." prefix.
+// Kept out of settingsFormFieldOrder (which drives branding/SEO defaults) but
+// must be part of the admin settings allowlist so they can be read & saved.
+export const teamJoinSettingKeys = [
+  "team_join.enabled",
+  "team_join.closed_message",
+  "team_join.title",
+  "team_join.subtitle",
+  "team_join.success_message",
+  "team_join.terms_text",
+  "team_join.violation_text",
+  "team_join.role_options",
+  "team_join.note_max_length",
+  "team_join.require_phone",
+  "team_join.show_socials",
+] as const;
+
 export const adminSettingsApiKeys = [
   ...settingsFormFieldOrder,
+  ...teamJoinSettingKeys,
   "news.categories",
   "events.custom_servers",
   "events.hidden_servers",
@@ -242,6 +260,9 @@ export const defaultSiteSettingValues: Record<string, string> = {
   "community.youtube_subscribers": "",
   "community.tiktok_followers": "",
   "community.zalo_members": "",
+  "team_join.enabled": "true",
+  "team_join.closed_message":
+    "Hiện tại team Arex đang tạm dừng nhận đơn tuyển dụng. Vui lòng quay lại sau hoặc theo dõi các kênh chính thức để cập nhật đợt tuyển tiếp theo.",
 };
 
 // Default values for ISC Network (site-specific keys only)
@@ -288,6 +309,11 @@ export function getSettingsFormInitialState(settings: SiteSetting[]) {
     const iscKey = `isc:${key}`;
     const raw = settingsMap.get(iscKey) ?? defaultIscSettingValues[key] ?? defaultSiteSettingValues[key] ?? "";
     state[iscKey] = raw === SENSITIVE_CONFIGURED_MASK ? "" : raw;
+  }
+
+  // Recruitment (team join) keys — not part of settingsFormFieldOrder.
+  for (const key of teamJoinSettingKeys) {
+    state[key] = settingsMap.get(key) ?? defaultSiteSettingValues[key] ?? "";
   }
 
   return state;
@@ -373,6 +399,10 @@ export function resolveTeamJoinSettings(settingsMap: Record<string, string>) {
     .map((s) => s.trim())
     .filter(Boolean);
   return {
+    enabled: settingsMap["team_join.enabled"] !== "false", // default on
+    closedMessage:
+      settingsMap["team_join.closed_message"] ||
+      "Hiện tại team Arex đang tạm dừng nhận đơn tuyển dụng. Vui lòng quay lại sau.",
     title: settingsMap["team_join.title"] || "Tham gia team Arex",
     subtitle:
       settingsMap["team_join.subtitle"] ||

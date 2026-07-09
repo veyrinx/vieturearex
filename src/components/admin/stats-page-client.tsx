@@ -46,7 +46,7 @@ export function StatsPageClient() {
     <section className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-black uppercase tracking-[0.08em]">THỐNG KÊ CHI TIẾT</h1>
+          <h1 className="font-heading text-xl font-bold uppercase tracking-[0.08em]">THỐNG KÊ CHI TIẾT</h1>
           <p className="text-sm text-muted-foreground">Lượt xem 30 ngày, bài viết nổi bật, bảng xếp hạng thành viên.</p>
         </div>
         <Button size="sm" variant="outline" onClick={() => void load()} disabled={loading} className="gap-1.5 rounded-xl">

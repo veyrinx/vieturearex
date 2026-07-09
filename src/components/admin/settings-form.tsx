@@ -8,7 +8,7 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
-  Bell, Tv, Paintbrush, UserCog, FileText, Hash, ToggleLeft, Link, Columns3,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
@@ -108,17 +108,6 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   );
 }
 
-function SaveRow({ onSave, saving }: { onSave: () => void; saving: boolean }) {
-  return (
-    <div className="flex justify-end pt-4">
-      <Button type="button" size="sm" disabled={saving} onClick={onSave} className="gap-1.5 rounded-xl px-5">
-        <Save className="size-3.5" />
-        {saving ? "Đang lưu..." : "Lưu thay đổi"}
-      </Button>
-    </div>
-  );
-}
-
 function PasswordInput({ value, onChange, placeholder, show, onToggle }: {
   value: string; onChange: (v: string) => void; placeholder: string; show: boolean; onToggle: () => void;
 }) {
@@ -149,14 +138,6 @@ function SensitiveHint({ hint }: { hint: string | null }) {
     <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
       <ShieldCheck className="size-3" /> {hint}
     </p>
-  );
-}
-
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z" />
-    </svg>
   );
 }
 
@@ -211,10 +192,9 @@ function getSlots(value: string) {
 export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFormProps) {
   const [active, setActive] = useState<SectionId>("account");
   const [state, setState] = useState<Record<string, string>>(() => getSettingsFormInitialState(settings));
-  const [saving, setSaving] = useState<string | null>(null);
   const [configuredKeys] = useState<Set<string>>(() => getConfiguredSensitiveKeys(settings));
 
-  // Returns the storage key for a setting — ISC site-specific keys get "isc:" prefix
+  // Returns the storage key for a setting — ISC site-specific keys get an "isc:" prefix
   const pk = (key: string) =>
     siteId === "isc" && SITE_SPECIFIC_SETTING_KEYS.has(key) ? `isc:${key}` : key;
 
@@ -383,33 +363,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       ? "đã lưu — để trống để giữ nguyên"
       : null;
 
-  const save = async (keys: string[], section: string) => {
-    setSaving(section);
-    try {
-      const results = await Promise.all(keys.map(async (k) => {
-        if (SENSITIVE_FORM_KEYS.has(k) && !v(k)) return true;
-        try {
-          const r = await fetch("/api/admin/settings", {
-            method: "PATCH", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: pk(k), value: v(k) }),
-          });
-          if (!r.ok) {
-            const body = (await r.json().catch(() => null)) as { error?: string } | null;
-            return body?.error ?? "Lỗi không xác định.";
-          }
-          return true;
-        } catch {
-          return "Lỗi mạng.";
-        }
-      }));
-      const errors = results.filter((r): r is string => typeof r === "string");
-      if (errors.length === 0) { toast.success("Đã lưu thay đổi."); await onSaved(); }
-      else toast.error(errors[0]);
-    } finally {
-      setSaving(null);
-    }
-  };
-
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
@@ -519,7 +472,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
-
         <Card>
           <div className="py-4">
             <SectionHeader icon={ShieldCheck} title="Bảo Mật" desc="Đổi mật khẩu đăng nhập" />
@@ -548,7 +500,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </Button>
           </div>
         </Card>
-
       </div>
     ),
 
@@ -596,7 +547,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
-        <SaveRow onSave={() => save(["branding.site_name", "branding.favicon_url", "branding.logo_light_url", "branding.logo_dark_url"], "branding")} saving={saving === "branding"} />
       </div>
     ),
 
@@ -635,7 +585,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{v("seo.default_description") || "Mô tả sẽ xuất hiện ở đây..."}</p>
           </div>
         </div>
-        <SaveRow onSave={() => save(["seo.default_title", "seo.default_description"], "seo")} saving={saving === "seo"} />
       </div>
     ),
 
@@ -747,14 +696,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </div>
         </div>
-        <SaveRow
-          onSave={() => save([
-            "home.hero.title", "home.background.transition_effect", "home.background.interval_seconds",
-            "home.background.transition_seconds", "home.background.desktop_urls", "home.background.mobile_urls",
-            "home.events_bg.image_url", "home.events_bg.video_url", "home.events_bg.caption",
-          ], "home")}
-          saving={saving === "home"}
-        />
       </div>
     ),
 
@@ -821,10 +762,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </div>
         </Card>
-        <SaveRow
-          onSave={() => save(["events.custom_servers", "events.hidden_servers", "events.server_logos"], "event_servers")}
-          saving={saving === "event_servers"}
-        />
       </div>
     ),
 
@@ -840,7 +777,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
           <Field label="TikTok">
             <div className="flex items-center gap-2">
-              <TikTokIcon className="size-3.5 shrink-0 text-muted-foreground" />
+              <svg className="size-3.5 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z" /></svg>
               <Input value={v("social.tiktok_url")} onChange={(e) => set("social.tiktok_url", e.target.value)} placeholder="https://tiktok.com/@..." />
             </div>
           </Field>
@@ -851,7 +788,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             <Input type="email" value={v("social.email")} onChange={(e) => set("social.email", e.target.value)} placeholder="admin@arex.tech" />
           </Field>
         </Card>
-        <SaveRow onSave={() => save(["social.facebook_url", "social.tiktok_url", "social.youtube_url", "social.email"], "social")} saving={saving === "social"} />
       </div>
     ),
 
@@ -951,10 +887,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </div>
 
-          <SaveRow
-            onSave={() => save(["community.launch_date", "community.facebook_members", "community.youtube_subscribers", "community.tiktok_followers", "community.zalo_members"], "community")}
-            saving={saving === "community"}
-          />
         </div>
       );
     })(),
@@ -1017,7 +949,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </div>
         </Card>
-        <SaveRow onSave={() => save(["ads.google_adsense_id", "ads.slot_header", "ads.slot_sidebar", "ads.slot_article"], "ads")} saving={saving === "ads"} />
 
         <Card>
           <div className="py-4">
@@ -1036,13 +967,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             <Input value={v("home.ads.right.link_url")} onChange={(e) => set("home.ads.right.link_url", e.target.value)} placeholder="https://..." />
           </Field>
         </Card>
-        <SaveRow
-          onSave={() => save(
-            ["home.ads.left.image_url", "home.ads.left.link_url", "home.ads.right.image_url", "home.ads.right.link_url"],
-            "home-ads",
-          )}
-          saving={saving === "home-ads"}
-        />
       </div>
     ),
 
@@ -1053,6 +977,32 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <div className="py-4">
             <SectionHeader icon={Users} title="Form mời gia nhập team" desc="Tuỳ chỉnh nội dung trang /team-join/[token]" />
           </div>
+
+          <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">Mở nhận đơn tuyển dụng</p>
+              <p className="text-xs text-muted-foreground">
+                Tắt để tạm dừng tuyển dụng: mọi link mời sẽ hiện thông báo tạm đóng và không nộp được đơn.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={v("team_join.enabled") !== "false"}
+              onChange={(e) => set("team_join.enabled", e.target.checked ? "true" : "false")}
+              className="mt-1 size-4 cursor-pointer accent-primary"
+            />
+          </label>
+          <Field label="Thông báo khi tạm đóng" hint="Hiển thị khi tắt nhận đơn ở trên" icon={Users}>
+            <Textarea
+              value={v("team_join.closed_message")}
+              onChange={(e) => set("team_join.closed_message", e.target.value)}
+              placeholder="Hiện tại team Arex đang tạm dừng nhận đơn tuyển dụng..."
+              rows={3}
+              maxLength={500}
+              className="resize-none"
+            />
+          </Field>
+
           <Field label="Tiêu đề trang" hint="Hiện ở header form" icon={Users}>
             <Input value={v("team_join.title")} onChange={(e) => set("team_join.title", e.target.value)} placeholder="Tham gia team Arex" maxLength={120} />
           </Field>
@@ -1147,20 +1097,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </label>
           </div>
         </Card>
-        <SaveRow
-          onSave={() => save([
-            "team_join.title",
-            "team_join.subtitle",
-            "team_join.success_message",
-            "team_join.terms_text",
-            "team_join.violation_text",
-            "team_join.role_options",
-            "team_join.note_max_length",
-            "team_join.require_phone",
-            "team_join.show_socials",
-          ], "team_join")}
-          saving={saving === "team_join"}
-        />
       </div>
     ),
 
@@ -1855,50 +1791,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
-
-        <SaveRow
-          onSave={() => save(
-            [
-              "zalo.webhook_url", "zalo.group_id",
-              "zalo.oa_access_token", "zalo.recipient_user_id",
-              "integrations.lark_webhook_url",
-              "integrations.lark_alerts_webhook_url",
-              "integrations.lark_bot_name",
-              "integrations.lark_daily_report",
-              "integrations.lark_app_id",
-              "integrations.lark_app_secret",
-              "integrations.lark_sheet_token",
-              "integrations.lark_sheet_name",
-              "integrations.discord_internal_webhook",
-              "integrations.discord_public_webhook",
-              "integrations.discord_daily_report",
-              "integrations.report_schedule_hour",
-              "integrations.report_schedule_interval",
-              "integrations.report_schedule_days",
-              "integrations.telegram_daily_report",
-              "integrations.discord_daily_report",
-              "integrations.lark_daily_report",
-              "integrations.telegram_bot_token",
-              "integrations.telegram_chat_id",
-              "integrations.telegram_daily_report",
-              "integrations.telegram_report_hour",
-              "integrations.telegram_user_bot_token",
-              "integrations.telegram_user_chat_id",
-              "integrations.lark_report_hour",
-              "integrations.discord_report_hour",
-              "integrations.ai_auto_reply",
-              "integrations.ai_bot_name",
-              "integrations.ai_system_prompt",
-              "integrations.ai_api_key",
-              "integrations.tg_auto_news",
-              "integrations.tg_auto_scheduled",
-              "integrations.tg_auto_events",
-              "integrations.tg_auto_broadcast_dm",
-            ],
-            "integrations",
-          )}
-          saving={saving === "integrations"}
-        />
       </div>
     ),
 
@@ -1993,11 +1885,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </div>
         </div>
 
-        <SaveRow
-          onSave={() => save(["site.maintenance_mode", "site.maintenance_message", "site.maintenance_end_time"], "maintenance")}
-          saving={saving === "maintenance"}
-        />
-
         <Card>
           <div className="py-4">
             <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="AES-256-GCM toàn bộ setting nhạy cảm — chạy lại bất cứ lúc nào để xoay khoá" />
@@ -2077,7 +1964,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </ul>
         </div>
 
-        <SaveRow onSave={() => save(["mail.smtp_host", "mail.smtp_port", "mail.smtp_user", "mail.smtp_pass", "mail.from_name", "mail.from_email"], "mail")} saving={saving === "mail"} />
       </div>
     ),
 
@@ -2152,7 +2038,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
         </Card>
 
-        <SaveRow onSave={() => save(["tms.free_per_week", "tms.payment_price", "tms.payment_info", "tms.payment_qr_url"], "tms")} saving={saving === "tms"} />
       </div>
     ),
 
@@ -2259,19 +2144,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
-
-        <SaveRow
-          onSave={() => save([
-            "content.comments_enabled",
-            "content.comments_require_login",
-            "content.comments_auto_approve",
-            "content.comments_max_length",
-            "content.news_per_page",
-            "content.featured_count",
-            "content.show_view_count",
-          ], "content")}
-          saving={saving === "content"}
-        />
       </div>
     ),
 
@@ -2369,18 +2241,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
-
-        <SaveRow
-          onSave={() => save([
-            "users.registration_enabled",
-            "users.require_email_verification",
-            "users.google_login_enabled",
-            "users.default_avatar_url",
-            "users.public_profiles",
-            "users.allow_display_name_change",
-          ], "users")}
-          saving={saving === "users"}
-        />
       </div>
     ),
 
@@ -2487,18 +2347,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
         </Card>
 
-        <SaveRow
-          onSave={() => save([
-            "push.enabled",
-            "push.vapid_public_key",
-            "push.vapid_private_key",
-            "push.vapid_email",
-            "push.default_title",
-            "push.icon_url",
-            "push.badge_url",
-          ], "push")}
-          saving={saving === "push"}
-        />
       </div>
     ),
 
@@ -2588,16 +2436,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </ol>
         </div>
 
-        <SaveRow
-          onSave={() => save([
-            "streams.youtube_channel_id",
-            "streams.youtube_api_key",
-            "streams.auto_featured",
-            "streams.show_upcoming",
-            "streams.max_displayed",
-          ], "streams")}
-          saving={saving === "streams"}
-        />
       </div>
     ),
 
@@ -2716,18 +2554,6 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
         </Card>
-
-        <SaveRow
-          onSave={() => save([
-            "appearance.primary_color",
-            "appearance.default_theme",
-            "appearance.card_style",
-            "appearance.card_show_views",
-            "appearance.card_show_category",
-            "appearance.show_author",
-          ], "appearance")}
-          saving={saving === "appearance"}
-        />
       </div>
     ),
   };

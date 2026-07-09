@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, RefreshCw, CheckCircle, MessageCircle } from "lucide-react";
+import { Send, RefreshCw, CheckCircle, MessageCircle, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type Session = {
@@ -70,7 +76,7 @@ export function CskhAdminPanel() {
   useEffect(() => {
     if (!selectedId) return;
     fetchMessages(selectedId);
-    pollRef.current = setInterval(() => { void fetchMessages(selectedId); }, 5000);
+    pollRef.current = setInterval(() => { void fetchMessages(selectedId); }, 10000); // Increased polling interval
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [selectedId, fetchMessages]);
 
@@ -110,7 +116,9 @@ export function CskhAdminPanel() {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-black uppercase tracking-[0.08em] text-foreground">CSKH</h1>
+          <h1 className="font-heading text-xl font-bold uppercase tracking-[0.08em] text-foreground">
+            Hỗ Trợ Khách Hàng (CSKH)
+          </h1>
           <p className="text-sm text-muted-foreground">Quản lý và trả lời yêu cầu hỗ trợ của người dùng.</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchSessions} className="gap-2 rounded-xl">
@@ -120,17 +128,18 @@ export function CskhAdminPanel() {
       </div>
 
       <div className="grid h-[600px] gap-4 md:grid-cols-[280px_1fr]">
-        {/* Sessions list */}
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="border-b border-border px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        <Card className="flex flex-col overflow-hidden">
+          <CardHeader className="border-b border-border px-4 py-3">
+            <CardTitle className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               Phiên ({sessions.filter((s) => s.status === "open").length} đang mở)
-            </p>
-          </div>
+            </CardTitle>
+          </CardHeader>
           {loading ? (
             <LoadingSpinner className="py-8" label="Đang tải..." />
           ) : sessions.length === 0 ? (
-            <EmptyState title="Chưa có yêu cầu" description="Chưa có người dùng nào liên hệ." />
+            <div className="flex-1">
+              <EmptyState title="Chưa có yêu cầu" description="Chưa có người dùng nào liên hệ." />
+            </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
               {sessions.map((s) => (
@@ -139,7 +148,7 @@ export function CskhAdminPanel() {
                   type="button"
                   onClick={() => setSelectedId(s.id)}
                   className={cn(
-                    "flex w-full flex-col gap-0.5 border-b border-border px-4 py-3 text-left transition hover:bg-muted/60",
+                    "flex w-full flex-col gap-0.5 border-b border-border px-4 py-3 text-left transition hover:bg-muted/50",
                     selectedId === s.id && "bg-primary/8 dark:bg-primary/12",
                   )}
                 >
@@ -157,10 +166,9 @@ export function CskhAdminPanel() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Message view */}
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
+        <Card className="flex flex-col overflow-hidden">
           {!selected ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
               <MessageCircle className="size-10 opacity-30" />
@@ -168,8 +176,7 @@ export function CskhAdminPanel() {
             </div>
           ) : (
             <>
-              {/* Header */}
-              <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+              <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b border-border px-4 py-3">
                 <div>
                   <p className="font-semibold text-foreground">{selected.display_name}</p>
                   <p className="text-xs text-muted-foreground">Bắt đầu {timeAgo(selected.created_at)}</p>
@@ -185,9 +192,8 @@ export function CskhAdminPanel() {
                     Đóng phiên
                   </Button>
                 )}
-              </div>
+              </CardHeader>
 
-              {/* Messages */}
               <div ref={scrollRef} className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4 scrollbar-none">
                 {messages.length === 0 ? (
                   <p className="text-center text-sm text-muted-foreground">Chưa có tin nhắn.</p>
@@ -200,9 +206,7 @@ export function CskhAdminPanel() {
                       <div key={msg.id} className={cn("flex flex-col gap-0.5", isAdmin ? "items-end" : "items-start")}>
                         <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
                           {isAi && (
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-violet-500">
-                              <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 14l1.25-2.75L23 19l-2.75-1.25L19 15l-1.25 2.75L15 19l2.75 1.25zM11.5 9.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12z" />
-                            </svg>
+                            <Bot className="size-3 text-violet-500" />
                           )}
                           {displayName}
                           {isAi && (
@@ -227,7 +231,6 @@ export function CskhAdminPanel() {
                 )}
               </div>
 
-              {/* Reply input */}
               {selected.status === "open" ? (
                 <div className="shrink-0 border-t border-border p-3">
                   <form onSubmit={(e) => { e.preventDefault(); void sendReply(); }} className="flex gap-2">
@@ -250,7 +253,7 @@ export function CskhAdminPanel() {
               )}
             </>
           )}
-        </div>
+        </Card>
       </div>
     </section>
   );
