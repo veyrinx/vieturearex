@@ -165,7 +165,7 @@ export function PlayerLeaderboardClient({ players }: { players: Player[] }) {
               })}
             </tbody>
           </table>
-          {query && <p className="px-3 py-2 text-[10px] text-muted-foreground border-t border-border">{filtered.length} kết quả cho "{query}"</p>}
+          {query && <p className="px-3 py-2 text-[10px] text-muted-foreground border-t border-border">{filtered.length} kết quả cho &quot;{query}&quot;</p>}
         </div>
       )}
     </div>
@@ -276,7 +276,7 @@ export function TeamLeaderboardClient({ teams }: { teams: Team[] }) {
               })}
             </tbody>
           </table>
-          {query && <p className="px-3 py-2 text-[10px] text-muted-foreground border-t border-border">{filtered.length} kết quả cho "{query}"</p>}
+          {query && <p className="px-3 py-2 text-[10px] text-muted-foreground border-t border-border">{filtered.length} kết quả cho &quot;{query}&quot;</p>}
         </div>
       )}
     </div>

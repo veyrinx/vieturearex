@@ -5,7 +5,7 @@ import sanitizeHtml from "sanitize-html";
 
 type Props = { content: string; className?: string };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// sanitize-html's typed options reject a few valid keys (transformTags overloads) — keep loose.
 const SANITIZE_OPTIONS: any = {
   allowedTags: [
     "p", "br", "strong", "em", "u", "s", "del",

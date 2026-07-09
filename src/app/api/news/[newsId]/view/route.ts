@@ -14,8 +14,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const db = createAdminSupabaseClient();
     if (db) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db as any).rpc("increment_news_views", { news_id: newsId }).catch(() => null);
+      await (db as unknown as { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ error: unknown }> })
+        .rpc("increment_news_views", { news_id: newsId });
     }
   } catch { /* non-fatal */ }
 

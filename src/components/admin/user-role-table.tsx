@@ -424,12 +424,12 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className="px-4 py-3">
+                <th className="px-4 py-3 w-[250px]">
                   <button onClick={() => toggleSort("email")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
                     Thành viên <SortIcon k="email" />
                   </button>
                 </th>
-                <th className="px-4 py-3">
+                <th className="px-4 py-3 w-[160px]">
                   <button onClick={() => toggleSort("role")} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
                     Vai trò <SortIcon k="role" />
                   </button>
@@ -447,7 +447,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                     Tham gia <SortIcon k="created_at" />
                   </button>
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground w-[180px]">
                   Hành động
                 </th>
               </tr>
@@ -463,7 +463,8 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
               ) : filtered.map((user) => {
                 const meta = ROLE_META[user.role];
                 const targetLevel = ROLE_META[user.role]?.level ?? 20;
-                const canManage = isAdmin && targetLevel < callerLevel && user.email !== currentUserEmail;
+                const isSelf = user.email === currentUserEmail;
+                const canManage = isAdmin && targetLevel < callerLevel && !isSelf;
                 const isUpdating = updatingId === user.id;
                 const isBanning = banningId === user.id;
                 const isReseting = resetingId === user.id;
@@ -471,7 +472,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                 const isVerifying = verifyingId === user.id;
 
                 return (
-                  <tr key={user.id} className={cn("transition-colors hover:bg-muted/30", user.is_banned && "opacity-60 bg-red-500/5")}>
+                  <tr key={user.id} className={cn("transition-colors hover:bg-muted/30", user.is_banned && "bg-red-500/5")}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className={cn(
@@ -480,7 +481,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                         )}>
                           {(user.display_name || user.email)[0].toUpperCase()}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <p className="truncate font-medium text-foreground">
                               {user.display_name || user.email.split("@")[0]}
@@ -505,7 +506,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                     <td className="px-4 py-3">
                       <Select
                         defaultValue={user.role}
-                        disabled={isUpdating || !canManage}
+                        disabled={isUpdating || !canManage || isSelf}
                         onValueChange={(v) => updateRole(user.id, v as UserRole)}
                       >
                         <SelectTrigger className={cn("h-8 w-36 border text-xs font-semibold", meta.color)}>

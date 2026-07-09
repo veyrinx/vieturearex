@@ -209,7 +209,7 @@ export function BroadcastPanel() {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
           <Megaphone className="mb-3 size-10 text-muted-foreground/30" />
           <p className="text-sm font-semibold text-muted-foreground">Chưa có thông báo nào</p>
-          <p className="text-xs text-muted-foreground/70 mt-0.5">Bấm "Thêm mới" để tạo thông báo đầu tiên</p>
+          <p className="text-xs text-muted-foreground/70 mt-0.5">Bấm &quot;Thêm mới&quot; để tạo thông báo đầu tiên</p>
         </div>
       ) : (
         <div className="space-y-3">

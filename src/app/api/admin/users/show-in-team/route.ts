@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   if (error) {
     if (error.code === "42703" || error.message?.includes("show_in_team")) {
       return NextResponse.json(
-        { error: "Cột show_in_team chưa có trong DB. Chạy migrate_points_team.sql trước." },
+        { error: "Cột show_in_team chưa có trong DB. Chạy supabase/schema.sql trước." },
         { status: 503 },
       );
     }
