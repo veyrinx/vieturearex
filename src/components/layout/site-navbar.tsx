@@ -28,15 +28,6 @@ import { navItems, siteConfig } from "@/lib/constants/site";
 import { Info, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const NAV_ICONS: Record<string, LucideIcon> = {
-  "/":              House,
-  "/calendar":      CalendarDays,
-  "/events":        Flame,
-  "/esports":       MonitorPlay,
-  "/news":          BookOpenText,
-  "/team":          Users,
-};
-
 const ABOUT_ITEMS = [
   { title: "Đội Ngũ",       href: "/team",    icon: Users, desc: "Thành viên vận hành Arex" },
   { title: "Về Chúng Tôi",  href: "/about",   icon: Info,  desc: "Câu chuyện & sứ mệnh" },
@@ -52,6 +43,36 @@ const COMMUNITY_ITEMS = [
   { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
   { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         desc: "Tìm clan & guild" },
   { title: "Trang Cá Nhân",  href: "/cong-dong/cosmetics",   icon: Palette,       desc: "Khung & Danh Hiệu" },
+];
+
+// ── Mobile sheet nav — gom thành nhóm gọn ───────────────────────────────────
+const MOBILE_NAV_SECTIONS: {
+  label: string;
+  items: { title: string; href: string; icon: LucideIcon }[];
+}[] = [
+  {
+    label: "Chính",
+    items: [
+      { title: "Trang Chủ", href: "/",     icon: House },
+      { title: "Tin Tức",   href: "/news", icon: BookOpenText },
+    ],
+  },
+  {
+    label: "Khám Phá",
+    items: [
+      { title: "Lịch",     href: "/calendar", icon: CalendarDays },
+      { title: "Sự Kiện",  href: "/events",   icon: Flame },
+      { title: "Trực Tiếp", href: "/esports", icon: MonitorPlay },
+    ],
+  },
+  {
+    label: "Cộng Đồng",
+    items: COMMUNITY_ITEMS.map(({ title, href, icon }) => ({ title, href, icon })),
+  },
+  {
+    label: "Giới Thiệu",
+    items: ABOUT_ITEMS.map(({ title, href, icon }) => ({ title, href, icon })),
+  },
 ];
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
@@ -401,109 +422,46 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                 </div>
               </div>
 
-              <nav className="flex-1 space-y-1 overflow-y-auto">
-                {/* Main nav items */}
-                {navItems.map((item, i) => {
-                  const active = pathname === item.href;
-                  const Icon = NAV_ICONS[item.href];
-                  return (
-                    <motion.div
-                      key={item.href}
-                      initial={{ opacity: 0, x: 16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.045, duration: 0.22, ease: "easeOut" }}
-                    >
-                      <Link
-                        href={item.href}
-                        onClick={() => setSheetOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
-                          active
-                            ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
-                            : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
-                        )}
-                      >
-                        {Icon && (
-                          <span className={cn(
-                            "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                            active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
-                          )}>
-                            <Icon className="size-3.5" />
-                          </span>
-                        )}
-                        {item.title}
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-
-                {/* Community section */}
-                <div className="pt-3">
-                  <p className="px-3.5 pb-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
-                    Cộng Đồng
-                  </p>
-                  {COMMUNITY_ITEMS.map(({ href, icon: Icon, title }, i) => {
-                    const active = pathname.startsWith(href);
-                    return (
-                      <motion.div
-                        key={href}
-                        initial={{ opacity: 0, x: 16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: (navItems.length + i) * 0.045, duration: 0.22, ease: "easeOut" }}
-                      >
-                        <Link
-                          href={href}
-                          onClick={() => setSheetOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
-                            active
-                              ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
-                              : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
-                          )}
-                        >
-                          <span className={cn(
-                            "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                            active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
-                          )}>
-                            <Icon className="size-3.5" />
-                          </span>
-                          {title}
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* Giới thiệu section */}
-                <div className="pt-3">
-                  <p className="px-3.5 pb-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
-                    Giới Thiệu
-                  </p>
-                  {ABOUT_ITEMS.map(({ href, icon: Icon, title }) => {
-                    const active = pathname.startsWith(href);
-                    return (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={() => setSheetOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-all",
-                          active
-                            ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
-                            : "border-transparent text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
-                        )}
-                      >
-                        <span className={cn(
-                          "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                          active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
-                        )}>
-                          <Icon className="size-3.5" />
-                        </span>
-                        {title}
-                      </Link>
-                    );
-                  })}
-                </div>
+              <nav className="flex-1 space-y-4 overflow-y-auto">
+                {MOBILE_NAV_SECTIONS.map((section, si) => (
+                  <div key={section.label}>
+                    <p className="px-1 pb-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
+                      {section.label}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {section.items.map(({ href, icon: Icon, title }, i) => {
+                        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+                        return (
+                          <motion.div
+                            key={href}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: si * 0.05 + i * 0.025, duration: 0.2, ease: "easeOut" }}
+                          >
+                            <Link
+                              href={href}
+                              onClick={() => setSheetOpen(false)}
+                              className={cn(
+                                "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-semibold transition-all",
+                                active
+                                  ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
+                                  : "border-transparent bg-muted/40 text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
+                              )}
+                            >
+                              <span className={cn(
+                                "flex size-6 shrink-0 items-center justify-center rounded-lg",
+                                active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-background/70",
+                              )}>
+                                <Icon className="size-3.5" />
+                              </span>
+                              <span className="truncate">{title}</span>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </nav>
 
               {/* Quick controls in sheet (mobile only) */}
