@@ -204,6 +204,17 @@ export function SensitivityTool() {
     }
   };
 
+  const handleRedetect = () => {
+    setDetected(null);
+    detectDevice().then((info) => {
+      setDetected(info);
+      setDevice(info.tier);
+      toast.success("Đã nhận diện lại máy!");
+    }).catch(() => {
+      toast.error("Không nhận diện được. Thử lại.");
+    });
+  };
+
   const handleReset = () => {
     setStyle("balanced");
     setFingers(3);
@@ -303,6 +314,15 @@ export function SensitivityTool() {
               Đang nhận diện cấu hình máy của bạn...
             </div>
           )}
+
+          <button
+            onClick={handleRedetect}
+            disabled={!detected}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground transition hover:border-primary/30 hover:text-primary disabled:opacity-50 dark:hover:text-amber-300"
+          >
+            <ScanLine className="size-3.5" />
+            Nhận diện lại máy
+          </button>
         </Section>
 
         {/* Tinh chỉnh */}
