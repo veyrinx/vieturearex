@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Crosshair, Zap, Target, Crown, Smartphone, Hand, Sparkles,
-  Copy, Save, RotateCcw, Check, Gauge,
+  Copy, Save, RotateCcw, Check, Gauge, Cpu, ScanLine,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -72,6 +72,77 @@ const PRESETS: { name: string; style: PlayStyle; fingers: Fingers; device: Devic
 
 const STORAGE_KEY = "arex_sens_preset";
 
+// ── Nhận diện thiết bị ─────────────────────────────────────────────
+type DetectedInfo = {
+  tier: DeviceTier;
+  refreshHz: number | null;
+  cores: number | null;
+  memory: number | null;
+  dpr: number;
+  shortSide: number; // cạnh ngắn (pixel vật lý) ~ độ phân giải ngang
+  brand: string;
+};
+
+// Đo tần số quét màn hình bằng cách đếm frame trong ~500ms
+function measureRefresh(): Promise<number | null> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame !== "function") return resolve(null);
+    let frames = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      frames++;
+      const elapsed = now - start;
+      if (elapsed >= 500) resolve(Math.round((frames / elapsed) * 1000));
+      else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+function guessBrand(ua: string): string {
+  const s = ua || "";
+  if (/iPhone/i.test(s)) return "iPhone";
+  if (/iPad/i.test(s)) return "iPad";
+  if (/SM-|Samsung/i.test(s)) return "Samsung";
+  if (/Redmi|POCO|Xiaomi|\bMI\b/i.test(s)) return "Xiaomi";
+  if (/OPPO|CPH/i.test(s)) return "OPPO";
+  if (/vivo/i.test(s)) return "vivo";
+  if (/Realme|RMX/i.test(s)) return "Realme";
+  if (/OnePlus/i.test(s)) return "OnePlus";
+  if (/HUAWEI|Honor/i.test(s)) return "Huawei/Honor";
+  if (/Android/i.test(s)) return "Android";
+  if (/Windows|Macintosh|Mac OS|Linux/i.test(s)) return "Máy tính";
+  return "Thiết bị";
+}
+
+function classifyTier(o: {
+  cores: number | null; memory: number | null; refreshHz: number | null; dpr: number; shortSide: number;
+}): DeviceTier {
+  let score = 0;
+  if (o.cores != null) score += o.cores >= 8 ? 2 : o.cores >= 6 ? 1 : 0;
+  if (o.memory != null) score += o.memory >= 6 ? 2 : o.memory >= 4 ? 1 : 0;
+  if (o.refreshHz != null) score += o.refreshHz >= 100 ? 2 : o.refreshHz >= 85 ? 1 : 0;
+  if (o.dpr >= 3) score += 1;
+  if (o.shortSide >= 1080) score += 1;
+  if (score >= 5) return "flagship";
+  if (score <= 1) return "entry";
+  return "mid";
+}
+
+async function detectDevice(): Promise<DetectedInfo> {
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  const cores = typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : null;
+  const memory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : null;
+  const dpr = window.devicePixelRatio || 1;
+  const sw = (window.screen?.width ?? 0) * dpr;
+  const sh = (window.screen?.height ?? 0) * dpr;
+  const shortSide = Math.round(Math.min(sw, sh));
+  const brand = guessBrand(nav.userAgent);
+  const refreshHz = await measureRefresh();
+  const tier = classifyTier({ cores, memory, refreshHz, dpr, shortSide });
+  return { tier, refreshHz, cores, memory, dpr, shortSide, brand };
+}
+
 // ── Component ──────────────────────────────────────────────────────
 export function SensitivityTool() {
   const [style, setStyle] = useState<PlayStyle>("balanced");
@@ -80,19 +151,32 @@ export function SensitivityTool() {
   const [intensity, setIntensity] = useState(0);
   const [copied, setCopied] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
+  const [detected, setDetected] = useState<DetectedInfo | null>(null);
 
-  // Nạp preset đã lưu
+  // Nạp preset đã lưu + tự nhận diện máy
   useEffect(() => {
+    let hadSaved = false;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const p = JSON.parse(raw) as { style: PlayStyle; fingers: Fingers; device: DeviceTier; intensity: number };
-      if (p.style) setStyle(p.style);
-      if (p.fingers) setFingers(p.fingers);
-      if (p.device) setDevice(p.device);
-      if (typeof p.intensity === "number") setIntensity(p.intensity);
-      setHasSaved(true);
+      if (raw) {
+        const p = JSON.parse(raw) as { style: PlayStyle; fingers: Fingers; device: DeviceTier; intensity: number };
+        if (p.style) setStyle(p.style);
+        if (p.fingers) setFingers(p.fingers);
+        if (p.device) setDevice(p.device);
+        if (typeof p.intensity === "number") setIntensity(p.intensity);
+        setHasSaved(true);
+        hadSaved = true;
+      }
     } catch { /**/ }
+
+    let cancelled = false;
+    detectDevice().then((info) => {
+      if (cancelled) return;
+      setDetected(info);
+      // Chỉ tự chọn cấu hình máy khi người dùng chưa có preset lưu sẵn
+      if (!hadSaved) setDevice(info.tier);
+    }).catch(() => { /**/ });
+    return () => { cancelled = true; };
   }, []);
 
   const result = useMemo(() => compute(style, fingers, device, intensity), [style, fingers, device, intensity]);
@@ -195,6 +279,30 @@ export function SensitivityTool() {
               </button>
             ))}
           </div>
+
+          {/* Kết quả tự nhận diện máy */}
+          {detected ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 font-bold text-foreground">
+                <Cpu className="size-3.5 text-primary dark:text-amber-400" /> {detected.brand}
+              </span>
+              {detected.refreshHz != null && <SpecChip>{detected.refreshHz}Hz</SpecChip>}
+              {detected.cores != null && <SpecChip>{detected.cores} nhân</SpecChip>}
+              {detected.memory != null && <SpecChip>{detected.memory}GB RAM</SpecChip>}
+              {detected.shortSide > 0 && <SpecChip>{detected.shortSide}px</SpecChip>}
+              <span className="ml-auto whitespace-nowrap text-[10px]">
+                → đề xuất{" "}
+                <span className="font-bold text-primary dark:text-amber-400">
+                  {DEVICES.find((d) => d.key === detected.tier)?.label}
+                </span>
+              </span>
+            </div>
+          ) : (
+            <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+              <ScanLine className="size-3.5 animate-pulse text-primary dark:text-amber-400" />
+              Đang nhận diện cấu hình máy của bạn...
+            </div>
+          )}
         </Section>
 
         {/* Tinh chỉnh */}
@@ -323,6 +431,14 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.E
       </div>
       {children}
     </div>
+  );
+}
+
+function SpecChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-md bg-background/70 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-foreground/80">
+      {children}
+    </span>
   );
 }
 
