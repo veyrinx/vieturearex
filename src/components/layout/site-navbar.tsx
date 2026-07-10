@@ -19,7 +19,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
@@ -387,46 +386,42 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               <Menu className="size-5" />
             </SheetTrigger>
 
-            <SheetContent side="right" className="flex w-72 flex-col border-border bg-card text-foreground">
-              <SheetHeader className="pb-2">
-                <SheetTitle className="font-heading text-sm uppercase tracking-[0.1em] text-foreground">
-                  {siteName}
-                </SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">
-                  Điều hướng nhanh tới các khu vực cộng đồng.
-                </SheetDescription>
-              </SheetHeader>
-
-              {/* Logo in sheet */}
-              <div className="mb-4 flex items-center gap-3 border-b border-border pb-4">
+            <SheetContent
+              side="right"
+              className="flex w-72 max-w-[85vw] flex-col gap-0 overflow-hidden rounded-l-[28px] border-l border-border/60 bg-card/95 p-0 text-foreground shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+            >
+              {/* Brand header */}
+              <div className="relative flex items-center gap-3 border-b border-border/60 bg-gradient-to-br from-primary/8 to-transparent px-4 py-4 dark:from-amber-400/8">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
                 <Image
                   src={iconLight}
                   alt={siteName}
-                  width={40}
-                  height={40}
-                  className="block size-10 rounded-xl object-contain dark:hidden"
+                  width={38}
+                  height={38}
+                  className="block size-9 shrink-0 rounded-xl object-contain dark:hidden"
                 />
                 <Image
                   src={iconDark}
                   alt={siteName}
-                  width={40}
-                  height={40}
-                  className="hidden size-10 rounded-xl object-contain dark:block"
+                  width={38}
+                  height={38}
+                  className="hidden size-9 shrink-0 rounded-xl object-contain dark:block"
                 />
-                <div className="leading-none">
-                  <p className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
+                <div className="min-w-0 leading-none">
+                  <SheetTitle className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
                     {siteName}
-                  </p>
-                  <p className="text-[0.62rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  </SheetTitle>
+                  <SheetDescription className="mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Community Hub
-                  </p>
+                  </SheetDescription>
                 </div>
               </div>
 
-              <nav className="flex-1 space-y-4 overflow-y-auto">
+              {/* Nav groups */}
+              <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
                 {MOBILE_NAV_SECTIONS.map((section, si) => (
                   <div key={section.label}>
-                    <p className="px-1 pb-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
+                    <p className="px-1.5 pb-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
                       {section.label}
                     </p>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -443,14 +438,14 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                               href={href}
                               onClick={() => setSheetOpen(false)}
                               className={cn(
-                                "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-semibold transition-all",
+                                "flex items-center gap-2 rounded-2xl border px-2.5 py-2.5 text-xs font-semibold transition-all active:scale-[0.97]",
                                 active
-                                  ? "border-primary/25 bg-primary/10 text-primary dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-300"
+                                  ? "border-primary/25 bg-primary/10 text-primary shadow-sm dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300"
                                   : "border-transparent bg-muted/40 text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
                               )}
                             >
                               <span className={cn(
-                                "flex size-6 shrink-0 items-center justify-center rounded-lg",
+                                "flex size-7 shrink-0 items-center justify-center rounded-xl",
                                 active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-background/70",
                               )}>
                                 <Icon className="size-3.5" />
@@ -465,10 +460,10 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                 ))}
               </nav>
 
-              {/* Quick controls in sheet (mobile only) */}
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
-                <div className="flex items-center gap-1.5">
+              {/* Quick controls */}
+              <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
+                <div className="flex items-center gap-1">
                   <LanguageToggle className="theme-control-surface" />
                   <NotificationBell />
                   <PushNotificationButton />
