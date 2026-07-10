@@ -6,6 +6,7 @@ import { isAfter, isBefore, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Clock, ArrowUpRight, Search, X, User } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
+import { ResultsBar } from "@/components/common/results-bar";
 import { useNewsQuery } from "@/hooks/use-news-query";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
@@ -75,6 +76,14 @@ export function NewsList({ news: initialNews }: NewsListProps) {
   }, [category, fromDate, safeNews, sort, toDate, searchQuery]);
 
   useEffect(() => { setDisplayCount(12); }, [filteredNews]);
+
+  const hasActiveFilters = category !== "all" || fromDate !== "" || toDate !== "" || searchQuery.trim() !== "";
+  const resetFilters = () => {
+    setCategory("all");
+    setFromDate("");
+    setToDate("");
+    setSearchQuery("");
+  };
 
   const visibleNews = filteredNews.slice(0, displayCount);
   const hasMore = displayCount < filteredNews.length;
@@ -180,15 +189,25 @@ export function NewsList({ news: initialNews }: NewsListProps) {
 
       {/* Results count */}
       {filteredNews.length > 0 && (
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          {filteredNews.length} bài viết
-        </p>
+        <ResultsBar
+          count={filteredNews.length}
+          noun="bài viết"
+          hasFilters={hasActiveFilters}
+          onClear={resetFilters}
+        />
       )}
 
       {filteredNews.length === 0 ? (
         <EmptyState
           title="CHƯA CÓ TIN TỨC PHÙ HỢP"
           description="Thử đổi chuyên mục hoặc khoảng ngày để xem thêm bài viết."
+          action={
+            hasActiveFilters ? (
+              <Button variant="outline" onClick={resetFilters} className="mt-1 rounded-xl">
+                Xóa bộ lọc
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

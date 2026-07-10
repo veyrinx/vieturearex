@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { Radio } from "lucide-react";
 import { StreamModal } from "@/components/esports/stream-modal";
 import { EmptyState } from "@/components/common/empty-state";
+import { ResultsBar } from "@/components/common/results-bar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { StreamItem, StreamStatus } from "@/lib/types/content";
 import { useQuery } from "@tanstack/react-query";
@@ -78,9 +80,10 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
 
   const safeStreams = streams ?? [];
   const allCategories = ["TẤT CẢ", ...categories];
-  const visibleStreams = activeCategory === "TẤT CẢ"
-    ? safeStreams
-    : safeStreams.filter((s) => (s.category ?? "") === activeCategory);
+  const hasActiveFilters = activeCategory !== "TẤT CẢ";
+  const visibleStreams = hasActiveFilters
+    ? safeStreams.filter((s) => (s.category ?? "") === activeCategory)
+    : safeStreams;
 
   return (
     <>
@@ -109,8 +112,27 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
         <div className="fixed left-0 top-0 z-40 h-screen w-screen bg-black/40 backdrop-blur-sm" onClick={() => setSelectedStream(null)} />
       )}
 
+      {visibleStreams.length > 0 && (
+        <ResultsBar
+          count={visibleStreams.length}
+          noun="stream"
+          hasFilters={hasActiveFilters}
+          onClear={() => setActiveCategory("TẤT CẢ")}
+        />
+      )}
+
       {visibleStreams.length === 0 ? (
-        <EmptyState title="CHƯA CÓ STREAM NÀO" description="Các buổi phát trực tiếp sắp tới sẽ xuất hiện ở đây." />
+        <EmptyState
+          title="CHƯA CÓ STREAM NÀO"
+          description="Các buổi phát trực tiếp sắp tới sẽ xuất hiện ở đây."
+          action={
+            hasActiveFilters ? (
+              <Button variant="outline" onClick={() => setActiveCategory("TẤT CẢ")} className="mt-1 rounded-xl">
+                Xóa bộ lọc
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visibleStreams.map((stream: StreamItem) => (

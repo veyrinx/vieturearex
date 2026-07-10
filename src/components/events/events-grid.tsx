@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
+import { ResultsBar } from "@/components/common/results-bar";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EventModal } from "@/components/timeline/event-modal";
 import { MediaFrame } from "@/components/common/media-frame";
@@ -78,6 +79,14 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         return sort === "newest" ? right - left : left - right;
       });
   }, [safeData, fromDate, sort, toDate, server]);
+
+  const hasActiveFilters = status !== "all" || server !== "all" || fromDate !== "" || toDate !== "";
+  const resetFilters = () => {
+    setStatus("all");
+    setServer("all");
+    setFromDate("");
+    setToDate("");
+  };
 
   return (
     <>
@@ -196,10 +205,27 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         </div>
       )}
 
+      {!isFetching && (
+        <ResultsBar
+          count={events.length}
+          noun="sự kiện"
+          hasFilters={hasActiveFilters}
+          onClear={resetFilters}
+          className="mb-4"
+        />
+      )}
+
       {!isFetching && events.length === 0 ? (
         <EmptyState
           title="CHƯA CÓ SỰ KIỆN PHÙ HỢP"
           description="Thử đổi bộ lọc hoặc khoảng ngày để xem thêm sự kiện."
+          action={
+            hasActiveFilters ? (
+              <Button variant="outline" onClick={resetFilters} className="mt-1 rounded-xl">
+                Xóa bộ lọc
+              </Button>
+            ) : undefined
+          }
         />
       ) : !isFetching ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
