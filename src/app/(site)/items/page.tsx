@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   Search, X, Image as ImageIcon, Copy, Check, ChevronLeft, ChevronRight,
-  Loader2, Database, ExternalLink, Filter, Server, AlertCircle, Download,
+  Loader2, Database, ExternalLink, Filter, Server, AlertCircle, Download, Eye,
 } from "lucide-react";
 
 const FALLBACK_CDN = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
@@ -509,36 +510,48 @@ function ItemCard({ id, label, url, onCopy, onOpen, copied }: {
 
   return (
     <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
-      <button
-        onClick={onOpen}
-        className="relative aspect-square w-full overflow-hidden rounded-lg bg-background flex items-center justify-center cursor-zoom-in"
-      >
-        {status === "fail" ? (
-          <X className="size-6 text-destructive/60" />
-        ) : (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={url}
-              alt={id}
-              onLoad={() => setStatus("ok")}
-              onError={() => setStatus("fail")}
-              className="size-full object-contain p-1"
-              loading="lazy"
-            />
-            {status === "loading" && (
-              <Loader2 className="absolute size-4 animate-spin text-muted-foreground" />
-            )}
-          </>
-        )}
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-background flex items-center justify-center">
+        <Link
+          href={`/items/${id}`}
+          aria-label={`Xem chi tiết ${id}`}
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
+        >
+          {status === "fail" ? (
+            <X className="size-6 text-destructive/60" />
+          ) : (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={id}
+                onLoad={() => setStatus("ok")}
+                onError={() => setStatus("fail")}
+                className="size-full object-contain p-1"
+                loading="lazy"
+              />
+              {status === "loading" && (
+                <Loader2 className="absolute size-4 animate-spin text-muted-foreground" />
+              )}
+            </>
+          )}
 
-        {/* Hover overlay — show copy button */}
-        <div className="absolute inset-0 flex items-center justify-center bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-          <span className="flex items-center gap-1.5 rounded-lg bg-card border border-border px-3 py-1 text-[10px] font-bold">
-            <ImageIcon className="size-3" /> Xem
-          </span>
-        </div>
-      </button>
+          {/* Hover overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+            <span className="flex items-center gap-1.5 rounded-lg bg-card border border-border px-3 py-1 text-[10px] font-bold">
+              <ImageIcon className="size-3" /> Chi tiết
+            </span>
+          </div>
+        </Link>
+
+        {/* Quick view — mở lightbox không rời trang */}
+        <button
+          onClick={onOpen}
+          title="Xem nhanh"
+          className="absolute right-1 top-1 z-10 flex size-6 items-center justify-center rounded-md border border-border bg-card/90 text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity hover:text-foreground group-hover:opacity-100"
+        >
+          <Eye className="size-3.5" />
+        </button>
+      </div>
       <div className="flex items-center justify-between gap-1">
         <div className="flex-1 min-w-0">
           {label && (
