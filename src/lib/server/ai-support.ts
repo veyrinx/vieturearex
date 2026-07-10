@@ -24,6 +24,9 @@ const AI_ENABLED_KEY = "integrations.ai_auto_reply";
 const AI_PROMPT_KEY  = "integrations.ai_system_prompt";
 const AI_NAME_KEY    = "integrations.ai_bot_name";
 const AI_KEY_KEY     = "integrations.ai_api_key";
+// Provider linh hoạt: cắm được OpenAI / Groq / Google Gemini… (đều OpenAI-compatible)
+const AI_BASE_URL_KEY = "integrations.ai_base_url";
+const AI_MODEL_KEY    = "integrations.ai_model";
 
 // ── Default system prompt ─────────────────────────────────────────────────────
 
@@ -72,6 +75,10 @@ export async function generateAiReply(
     process.env.OPENAI_API_KEY;
   if (!apiKey) return { reply: "", refused: false, category: "no_api_key" };
 
+  // Base URL + model tuỳ chọn → dùng provider free (Groq/Gemini) mà không đổi code.
+  const baseURL = settings.find((s) => s.key === AI_BASE_URL_KEY)?.value?.trim() || undefined;
+  const model = settings.find((s) => s.key === AI_MODEL_KEY)?.value?.trim() || "gpt-4o-mini";
+
   const customPrompt = settings.find((s) => s.key === AI_PROMPT_KEY)?.value?.trim();
   const systemPrompt = (customPrompt || DEFAULT_SYSTEM).replace(/\{siteName\}/g, siteName);
 
@@ -88,9 +95,9 @@ export async function generateAiReply(
   const lastUserMsg = recent.filter((m) => m.sender_type === "user").at(-1)?.content ?? "";
 
   try {
-    const client = new OpenAI({ apiKey });
+    const client = new OpenAI({ apiKey, baseURL });
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       max_tokens: 1024,
       temperature: 0.7,
       messages: [
