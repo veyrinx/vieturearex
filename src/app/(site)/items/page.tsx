@@ -34,7 +34,7 @@ export default function ItemsPublicPage() {
   useEffect(() => {
     // Load both storage list and catalog in parallel
     Promise.all([
-      fetch("/api/ff-items").then((r) => r.json()).catch(() => null),
+      fetch("/api/ff-icons").then((r) => r.json()).catch(() => null),
       fetch("/api/ff-items/catalog").then((r) => r.json()).catch(() => null),
     ]).then(([storage, cat]) => {
       const d = storage as { ids?: string[]; baseUrl?: string | null; bucketMissing?: boolean; error?: string } | null;
