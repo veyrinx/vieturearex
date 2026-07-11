@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
   BookOpenText, Users, MessageSquare, Trophy,
-  TrendingUp, Palette, Rss, Image as ImageIcon, Crosshair, ListOrdered,
+  TrendingUp, Palette, Rss, Image as ImageIcon, Crosshair, ListOrdered, Layers,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -36,6 +36,7 @@ const ABOUT_ITEMS = [
 const COMMUNITY_ITEMS = [
   { title: "Chỉnh Độ Nhạy",  href: "/do-nhay",               icon: Crosshair,     desc: "Công cụ gợi ý độ nhạy Free Fire" },
   { title: "Tier List",      href: "/tier-list",             icon: ListOrdered,   desc: "Xếp hạng nhân vật theo meta" },
+  { title: "Combo Kỹ Năng",  href: "/combo",                 icon: Layers,        desc: "Ghép combo 1 chủ động + 3 bị động" },
   { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
   { title: "Feed",            href: "/feed",                  icon: Rss,           desc: "Hoạt động từ người bạn theo dõi" },
   { title: "Wiki CĐ",        href: "/wiki",                  icon: BookOpenText,  desc: "Kiến thức do cộng đồng đóng góp" },

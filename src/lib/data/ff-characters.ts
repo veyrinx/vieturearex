@@ -17,6 +17,17 @@ export function charSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+export type SkillType = "active" | "passive";
+
+// Nhân vật có kỹ năng CHỦ ĐỘNG (có hồi chiêu). Còn lại là bị động.
+export const ACTIVE_SKILL_NAMES = new Set<string>([
+  "Alok", "K", "Dimitri", "Skyler", "Chrono", "Wukong", "Xayne", "A124", "Steffie", "Rafael",
+]);
+
+export function skillType(name: string): SkillType {
+  return ACTIVE_SKILL_NAMES.has(name) ? "active" : "passive";
+}
+
 export const TIER_ORDER: Tier[] = ["S", "A", "B", "C", "D"];
 
 export const TIER_META: Record<Tier, { label: string; text: string; ring: string; bar: string }> = {
