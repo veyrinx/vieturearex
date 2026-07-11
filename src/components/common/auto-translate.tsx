@@ -29,6 +29,11 @@ export function AutoTranslate() {
       } catch { /* ignore */ }
     }
 
+    // Chỉ nạp Google Translate khi thật sự cần dịch sang EN.
+    // Người dùng tiếng Việt (mặc định) không nạp widget -> tránh gọi
+    // translate_a/t thừa (và lỗi 400 khi trình duyệt như Brave proxy lại).
+    if (getLangCookie() !== "en") return;
+
     // Inject Google Translate script once
     if (!document.getElementById("g-translate-script")) {
       const container = document.createElement("div");
