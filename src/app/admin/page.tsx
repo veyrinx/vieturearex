@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BarChart3, CalendarRange, Newspaper, Users, Shield, Zap,
   Settings, ImageIcon, Radio, Star, FileText, Activity,
-  ArrowRight, MessageSquare, BookOpen, Palette, Trophy, Megaphone, ShieldAlert, Medal,
+  ArrowRight, MessageSquare, BookOpen, Palette, Trophy, Megaphone, ShieldAlert, Medal, Download,
 } from "lucide-react";
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
@@ -186,11 +186,37 @@ export default async function AdminDashboardPage() {
       {/* ── Báo cáo đăng ký ── */}
       <RegistrationReportCard />
 
-      {/* ── Today's activity ── */}
-      <TodayActivityCard />
+      {/* ── Xuất báo cáo ── */}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Download className="size-4 text-muted-foreground" />
+          <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Xuất báo cáo</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { type: "registrations", label: "Đăng ký người dùng", icon: Users },
+            { type: "news", label: "Tin tức", icon: Newspaper },
+            { type: "events", label: "Sự kiện", icon: CalendarRange },
+          ].map(({ type, label, icon: Icon }) => (
+            <a
+              key={type}
+              href={`/api/admin/report/export?type=${type}`}
+              download
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/5"
+            >
+              <Icon className="size-3.5 text-muted-foreground" />
+              {label}
+              <span className="text-[10px] text-muted-foreground">.csv</span>
+            </a>
+          ))}
+        </div>
+      </div>
 
-      {/* ── Analytics trend ── */}
-      <ViewsTrendCard />
+      {/* ── Phân tích (2 cột) ── */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <ViewsTrendCard />
+        <TodayActivityCard />
+      </div>
 
       {/* ── Active admins ── */}
       <ActiveAdminsPanel />
