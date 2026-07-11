@@ -457,6 +457,17 @@ export default function FFItemsPage() {
     });
   };
 
+  // Tải file PNG qua proxy same-origin (buộc download thật, không mở tab)
+  const downloadIcon = (itemId: string) => {
+    const a = document.createElement("a");
+    a.href = `/api/ff-icon/${encodeURIComponent(itemId)}.png`;
+    a.download = `${itemId}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast.success(`Đang tải ${itemId}.png`);
+  };
+
   const toggleFavorite = (itemId: string, category?: CategoryKey) => {
     setFavorites((prev) => {
       const exists = prev.some((f) => f.id === itemId);
@@ -769,6 +780,12 @@ export default function FFItemsPage() {
               >
                 <ExternalLink className="size-3.5" /> Mở
               </a>
+              <button
+                onClick={() => downloadIcon(debouncedId)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold hover:border-emerald-500/40 hover:text-emerald-500 transition-colors"
+              >
+                <Download className="size-3.5" /> Tải
+              </button>
             </div>
           </div>
         )}
@@ -896,6 +913,10 @@ export default function FFItemsPage() {
                               <span className="absolute right-1 top-1 rounded bg-rose-500/20 text-rose-500 px-1 py-0.5 text-[8px] font-bold">RIÊNG</span>
                             )}
                             <div className="absolute inset-0 flex items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                              <button onClick={() => downloadIcon(item.id)} title="Tải ảnh"
+                                className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-emerald-500/40 hover:text-emerald-500">
+                                <Download className="size-3" />
+                              </button>
                               <button onClick={() => setEditCatalogItem(item)} title="Sửa"
                                 className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-blue-500/40 hover:text-blue-500">
                                 <Pencil className="size-3" />
@@ -1111,6 +1132,7 @@ export default function FFItemsPage() {
                         selected={selectedIds.has(itemId)}
                         onToggleSelect={() => toggleSelected(itemId)}
                         onCopy={() => copyUrl(itemId)}
+                        onDownload={() => downloadIcon(itemId)}
                         onCopyId={() => copyId(itemId)}
                         onFavorite={() => toggleFavorite(itemId)}
                         onTag={() => setTagModalId(itemId)}
@@ -1192,6 +1214,7 @@ export default function FFItemsPage() {
                 isFavorited={isFavorited(itemId)}
                 category={getFavoriteCategory(itemId)}
                 onCopy={() => copyUrl(itemId)}
+                onDownload={() => downloadIcon(itemId)}
                 onCopyId={() => copyId(itemId)}
                 onFavorite={() => toggleFavorite(itemId)}
                 onTag={() => setTagModalId(itemId)}
@@ -1348,6 +1371,7 @@ export default function FFItemsPage() {
                   category={fav.category}
                   label={fav.label}
                   onCopy={() => copyUrl(fav.id)}
+                  onDownload={() => downloadIcon(fav.id)}
                   onCopyId={() => copyId(fav.id)}
                   onFavorite={() => toggleFavorite(fav.id)}
                   onTag={() => setTagModalId(fav.id)}
@@ -1383,6 +1407,7 @@ export default function FFItemsPage() {
                 isFavorited={isFavorited(r.id)}
                 category={getFavoriteCategory(r.id)}
                 onCopy={() => copyUrl(r.id)}
+                onDownload={() => downloadIcon(r.id)}
                 onCopyId={() => copyId(r.id)}
                 onFavorite={() => toggleFavorite(r.id)}
                 onTag={() => setTagModalId(r.id)}
@@ -1814,7 +1839,7 @@ function TagModal({
 // ───────────────────────────────────────────────────────────────────────────
 function ItemThumb({
   id, isFavorited, category, label, selectMode, selected, onToggleSelect,
-  onCopy, onCopyId, onFavorite, onTag, onRename, onRemove, onSelect, copied,
+  onCopy, onCopyId, onFavorite, onTag, onRename, onRemove, onSelect, onDownload, copied,
 }: {
   id: string;
   isFavorited: boolean;
@@ -1830,6 +1855,7 @@ function ItemThumb({
   onRename?: () => void;
   onRemove?: () => void;
   onSelect?: () => void;
+  onDownload?: () => void;
   copied: boolean;
 }) {
   const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
@@ -1897,6 +1923,12 @@ function ItemThumb({
             className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-primary/40">
             {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
           </button>
+          {onDownload && (
+            <button onClick={onDownload} title="Tải ảnh PNG"
+              className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-emerald-500/40 hover:text-emerald-500">
+              <Download className="size-3" />
+            </button>
+          )}
           <button onClick={onFavorite} title={isFavorited ? "Bỏ yêu thích" : "Yêu thích"}
             className={`flex size-7 items-center justify-center rounded-lg border ${isFavorited ? "border-amber-500/40 bg-amber-500/10 text-amber-500" : "border-border bg-card"}`}>
             <Star className={`size-3 ${isFavorited ? "fill-current" : ""}`} />
