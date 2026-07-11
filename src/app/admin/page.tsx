@@ -9,6 +9,10 @@ import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
 import { ViewsTrendCard } from "@/components/admin/views-trend-card";
 import { TodayActivityCard } from "@/components/admin/today-activity-card";
+import { RegistrationReportCard } from "@/components/admin/registration-report-card";
+
+const APP_VERSION = "1.0.0";
+const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
 import { getDashboardStats, getUserByEmail } from "@/lib/data/content-service";
 import { getAuthContext } from "@/lib/server/auth";
 
@@ -99,6 +103,9 @@ export default async function AdminDashboardPage() {
               <p className="text-xs text-muted-foreground">
                 {new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
               </p>
+              <p className="font-mono text-[10px] text-muted-foreground/70">
+                Phiên bản v{APP_VERSION} · build {BUILD}
+              </p>
             </div>
           </div>
 
@@ -172,6 +179,9 @@ export default async function AdminDashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* ── Báo cáo đăng ký ── */}
+      <RegistrationReportCard />
 
       {/* ── Today's activity ── */}
       <TodayActivityCard />
