@@ -20,7 +20,30 @@ const ROLE_ICONS: Record<CharRole, React.ElementType> = {
 
 const ROLE_KEYS = Object.keys(ROLE_META) as CharRole[];
 
-export function CharacterTierList() {
+// Avatar: ưu tiên ảnh chân dung, lỗi/thiếu thì quay về chữ cái đầu
+function CharAvatar({ char, className }: { char: FFCharacter; className: string }) {
+  const [err, setErr] = useState(false);
+  const role = ROLE_META[char.role];
+  if (char.image && !err) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={char.image}
+        alt={char.name}
+        loading="lazy"
+        onError={() => setErr(true)}
+        className={cn("object-cover", className)}
+      />
+    );
+  }
+  return (
+    <span className={cn("flex items-center justify-center font-heading font-black", role.bg, role.text, className)}>
+      {char.name.charAt(0)}
+    </span>
+  );
+}
+
+export function CharacterTierList({ characters = FF_CHARACTERS }: { characters?: FFCharacter[] }) {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<CharRole | "all">("all");
   const [selected, setSelected] = useState<FFCharacter | null>(null);
@@ -29,12 +52,12 @@ export function CharacterTierList() {
 
   const filtered = useMemo(
     () =>
-      FF_CHARACTERS.filter((c) => {
+      characters.filter((c) => {
         if (role !== "all" && c.role !== role) return false;
         if (q && !c.name.toLowerCase().includes(q) && !c.skill.toLowerCase().includes(q)) return false;
         return true;
       }),
-    [role, q],
+    [role, q, characters],
   );
 
   const byTier = useMemo(() => {
@@ -168,9 +191,7 @@ function CharChip({ char, onClick }: { char: FFCharacter; onClick: () => void })
       title={char.skill}
       className="group flex items-center gap-2 rounded-xl border border-border bg-muted/30 py-1.5 pl-1.5 pr-3 transition-all hover:border-primary/40 hover:bg-primary/5 active:scale-95"
     >
-      <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg font-heading text-sm font-black", role.bg, role.text)}>
-        {char.name.charAt(0)}
-      </span>
+      <CharAvatar char={char} className="size-8 shrink-0 overflow-hidden rounded-lg text-sm" />
       <span className="text-left leading-tight">
         <span className="block text-xs font-bold text-foreground">{char.name}</span>
         <span className={cn("flex items-center gap-0.5 text-[9px] font-semibold", role.text)}>
@@ -199,9 +220,8 @@ function CharDetail({ char, onClose }: { char: FFCharacter; onClose: () => void 
         className="w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
       >
         <div className="flex items-center gap-4 border-b border-border p-5">
-          <span className={cn("flex size-16 shrink-0 items-center justify-center rounded-2xl font-heading text-3xl font-black", role.bg, role.text)}>
-            {char.name.charAt(0)}
-          </span>
+          <CharAvatar char={char} className="size-16 shrink-0 overflow-hidden rounded-2xl text-3xl" />
+
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-heading text-xl font-black uppercase tracking-tight text-foreground">{char.name}</h3>

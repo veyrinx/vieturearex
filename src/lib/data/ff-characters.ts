@@ -9,7 +9,13 @@ export type FFCharacter = {
   tier: Tier;
   role: CharRole;
   skill: string; // tên + mô tả ngắn kỹ năng
+  image?: string; // URL ảnh chân dung (tùy chọn; thiếu thì hiện avatar chữ cái)
 };
+
+// Slug tên file ảnh: chữ thường, bỏ ký tự đặc biệt (vd "D-bee" -> "dbee")
+export function charSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 export const TIER_ORDER: Tier[] = ["S", "A", "B", "C", "D"];
 
