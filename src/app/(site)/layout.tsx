@@ -48,10 +48,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
   }
 
   return (
-    <div
-      className="relative min-h-screen"
-      style={{ paddingTop: "var(--banner-h, 0px)", transition: "padding-top 0.22s cubic-bezier(0.4,0,0.2,1)" }}
-    >
+    <div className="relative min-h-screen">
       <AutoReload />
       <SiteNavbar
         logoLight={settingsMap["branding.logo_light_url"]}

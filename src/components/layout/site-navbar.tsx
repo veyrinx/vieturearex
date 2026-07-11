@@ -247,7 +247,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
 
   return (
     <header
-      style={{ top: "var(--banner-h, 0px)", transition: "top 0.22s cubic-bezier(0.4,0,0.2,1)" }}
+      style={{ top: 0 }}
       className={cn(
         "z-50 backdrop-blur-xl",
         isHomePage
