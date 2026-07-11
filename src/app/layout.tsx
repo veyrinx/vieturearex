@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/constants/site";
 import { AppProviders } from "@/components/providers/app-providers";
 import { PageViewTracker } from "@/components/common/page-view-tracker";
+import { ConsoleBanner } from "@/components/common/console-banner";
+import { CookieConsent } from "@/components/common/cookie-consent";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { getSettings } from "@/lib/data/content-service";
@@ -14,6 +16,15 @@ import { getSiteConfig } from "@/lib/server/get-site-config";
 // GFF Fonts are loaded from fonts.css
 // Heading: --font-heading (GFF Latin ExtraBold)
 // Body: --font-body (GFF Latin Regular)
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, activeSite] = await Promise.all([getSettings(), getSiteConfig()]);
@@ -94,6 +105,7 @@ export async function generateMetadata(): Promise<Metadata> {
       shortcut: favicon,
       apple: favicon,
     },
+    manifest: "/manifest.webmanifest",
     verification: {
       google: "vKpEfaaix3tyf3KNuLOD4z3LE4K1_5RnaU_lwqDOD9U",
     },
@@ -116,8 +128,13 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://googlevideo.com" />
         {/* Preload font chính để giảm blocking */}
         <link rel="preload" href="/fonts/GFF-Latin-Regular.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
-        {/* Announcement bar: set --banner-h before first paint to prevent layout shift */}
-        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('cskh-bar-v1')!=='1')document.documentElement.style.setProperty('--banner-h','40px');}catch(e){}` }} />
+        {/* Google Material Symbols (Rounded) — icon set phần public */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+        />
         {/* DMCA verification */}
         <meta name="dmca-site-verification" content="cmE4MmRVTTUvU1ozdU9Xb0lHQmxodDZwemQ0bFgyc1MvNHY5M2VWZUxYTT01" />
         {/* Google Analytics */}
@@ -126,7 +143,10 @@ export default async function RootLayout({
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
+try{if(localStorage.getItem('arex-cookie-consent')==='accepted'){gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});}}catch(e){}
+gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         </Script>
         {/* Google AdSense */}
         <Script
@@ -188,6 +208,8 @@ export default async function RootLayout({
       </head>
       <body className={cn("font-body min-h-screen bg-background text-foreground antialiased")}>
         <AppProviders>{children}</AppProviders>
+        <ConsoleBanner />
+        <CookieConsent />
         <PageViewTracker />
         <Analytics />
         <SpeedInsights />
