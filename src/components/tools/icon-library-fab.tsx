@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import {
   Search, X, Copy, Check, Grid2x2, Code2, ChevronLeft, ChevronRight, Loader2, GripVertical,
 } from "lucide-react";
@@ -9,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const CDN_URL            = "https://raw.githubusercontent.com/ShahGCreator/icon/main/PNG/";
+const CDN_URL            = "/api/ff-icon/"; // qua domain site (proxy + cache)
 const ITEMS_PER_PAGE     = 80;
 const SEARCH_DEBOUNCE_MS = 250;
 const DEV_STORAGE_KEY    = "fflib_dev_mode";
@@ -24,6 +25,7 @@ const clampPos = (p: Pos): Pos => ({
 });
 
 export function IconLibraryFab() {
+  const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Pos | null>(null);
@@ -138,7 +140,8 @@ export function IconLibraryFab() {
     }
   };
 
-  if (!isAdmin || !pos) return null;
+  // Ẩn trên trang /items vì đó đã là thư viện icon (FAB thừa)
+  if (!isAdmin || !pos || pathname.startsWith("/items")) return null;
 
   return (
     <>

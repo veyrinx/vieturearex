@@ -1,7 +1,11 @@
 // Nguồn icon Free Fire đầy đủ (~33k) từ repo ShahGCreator/icon.
 // Ảnh phục vụ qua raw.githubusercontent; danh sách ID lấy từ GitHub tree API (cache).
 
-export const ICON_CDN = "https://raw.githubusercontent.com/ShahGCreator/icon/main/PNG/";
+// Nguồn gốc ảnh trên GitHub (dùng bởi route proxy)
+export const ICON_UPSTREAM = "https://raw.githubusercontent.com/ShahGCreator/icon/main/PNG/";
+
+// Link ảnh phục vụ NGƯỜI DÙNG đi qua domain của site (proxy + cache edge)
+export const ICON_CDN = "/api/ff-icon/";
 
 export const iconUrl = (id: string) => `${ICON_CDN}${id}.png`;
 
