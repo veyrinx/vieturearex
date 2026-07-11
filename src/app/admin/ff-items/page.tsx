@@ -10,10 +10,17 @@ import {
   Pencil, Download, Upload,
 } from "lucide-react";
 
-const ICON_BASE = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
+// Hiển thị qua proxy same-origin (đủ 33k icon, không phụ thuộc jsDelivr)
+const ICON_BASE = "/api/ff-icon";
 
 function buildUrl(id: string) {
   return `${ICON_BASE}/${encodeURIComponent(id.trim())}.png`;
+}
+
+// URL tuyệt đối theo domain site (để copy/chia sẻ)
+function absoluteUrl(id: string) {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${buildUrl(id)}`;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -444,7 +451,7 @@ export default function FFItemsPage() {
   };
 
   const copyUrl = (itemId: string) => {
-    navigator.clipboard.writeText(buildUrl(itemId)).then(() => {
+    navigator.clipboard.writeText(absoluteUrl(itemId)).then(() => {
       setCopiedId(itemId);
       toast.success("Đã copy URL");
       setTimeout(() => setCopiedId(null), 1500);

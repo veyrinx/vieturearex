@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
+import { ICON_UPSTREAM } from "@/lib/data/ff-icons";
 
 const BUCKET = "ff-items";
-const CDN_BASE = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
 const BATCH_MAX = 20;
 
 // POST { ids: string[] } — downloads from jsDelivr CDN, uploads to Supabase Storage
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Download from CDN
-      const cdnRes = await fetch(`${CDN_BASE}/${encodeURIComponent(id)}.png`, {
+      // Download from raw GitHub
+      const cdnRes = await fetch(`${ICON_UPSTREAM}${encodeURIComponent(id)}.png`, {
         cache: "no-store",
       });
       if (!cdnRes.ok) {
