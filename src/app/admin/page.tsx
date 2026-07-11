@@ -10,8 +10,8 @@ import { StatsCard } from "@/components/admin/stats-card";
 import { ViewsTrendCard } from "@/components/admin/views-trend-card";
 import { TodayActivityCard } from "@/components/admin/today-activity-card";
 import { RegistrationReportCard } from "@/components/admin/registration-report-card";
+import { APP_VERSION } from "@/lib/data/changelog";
 
-const APP_VERSION = "1.0.0";
 const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
 import { getDashboardStats, getUserByEmail } from "@/lib/data/content-service";
 import { getAuthContext } from "@/lib/server/auth";
@@ -103,9 +103,12 @@ export default async function AdminDashboardPage() {
               <p className="text-xs text-muted-foreground">
                 {new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
               </p>
-              <p className="font-mono text-[10px] text-muted-foreground/70">
+              <Link
+                href="/admin/changelog"
+                className="inline-flex w-fit items-center gap-1 font-mono text-[10px] text-muted-foreground/70 transition-colors hover:text-primary dark:hover:text-amber-400"
+              >
                 Phiên bản v{APP_VERSION} · build {BUILD}
-              </p>
+              </Link>
             </div>
           </div>
 

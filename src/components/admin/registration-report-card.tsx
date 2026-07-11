@@ -27,6 +27,20 @@ export async function RegistrationReportCard() {
   const new7 = users.filter((u) => within(u.created_at, 7 * DAY)).length;
   const totalViews = users.reduce((acc, u) => acc + (u.views ?? 0), 0);
 
+  // Biểu đồ đăng ký 14 ngày gần nhất
+  const DAYS = 14;
+  const buckets = Array.from({ length: DAYS }, (_, i) => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (DAYS - 1 - i));
+    return { key: d.getTime(), label: `${d.getDate()}/${d.getMonth() + 1}`, count: 0 };
+  });
+  for (const u of users) {
+    if (!u.created_at) continue;
+    const t = new Date(u.created_at); t.setHours(0, 0, 0, 0);
+    const b = buckets.find((x) => x.key === t.getTime());
+    if (b) b.count++;
+  }
+  const maxBar = Math.max(...buckets.map((b) => b.count), 1);
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
       {/* Header */}
@@ -62,6 +76,27 @@ export async function RegistrationReportCard() {
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Biểu đồ đăng ký 14 ngày */}
+      <div>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Đăng ký 14 ngày gần nhất
+        </p>
+        <div className="flex h-14 items-end gap-1">
+          {buckets.map((b) => (
+            <div key={b.key} className="group relative flex-1" title={`${b.label}: ${b.count} đăng ký`}>
+              <div
+                className="rounded-sm bg-blue-500/40 transition-all group-hover:bg-blue-500/70"
+                style={{ height: `${Math.max(4, Math.round((b.count / maxBar) * 56))}px` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="mt-1 flex justify-between text-[9px] text-muted-foreground/60">
+          <span>{buckets[0]?.label}</span>
+          <span>{buckets[buckets.length - 1]?.label}</span>
+        </div>
       </div>
 
       {/* Recent registrations */}

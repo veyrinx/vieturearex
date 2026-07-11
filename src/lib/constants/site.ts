@@ -84,6 +84,7 @@ export const adminNavItems = [
   { title: "POP-UP", href: "/admin/popup" },
   { title: "NHẬT KÝ", href: "/admin/logs" },
   { title: "THỐNG KÊ", href: "/admin/stats" },
+  { title: "PHIÊN BẢN", href: "/admin/changelog" },
   { title: "ĐỘI NGŨ", href: "/admin/team" },
   { title: "BẢO MẬT", href: "/admin/security" },
   { title: "GIẢI ĐẤU", href: "/admin/tournaments" },
