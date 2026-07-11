@@ -191,7 +191,7 @@ export default function CookiePolicyPage() {
       </section>
 
       {/* Quick nav */}
-      <nav className="sticky top-16 z-30 border-b border-border bg-background/95 backdrop-blur-xl">
+      <nav className="sticky top-11 z-30 border-b border-border bg-background/95 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl overflow-x-auto px-6">
           <ul className="flex gap-1 py-2">
             {sections.map((s) => (
