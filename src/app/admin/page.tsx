@@ -20,6 +20,7 @@ import { StatsCard } from "@/components/admin/stats-card";
 import { ViewsTrendCard } from "@/components/admin/views-trend-card";
 import { TodayActivityCard } from "@/components/admin/today-activity-card";
 import { RegistrationReportCard } from "@/components/admin/registration-report-card";
+import { NeedsAttentionPanel } from "@/components/admin/needs-attention-panel";
 import { APP_VERSION } from "@/lib/data/changelog";
 
 const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
@@ -153,6 +154,9 @@ export default async function AdminDashboardPage() {
         />
         </div>
       </div>
+
+      {/* ── Cần xử lý ── */}
+      <NeedsAttentionPanel />
 
       {/* ── Truy cập nhanh (theo nhóm, đồng bộ sidebar) ── */}
       <div className="space-y-4">
