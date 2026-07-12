@@ -2,9 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   BarChart3, CalendarRange, Newspaper, Users, Shield, Zap,
-  Settings, ImageIcon, Radio, Star, FileText, Activity,
+  Settings, ImageIcon, Radio, Star, Activity,
   ArrowRight, MessageSquare, BookOpen, Palette, Trophy, Megaphone, ShieldAlert, Medal, Download,
+  LayoutDashboard,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+function SectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <Icon className="size-4 text-muted-foreground" />
+      <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{title}</h2>
+    </div>
+  );
+}
 import { ActiveAdminsPanel } from "@/components/admin/active-admins-panel";
 import { StatsCard } from "@/components/admin/stats-card";
 import { ViewsTrendCard } from "@/components/admin/views-trend-card";
@@ -122,8 +133,10 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ── Stats grid ── */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* ── Tổng quan ── */}
+      <div className="space-y-3">
+        <SectionHeader icon={LayoutDashboard} title="Tổng quan" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatsCard
           title="Người dùng"
           value={stats.users}
@@ -155,14 +168,12 @@ export default async function AdminDashboardPage() {
           color="green"
           sub="Tổng lượt xem trang"
         />
+        </div>
       </div>
 
       {/* ── Quick actions ── */}
       <div>
-        <div className="mb-3 flex items-center gap-2">
-          <FileText className="size-4 text-muted-foreground" />
-          <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Truy cập nhanh</h2>
-        </div>
+        <SectionHeader icon={Zap} title="Truy cập nhanh" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-5">
           {QUICK_ACTIONS.map(({ href, icon: Icon, label, desc, color }) => (
             <Link
@@ -212,14 +223,15 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ── Phân tích (2 cột) ── */}
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <ViewsTrendCard />
-        <TodayActivityCard />
+      {/* ── Phân tích ── */}
+      <div className="space-y-4">
+        <SectionHeader icon={BarChart3} title="Phân tích" />
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <ViewsTrendCard />
+          <TodayActivityCard />
+        </div>
+        <ActiveAdminsPanel />
       </div>
-
-      {/* ── Active admins ── */}
-      <ActiveAdminsPanel />
     </section>
   );
 }
