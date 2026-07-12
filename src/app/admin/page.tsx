@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   BarChart3, CalendarRange, Newspaper, Users, Shield, Zap,
-  Settings, ImageIcon, Radio, Star, Activity,
-  ArrowRight, MessageSquare, BookOpen, Palette, Trophy, Megaphone, ShieldAlert, Medal, Download,
-  LayoutDashboard,
+  Settings, Download, LayoutDashboard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { adminNavGroups } from "@/lib/constants/admin-nav";
 
 function SectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
   return (
@@ -50,23 +49,6 @@ const ROLE_COLORS: Record<string, string> = {
   user: "bg-muted text-muted-foreground border-border",
 };
 
-const QUICK_ACTIONS = [
-  { href: "/admin/news",     icon: Newspaper,    label: "Bài viết",   desc: "Quản lý tin tức",     color: "text-purple-500 bg-purple-500/10" },
-  { href: "/admin/events",   icon: CalendarRange, label: "Sự kiện",   desc: "Lịch & sự kiện",      color: "text-amber-500 bg-amber-500/10" },
-  { href: "/admin/gallery",  icon: ImageIcon,     label: "Gallery",   desc: "Ảnh cộng đồng",       color: "text-pink-500 bg-pink-500/10" },
-  { href: "/admin/users",    icon: Users,         label: "Thành viên", desc: "Quản lý người dùng", color: "text-blue-500 bg-blue-500/10" },
-  { href: "/admin/esports",  icon: Radio,         label: "Esports",   desc: "Stream & giải đấu",   color: "text-red-500 bg-red-500/10" },
-  { href: "/admin/forum",        icon: ShieldAlert, label: "Diễn đàn",   desc: "Kiểm duyệt bài viết",  color: "text-rose-500 bg-rose-500/10" },
-  { href: "/admin/achievements", icon: Medal,       label: "Thành tựu",  desc: "Cấp & quản lý thành tựu", color: "text-amber-500 bg-amber-500/10" },
-  { href: "/admin/comments", icon: MessageSquare,  label: "Bình luận", desc: "Kiểm duyệt bình luận", color: "text-indigo-500 bg-indigo-500/10" },
-  { href: "/admin/ratings",  icon: Star,          label: "Đánh giá",  desc: "Phản hồi người dùng", color: "text-yellow-500 bg-yellow-500/10" },
-  { href: "/admin/logs",     icon: Activity,      label: "Nhật ký",   desc: "Hoạt động admin",     color: "text-green-500 bg-green-500/10" },
-  { href: "/admin/wiki",         icon: BookOpen,      label: "Wiki",       desc: "Quản lý bài viết wiki",   color: "text-emerald-500 bg-emerald-500/10" },
-  { href: "/admin/cosmetics",    icon: Palette,       label: "Cosmetics",  desc: "Khung & danh hiệu",       color: "text-pink-500 bg-pink-500/10" },
-  { href: "/admin/contributors", icon: Trophy,        label: "Contributors", desc: "Điểm cộng đồng",       color: "text-amber-500 bg-amber-500/10" },
-  { href: "/admin/broadcast",    icon: Megaphone,     label: "Broadcast",  desc: "Thông báo hệ thống",      color: "text-blue-500 bg-blue-500/10" },
-  { href: "/admin/settings",     icon: Settings,      label: "Cài đặt",   desc: "Cấu hình hệ thống",       color: "text-foreground bg-muted" },
-];
 
 export default async function AdminDashboardPage() {
   const auth = await getAuthContext();
@@ -171,27 +153,34 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ── Quick actions ── */}
-      <div>
+      {/* ── Truy cập nhanh (theo nhóm, đồng bộ sidebar) ── */}
+      <div className="space-y-4">
         <SectionHeader icon={Zap} title="Truy cập nhanh" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-5">
-          {QUICK_ACTIONS.map(({ href, icon: Icon, label, desc, color }) => (
-            <Link
-              key={href}
-              href={href}
-              className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <div className={`flex size-10 items-center justify-center rounded-xl ${color} transition-transform duration-200 group-hover:scale-110`}>
-                <Icon className="size-5" />
+        {adminNavGroups.map((group) => {
+          const items = group.items.filter((it) => it.href !== "/admin");
+          if (items.length === 0) return null;
+          return (
+            <div key={group.label} className="space-y-2">
+              <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/50">
+                {group.label}
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
+                {items.map(({ href, title, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="group flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted transition-colors group-hover:bg-primary/10 dark:group-hover:bg-amber-400/10">
+                      <Icon className="size-4 text-muted-foreground transition-colors group-hover:text-primary dark:group-hover:text-amber-400" />
+                    </span>
+                    <span className="truncate text-xs font-semibold text-foreground">{title}</span>
+                  </Link>
+                ))}
               </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">{label}</p>
-                <p className="text-[11px] text-muted-foreground">{desc}</p>
-              </div>
-              <ArrowRight className="size-3.5 text-muted-foreground/40 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
-            </Link>
-          ))}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ── Báo cáo đăng ký ── */}
