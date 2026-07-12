@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ReactNode } from "react";
 import { AdminHeartbeat } from "@/components/admin/admin-heartbeat";
-import { IconLibraryFab } from "@/components/tools/icon-library-fab";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { requireAdminAccess } from "@/lib/server/auth";
 import { getSettings } from "@/lib/data/content-service";
@@ -47,7 +46,6 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         siteName={siteName}
       />
       <main className="min-w-0 flex-1 space-y-6">{children}</main>
-      <IconLibraryFab />
     </div>
   );
 }

@@ -10,7 +10,6 @@ import { AnnouncementBanner } from "@/components/common/announcement-banner";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { DailyCheckinTrigger } from "@/components/common/daily-checkin-trigger";
 import { CskhChat } from "@/components/community/cskh-chat";
-import { IconLibraryFab } from "@/components/tools/icon-library-fab";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -67,7 +66,6 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <AutoTranslate />
       <DailyCheckinTrigger />
       <CskhChat />
-      <IconLibraryFab />
     </div>
   );
 }
