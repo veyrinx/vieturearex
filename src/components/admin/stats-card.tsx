@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, LucideIcon, TrendingUp } from "lucide-react";
+import { ArrowRight, LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type StatsCardProps = {
@@ -9,7 +9,24 @@ type StatsCardProps = {
   href?: string;
   color?: "blue" | "orange" | "purple" | "green" | "red";
   sub?: string;
+  trend?: number | null;
 };
+
+function TrendBadge({ pct }: { pct: number }) {
+  const Icon = pct > 0 ? TrendingUp : pct < 0 ? TrendingDown : Minus;
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
+      pct > 0 && "bg-green-500/10 text-green-500",
+      pct < 0 && "bg-red-500/10 text-red-500",
+      pct === 0 && "bg-yellow-500/10 text-yellow-600 dark:text-yellow-500",
+    )}>
+      <Icon className="size-3" />
+      {pct > 0 ? "+" : ""}{pct}%
+      <span className="font-normal opacity-60">7 ngày</span>
+    </span>
+  );
+}
 
 const COLOR_MAP = {
   blue:   { icon: "bg-blue-500/10 text-blue-500 border-blue-500/20",   glow: "hover:shadow-[0_8px_30px_rgba(59,130,246,0.15)]", bar: "from-blue-500/20 to-transparent", num: "text-blue-600 dark:text-blue-400" },
@@ -19,7 +36,7 @@ const COLOR_MAP = {
   red:    { icon: "bg-red-500/10 text-red-500 border-red-500/20",        glow: "hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)]",   bar: "from-red-500/20 to-transparent",    num: "text-red-600 dark:text-red-400" },
 };
 
-export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub }: StatsCardProps) {
+export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub, trend }: StatsCardProps) {
   const c = COLOR_MAP[color];
 
   const inner = (
@@ -39,8 +56,13 @@ export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub 
         <div className="min-w-0 flex-1">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{title}</span>
           <p className={cn("mt-2 font-heading text-[2rem] font-black leading-none tabular-nums", c.num)}>{value}</p>
+          {typeof trend === "number" && (
+            <div className="mt-2">
+              <TrendBadge pct={trend} />
+            </div>
+          )}
           {sub && (
-            <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
               <TrendingUp className="size-3" />
               <span>{sub}</span>
             </div>

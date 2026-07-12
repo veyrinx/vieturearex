@@ -21,6 +21,7 @@ import { ViewsTrendCard } from "@/components/admin/views-trend-card";
 import { TodayActivityCard } from "@/components/admin/today-activity-card";
 import { RegistrationReportCard } from "@/components/admin/registration-report-card";
 import { NeedsAttentionPanel } from "@/components/admin/needs-attention-panel";
+import { getStatsTrends } from "@/lib/data/admin-stats-trends";
 import { APP_VERSION } from "@/lib/data/changelog";
 
 const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
@@ -53,9 +54,10 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default async function AdminDashboardPage() {
   const auth = await getAuthContext();
-  const [stats, userProfile] = await Promise.all([
+  const [stats, userProfile, trends] = await Promise.all([
     getDashboardStats(),
     auth.email ? getUserByEmail(auth.email).catch(() => null) : Promise.resolve(null),
+    getStatsTrends().catch(() => ({ users: null, news: null, events: null, views: null })),
   ]);
 
   const roleLabel = ROLE_LABELS[auth.role] ?? auth.role;
@@ -127,6 +129,7 @@ export default async function AdminDashboardPage() {
           href="/admin/users"
           color="blue"
           sub="Tổng tài khoản đã đăng ký"
+          trend={trends.users}
         />
         <StatsCard
           title="Sự kiện"
@@ -135,6 +138,7 @@ export default async function AdminDashboardPage() {
           href="/admin/events"
           color="orange"
           sub="Bao gồm đang & sắp diễn ra"
+          trend={trends.events}
         />
         <StatsCard
           title="Bài viết"
@@ -143,6 +147,7 @@ export default async function AdminDashboardPage() {
           href="/admin/news"
           color="purple"
           sub="Tin tức đã xuất bản"
+          trend={trends.news}
         />
         <StatsCard
           title="Lượt xem"
@@ -151,6 +156,7 @@ export default async function AdminDashboardPage() {
           href="/admin/stats"
           color="green"
           sub="Tổng lượt xem trang"
+          trend={trends.views}
         />
         </div>
       </div>
