@@ -30,25 +30,29 @@ export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub 
     )}>
       {/* Top gradient bar */}
       <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r", c.bar)} />
+      {/* Glow orb */}
+      <div className={cn("pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-gradient-to-br opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80", c.bar)} />
+      {/* Watermark icon */}
+      <Icon className={cn("pointer-events-none absolute -bottom-5 -right-4 size-28 opacity-[0.055] transition-transform duration-500 group-hover:scale-110", c.num)} />
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="relative z-10 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{title}</span>
-          <p className={cn("mt-2 font-heading text-3xl font-extrabold tabular-nums", c.num)}>{value}</p>
+          <p className={cn("mt-2 font-heading text-[2rem] font-black leading-none tabular-nums", c.num)}>{value}</p>
           {sub && (
-            <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
               <TrendingUp className="size-3" />
               <span>{sub}</span>
             </div>
           )}
         </div>
-        <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:scale-110", c.icon)}>
+        <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3", c.icon)}>
           <Icon className="size-5" />
         </div>
       </div>
 
       {href && (
-        <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors group-hover:text-foreground">
+        <div className="relative z-10 mt-3 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors group-hover:text-foreground">
           Xem chi tiết
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
         </div>

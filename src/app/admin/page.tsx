@@ -147,6 +147,7 @@ export default async function AdminDashboardPage() {
           title="Lượt xem"
           value={Number(stats.views ?? 0).toLocaleString("vi-VN")}
           icon={BarChart3}
+          href="/admin/stats"
           color="green"
           sub="Tổng lượt xem trang"
         />
