@@ -53,7 +53,7 @@ export function IconLibraryFab() {
     });
   }, []);
 
-  // ── Nạp vị trí ghim + dev mode ──
+  // ── Nạp vị trí ghim ──
   useEffect(() => {
     try {
       const raw = localStorage.getItem(FAB_POS_KEY);

@@ -25,7 +25,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "feature", text: "Công cụ người chơi: Chỉnh độ nhạy (/do-nhay) tự nhận diện máy, Tier List nhân vật (/tier-list), Combo kỹ năng (/combo)" },
       { type: "improvement", text: "Thư viện icon /items dùng đủ ~33.399 icon, phục vụ ảnh qua domain (proxy /api/ff-icon)" },
       { type: "feature", text: "Trang chi tiết từng item /items/[id] + nút tải ảnh PNG trong admin" },
-      { type: "feature", text: "Nút thư viện icon nổi (kéo-thả) cho admin, có dev mode copy ID/URL" },
+      { type: "feature", text: "Nút thư viện icon nổi (kéo-thả) cho admin để tra cứu & copy URL nhanh" },
       { type: "improvement", text: "Đồng bộ toàn bộ 33.399 icon về Supabase Storage" },
       { type: "fix", text: "Sửa lỗi Brave translate 400 (chỉ nạp Google Translate khi cần EN)" },
       { type: "fix", text: "Sửa khoảng hở phía trên thanh điều hướng (header)" },
