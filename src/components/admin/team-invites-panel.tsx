@@ -37,6 +37,11 @@ type Pending = {
   application_note?: string | null;
   phone?: string | null;
   game_profiles?: Array<{ game: string; uid: string; nickname?: string; custom_label?: string }> | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  tiktok_url?: string | null;
+  discord_url?: string | null;
+  zalo_url?: string | null;
   created_at: string;
   avatar_url: string | null;
 };

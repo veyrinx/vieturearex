@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserByEmail, updateUserIsVerified } from "@/lib/data/content-service";
+import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserByEmail, updateUserIsVerified, getSettings } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { getResolvedRoles, getRoleLevel, BUILTIN_ROLE_LEVELS } from "@/lib/permissions";
 
 const ROLE_HIERARCHY: Record<string, number> = {
   super_admin: 200, it: 150, admin: 100, manager: 60, support: 40, user: 20,
@@ -19,9 +20,11 @@ async function getCallerRole(): Promise<string | null> {
   return data?.role ?? (user.app_metadata?.role as string | undefined) ?? null;
 }
 
+// Chấp nhận bất kỳ role key hợp lệ (builtin + custom trong settings). Việc role
+// đó có tồn tại hay không được kiểm tra động ở handler (getResolvedRoles).
 const updateRoleSchema = z.object({
   id: z.string().min(1),
-  role: z.enum(["super_admin", "admin", "it", "manager", "support", "user"]),
+  role: z.string().regex(/^[a-z0-9_]{1,32}$/, "Role không hợp lệ"),
 });
 
 const updateBanSchema = z.object({
@@ -150,25 +153,44 @@ export async function PATCH(request: NextRequest) {
   }
 
   const targetRole = roleParsed.data.role;
-  if (targetRole === "super_admin" || targetRole === "admin" || targetRole === "it") {
+
+  // Resolve roles từ settings (builtin + custom) → cho phép gán role tuỳ biến.
+  // "Tự đồng bộ": thêm custom role trong /admin/settings → Phân quyền là dùng ngay,
+  // không cần đổi code hay chạy migration DB.
+  const settings = await getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>);
+  const resolved = getResolvedRoles(
+    settings.find((s) => s.key === "permissions.custom_roles")?.value,
+    settings.find((s) => s.key === "permissions.role_capabilities")?.value,
+  );
+  const targetMeta = resolved.find((r) => r.key === targetRole);
+  if (!targetMeta) {
+    return NextResponse.json(
+      { error: `Role "${targetRole}" không tồn tại. Tạo trong /admin/settings → Phân quyền trước.` },
+      { status: 400 },
+    );
+  }
+
+  const ADMIN_LEVEL = BUILTIN_ROLE_LEVELS.admin;
+  if (targetMeta.level >= ADMIN_LEVEL) {
+    // Gán role cấp admin trở lên → chỉ super_admin
     const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "users.edit" });
     if (denied) return denied;
   } else {
     const denied = await enforceAdminApiAuth({ minimumRole: "admin", capability: "users.edit" });
     if (denied) return denied;
 
-    // Admin cannot change role of another admin/super_admin
+    // Admin không được đổi role của người đang ở cấp admin trở lên
     const callerRole = await getCallerRole();
     if (callerRole !== "super_admin") {
       const allUsers = await getUsers();
       const target = allUsers.find((u) => u.id === roleParsed.data.id);
-      if (target && (ROLE_HIERARCHY[target.role] ?? 0) >= (ROLE_HIERARCHY["admin"] ?? 0)) {
+      if (target && getRoleLevel(target.role, resolved) >= ADMIN_LEVEL) {
         return NextResponse.json({ error: "Không thể thay đổi quyền của admin khác." }, { status: 403 });
       }
     }
   }
 
-  const user = await updateUserRole(roleParsed.data.id, targetRole);
+  const user = await updateUserRole(roleParsed.data.id, targetRole as never);
   await logAdminActivity({
     action: "USER_ROLE_UPDATED",
     targetType: "USER",

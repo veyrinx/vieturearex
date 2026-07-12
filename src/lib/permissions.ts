@@ -11,7 +11,7 @@
  * setting can't lock the project owner out.
  */
 
-export const ROLE_KEYS = ["super_admin", "admin", "it", "manager", "support", "user"] as const;
+export const ROLE_KEYS = ["super_admin", "admin", "it", "manager", "support", "team_member", "user"] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 export const ROLE_LABELS: Record<RoleKey, string> = {
@@ -20,6 +20,7 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
   it: "IT",
   manager: "Quản Lý",
   support: "CSKH",
+  team_member: "Thành Viên Team",
   user: "Người Dùng",
 };
 
@@ -30,6 +31,7 @@ export const BUILTIN_ROLE_LEVELS: Record<RoleKey, number> = {
   admin: 100,
   manager: 60,
   support: 40,
+  team_member: 30,
   user: 20,
 };
 
@@ -206,6 +208,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "ratings.manage",
     "users.view",
   ],
+  team_member: [],
   user: [],
 };
 

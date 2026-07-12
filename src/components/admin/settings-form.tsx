@@ -25,26 +25,36 @@ type SettingsFormProps = { settings: SiteSetting[]; onSaved: () => Promise<void>
 
 // ─── Nav config ─────────────────────────────────────────────────────────────
 
-const NAV_ITEMS = [
-  { id: "account",      icon: User,         label: "Tài Khoản",   desc: "Hồ sơ & mật khẩu" },
-  { id: "branding",     icon: Palette,      label: "Thương Hiệu", desc: "Tên, logo, favicon" },
-  { id: "seo",          icon: Search,       label: "SEO",         desc: "Tiêu đề & mô tả" },
-  { id: "home",         icon: Home,         label: "Trang Chủ",   desc: "Hero & slider" },
-  { id: "social",       icon: Share2,       label: "Mạng Xã Hội", desc: "Facebook, YouTube…" },
-  { id: "community",    icon: Users,        label: "Cộng Đồng",   desc: "Thống kê & ngày ra mắt" },
-  { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
-  { id: "event_servers", icon: Globe,       label: "Server",      desc: "Server sự kiện tuỳ chỉnh" },
-  { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
-  { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark, Telegram, AI" },
-  { id: "tms",          icon: Trophy,       label: "Giải Đấu",    desc: "Quota & thanh toán TMS" },
-  { id: "content",      icon: FileText,     label: "Nội Dung",    desc: "Bình luận & bài viết" },
-  { id: "users",        icon: UserCog,      label: "Người Dùng",  desc: "Đăng ký & hồ sơ" },
-  { id: "push",         icon: Bell,         label: "Push Notify", desc: "Web push notifications" },
-  { id: "streams",      icon: Tv,           label: "Livestream",  desc: "YouTube livestream" },
-  { id: "appearance",   icon: Paintbrush,   label: "Giao Diện",   desc: "Màu sắc & card style" },
-  { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
-  { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
-] as const;
+const NAV_GROUPS = {
+  "Cá nhân": [
+    { id: "account",      icon: User,         label: "Tài Khoản",   desc: "Hồ sơ & mật khẩu" },
+  ],
+  "Nội dung": [
+    { id: "content",      icon: FileText,     label: "Nội Dung",    desc: "Bình luận & bài viết" },
+    { id: "event_servers", icon: Globe,       label: "Server Sự Kiện", desc: "Server tuỳ chỉnh" },
+    { id: "streams",      icon: Tv,           label: "Livestream",  desc: "YouTube livestream" },
+    { id: "tms",          icon: Trophy,       label: "Giải Đấu",    desc: "Quota & thanh toán TMS" },
+  ],
+  "Giao diện": [
+    { id: "branding",     icon: Palette,      label: "Thương Hiệu", desc: "Tên, logo, favicon" },
+    { id: "appearance",   icon: Paintbrush,   label: "Giao Diện",   desc: "Màu sắc & card style" },
+    { id: "seo",          icon: Search,       label: "SEO",         desc: "Tiêu đề & mô tả" },
+    { id: "home",         icon: Home,         label: "Trang Chủ",   desc: "Hero & slider" },
+    { id: "ads",          icon: BarChart3,    label: "Quảng Cáo",   desc: "Google AdSense" },
+  ],
+  "Hệ thống": [
+    { id: "users",        icon: UserCog,      label: "Người Dùng",  desc: "Đăng ký & hồ sơ" },
+    { id: "team_join",    icon: Users,        label: "Team Join",   desc: "Form mời gia nhập" },
+    { id: "social",       icon: Share2,       label: "Mạng Xã Hội", desc: "Facebook, YouTube…" },
+    { id: "community",    icon: Users,        label: "Cộng Đồng",   desc: "Thống kê & ngày ra mắt" },
+    { id: "integrations", icon: Plug,         label: "Tích Hợp",    desc: "Zalo, Discord, Lark, Telegram, AI" },
+    { id: "push",         icon: Bell,         label: "Push Notify", desc: "Web push notifications" },
+    { id: "mail",         icon: Mail,         label: "Email",        desc: "Cấu hình SMTP" },
+    { id: "maintenance",  icon: Wrench,       label: "Bảo Trì",     desc: "Chế độ bảo trì" },
+  ],
+} as const;
+
+const NAV_ITEMS = Object.values(NAV_GROUPS).flat();
 
 type SectionId = (typeof NAV_ITEMS)[number]["id"];
 
@@ -1785,8 +1795,36 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               />
               <SensitiveHint hint={sensitiveHint("integrations.ai_api_key")} />
               <p className="text-[11px] text-muted-foreground">
-                Để trống → dùng <code className="font-mono">OPENAI_API_KEY</code> từ môi trường Vercel/server. Model: <code className="font-mono">gpt-4o-mini</code>. Lấy key tại{" "}
-                <span className="font-mono text-primary">platform.openai.com</span>.
+                Key của provider bên dưới. Để trống → dùng <code className="font-mono">OPENAI_API_KEY</code> từ môi trường.
+                Free: <span className="font-mono text-primary">console.groq.com</span> hoặc <span className="font-mono text-primary">aistudio.google.com</span>.
+              </p>
+            </div>
+          </Field>
+
+          <Field label="AI Base URL (provider)" hint="Để trống = OpenAI. Đổi để dùng provider free." icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.ai_base_url")}
+                onChange={(e) => set("integrations.ai_base_url", e.target.value)}
+                placeholder="https://api.groq.com/openai/v1"
+                className="font-mono text-xs"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Groq: <code className="font-mono">https://api.groq.com/openai/v1</code> · Gemini: <code className="font-mono">https://generativelanguage.googleapis.com/v1beta/openai/</code>
+              </p>
+            </div>
+          </Field>
+
+          <Field label="AI Model" hint="Để trống = gpt-4o-mini (OpenAI)." icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.ai_model")}
+                onChange={(e) => set("integrations.ai_model", e.target.value)}
+                placeholder="gpt-4o-mini"
+                className="font-mono text-xs"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Groq: <code className="font-mono">llama-3.3-70b-versatile</code> · Gemini: <code className="font-mono">gemini-2.0-flash</code>
               </p>
             </div>
           </Field>
@@ -2567,54 +2605,61 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       <nav className="lg:sticky lg:top-6 lg:w-56 lg:shrink-0">
         {/* Mobile: horizontal scroll */}
         <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none lg:hidden">
-          {NAV_ITEMS.map(({ id, icon: Icon, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActive(id)}
-              className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all whitespace-nowrap",
-                active === id
-                  ? "bg-primary text-primary-foreground shadow"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className="size-3.5" />
-              {label}
-            </button>
-          ))}
+          {Object.values(NAV_GROUPS).flat().map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActive(id)}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all whitespace-nowrap",
+                  active === id
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <Icon className="size-3.5" />
+                {label}
+              </button>
+            ))}
         </div>
 
         {/* Desktop: vertical list */}
-        <div className="hidden lg:flex lg:flex-col lg:gap-0.5">
-          {NAV_ITEMS.map(({ id, icon: Icon, label, desc }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActive(id)}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
-                active === id
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                id === "maintenance" && maintenanceOn && active !== id && "text-amber-500",
-              )}
-            >
-              <div className={cn(
-                "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
-                active === id ? "bg-primary/15" : "bg-muted",
-                id === "maintenance" && maintenanceOn && active !== id && "bg-amber-500/10",
-              )}>
-                <Icon className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide leading-tight">{label}</p>
-                <p className="text-[10px] leading-tight opacity-60 truncate">{desc}</p>
-              </div>
-              {id === "maintenance" && maintenanceOn && (
-                <span className="ml-auto shrink-0 size-1.5 rounded-full bg-amber-500 animate-pulse" />
-              )}
-            </button>
+        <div className="hidden lg:flex lg:flex-col lg:gap-4">
+          {Object.entries(NAV_GROUPS).map(([groupName, items]) => (
+            <div key={groupName} className="space-y-0.5">
+              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">
+                {groupName}
+              </p>
+              {items.map(({ id, icon: Icon, label, desc }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActive(id)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
+                    active === id
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    id === "maintenance" && maintenanceOn && active !== id && "text-amber-500",
+                  )}
+                >
+                  <div className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+                    active === id ? "bg-primary/15" : "bg-muted",
+                    id === "maintenance" && maintenanceOn && active !== id && "bg-amber-500/10",
+                  )}>
+                    <Icon className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide leading-tight">{label}</p>
+                    <p className="text-[10px] leading-tight opacity-60 truncate">{desc}</p>
+                  </div>
+                  {id === "maintenance" && maintenanceOn && (
+                    <span className="ml-auto shrink-0 size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  )}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       </nav>

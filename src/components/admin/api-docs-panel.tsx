@@ -1266,7 +1266,7 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
 
         {/* ── Try It Panel ──────────────────────────────────────────── */}
         {showTry && !isExternal && (
-          <div className="rounded-xl border border-primary/20 bg-primary/5 dark:border-amber-400/15 dark:bg-amber-400/5 space-y-3 p-3">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 dark:border-amber-400/15 dark:bg-amber-400/5 space-y-4 p-4">
             <div className="flex items-center gap-2">
               <FlaskConical className="size-3.5 text-primary dark:text-amber-400" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-primary dark:text-amber-400">Try it</span>
@@ -1275,7 +1275,7 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
             {/* Path params */}
             {pathParamNames.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Path Params</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">PATH PARAMS</p>
                 <div className="grid gap-1.5 sm:grid-cols-2">
                   {pathParamNames.map((name) => (
                     <div key={name} className="flex items-center gap-2">
@@ -1296,7 +1296,7 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
             {/* Query params */}
             {ep.params && ep.params.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Query Params</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">QUERY PARAMS</p>
                 <div className="grid gap-1.5 sm:grid-cols-2">
                   {ep.params.map((p) => (
                     <div key={p.name} className="flex items-center gap-2">
@@ -1318,7 +1318,7 @@ function EndpointCard({ ep }: { ep: Endpoint }) {
             {ep.method !== "GET" && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Request Body (JSON)</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">REQUEST BODY (JSON)</p>
                   {ep.body && (
                     <button
                       type="button"

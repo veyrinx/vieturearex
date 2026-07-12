@@ -111,6 +111,8 @@ export const settingsFormFieldOrder = [
   "integrations.ai_bot_name",
   "integrations.ai_system_prompt",
   "integrations.ai_api_key",
+  "integrations.ai_base_url",
+  "integrations.ai_model",
   "integrations.discord_internal_webhook",
   "integrations.discord_public_webhook",
   "integrations.discord_daily_report",

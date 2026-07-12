@@ -261,6 +261,7 @@ language sql
 stable
 security definer
 set search_path = public
+set search_path = '' -- IMPORTANT: prevent search_path hijacking
 as $$
   select exists (
     select 1 from public.users
@@ -274,6 +275,7 @@ language sql
 stable
 security definer
 set search_path = public
+set search_path = '' -- IMPORTANT: prevent search_path hijacking
 as $$
   select exists (
     select 1 from public.users
@@ -287,10 +289,12 @@ language sql
 stable
 security definer
 set search_path = public
+set search_path = '' -- IMPORTANT: prevent search_path hijacking
 as $$
   select exists (
     select 1 from public.users
     where id = auth.uid() and role in ('super_admin', 'admin', 'manager', 'support')
+    where id = auth.uid() and role in ('super_admin', 'admin', 'it', 'manager')
   );
 $$;
 
@@ -299,6 +303,7 @@ returns table(success boolean, message text)
 language plpgsql
 security definer
 set search_path = public
+set search_path = ''
 as $$
 declare
   caller_role text;
@@ -2688,6 +2693,7 @@ language sql immutable security definer
 set search_path = public
 as $$
   select k = any(array[
+  select k = any(array[ -- THIS IS A SAMPLE LIST, THE REAL ONE IS IN THE APP
     'mail.smtp_pass',
     'mail.smtp_user',
     'mail.smtp_host',
@@ -3066,9 +3072,18 @@ values
 -- SUCCESS MESSAGE
 -- ============================================================
 -- ✅ Seed data inserted successfully!
--- 
+--
 -- Next steps:
 -- 1. Create admin account (admin@arex.tech)
 -- 2. Test login at /admin
 -- 3. Verify dashboard shows this data
 -- 4. Deploy to Vercel when ready
+
+-- ============================================================
+-- ROLES: KHÔNG ép CHECK constraint cứng.
+-- Role do app quản lý (settings.permissions.custom_roles + role_capabilities).
+-- Nhờ vậy tạo thêm role mới trong admin là dùng được ngay, KHÔNG cần chạy
+-- migration DB mỗi lần thêm role ("tự đồng bộ"). Câu lệnh này chạy CUỐI cùng
+-- nên là trạng thái sau chót: bỏ mọi ràng buộc role còn sót từ các bản cũ.
+-- ============================================================
+alter table if exists public.users drop constraint if exists users_role_check;

@@ -31,7 +31,7 @@ export function NewsSidebar({ categories, recentPosts }: NewsSidebarProps) {
               <Link
                 key={category}
                 href={`/news?category=${encodeURIComponent(category)}`}
-                className="rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary/15 dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-400 dark:hover:bg-amber-400/15"
+                className="rounded-lg border border-primary/20 bg-primary/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary/15 dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-400 dark:hover:bg-amber-400/15"
               >
                 {category}
               </Link>
@@ -56,7 +56,7 @@ export function NewsSidebar({ categories, recentPosts }: NewsSidebarProps) {
                 <Link
                   key={post.id}
                   href={`/news/${post.slug}`}
-                  className="group flex gap-3 rounded-xl border border-border bg-background/60 p-3 transition hover:border-primary/30 hover:bg-primary/5 dark:hover:border-amber-400/20 dark:hover:bg-amber-400/5"
+                  className="group flex gap-3 rounded-xl border border-border bg-background/60 p-2.5 transition hover:border-primary/30 hover:bg-primary/5 dark:hover:border-amber-400/20 dark:hover:bg-amber-400/5"
                 >
                   {post.cover && (
                     // eslint-disable-next-line @next/next/no-img-element

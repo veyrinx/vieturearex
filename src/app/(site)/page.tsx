@@ -73,7 +73,7 @@ export default async function HomePage() {
   const liveAndUpcomingStreams = streams.filter((s) => s.status === "live" || s.status === "upcoming");
 
   return (
-    <div className="space-y-12 pb-12 md:space-y-20 lg:space-y-24">
+    <>
       <SideAds left={sideAds.left} right={sideAds.right} />
       {firstHeroImage && (
         // eslint-disable-next-line @next/next/no-head-element
@@ -106,6 +106,7 @@ export default async function HomePage() {
         />
       ) : null}
 
+      <div className="space-y-12 pb-12 md:space-y-20 lg:space-y-24">
       <HeroBanner
         heroTitle={heroTitle}
         desktopBackgroundUrls={heroSlider.desktopImages}
@@ -183,6 +184,7 @@ export default async function HomePage() {
         tiktokFollowers={communityStats.tiktokFollowers}
         zaloMembers={communityStats.zaloMembers}
       />
-    </div>
+      </div>
+    </>
   );
 }

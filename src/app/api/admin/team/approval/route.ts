@@ -21,6 +21,13 @@ type Row = {
   team_status: string | null;
   applied_role: string | null;
   application_note: string | null;
+  phone: string | null;
+  game_profiles: Array<{ game: string; uid: string; nickname?: string; custom_label?: string }> | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  tiktok_url: string | null;
+  discord_url: string | null;
+  zalo_url: string | null;
   created_at: string;
   avatar_url: string | null;
 };
@@ -37,7 +44,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from("users")
-    .select("id, email, display_name, role, team_status, applied_role, application_note, game_profiles, phone, created_at, avatar_url")
+    .select("id, email, display_name, role, team_status, applied_role, application_note, game_profiles, phone, facebook_url, instagram_url, tiktok_url, discord_url, zalo_url, created_at, avatar_url")
     .in("team_status", ["pending_it", "pending_admin", "pending"])
     .order("created_at", { ascending: false })
     .limit(200);

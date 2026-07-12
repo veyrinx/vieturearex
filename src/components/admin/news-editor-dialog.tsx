@@ -415,42 +415,44 @@ export function NewsEditorDialog({
               {errors.category ? <p className="text-xs text-rose-500">{errors.category.message}</p> : null}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                THÊM DANH MỤC MỚI
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  value={newCategory}
-                  onChange={(event) => setNewCategory(event.target.value)}
-                  placeholder="THÊM DANH MỤC MỚI"
-                  className="border-border bg-background text-foreground"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0 rounded-xl"
-                  onClick={addCategory}
-                  disabled={isCategorySaving}
-                >
-                  <Plus className="mr-2 size-4" />
-                  THÊM
-                </Button>
+            <div className="rounded-xl border border-border bg-muted/30 p-3 md:col-span-2">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                  Quản lý danh mục
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategory}
+                    onChange={(event) => setNewCategory(event.target.value)}
+                    placeholder="Thêm danh mục mới..."
+                    className="h-8 flex-1 rounded-lg border-border bg-background text-xs text-foreground"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0 rounded-lg gap-1.5 bg-background text-xs"
+                    onClick={addCategory}
+                    disabled={isCategorySaving}
+                  >
+                    <Plus className="size-3.5" />
+                    Thêm
+                  </Button>
+                </div>
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 md:col-span-2">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => void removeCategory(category)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-primary transition hover:border-primary/35"
-                >
-                  {category}
-                  <X className="size-3.5" />
-                </button>
-              ))}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => void removeCategory(category)}
+                    className="group inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition hover:border-destructive/40 hover:text-destructive"
+                  >
+                    {category}
+                    <X className="size-2.5 opacity-50 transition group-hover:opacity-100" />
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* ── Publish mode ────────────────────────────────── */}

@@ -121,12 +121,32 @@ export async function POST(request: NextRequest) {
   const authUser = authData.user;
   await ensureUserAccount({ id: authUser.id, email, role: "team_member" });
 
-  // Save extra info — graceful: drop columns the migration may not have created yet.
-  const updates: Record<string, unknown> = {
-    role: "team_member",
-    team_status: "pending_it",
-    team_terms_accepted_at: new Date().toISOString(),
-    display_name: displayName,
+  // Core fields BẮT BUỘC thành công. Nếu fail (vd. constraint users_role_check
+  // thiếu 'team_member', hoặc team_status không hợp lệ) → xoá auth user vừa tạo
+  // rồi báo lỗi rõ ràng. KHÔNG nuốt lỗi im lặng để hồ sơ mồ côi / không vào hàng chờ.
+  const { error: coreErr } = await admin
+    .from("users")
+    .update({
+      role: "team_member",
+      team_status: "pending_it",
+      display_name: displayName,
+      team_terms_accepted_at: new Date().toISOString(),
+    } as never)
+    .eq("id", authUser.id);
+  if (coreErr) {
+    await admin.auth.admin.deleteUser(authUser.id).catch(() => {});
+    return NextResponse.json(
+      {
+        error:
+          `Không tạo được hồ sơ team: ${coreErr.message}. ` +
+          `Có thể DB chưa cho phép role 'team_member' — báo admin chạy migration users_role_check.`,
+      },
+      { status: 500 },
+    );
+  }
+
+  // Thông tin phụ — graceful: bỏ qua cột migration chưa tạo (không chặn đăng ký).
+  const extras: Record<string, unknown> = {
     phone: parsed.data.phone || null,
     applied_role: parsed.data.applied_role || null,
     application_note: parsed.data.application_note || null,
@@ -146,21 +166,18 @@ export async function POST(request: NextRequest) {
   };
 
   const COLUMN_ERR = /column ["']?([a-z0-9_]+)["']? .*does not exist|could not find the ['"]?([a-z0-9_]+)['"]? column/i;
-  const REQUIRED = new Set(["role", "team_status", "display_name"]);
   let attempts = 0;
-  let working = { ...updates };
+  let working = { ...extras };
   while (Object.keys(working).length > 0 && attempts < 16) {
     const { error } = await admin.from("users").update(working as never).eq("id", authUser.id);
     if (!error) break;
     const match = COLUMN_ERR.exec(error.message ?? "");
     const missing = match?.[1] ?? match?.[2];
-    if (missing && working[missing] !== undefined && !REQUIRED.has(missing)) {
+    if (missing && working[missing] !== undefined) {
       delete working[missing];
       attempts += 1;
       continue;
     }
-    // For required-column failures we still proceed: the row exists from
-    // ensureUserAccount, we just couldn't save extras.
     break;
   }
 

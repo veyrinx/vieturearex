@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Mail, Phone, User, Briefcase, Gamepad2, FileText, Calendar, Image as ImageIcon,
+  Mail, Phone, User, Briefcase, Gamepad2, FileText, Calendar, Image as ImageIcon, Share2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -16,6 +16,11 @@ export type ApplicantDetail = {
   application_note?: string | null;
   phone?: string | null;
   game_profiles?: Array<{ game: string; uid: string; nickname?: string; custom_label?: string }> | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  tiktok_url?: string | null;
+  discord_url?: string | null;
+  zalo_url?: string | null;
   created_at: string;
   avatar_url: string | null;
 };
@@ -48,6 +53,13 @@ export function ApplicantDetailDialog({
   const a = applicant;
   const created = new Date(a.created_at).toLocaleString("vi-VN");
   const games = Array.isArray(a.game_profiles) ? a.game_profiles : [];
+  const socials = [
+    { label: "Facebook", value: a.facebook_url },
+    { label: "Instagram", value: a.instagram_url },
+    { label: "TikTok", value: a.tiktok_url },
+    { label: "Discord", value: a.discord_url },
+    { label: "Zalo", value: a.zalo_url },
+  ].filter((s): s is { label: string; value: string } => Boolean(s.value && s.value.trim()));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,6 +134,34 @@ export function ApplicantDetailDialog({
               <p className="whitespace-pre-wrap rounded-md bg-muted/40 px-2.5 py-2 text-xs italic">
                 {a.application_note}
               </p>
+            </Row>
+          )}
+          {socials.length > 0 && (
+            <Row icon={Share2} label="Mạng xã hội">
+              <div className="flex flex-wrap gap-1.5">
+                {socials.map((s) => {
+                  const val = s.value.trim();
+                  const isUrl = /^https?:\/\//i.test(val);
+                  return isUrl ? (
+                    <a
+                      key={s.label}
+                      href={val}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-primary hover:underline dark:text-amber-400"
+                    >
+                      {s.label}
+                    </a>
+                  ) : (
+                    <span
+                      key={s.label}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                    >
+                      <span className="font-semibold text-muted-foreground">{s.label}:</span> {val}
+                    </span>
+                  );
+                })}
+              </div>
             </Row>
           )}
           <Row icon={Calendar} label="Đăng ký lúc">{created}</Row>

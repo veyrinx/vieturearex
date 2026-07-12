@@ -3,10 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowRight, CalendarClock, ChevronLeft, ChevronRight,
-  Flame, Newspaper, ImageIcon,
-} from "lucide-react";
+import { Icon } from "@/components/common/icon";
 import { Button } from "@/components/ui/button";
 import type { HeroSliderEffect } from "@/lib/utils/site-settings";
 
@@ -122,9 +119,9 @@ export function HeroBanner({
   const line3 = titleWords.slice(3).join(" ") || "HUB";
 
   const stats = [
-    { icon: Flame,     label: "Sự kiện",   value: activeEventCount,  color: "text-orange-400" },
-    { icon: Newspaper, label: "Bài viết",  value: publishedNewsCount, color: "text-primary dark:text-amber-400" },
-    { icon: ImageIcon, label: "Ảnh",        value: galleryCount,       color: "text-emerald-400" },
+    { icon: "local_fire_department", label: "Sự kiện",  value: activeEventCount,   color: "text-orange-400" },
+    { icon: "newspaper",             label: "Bài viết", value: publishedNewsCount, color: "text-primary dark:text-amber-400" },
+    { icon: "image",                 label: "Ảnh",      value: galleryCount,       color: "text-emerald-400" },
   ];
 
   return (
@@ -296,7 +293,7 @@ export function HeroBanner({
               transition={{ duration: 0.5, delay: 0.28 }}
               className="flex flex-wrap gap-2"
             >
-              {stats.map(({ icon: Icon, label, value, color }, i) => (
+              {stats.map(({ icon, label, value, color }, i) => (
                 <motion.div
                   key={label}
                   initial={{ opacity: 0, scale: 0.88 }}
@@ -305,7 +302,7 @@ export function HeroBanner({
                   className="flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-3.5 py-1.5 backdrop-blur-md"
                   style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 0 16px rgba(255,255,255,0.04)" }}
                 >
-                  <Icon className={`size-3.5 shrink-0 ${color}`} />
+                  <Icon name={icon} size={15} className={`shrink-0 ${color}`} />
                   <span className={`font-heading text-sm font-black tabular-nums ${color}`}>{value}</span>
                   <span className="text-[10px] font-medium text-white/62">{label}</span>
                 </motion.div>
@@ -362,7 +359,7 @@ export function HeroBanner({
               >
                 <Link href="/calendar">
                   XEM LỊCH SỰ KIỆN
-                  <CalendarClock className="ml-2 size-4" />
+                  <Icon name="calendar_month" size={16} className="ml-2" />
                 </Link>
               </Button>
               <Button
@@ -373,7 +370,7 @@ export function HeroBanner({
               >
                 <Link href="/news">
                   TIN TỨC
-                  <ArrowRight className="ml-2 size-4" />
+                  <Icon name="arrow_forward" size={16} className="ml-2" />
                 </Link>
               </Button>
             </motion.div>
@@ -407,7 +404,7 @@ export function HeroBanner({
             aria-label="Ảnh trước"
             className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 hover:border-white/40 md:left-5 md:size-10"
           >
-            <ChevronLeft className="size-4" />
+            <Icon name="chevron_left" size={18} />
           </button>
           <button
             type="button"
@@ -415,7 +412,7 @@ export function HeroBanner({
             aria-label="Ảnh tiếp theo"
             className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 hover:border-white/40 md:right-5 md:size-10"
           >
-            <ChevronRight className="size-4" />
+            <Icon name="chevron_right" size={18} />
           </button>
         </>
       )}

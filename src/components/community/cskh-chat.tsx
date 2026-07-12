@@ -313,7 +313,7 @@ export function CskhChat() {
             exit={{ scale: 0, opacity: 0 }}
             type="button"
             onClick={handleOpen}
-            className="fixed bottom-24 right-4 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_30px_rgba(0,82,255,0.3)] transition-transform hover:scale-105 dark:bg-amber-500 dark:shadow-[0_8px_30px_rgba(247,147,26,0.3)] md:bottom-6 md:right-6"
+            className="fixed bottom-4 right-4 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_30px_rgba(0,82,255,0.3)] transition-transform hover:scale-105 dark:bg-amber-500 dark:shadow-[0_8px_30px_rgba(247,147,26,0.3)] md:bottom-6 md:right-6"
             aria-label="Mở CSKH"
           >
             <Headset className="size-6" />
@@ -329,7 +329,7 @@ export function CskhChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-4 z-50 flex h-[520px] max-h-[calc(100vh-8rem)] w-[360px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_64px_rgba(2,6,23,0.18)] md:bottom-6 md:right-6"
+            className="fixed bottom-4 right-4 z-50 flex h-[520px] max-h-[calc(100vh-8rem)] w-[360px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_64px_rgba(2,6,23,0.18)] md:bottom-6 md:right-6"
           >
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-gradient-to-r from-primary/10 to-transparent px-4 py-3 dark:from-amber-400/10">

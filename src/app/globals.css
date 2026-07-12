@@ -43,6 +43,23 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
+/* ── Google Material Symbols (Rounded) — icon set phần public ─────────────── */
+.material-symbols-rounded {
+  font-family: "Material Symbols Rounded";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  vertical-align: middle;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
 /* Chặn copy text toàn trang */
 * {
   -webkit-user-select: none;
@@ -516,10 +533,10 @@ body, .font-body {
 }
 
 @layer utilities {
-  /* Positions element above mobile bottom nav, accounting for iOS safe area */
+  /* Floating element near bottom on mobile, accounting for iOS safe area */
   .bottom-safe-nav {
-    bottom: 4.5rem;
-    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
   .line-clamp-1 {
