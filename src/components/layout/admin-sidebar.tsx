@@ -8,7 +8,8 @@ import { PanelLeft } from "lucide-react";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { cn } from "@/lib/utils";
-import { adminNavItems, siteConfig } from "@/lib/constants/site";
+import { siteConfig } from "@/lib/constants/site";
+import { adminNavGroups } from "@/lib/constants/admin-nav";
 
 const DEFAULT_SITE_NAME = siteConfig.shortName;
 import {
@@ -43,21 +44,40 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
         </div>
       </div>
 
-      <nav className="scrollbar-none flex-1 space-y-1.5 overflow-y-auto">
-        {adminNavItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "block rounded-xl border border-transparent px-3 py-2 text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground transition hover:border-primary/20 hover:bg-primary/10 hover:text-primary dark:hover:text-amber-300",
-              pathname === item.href &&
-              "border-primary/25 bg-primary/10 text-primary dark:border-primary/20 dark:bg-primary/12 dark:text-amber-300",
-            )}
-          >
-            {item.title}
-          </Link>
-        ))}
+      <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto">
+        {adminNavGroups.map((group) => {
+          const GroupIcon = group.icon;
+          return (
+            <div key={group.label} className="space-y-1">
+              {/* Tiêu đề nhóm */}
+              <div className="flex items-center gap-1.5 px-2 pb-1 pt-0.5">
+                <GroupIcon className="size-3 text-muted-foreground/50" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+                  {group.label}
+                </span>
+              </div>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-muted-foreground transition hover:border-primary/20 hover:bg-primary/10 hover:text-primary dark:hover:text-amber-300",
+                      active &&
+                        "border-primary/25 bg-primary/10 text-primary dark:border-primary/20 dark:bg-primary/12 dark:text-amber-300",
+                    )}
+                  >
+                    <Icon className={cn("size-4 shrink-0", active ? "" : "text-muted-foreground/70")} />
+                    {item.title}
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="mt-4 shrink-0 border-t border-border pt-4">
