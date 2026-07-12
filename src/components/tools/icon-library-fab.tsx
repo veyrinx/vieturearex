@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import {
-  Search, X, Copy, Check, Grid2x2, Code2, ChevronLeft, ChevronRight, Loader2, GripVertical,
+  Search, X, Copy, Check, Grid2x2, ChevronLeft, ChevronRight, Loader2, GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 const CDN_URL            = "/api/ff-icon/"; // qua domain site (proxy + cache)
 const ITEMS_PER_PAGE     = 80;
 const SEARCH_DEBOUNCE_MS = 250;
-const DEV_STORAGE_KEY    = "fflib_dev_mode";
 const FAB_POS_KEY        = "fflib_fab_pos";
 const ADMIN_ROLES = ["super_admin", "admin", "manager", "support"];
 
@@ -29,7 +28,6 @@ export function IconLibraryFab() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Pos | null>(null);
-  const [devMode, setDevMode] = useState(false);
 
   const [ids, setIds] = useState<string[]>([]);
   const [baseUrl, setBaseUrl] = useState(CDN_URL);
@@ -61,7 +59,6 @@ export function IconLibraryFab() {
       const raw = localStorage.getItem(FAB_POS_KEY);
       const saved = raw ? (JSON.parse(raw) as Pos) : null;
       setPos(saved ? clampPos(saved) : { x: 16, y: window.innerHeight - 150 });
-      setDevMode(localStorage.getItem(DEV_STORAGE_KEY) === "1");
     } catch {
       setPos({ x: 16, y: window.innerHeight - 150 });
     }
@@ -106,14 +103,6 @@ export function IconLibraryFab() {
       setCopiedId(id);
       toast.success(`Đã copy ${kind}`);
       setTimeout(() => setCopiedId(null), 1200);
-    });
-  };
-
-  const toggleDev = () => {
-    setDevMode((v) => {
-      const nv = !v;
-      try { localStorage.setItem(DEV_STORAGE_KEY, nv ? "1" : "0"); } catch { /**/ }
-      return nv;
     });
   };
 
@@ -170,19 +159,7 @@ export function IconLibraryFab() {
             <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary dark:bg-amber-400/10 dark:text-amber-400">
               {loaded ? filtered.length.toLocaleString() : "…"}
             </span>
-            <button
-              onClick={toggleDev}
-              title="Dev mode: hiện & copy ID"
-              className={cn(
-                "ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold transition",
-                devMode
-                  ? "bg-primary text-white dark:bg-amber-500"
-                  : "border border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Code2 className="size-3" /> DEV
-            </button>
-            <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-muted-foreground hover:bg-muted">
+            <button onClick={() => setOpen(false)} className="ml-auto rounded-lg p-1 text-muted-foreground hover:bg-muted">
               <X className="size-4" />
             </button>
           </div>
@@ -228,15 +205,6 @@ export function IconLibraryFab() {
                         {copiedId === id ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-3.5 text-foreground" />}
                       </span>
                     </button>
-                    {devMode && (
-                      <button
-                        onClick={() => copy(id, id, "ID")}
-                        title="Copy ID"
-                        className="mt-0.5 block w-full truncate rounded bg-muted px-1 py-0.5 font-mono text-[8px] text-muted-foreground hover:text-foreground"
-                      >
-                        {id}
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
