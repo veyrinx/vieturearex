@@ -89,17 +89,37 @@ export function StatsPageClient() {
             </ResponsiveContainer>
           </div>
 
-          {/* Total views banner */}
-          <div className="rounded-2xl border border-border bg-card p-5 flex items-center gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-amber-400/10">
-              <BarChart3 className="size-6 text-primary dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tổng lượt xem tích lũy</p>
-              <p className="font-heading text-3xl font-black text-foreground">
-                {(data.totalViews ?? 0).toLocaleString("vi-VN")}
-              </p>
-            </div>
+          {/* View totals */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "Tổng lượt xem tích lũy", value: data.totalViews ?? 0, primary: true },
+              { label: "Hôm nay", value: data.chart.at(-1)?.views ?? 0, primary: false },
+              { label: "7 ngày qua", value: data.chart.slice(-7).reduce((a, c) => a + c.views, 0), primary: false },
+              { label: "30 ngày qua", value: data.chart.reduce((a, c) => a + c.views, 0), primary: false },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className={cn(
+                  "rounded-2xl border p-5",
+                  s.primary
+                    ? "border-primary/30 bg-primary/5 dark:border-amber-400/30 dark:bg-amber-400/5"
+                    : "border-border bg-card",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                    s.primary ? "bg-primary/15 dark:bg-amber-400/15" : "bg-muted",
+                  )}>
+                    <BarChart3 className={cn("size-4", s.primary ? "text-primary dark:text-amber-400" : "text-muted-foreground")} />
+                  </span>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{s.label}</p>
+                </div>
+                <p className="mt-2 font-heading text-2xl font-black text-foreground tabular-nums">
+                  {s.value.toLocaleString("vi-VN")}
+                </p>
+              </div>
+            ))}
           </div>
 
           {/* Year / Month breakdown */}
