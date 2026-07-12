@@ -25,6 +25,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "improvement", text: "Sidebar admin chia nhóm (Tổng quan/Nội dung/Cộng đồng/Người dùng/Hệ thống) + icon từng mục" },
       { type: "feature", text: "Dashboard: panel 'Cần xử lý' (bình luận/diễn đàn/đơn gia nhập đang chờ) + link nhanh" },
       { type: "feature", text: "Stat card hiển thị % tăng trưởng 7 ngày (người dùng / tin tức / lượt xem)" },
+      { type: "feature", text: "Tìm nhanh trong admin (Ctrl+K) — gõ để nhảy tới bất kỳ trang quản trị" },
       { type: "feature", text: "Công cụ người chơi: Chỉnh độ nhạy (/do-nhay) tự nhận diện máy, Tier List nhân vật (/tier-list), Combo kỹ năng (/combo)" },
       { type: "improvement", text: "Thư viện icon /items dùng đủ ~33.399 icon, phục vụ ảnh qua domain (proxy /api/ff-icon)" },
       { type: "feature", text: "Trang chi tiết từng item /items/[id] + nút tải ảnh PNG trong admin" },

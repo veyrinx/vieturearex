@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, Search } from "lucide-react";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,16 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
           <ThemeToggle />
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event("admin-cmd-open"))}
+        className="mb-3 flex w-full shrink-0 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
+      >
+        <Search className="size-3.5 shrink-0" />
+        <span className="flex-1 text-left">Tìm nhanh...</span>
+        <kbd className="rounded bg-background px-1.5 py-0.5 font-mono text-[9px]">Ctrl K</kbd>
+      </button>
 
       <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto">
         {adminNavGroups.map((group) => {
