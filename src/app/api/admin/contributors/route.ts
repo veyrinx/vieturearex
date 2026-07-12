@@ -20,7 +20,7 @@ type ContributorRow = {
 const patchSchema = z.object({
   user_id:      z.string().min(1),
   total_points: z.number().int().min(0).optional(),
-  badge:        z.enum(["member", "contributor", "veteran", "legend"]).optional(),
+  badge:        z.enum(["member", "regular", "veteran", "expert", "legend"]).optional(),
   posts_count:  z.number().int().min(0).optional(),
   replies_count: z.number().int().min(0).optional(),
   wiki_count:   z.number().int().min(0).optional(),

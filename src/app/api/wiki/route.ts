@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
 
 const createSchema = z.object({
   slug:      z.string().min(3).max(80).regex(/^[a-z0-9-]+$/, "Slug chỉ gồm chữ thường, số và dấu gạch ngang"),
@@ -66,12 +67,19 @@ export async function POST(req: NextRequest) {
 
   const authorName = profile?.display_name ?? user.email?.split("@")[0] ?? "Ẩn danh";
 
+  // Sanitize user-supplied content — this article is auto-published and rendered
+  // as raw HTML on /wiki/[slug], so unsanitized input is a stored-XSS vector.
+  const safeContent = sanitizeRichText(parsed.data.content);
+  if (safeContent.trim().length < 20) {
+    return NextResponse.json({ error: "Nội dung không hợp lệ." }, { status: 400 });
+  }
+
   const { data: article, error } = await untypedFrom(db, "wiki_articles").insert({
     slug:        parsed.data.slug,
-    title:       parsed.data.title,
-    content:     parsed.data.content,
-    excerpt:     parsed.data.excerpt ?? null,
-    category:    parsed.data.category,
+    title:       sanitizePlainText(parsed.data.title),
+    content:     safeContent,
+    excerpt:     parsed.data.excerpt ? sanitizePlainText(parsed.data.excerpt) : null,
+    category:    sanitizePlainText(parsed.data.category),
     cover_url:   parsed.data.cover_url || null,
     author_id:   user.id,
     author_name: authorName,

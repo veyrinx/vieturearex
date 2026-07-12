@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
 
 const updateSchema = z.object({
   title:     z.string().min(3).max(200).optional(),
@@ -99,6 +100,19 @@ export async function PUT(
 
   const { summary, ...updateFields } = parsed.data;
   const editorName = profile?.display_name ?? user.email?.split("@")[0] ?? "Ẩn danh";
+
+  // Sanitize user-supplied fields — content is rendered as raw HTML on
+  // /wiki/[slug], so unsanitized input is a stored-XSS vector.
+  if (updateFields.content !== undefined) {
+    const safeContent = sanitizeRichText(updateFields.content);
+    if (safeContent.trim().length < 20) {
+      return NextResponse.json({ error: "Nội dung không hợp lệ." }, { status: 400 });
+    }
+    updateFields.content = safeContent;
+  }
+  if (updateFields.title !== undefined) updateFields.title = sanitizePlainText(updateFields.title);
+  if (updateFields.excerpt) updateFields.excerpt = sanitizePlainText(updateFields.excerpt);
+  if (updateFields.category !== undefined) updateFields.category = sanitizePlainText(updateFields.category);
 
   // Update article
   const { error: updateError } = await untypedFrom(db, "wiki_articles")

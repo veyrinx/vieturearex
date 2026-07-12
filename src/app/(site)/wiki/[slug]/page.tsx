@@ -11,6 +11,7 @@ import { BookmarkButton } from "@/components/news/bookmark-button";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { WikiViewTracker } from "@/components/wiki/wiki-view-tracker";
 import { siteConfig } from "@/lib/constants/site";
+import { sanitizeRichText } from "@/lib/server/sanitize";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -83,6 +84,9 @@ export default async function WikiArticlePage(
     .limit(3) as { data: Array<{ slug: string; title: string; excerpt: string | null; category: string; author_name: string }> | null };
 
   const isHtml = article.content.trimStart().startsWith("<");
+  // Defense-in-depth: strip any unsafe markup at render time so rows stored
+  // before content sanitization (or via other paths) can't inject scripts.
+  const safeContent = isHtml ? sanitizeRichText(article.content) : article.content;
 
   const readingTime = Math.max(1, Math.ceil(article.content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200));
 
@@ -170,8 +174,8 @@ export default async function WikiArticlePage(
           {/* Content */}
           <div className="min-h-[200px]">
             {isHtml
-              ? <RichTextRenderer html={article.content} />
-              : <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">{article.content}</div>
+              ? <RichTextRenderer html={safeContent} />
+              : <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">{safeContent}</div>
             }
           </div>
 

@@ -2222,9 +2222,25 @@ CREATE TABLE IF NOT EXISTS contributor_points (
   replies_count INT NOT NULL DEFAULT 0,
   wiki_count    INT NOT NULL DEFAULT 0,
   total_points  INT NOT NULL DEFAULT 0,
-  badge         TEXT NOT NULL DEFAULT 'member' CHECK (badge IN ('member','contributor','top_contributor','legend')),
+  badge         TEXT NOT NULL DEFAULT 'member' CHECK (badge IN ('member','regular','veteran','expert','legend')),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Align badge tiers with the app (contributor-sync.ts / xu-huong UI). Older
+-- schemas used ('member','contributor','top_contributor','legend'), which the
+-- app never writes — causing upserts to fail the CHECK once a user passed 50
+-- points, silently freezing their points. Re-map legacy values then swap CHECK.
+DO $$
+BEGIN
+  UPDATE public.contributor_points SET badge = 'expert'  WHERE badge = 'top_contributor';
+  UPDATE public.contributor_points SET badge = 'regular' WHERE badge = 'contributor';
+  ALTER TABLE public.contributor_points DROP CONSTRAINT IF EXISTS contributor_points_badge_check;
+  ALTER TABLE public.contributor_points
+    ADD CONSTRAINT contributor_points_badge_check
+    CHECK (badge IN ('member','regular','veteran','expert','legend'));
+EXCEPTION WHEN undefined_table THEN
+  NULL; -- table not created yet on a fresh bootstrap
+END $$;
 
 -- ── forum_post_votes (helpful) ───────────────────────────────
 CREATE TABLE IF NOT EXISTS forum_post_votes (
