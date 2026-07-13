@@ -303,6 +303,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.72,
     },
+    {
+      url: `${BASE}/nhan-vat/so-sanh`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
     ...Object.keys(ROLE_META).map((role) => ({
       url: `${BASE}/nhan-vat/vai-tro/${role}`,
       lastModified: now,

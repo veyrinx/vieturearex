@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { UserRound } from "lucide-react";
+import Link from "next/link";
+import { UserRound, Scale } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
@@ -21,11 +22,19 @@ export default function CharactersPage() {
     <main className="container-main my-8 space-y-8">
       <Breadcrumbs items={[{ name: "Nhân vật", href: "/nhan-vat" }]} />
 
-      <div className="flex items-center gap-3">
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <UserRound className="size-5" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <UserRound className="size-5" />
+          </div>
+          <SectionHeading title="Nhân vật Free Fire" eyebrow="Thư viện" align="left" />
         </div>
-        <SectionHeading title="Nhân vật Free Fire" eyebrow="Thư viện" align="left" />
+        <Link
+          href="/nhan-vat/so-sanh"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+        >
+          <Scale className="size-4" /> So sánh nhân vật
+        </Link>
       </div>
 
       <CharactersMetaHighlight characters={characters} />
