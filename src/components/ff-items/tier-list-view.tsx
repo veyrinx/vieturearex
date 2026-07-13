@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ListChecks, Swords, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -55,17 +56,29 @@ function TierListCard({ list }: { list: PublicTierList }) {
               {items.length === 0 ? (
                 <span className="px-2 py-1 text-xs text-muted-foreground/60">Trống</span>
               ) : (
-                items.map((item) => (
-                  <div key={item.id} className="group relative" title={item.name}>
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      width={48}
-                      height={48}
-                      className="size-12 rounded-md object-contain transition-transform group-hover:scale-105"
-                    />
-                  </div>
-                ))
+                items.map((item) =>
+                  item.slug ? (
+                    <Link key={item.id} href={`/vu-khi/${item.slug}`} className="group relative" title={item.name}>
+                      <Image
+                        src={item.image_url}
+                        alt={item.name}
+                        width={48}
+                        height={48}
+                        className="size-12 rounded-md object-contain ring-primary/0 transition-all group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/60"
+                      />
+                    </Link>
+                  ) : (
+                    <div key={item.id} className="group relative" title={item.name}>
+                      <Image
+                        src={item.image_url}
+                        alt={item.name}
+                        width={48}
+                        height={48}
+                        className="size-12 rounded-md object-contain transition-transform group-hover:scale-105"
+                      />
+                    </div>
+                  ),
+                )
               )}
             </div>
           </div>

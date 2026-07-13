@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getEvents, getNews } from "@/lib/data/content-service";
 import { getTmsTournaments } from "@/lib/tms/data";
+import { getAllWeapons } from "@/lib/data/ff-data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { siteConfig } from "@/lib/constants/site";
@@ -41,11 +42,12 @@ function newsPriority(days: number): number {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [news, events, tournaments, wiki] = await Promise.all([
+  const [news, events, tournaments, wiki, weapons] = await Promise.all([
     getNews("published", { includeContent: false }).catch(() => []),
     getEvents().catch(() => []),
     getTmsTournaments().catch(() => []),
     getPublishedWiki(),
+    getAllWeapons().catch(() => []),
   ]);
 
   const now = new Date();
@@ -247,6 +249,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
+  // ── FF Wiki: tier list + vũ khí ──────────────────────────────────────────
+  const ffRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${BASE}/tier-lists`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.75,
+      alternates: { languages: { vi: `${BASE}/bang-xep-hang` } },
+    },
+    {
+      url: `${BASE}/vu-khi`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.72,
+    },
+    ...weapons.map((w) => ({
+      url: `${BASE}/vu-khi/${w.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+      priority: 0.60,
+    })),
+  ];
+
   return [
     ...coreRoutes,
     ...viRoutes,
@@ -257,5 +282,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...eventRoutes,
     ...tournamentRoutes,
     ...wikiRoutes,
+    ...ffRoutes,
   ];
 }

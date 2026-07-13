@@ -8,6 +8,8 @@ export type PublicTierEntry = {
   image_url: string;
   tier: string;
   ref_id: string | null;
+  /** Slug of the linked weapon, when ref_id points to an ff_weapons row. */
+  slug: string | null;
 };
 
 export type PublicTierList = {
@@ -47,6 +49,21 @@ export async function getPublicTierLists(): Promise<PublicTierList[]> {
     return [];
   }
 
+  // Resolve ref_id → weapon slug so entries can link to detail pages.
+  const refIds = Array.from(
+    new Set(
+      data.flatMap((l) => (l.tier_list_entries ?? []).map((e) => e.ref_id).filter((r): r is string => Boolean(r))),
+    ),
+  );
+
+  const slugByRef = new Map<string, string>();
+  if (refIds.length > 0) {
+    const { data: weapons } = await (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
+      .select("id, slug")
+      .in("id", refIds) as { data: { id: string; slug: string }[] | null };
+    for (const w of weapons ?? []) slugByRef.set(w.id, w.slug);
+  }
+
   return data.map((list) => ({
     id: list.id,
     kind: list.kind === "character" ? "character" : "weapon",
@@ -61,6 +78,7 @@ export async function getPublicTierLists(): Promise<PublicTierList[]> {
         image_url: e.image_url,
         tier: e.tier,
         ref_id: e.ref_id,
+        slug: e.ref_id ? slugByRef.get(e.ref_id) ?? null : null,
       })),
   }));
 }

@@ -38,6 +38,10 @@ type TierList = {
 };
 
 type CatalogItem = { id: string; label: string | null; category: string | null };
+type WeaponPick = { id: string; slug: string; name: string; image_url: string };
+
+/** Normalized item shown in the picker, regardless of source. */
+type PickItem = { key: string; ref_id: string | null; name: string; image_url: string };
 
 const imageOf = (id: string) => (FF_ITEM_IMAGE_BASE_URL ? `${FF_ITEM_IMAGE_BASE_URL}/${id}.png` : "");
 
@@ -55,19 +59,23 @@ export function TierListManager() {
   const [loading, setLoading] = useState(true);
   const [lists, setLists] = useState<TierList[]>([]);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [weapons, setWeapons] = useState<WeaponPick[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [listRes, catRes] = await Promise.all([
+      const [listRes, catRes, wpnRes] = await Promise.all([
         fetch("/api/admin/tier-lists"),
         fetch("/api/admin/ff-items/catalog"),
+        fetch("/api/admin/weapons"),
       ]);
       const listJson = await listRes.json().catch(() => ({}));
       const catJson = await catRes.json().catch(() => ({}));
+      const wpnJson = await wpnRes.json().catch(() => ({}));
       setLists((listJson.lists ?? []) as TierList[]);
       setCatalog((catJson.items ?? []) as CatalogItem[]);
+      setWeapons((wpnJson.weapons ?? []) as WeaponPick[]);
     } catch {
       toast.error("Không thể tải dữ liệu tier list.");
     } finally {
@@ -151,6 +159,7 @@ export function TierListManager() {
         draft={draft}
         setDraft={setDraft}
         catalog={catalog}
+        weapons={weapons}
         saving={saving}
         onSave={save}
         onCancel={() => setDraft(null)}
@@ -212,11 +221,12 @@ export function TierListManager() {
 }
 
 function DraftEditor({
-  draft, setDraft, catalog, saving, onSave, onCancel,
+  draft, setDraft, catalog, weapons, saving, onSave, onCancel,
 }: {
   draft: Draft;
   setDraft: React.Dispatch<React.SetStateAction<Draft | null>>;
   catalog: CatalogItem[];
+  weapons: WeaponPick[];
   saving: boolean;
   onSave: () => void;
   onCancel: () => void;
@@ -224,24 +234,30 @@ function DraftEditor({
   const [pickerTier, setPickerTier] = useState<Tier | null>(null);
   const [query, setQuery] = useState("");
 
-  const usedIds = useMemo(() => new Set(draft.entries.map((e) => e.ref_id)), [draft.entries]);
+  // Weapon lists pick from real weapons (ref_id = weapon uuid → links to detail).
+  // Character lists pick from the image catalog (no detail page → ref_id null).
+  const source: PickItem[] = useMemo(() => {
+    if (draft.kind === "weapon") {
+      return weapons.map((w) => ({ key: w.id, ref_id: w.id, name: w.name, image_url: w.image_url }));
+    }
+    return catalog.map((c) => ({ key: c.id, ref_id: null, name: c.label || c.id, image_url: imageOf(c.id) }));
+  }, [draft.kind, weapons, catalog]);
+
+  const usedImages = useMemo(() => new Set(draft.entries.map((e) => e.image_url)), [draft.entries]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return catalog
-      .filter((c) => !usedIds.has(c.id))
-      .filter((c) => !q || (c.label ?? c.id).toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
+    return source
+      .filter((c) => !usedImages.has(c.image_url))
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
       .slice(0, 60);
-  }, [catalog, query, usedIds]);
+  }, [source, query, usedImages]);
 
   const update = (patch: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...patch } : d));
 
-  function addItem(item: CatalogItem, tier: Tier) {
+  function addItem(item: PickItem, tier: Tier) {
     update({
-      entries: [
-        ...draft.entries,
-        { ref_id: item.id, name: item.label || item.id, image_url: imageOf(item.id), tier },
-      ],
+      entries: [...draft.entries, { ref_id: item.ref_id, name: item.name, image_url: item.image_url, tier }],
     });
   }
 
@@ -385,15 +401,17 @@ function DraftEditor({
               ) : (
                 results.map((item) => (
                   <button
-                    key={item.id}
+                    key={item.key}
                     onClick={() => addItem(item, pickerTier)}
                     className="flex flex-col items-center gap-1 rounded-lg border border-border p-1.5 hover:border-primary hover:bg-primary/5"
-                    title={item.label || item.id}
+                    title={item.name}
                   >
                     <div className="size-12 overflow-hidden rounded-md bg-muted/40">
-                      <Image src={imageOf(item.id)} alt={item.label || item.id} width={48} height={48} className="size-full object-contain" />
+                      {item.image_url ? (
+                        <Image src={item.image_url} alt={item.name} width={48} height={48} className="size-full object-contain" />
+                      ) : null}
                     </div>
-                    <span className="w-full truncate text-center text-[10px] text-muted-foreground">{item.label || item.id}</span>
+                    <span className="w-full truncate text-center text-[10px] text-muted-foreground">{item.name}</span>
                   </button>
                 ))
               )}
