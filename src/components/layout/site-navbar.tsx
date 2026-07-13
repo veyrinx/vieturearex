@@ -222,23 +222,10 @@ function NavDropdown({
 export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }: SiteNavbarProps) {
   const iconLight = logoLight || ICON_LIGHT_DEFAULT;
   const iconDark = logoDark || ICON_DARK_DEFAULT;
+  const brandName = /network/i.test(siteName) ? siteName : `${siteName} Network`;
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [compact, setCompact] = useState(false);
   const isHomePage = pathname === "/";
-
-  useEffect(() => {
-    let prev = 0;
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (y < 56)         setCompact(false);
-      else if (y > prev + 6) setCompact(true);
-      else if (prev > y + 6) setCompact(false);
-      prev = y;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const ctrlClass =
     "theme-control-surface border-slate-200/90 bg-white/84 text-slate-900 hover:bg-white dark:border-white/15 dark:bg-[#0F1115]/72 dark:text-white dark:hover:bg-[#151820]";
@@ -253,10 +240,8 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           : "sticky border-b border-border bg-background/90",
       )}
     >
-      <motion.div
-        animate={{ height: compact ? 44 : 64 }}
-        transition={{ type: "spring", stiffness: 420, damping: 38 }}
-        className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 md:px-6"
+      <div
+        className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 md:px-6"
       >
 
         {/* ── Logo ── */}
@@ -273,31 +258,27 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             <Image
               src={iconLight}
               alt={siteName}
-              width={36}
-              height={36}
+              width={32}
+              height={32}
               priority
-              className="block size-9 object-contain drop-shadow-[0_6px_18px_rgba(15,23,42,0.18)] dark:hidden"
+              className="block size-8 rounded-xl object-contain drop-shadow-[0_6px_18px_rgba(15,23,42,0.18)] dark:hidden"
             />
             <Image
               src={iconDark}
               alt={siteName}
-              width={36}
-              height={36}
+              width={32}
+              height={32}
               priority
-              className="hidden size-9 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.38)] dark:block"
+              className="hidden size-8 rounded-xl object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.38)] dark:block"
             />
           </motion.div>
           <div className="hidden flex-col leading-none sm:flex">
             <span className="font-heading text-[0.72rem] font-black uppercase tracking-[0.14em] text-foreground">
-              {siteName}
+              {brandName}
             </span>
-            <motion.span
-              animate={{ opacity: compact ? 0 : 1, height: compact ? 0 : "auto" }}
-              transition={{ duration: 0.18, ease: "easeInOut" }}
-              className="overflow-hidden text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground"
-            >
+            <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
               Community Hub
-            </motion.span>
+            </span>
           </div>
         </Link>
 
@@ -409,7 +390,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                 />
                 <div className="min-w-0 leading-none">
                   <SheetTitle className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
-                    {siteName}
+                    {brandName}
                   </SheetTitle>
                   <SheetDescription className="mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     Community Hub
@@ -473,7 +454,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             </SheetContent>
           </Sheet>
         </div>
-      </motion.div>
+      </div>
     </header>
   );
 }
