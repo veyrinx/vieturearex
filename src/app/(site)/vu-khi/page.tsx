@@ -4,8 +4,9 @@ import { Swords, Scale, Layers } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
-import { getAllWeapons } from "@/lib/data/ff-data";
+import { getAllWeapons, getAllLoadouts } from "@/lib/data/ff-data";
 import { WeaponsBrowser } from "@/components/ff-items/weapons-browser";
+import { WeaponsMetaHighlight } from "@/components/ff-items/weapons-meta-highlight";
 
 export const metadata: Metadata = {
   title: "Vũ khí Free Fire — Chỉ số & Thông tin chi tiết | Arex",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function WeaponsPage() {
-  const weapons = await getAllWeapons();
+  const [weapons, loadouts] = await Promise.all([getAllWeapons(), getAllLoadouts()]);
 
   return (
     <main className="container-main my-8 space-y-8">
@@ -48,7 +49,10 @@ export default async function WeaponsPage() {
           <p className="text-sm text-muted-foreground">Chưa có vũ khí nào được cập nhật.</p>
         </div>
       ) : (
-        <WeaponsBrowser weapons={weapons} />
+        <>
+          <WeaponsMetaHighlight weapons={weapons} loadouts={loadouts} />
+          <WeaponsBrowser weapons={weapons} />
+        </>
       )}
     </main>
   );
