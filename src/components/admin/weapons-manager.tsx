@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { Plus, Save, Trash2, Pencil, Swords, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
+import { WEAPON_TYPES } from "@/lib/constants/weapon-types";
 
 type Weapon = {
   id: string;
@@ -19,6 +21,8 @@ type Weapon = {
   rate_of_fire: number | null;
   reload: number | null;
   magazine: number | null;
+  weapon_type: string | null;
+  ob: string | null;
   released_at: string | null;
   updated_at?: string;
 };
@@ -36,6 +40,8 @@ const emptyDraft = (): Draft => ({
   rate_of_fire: null,
   reload: null,
   magazine: null,
+  weapon_type: null,
+  ob: "",
   released_at: "",
 });
 
@@ -120,6 +126,8 @@ export function WeaponsManager() {
           rate_of_fire: draft.rate_of_fire,
           reload: draft.reload,
           magazine: draft.magazine,
+          weapon_type: draft.weapon_type || null,
+          ob: draft.ob?.trim() || null,
           released_at: draft.released_at || null,
         }),
       });
@@ -191,6 +199,27 @@ export function WeaponsManager() {
             </Field>
             <Field label="Slug (URL)">
               <Input value={draft.slug} onChange={(e) => update({ slug: slugify(e.target.value) })} placeholder="mp40" className="bg-background" />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Thể loại">
+              <Select
+                value={draft.weapon_type ?? ""}
+                onValueChange={(v) => update({ weapon_type: v || null })}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Chọn thể loại..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEAPON_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Phiên bản OB">
+              <Input value={draft.ob ?? ""} onChange={(e) => update({ ob: e.target.value })} placeholder="OB48" className="bg-background" />
             </Field>
           </div>
 

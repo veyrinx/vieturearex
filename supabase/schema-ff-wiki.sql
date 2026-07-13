@@ -16,12 +16,18 @@ create table if not exists public.ff_weapons (
   rate_of_fire  integer,
   reload        integer,
   magazine      integer,
+  weapon_type   text check (weapon_type is null or weapon_type in (
+    'ar', 'smg', 'sniper', 'marksman', 'shotgun',
+    'lmg', 'pistol', 'launcher', 'melee', 'throwable'
+  )),
+  ob            text,
   released_at   date,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
 
 create index if not exists ff_weapons_slug_idx on public.ff_weapons (slug);
+create index if not exists ff_weapons_weapon_type_idx on public.ff_weapons (weapon_type) where weapon_type is not null;
 
 -- ── Tier lists (character | weapon) ─────────────────────────
 create table if not exists public.tier_lists (

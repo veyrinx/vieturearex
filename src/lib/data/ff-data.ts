@@ -39,6 +39,8 @@ export type WeaponDetail = {
   rate_of_fire: number | null;
   reload: number | null;
   magazine: number | null;
+  weapon_type: string | null;
+  ob: string | null;
   released_at: string | null;
   tier_lists: TierListInfo[];
   comments: CommentWithAuthor[];
@@ -147,6 +149,8 @@ export type WeaponListItem = {
   image_url: string;
   damage: number | null;
   range: number | null;
+  weapon_type: string | null;
+  ob: string | null;
 };
 
 export async function getAllWeapons(): Promise<WeaponListItem[]> {
@@ -155,7 +159,7 @@ export async function getAllWeapons(): Promise<WeaponListItem[]> {
   if (!supabase) return [];
 
   const { data, error } = await (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
-    .select("id, slug, name, image_url, damage, range")
+    .select("id, slug, name, image_url, damage, range, weapon_type, ob")
     .order("name", { ascending: true })
     .limit(500) as { data: WeaponListItem[] | null; error: { message?: string } | null };
 
@@ -165,6 +169,83 @@ export async function getAllWeapons(): Promise<WeaponListItem[]> {
   }
 
   return data.map((w) => ({
+    ...w,
+    image_url: w.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${w.id}.png`,
+  }));
+}
+
+// Danh sách vũ khí kèm đủ chỉ số — dùng cho trang so sánh (chọn 2 khẩu, so tại client).
+export type WeaponCompareItem = {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string;
+  weapon_type: string | null;
+  ob: string | null;
+  damage: number | null;
+  range: number | null;
+  rate_of_fire: number | null;
+  reload: number | null;
+  magazine: number | null;
+};
+
+export async function getWeaponsForCompare(): Promise<WeaponCompareItem[]> {
+  noStore();
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data } = await (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
+    .select("id, slug, name, image_url, weapon_type, ob, damage, range, rate_of_fire, reload, magazine")
+    .order("name", { ascending: true })
+    .limit(500) as { data: WeaponCompareItem[] | null };
+
+  return (data ?? []).map((w) => ({
+    ...w,
+    image_url: w.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${w.id}.png`,
+  }));
+}
+
+// Giá trị lớn nhất của từng chỉ số (toàn bộ vũ khí) — để chuẩn hoá thanh chỉ số.
+export type WeaponStatMax = { damage: number; range: number; rate_of_fire: number };
+
+export async function getWeaponStatMaxes(): Promise<WeaponStatMax> {
+  noStore();
+  const fallback: WeaponStatMax = { damage: 100, range: 100, rate_of_fire: 100 };
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return fallback;
+
+  type StatRow = { damage: number | null; range: number | null; rate_of_fire: number | null };
+  const { data } = await (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
+    .select("damage, range, rate_of_fire")
+    .limit(500) as { data: StatRow[] | null };
+
+  if (!data || data.length === 0) return fallback;
+
+  const max = (key: keyof StatRow) =>
+    Math.max(1, ...data.map((w) => w[key] ?? 0));
+
+  return { damage: max("damage"), range: max("range"), rate_of_fire: max("rate_of_fire") };
+}
+
+// Vũ khí cùng thể loại (loại trừ khẩu đang xem).
+export async function getRelatedWeapons(
+  weaponType: string | null,
+  excludeId: string,
+  limit = 6,
+): Promise<WeaponListItem[]> {
+  if (!weaponType) return [];
+  noStore();
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data } = await (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
+    .select("id, slug, name, image_url, damage, range, weapon_type, ob")
+    .eq("weapon_type", weaponType)
+    .neq("id", excludeId)
+    .order("damage", { ascending: false, nullsFirst: false })
+    .limit(limit) as { data: WeaponListItem[] | null };
+
+  return (data ?? []).map((w) => ({
     ...w,
     image_url: w.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${w.id}.png`,
   }));

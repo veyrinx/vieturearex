@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { SectionHeading } from "@/components/common/section-heading";
-import { getWeaponBySlug, getTierColor } from "@/lib/data/ff-data";
+import { siteConfig } from "@/lib/constants/site";
+import { getWeaponBySlug, getRelatedWeapons, getWeaponStatMaxes, getTierColor } from "@/lib/data/ff-data";
 import { cn } from "@/lib/utils";
+import { weaponTypeLabel } from "@/lib/constants/weapon-types";
 import { ItemInteractions } from "@/components/ff-items/item-interactions";
-import { Target, Gauge, Zap, ChevronsRight, Box, Calendar } from "lucide-react";
+import { Gauge, Box, Calendar, Crosshair, Tag } from "lucide-react";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -29,17 +32,50 @@ export default async function WeaponDetailPage({ params }: Props) {
   const weapon = await getWeaponBySlug(slug);
   if (!weapon) notFound();
 
-  const stats = [
-    { label: "Sát thương", value: weapon.damage, icon: Target },
-    { label: "Tầm bắn", value: weapon.range, icon: ChevronsRight },
-    { label: "Tốc độ bắn", value: weapon.rate_of_fire, icon: Zap },
+  const [statMax, related] = await Promise.all([
+    getWeaponStatMaxes(),
+    getRelatedWeapons(weapon.weapon_type, weapon.id),
+  ]);
+
+  const barStats = [
+    { label: "Sát thương", value: weapon.damage, max: statMax.damage },
+    { label: "Tầm bắn", value: weapon.range, max: statMax.range },
+    { label: "Tốc độ bắn", value: weapon.rate_of_fire, max: statMax.rate_of_fire },
+  ];
+
+  const metaStats = [
+    { label: "Thể loại", value: weaponTypeLabel(weapon.weapon_type), icon: Crosshair },
+    { label: "Phiên bản OB", value: weapon.ob, icon: Tag },
     { label: "Tốc độ thay đạn", value: weapon.reload, icon: Gauge },
     { label: "Băng đạn", value: weapon.magazine, icon: Box },
     { label: "Ngày ra mắt", value: weapon.released_at ? new Date(weapon.released_at).toLocaleDateString("vi-VN") : "N/A", icon: Calendar },
   ];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: weapon.name,
+    image: weapon.image_url,
+    description: weapon.description || `Chỉ số và thông tin vũ khí ${weapon.name} trong Free Fire.`,
+    category: weaponTypeLabel(weapon.weapon_type) || "Vũ khí Free Fire",
+    url: `${siteConfig.url}/vu-khi/${weapon.slug}`,
+    ...(weapon.ratings.count > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: weapon.ratings.average.toFixed(1),
+        ratingCount: weapon.ratings.count,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }),
+  };
+
   return (
     <main className="container-main my-8 space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Header */}
       <div className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
         <Image
@@ -63,9 +99,32 @@ export default async function WeaponDetailPage({ params }: Props) {
         {/* Left: Stats */}
         <div className="space-y-8">
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-heading text-lg font-bold uppercase tracking-wider">Chỉ số cơ bản</h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {stats.map(({ label, value, icon: Icon }) => (
+            <h2 className="mb-5 font-heading text-lg font-bold uppercase tracking-wider">Chỉ số cơ bản</h2>
+
+            {/* Thanh chỉ số chiến đấu */}
+            <div className="space-y-4">
+              {barStats.map(({ label, value, max }) => {
+                const pct = value != null ? Math.min(100, Math.round((value / max) * 100)) : 0;
+                return (
+                  <div key={label}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="font-semibold text-muted-foreground">{label}</span>
+                      <span className="font-bold text-foreground">{value ?? "N/A"}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Thông tin khác */}
+            <div className="mt-6 grid grid-cols-2 gap-4 border-t border-border pt-5 sm:grid-cols-3">
+              {metaStats.map(({ label, value, icon: Icon }) => (
                 <div key={label} className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground">
                     <Icon className="size-4" />
@@ -110,6 +169,39 @@ export default async function WeaponDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Related weapons (same type) */}
+      {related.length > 0 && (
+        <section className="space-y-4">
+          <SectionHeading
+            title={weaponTypeLabel(weapon.weapon_type) || "Vũ khí liên quan"}
+            eyebrow="Cùng thể loại"
+            align="left"
+          />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {related.map((w) => (
+              <Link
+                key={w.id}
+                href={`/vu-khi/${w.slug}`}
+                className="group flex flex-col rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/50"
+              >
+                <div className="mx-auto flex size-16 items-center justify-center rounded-xl bg-muted/40">
+                  <Image
+                    src={w.image_url}
+                    alt={w.name}
+                    width={64}
+                    height={64}
+                    className="size-full object-contain p-1 transition-transform group-hover:scale-105"
+                  />
+                </div>
+                <p className="mt-2 truncate text-center text-xs font-bold uppercase tracking-wide text-foreground">
+                  {w.name}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Interactions: Ratings & Comments */}
       <ItemInteractions

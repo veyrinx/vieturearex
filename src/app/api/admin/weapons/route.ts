@@ -4,6 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
+import { WEAPON_TYPE_VALUES } from "@/lib/constants/weapon-types";
 
 const nullableInt = z.number().int().min(0).max(100000).optional().nullable();
 
@@ -18,6 +19,8 @@ const upsertSchema = z.object({
   rate_of_fire: nullableInt,
   reload: nullableInt,
   magazine: nullableInt,
+  weapon_type: z.enum(WEAPON_TYPE_VALUES as [string, ...string[]]).optional().nullable(),
+  ob: z.string().max(30).optional().nullable(),
   released_at: z.string().max(30).optional().nullable(),
 });
 
@@ -32,6 +35,8 @@ type WeaponRow = {
   rate_of_fire: number | null;
   reload: number | null;
   magazine: number | null;
+  weapon_type: string | null;
+  ob: string | null;
   released_at: string | null;
   updated_at: string;
 };
@@ -48,7 +53,7 @@ export async function GET(req: NextRequest) {
   if (!db) return NextResponse.json({ weapons: [] });
 
   const { data } = await untypedFrom(db, "ff_weapons")
-    .select("id, slug, name, description, image_url, damage, range, rate_of_fire, reload, magazine, released_at, updated_at")
+    .select("id, slug, name, description, image_url, damage, range, rate_of_fire, reload, magazine, weapon_type, ob, released_at, updated_at")
     .order("name", { ascending: true })
     .limit(500) as { data: WeaponRow[] | null };
 
@@ -83,6 +88,8 @@ export async function POST(req: NextRequest) {
     rate_of_fire: fields.rate_of_fire ?? null,
     reload: fields.reload ?? null,
     magazine: fields.magazine ?? null,
+    weapon_type: fields.weapon_type || null,
+    ob: fields.ob?.trim() || null,
     released_at: fields.released_at || null,
   };
 
