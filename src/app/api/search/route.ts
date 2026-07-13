@@ -4,7 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
-type ResultType = "news" | "event" | "forum" | "wiki";
+type ResultType = "news" | "event" | "forum" | "wiki" | "weapon" | "loadout";
 
 type SearchResult = {
   type: ResultType;
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() ?? "";
-  const type = searchParams.get("type") ?? "all"; // "all" | "news" | "event" | "forum" | "wiki"
+  const type = searchParams.get("type") ?? "all"; // "all" | "news" | "event" | "forum" | "wiki" | "weapon" | "loadout"
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
   const category = searchParams.get("category") ?? "";
 
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
   const sb = createAdminSupabaseClient() ?? createServerSupabaseClient();
   if (!sb) return NextResponse.json({ results: [] });
 
-  const perSource = Math.ceil(limit / (type === "all" ? 4 : 1));
+  const perSource = Math.ceil(limit / (type === "all" ? 6 : 1));
 
-  const [newsRes, eventsRes, forumRes, wikiRes] = await Promise.allSettled([
+  const [newsRes, eventsRes, forumRes, wikiRes, weaponRes, loadoutRes] = await Promise.allSettled([
     (type === "all" || type === "news")
       ? sb.from("news")
           .select("id, title, slug, excerpt, category, status, created_at")
@@ -65,6 +65,20 @@ export async function GET(request: NextRequest) {
           .eq("status", "published")
           .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,content.ilike.%${q}%`)
           .limit(perSource) as unknown as Promise<{ data: Array<{ slug: string; title: string; excerpt: string | null; category: string; author_name: string; updated_at: string }> | null }>)
+      : Promise.resolve({ data: null }),
+
+    (type === "all" || type === "weapon")
+      ? (untypedFrom(sb, "ff_weapons")
+          .select("id, slug, name, description, weapon_type, created_at")
+          .or(`name.ilike.%${q}%,description.ilike.%${q}%`)
+          .limit(perSource) as unknown as Promise<{ data: Array<{ id: string; slug: string; name: string; description: string | null; weapon_type: string | null; created_at: string }> | null }>)
+      : Promise.resolve({ data: null }),
+
+    (type === "all" || type === "loadout")
+      ? (untypedFrom(sb, "ff_loadouts")
+          .select("id, slug, name, description, playstyle, updated_at")
+          .or(`name.ilike.%${q}%,description.ilike.%${q}%`)
+          .limit(perSource) as unknown as Promise<{ data: Array<{ id: string; slug: string; name: string; description: string | null; playstyle: string | null; updated_at: string }> | null }>)
       : Promise.resolve({ data: null }),
   ]);
 
@@ -110,6 +124,36 @@ export async function GET(request: NextRequest) {
         href: `/wiki/${w.slug}`,
         category: w.category,
         slug: w.slug,
+      });
+    }
+  }
+
+  if (weaponRes.status === "fulfilled" && weaponRes.value.data) {
+    for (const w of weaponRes.value.data as { id: string; slug: string; name: string; description: string | null; weapon_type: string | null; created_at: string }[]) {
+      results.push({
+        type: "weapon",
+        id: w.id,
+        title: w.name,
+        description: w.description?.slice(0, 150) ?? "",
+        date: w.created_at,
+        href: `/vu-khi/${w.slug}`,
+        category: w.weapon_type ?? undefined,
+        slug: w.slug,
+      });
+    }
+  }
+
+  if (loadoutRes.status === "fulfilled" && loadoutRes.value.data) {
+    for (const l of loadoutRes.value.data as { id: string; slug: string; name: string; description: string | null; playstyle: string | null; updated_at: string }[]) {
+      results.push({
+        type: "loadout",
+        id: l.id,
+        title: l.name,
+        description: l.description?.slice(0, 150) ?? "",
+        date: l.updated_at,
+        href: `/vu-khi/loadout/${l.slug}`,
+        category: l.playstyle ?? undefined,
+        slug: l.slug,
       });
     }
   }

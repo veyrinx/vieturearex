@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy, MessageSquare, BookOpen } from "lucide-react";
+import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy, MessageSquare, BookOpen, Swords, Layers } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -21,7 +21,7 @@ function saveHistory(q: string) {
 function clearHistory() { localStorage.removeItem(HISTORY_KEY); }
 
 type SearchResult = {
-  type: "event" | "news" | "forum" | "wiki";
+  type: "event" | "news" | "forum" | "wiki" | "weapon" | "loadout";
   id: string;
   title: string;
   description: string;
@@ -38,7 +38,7 @@ export default function SearchPage() {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<"all" | "event" | "news" | "forum" | "wiki">("all");
+  const [filter, setFilter] = useState<"all" | "event" | "news" | "forum" | "wiki" | "weapon" | "loadout">("all");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -49,7 +49,7 @@ export default function SearchPage() {
 
   useEffect(() => { setHistory(getHistory()); }, []);
 
-  const doSearch = async (q: string, type: "all" | "event" | "news" | "forum" | "wiki" = filter) => {
+  const doSearch = async (q: string, type: "all" | "event" | "news" | "forum" | "wiki" | "weapon" | "loadout" = filter) => {
     if (q.trim().length < 2) { setResults([]); return; }
     setLoading(true);
     try {
@@ -120,7 +120,7 @@ export default function SearchPage() {
           <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
             Tìm kiếm
           </h1>
-          <p className="text-xs text-muted-foreground">Tìm sự kiện, tin tức, bài diễn đàn và wiki trong hệ thống</p>
+          <p className="text-xs text-muted-foreground">Tìm sự kiện, tin tức, diễn đàn, wiki, vũ khí và combo trong hệ thống</p>
         </div>
 
       <div className="relative space-y-4">
@@ -166,11 +166,13 @@ export default function SearchPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
           {([
-            { key: "all",   label: "Tất cả" },
-            { key: "news",  label: "Tin tức" },
-            { key: "event", label: "Sự kiện" },
-            { key: "forum", label: "Diễn đàn" },
-            { key: "wiki",  label: "Wiki" },
+            { key: "all",     label: "Tất cả" },
+            { key: "news",    label: "Tin tức" },
+            { key: "event",   label: "Sự kiện" },
+            { key: "forum",   label: "Diễn đàn" },
+            { key: "wiki",    label: "Wiki" },
+            { key: "weapon",  label: "Vũ khí" },
+            { key: "loadout", label: "Combo" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -269,27 +271,35 @@ export default function SearchPage() {
               <div className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-lg">
                 <div className="flex items-start gap-3">
                   <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                    result.type === "event" ? "bg-blue-500/10 text-blue-500" :
-                    result.type === "forum" ? "bg-indigo-500/10 text-indigo-500" :
-                    result.type === "wiki"  ? "bg-emerald-500/10 text-emerald-500" :
+                    result.type === "event"   ? "bg-blue-500/10 text-blue-500" :
+                    result.type === "forum"   ? "bg-indigo-500/10 text-indigo-500" :
+                    result.type === "wiki"    ? "bg-emerald-500/10 text-emerald-500" :
+                    result.type === "weapon"  ? "bg-rose-500/10 text-rose-500" :
+                    result.type === "loadout" ? "bg-amber-500/10 text-amber-500" :
                     "bg-green-500/10 text-green-500"
                   }`}>
-                    {result.type === "event"  ? <Calendar className="size-5" /> :
-                     result.type === "forum"  ? <MessageSquare className="size-5" /> :
-                     result.type === "wiki"   ? <BookOpen className="size-5" /> :
+                    {result.type === "event"   ? <Calendar className="size-5" /> :
+                     result.type === "forum"   ? <MessageSquare className="size-5" /> :
+                     result.type === "wiki"    ? <BookOpen className="size-5" /> :
+                     result.type === "weapon"  ? <Swords className="size-5" /> :
+                     result.type === "loadout" ? <Layers className="size-5" /> :
                      <Newspaper className="size-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                        result.type === "event" ? "bg-blue-500/10 text-blue-500" :
-                        result.type === "forum" ? "bg-indigo-500/10 text-indigo-500" :
-                        result.type === "wiki"  ? "bg-emerald-500/10 text-emerald-500" :
+                        result.type === "event"   ? "bg-blue-500/10 text-blue-500" :
+                        result.type === "forum"   ? "bg-indigo-500/10 text-indigo-500" :
+                        result.type === "wiki"    ? "bg-emerald-500/10 text-emerald-500" :
+                        result.type === "weapon"  ? "bg-rose-500/10 text-rose-500" :
+                        result.type === "loadout" ? "bg-amber-500/10 text-amber-500" :
                         "bg-green-500/10 text-green-500"
                       }`}>
-                        {result.type === "event" ? "SỰ KIỆN" :
-                         result.type === "forum" ? "DIỄN ĐÀN" :
-                         result.type === "wiki"  ? "WIKI" : "TIN TỨC"}
+                        {result.type === "event"   ? "SỰ KIỆN" :
+                         result.type === "forum"   ? "DIỄN ĐÀN" :
+                         result.type === "wiki"    ? "WIKI" :
+                         result.type === "weapon"  ? "VŨ KHÍ" :
+                         result.type === "loadout" ? "COMBO" : "TIN TỨC"}
                       </span>
                       {result.status && (
                         <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary dark:text-amber-400">
