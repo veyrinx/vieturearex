@@ -69,11 +69,23 @@ export default async function ItemDetailPage({ params }: Props) {
         {/* Thông tin */}
         <div className="flex flex-col gap-5">
           <div className="space-y-2">
-            {cat && (
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${cat.bg} ${cat.color}`}>
-                <Tag className="size-3" /> {cat.label}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {cat && (
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${cat.bg} ${cat.color}`}>
+                  <Tag className="size-3" /> {cat.label}
+                </span>
+              )}
+              {item.is_hot && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-600 dark:text-orange-400">
+                  🔥 Hot / Mới ra
+                </span>
+              )}
+              {item.ob && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary dark:bg-amber-400/10 dark:text-amber-400">
+                  {item.ob}
+                </span>
+              )}
+            </div>
             <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
               {name}
             </h1>
@@ -86,6 +98,7 @@ export default async function ItemDetailPage({ params }: Props) {
           <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
             <MetaRow icon={Hash} label="Item ID" value={item.id} mono />
             <MetaRow icon={Layers} label="Loại" value={cat?.label ?? "Chưa phân loại"} />
+            {item.ob && <MetaRow icon={Tag} label="Phiên bản" value={item.ob} />}
             <div className="pt-1">
               <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 URL ảnh

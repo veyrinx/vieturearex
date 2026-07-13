@@ -6,6 +6,8 @@ export type FFItem = {
   id: string;
   label: string | null;
   category: string | null;
+  ob: string | null;
+  is_hot: boolean;
   imageUrl: string;
 };
 
@@ -27,17 +29,20 @@ export const CATEGORY_META: Record<string, { label: string; color: string; bg: s
 };
 
 // Nhãn/loại (nếu có) từ catalog nội bộ — không bắt buộc
-async function catalogMeta(id: string): Promise<{ label: string | null; category: string | null }> {
+type CatalogMeta = { label: string | null; category: string | null; ob: string | null; is_hot: boolean };
+
+async function catalogMeta(id: string): Promise<CatalogMeta> {
+  const empty: CatalogMeta = { label: null, category: null, ob: null, is_hot: false };
   try {
     const db = createAdminSupabaseClient();
-    if (!db) return { label: null, category: null };
+    if (!db) return empty;
     const { data } = (await untypedFrom(db, "ff_items_catalog")
-      .select("label, category, is_public")
+      .select("label, category, ob, is_hot, is_public")
       .eq("id", id)
-      .maybeSingle()) as { data: { label: string | null; category: string | null; is_public: boolean } | null };
-    if (data && data.is_public) return { label: data.label, category: data.category };
+      .maybeSingle()) as { data: (CatalogMeta & { is_public: boolean }) | null };
+    if (data && data.is_public) return { label: data.label, category: data.category, ob: data.ob, is_hot: data.is_hot };
   } catch { /**/ }
-  return { label: null, category: null };
+  return empty;
 }
 
 /** Chi tiết 1 icon. Trả null nếu id không hợp lệ hoặc không có trong kho. */
@@ -47,8 +52,8 @@ export async function getItemDetail(id: string): Promise<FFItem | null> {
   // Nếu lấy được list mà id không có -> không tồn tại. List rỗng (GitHub lỗi) thì bỏ qua kiểm tra.
   if (ids.length > 0 && !ids.includes(id)) return null;
 
-  const { label, category } = await catalogMeta(id);
-  return { id, label, category, imageUrl: iconUrl(id) };
+  const { label, category, ob, is_hot } = await catalogMeta(id);
+  return { id, label, category, ob, is_hot, imageUrl: iconUrl(id) };
 }
 
 /** Icon liên quan: cùng tiền tố 3 ký tự trong kho. */
@@ -58,5 +63,5 @@ export async function getRelatedItems(item: FFItem, limit = 18): Promise<FFItem[
   return ids
     .filter((x) => x !== item.id && x.startsWith(prefix))
     .slice(0, limit)
-    .map((id) => ({ id, label: null, category: null, imageUrl: iconUrl(id) }));
+    .map((id) => ({ id, label: null, category: null, ob: null, is_hot: false, imageUrl: iconUrl(id) }));
 }
