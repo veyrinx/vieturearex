@@ -256,14 +256,14 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
       <motion.div
         animate={{ height: compact ? 44 : 64 }}
         transition={{ type: "spring", stiffness: 420, damping: 38 }}
-        className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 md:px-6"
+        className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 md:px-6"
       >
 
         {/* ── Logo ── */}
         <Link
           href="/"
           aria-label={siteName}
-          className="flex shrink-0 items-center gap-2.5"
+          className="flex min-w-0 items-center gap-2.5 justify-self-start"
         >
           <motion.div
             whileHover={{ scale: 1.08 }}
@@ -302,7 +302,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
         </Link>
 
         {/* ── Nav links (desktop center) ── */}
-        <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex">
+        <nav className="col-start-2 hidden items-center justify-center gap-0.5 lg:flex">
           {/* TRANG CHỦ → TIN TỨC */}
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -355,7 +355,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
         </nav>
 
         {/* ── Controls ── */}
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 md:ml-0">
+        <div className="col-start-3 flex min-w-0 items-center justify-end gap-1.5 justify-self-end">
           <Link
             href="/search"
             aria-label="Tìm kiếm"
@@ -367,8 +367,8 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             <Search className="size-[17px]" />
           </Link>
           <UserNavButton className={isHomePage ? ctrlClass : undefined} />
-          {/* Hide extra icons on mobile — moved into sheet */}
-          <span className="hidden md:contents">
+          {/* Hide extra icons below lg — moved into sheet (avoids cramping) */}
+          <span className="hidden lg:contents">
             <LanguageToggle className={isHomePage ? ctrlClass : "theme-control-surface"} />
             <NotificationBell className={isHomePage ? ctrlClass : undefined} />
             <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
@@ -379,7 +379,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger
               className={cn(
-                "inline-flex size-9 items-center justify-center rounded-xl md:hidden",
+                "inline-flex size-9 items-center justify-center rounded-xl lg:hidden",
                 isHomePage ? ctrlClass : "theme-control-surface",
               )}
             >
