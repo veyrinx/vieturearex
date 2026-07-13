@@ -4,7 +4,9 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
-type ResultType = "news" | "event" | "forum" | "wiki" | "weapon" | "loadout";
+import { getAllCharacters, ROLE_META, splitSkill } from "@/lib/data/ff-characters";
+
+type ResultType = "news" | "event" | "forum" | "wiki" | "weapon" | "loadout" | "character";
 
 type SearchResult = {
   type: ResultType;
@@ -154,6 +156,27 @@ export async function GET(request: NextRequest) {
         href: `/vu-khi/loadout/${l.slug}`,
         category: l.playstyle ?? undefined,
         slug: l.slug,
+      });
+    }
+  }
+
+  // Nhân vật — data tĩnh, lọc in-memory theo tên/kỹ năng.
+  if (type === "all" || type === "character") {
+    const nq = q.toLowerCase();
+    const chars = getAllCharacters()
+      .filter((c) => c.name.toLowerCase().includes(nq) || c.skill.toLowerCase().includes(nq))
+      .slice(0, perSource);
+    for (const c of chars) {
+      const skill = splitSkill(c.skill);
+      results.push({
+        type: "character",
+        id: c.slug,
+        title: c.name,
+        description: skill.desc || skill.name,
+        date: new Date().toISOString(),
+        href: `/nhan-vat/${c.slug}`,
+        category: ROLE_META[c.role].label,
+        slug: c.slug,
       });
     }
   }

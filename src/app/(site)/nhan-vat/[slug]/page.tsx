@@ -68,7 +68,13 @@ export default async function CharacterDetailPage({ params }: Props) {
   return (
     <main className="container-main my-8 space-y-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Breadcrumbs items={[{ name: "Nhân vật", href: "/nhan-vat" }, { name: char.name, href: `/nhan-vat/${char.slug}` }]} />
+      <Breadcrumbs
+        items={[
+          { name: "Nhân vật", href: "/nhan-vat" },
+          { name: ROLE_META[char.role].label, href: `/nhan-vat/vai-tro/${char.role}` },
+          { name: char.name, href: `/nhan-vat/${char.slug}` },
+        ]}
+      />
 
       {/* Header */}
       <div className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
@@ -92,9 +98,12 @@ export default async function CharacterDetailPage({ params }: Props) {
             {char.name}
           </h1>
           <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <span className={cn("rounded-full px-3 py-1 text-xs font-bold uppercase", ROLE_META[char.role].bg, ROLE_META[char.role].text)}>
+            <Link
+              href={`/nhan-vat/vai-tro/${char.role}`}
+              className={cn("rounded-full px-3 py-1 text-xs font-bold uppercase transition-opacity hover:opacity-80", ROLE_META[char.role].bg, ROLE_META[char.role].text)}
+            >
               {ROLE_META[char.role].label}
-            </span>
+            </Link>
             <span className={cn("rounded-full bg-muted px-3 py-1 text-xs font-bold uppercase", TIER_META[char.tier].text)}>
               Tier {char.tier} · {TIER_META[char.tier].label}
             </span>

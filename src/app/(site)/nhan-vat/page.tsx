@@ -5,6 +5,7 @@ import { SectionHeading } from "@/components/common/section-heading";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getAllCharacters } from "@/lib/data/ff-characters";
 import { CharactersBrowser } from "@/components/ff-items/characters-browser";
+import { CharactersMetaHighlight } from "@/components/ff-items/characters-meta-highlight";
 
 export const metadata: Metadata = {
   title: "Nhân vật Free Fire — Kỹ năng & Tier meta | Arex",
@@ -27,6 +28,7 @@ export default function CharactersPage() {
         <SectionHeading title="Nhân vật Free Fire" eyebrow="Thư viện" align="left" />
       </div>
 
+      <CharactersMetaHighlight characters={characters} />
       <CharactersBrowser characters={characters} />
     </main>
   );

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy, MessageSquare, BookOpen, Swords, Layers } from "lucide-react";
+import { Search, Calendar, Newspaper, Filter, X, SlidersHorizontal, Clock, TrendingUp, Flame, Trophy, MessageSquare, BookOpen, Swords, Layers, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -21,7 +21,7 @@ function saveHistory(q: string) {
 function clearHistory() { localStorage.removeItem(HISTORY_KEY); }
 
 type SearchResult = {
-  type: "event" | "news" | "forum" | "wiki" | "weapon" | "loadout";
+  type: "event" | "news" | "forum" | "wiki" | "weapon" | "loadout" | "character";
   id: string;
   title: string;
   description: string;
@@ -38,7 +38,7 @@ export default function SearchPage() {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<"all" | "event" | "news" | "forum" | "wiki" | "weapon" | "loadout">("all");
+  const [filter, setFilter] = useState<"all" | "event" | "news" | "forum" | "wiki" | "weapon" | "loadout" | "character">("all");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -49,7 +49,7 @@ export default function SearchPage() {
 
   useEffect(() => { setHistory(getHistory()); }, []);
 
-  const doSearch = async (q: string, type: "all" | "event" | "news" | "forum" | "wiki" | "weapon" | "loadout" = filter) => {
+  const doSearch = async (q: string, type: "all" | "event" | "news" | "forum" | "wiki" | "weapon" | "loadout" | "character" = filter) => {
     if (q.trim().length < 2) { setResults([]); return; }
     setLoading(true);
     try {
@@ -173,6 +173,7 @@ export default function SearchPage() {
             { key: "wiki",    label: "Wiki" },
             { key: "weapon",  label: "Vũ khí" },
             { key: "loadout", label: "Combo" },
+            { key: "character", label: "Nhân vật" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -276,6 +277,7 @@ export default function SearchPage() {
                     result.type === "wiki"    ? "bg-emerald-500/10 text-emerald-500" :
                     result.type === "weapon"  ? "bg-rose-500/10 text-rose-500" :
                     result.type === "loadout" ? "bg-amber-500/10 text-amber-500" :
+                    result.type === "character" ? "bg-violet-500/10 text-violet-500" :
                     "bg-green-500/10 text-green-500"
                   }`}>
                     {result.type === "event"   ? <Calendar className="size-5" /> :
@@ -283,6 +285,7 @@ export default function SearchPage() {
                      result.type === "wiki"    ? <BookOpen className="size-5" /> :
                      result.type === "weapon"  ? <Swords className="size-5" /> :
                      result.type === "loadout" ? <Layers className="size-5" /> :
+                     result.type === "character" ? <UserRound className="size-5" /> :
                      <Newspaper className="size-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -293,13 +296,15 @@ export default function SearchPage() {
                         result.type === "wiki"    ? "bg-emerald-500/10 text-emerald-500" :
                         result.type === "weapon"  ? "bg-rose-500/10 text-rose-500" :
                         result.type === "loadout" ? "bg-amber-500/10 text-amber-500" :
+                        result.type === "character" ? "bg-violet-500/10 text-violet-500" :
                         "bg-green-500/10 text-green-500"
                       }`}>
                         {result.type === "event"   ? "SỰ KIỆN" :
                          result.type === "forum"   ? "DIỄN ĐÀN" :
                          result.type === "wiki"    ? "WIKI" :
                          result.type === "weapon"  ? "VŨ KHÍ" :
-                         result.type === "loadout" ? "COMBO" : "TIN TỨC"}
+                         result.type === "loadout" ? "COMBO" :
+                         result.type === "character" ? "NHÂN VẬT" : "TIN TỨC"}
                       </span>
                       {result.status && (
                         <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary dark:text-amber-400">

@@ -3,7 +3,7 @@ import { getEvents, getNews } from "@/lib/data/content-service";
 import { getTmsTournaments } from "@/lib/tms/data";
 import { getAllWeapons, getAllLoadouts } from "@/lib/data/ff-data";
 import { WEAPON_TYPES } from "@/lib/constants/weapon-types";
-import { getAllCharacters } from "@/lib/data/ff-characters";
+import { getAllCharacters, ROLE_META } from "@/lib/data/ff-characters";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { siteConfig } from "@/lib/constants/site";
@@ -303,6 +303,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.72,
     },
+    ...Object.keys(ROLE_META).map((role) => ({
+      url: `${BASE}/nhan-vat/vai-tro/${role}`,
+      lastModified: now,
+      changeFrequency: "weekly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+      priority: 0.58,
+    })),
     ...getAllCharacters().map((c) => ({
       url: `${BASE}/nhan-vat/${c.slug}`,
       lastModified: now,
