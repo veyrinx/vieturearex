@@ -1,6 +1,6 @@
 import {
-  LayoutDashboard, BarChart3, ScrollText, History,
-  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell,
+  LayoutDashboard, BarChartBig, ScrollText, History,
+  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, ListChecks, Swords,
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
@@ -17,7 +17,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: LayoutDashboard,
     items: [
       { title: "Dashboard",  href: "/admin",          icon: LayoutDashboard },
-      { title: "Thống kê",   href: "/admin/stats",    icon: BarChart3 },
+      { title: "Thống kê",   href: "/admin/stats",    icon: BarChartBig },
       { title: "Nhật ký",    href: "/admin/logs",     icon: ScrollText },
       { title: "Phiên bản",  href: "/admin/changelog", icon: History },
     ],
@@ -32,6 +32,8 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Thư viện",  href: "/admin/gallery",  icon: ImageIcon },
       { title: "Wiki",      href: "/admin/wiki",     icon: BookOpen },
       { title: "FF Items",  href: "/admin/ff-items", icon: Grid2x2 },
+      { title: "Vũ khí",    href: "/admin/weapons", icon: Swords },
+      { title: "Tier Lists", href: "/admin/tier-lists", icon: ListChecks },
       { title: "Pop-up",    href: "/admin/popup",    icon: Bell },
     ],
   },

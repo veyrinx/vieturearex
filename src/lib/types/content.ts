@@ -181,3 +181,17 @@ export type PublicUserProfile = {
   views?: number;
   privacy?: Record<string, boolean> | null;
 };
+
+export type CommentAuthor = {
+  id: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+};
+
+export type CommentWithAuthor = {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string | null;
+  author: CommentAuthor;
+};
