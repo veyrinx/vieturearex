@@ -15,8 +15,13 @@ const upsertSchema = z.object({
     id: z.string().min(1).max(80).regex(/^[\w.-]+$/),
     label: z.string().max(80).optional().nullable(),
     category: z.enum(VALID_CATEGORIES).optional().nullable(),
+    ob: z.string().max(20).optional().nullable(),
+    is_hot: z.boolean().optional(),
     is_public: z.boolean().optional(),
   })).min(1).max(200),
+  // true → chỉ thêm mới, bỏ qua item đã tồn tại (dùng cho bulk push từ Library,
+  // tránh ghi đè label/category/is_public đã curate).
+  ignoreDuplicates: z.boolean().optional(),
 });
 
 // GET — admin lists all catalog entries
@@ -31,9 +36,9 @@ export async function GET(req: NextRequest) {
   if (!db) return NextResponse.json({ items: [] });
 
   const { data } = await untypedFrom(db, "ff_items_catalog")
-    .select("id, label, category, is_public, created_at, updated_at")
+    .select("id, label, category, ob, is_hot, is_public, created_at, updated_at")
     .order("updated_at", { ascending: false })
-    .limit(2000) as { data: Array<{ id: string; label: string | null; category: string | null; is_public: boolean; created_at: string; updated_at: string }> | null };
+    .limit(2000) as { data: Array<{ id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean; is_public: boolean; created_at: string; updated_at: string }> | null };
 
   return NextResponse.json({ items: data ?? [], count: (data ?? []).length });
 }
@@ -58,15 +63,24 @@ export async function POST(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
-  const rows = parsed.data.items.map((item) => ({
-    id: item.id,
-    label: item.label || null,
-    category: item.category || null,
-    is_public: item.is_public ?? true,
-    created_by: user.id,
-  }));
+  const rows = parsed.data.items.map((item) => {
+    const row: Record<string, unknown> = {
+      id: item.id,
+      label: item.label || null,
+      category: item.category || null,
+      is_public: item.is_public ?? true,
+      created_by: user.id,
+    };
+    // Chỉ set khi caller gửi — tránh clobber cờ Hot/OB khi push hàng loạt
+    if (item.ob !== undefined) row.ob = item.ob || null;
+    if (item.is_hot !== undefined) row.is_hot = item.is_hot;
+    return row;
+  });
 
-  const { error } = await untypedFrom(db, "ff_items_catalog").upsert(rows as never, { onConflict: "id" });
+  const { error } = await untypedFrom(db, "ff_items_catalog").upsert(rows as never, {
+    onConflict: "id",
+    ignoreDuplicates: parsed.data.ignoreDuplicates ?? false,
+  });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true, count: rows.length });

@@ -108,11 +108,11 @@ export default function FFItemsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
 
   // Catalog (DB-backed, shared between admins)
-  type CatalogItem = { id: string; label: string | null; category: string | null; is_public: boolean; ob_version?: string };
+  type CatalogItem = { id: string; label: string | null; category: string | null; is_public: boolean; ob?: string | null; is_hot?: boolean };
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [addCatalogModal, setAddCatalogModal] = useState(false);
-  const [catalogForm, setCatalogForm] = useState({ id: "", label: "", category: "weapon" as CategoryKey, ob_version: "", is_public: true });
+  const [catalogForm, setCatalogForm] = useState({ id: "", label: "", category: "weapon" as CategoryKey, ob: "", is_hot: false, is_public: true });
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogFilter, setCatalogFilter] = useState<CategoryKey | "all">("all");
@@ -201,6 +201,8 @@ export default function FFItemsPage() {
             id: catalogForm.id.trim(),
             label: catalogForm.label.trim() || null,
             category: catalogForm.category,
+            ob: catalogForm.ob.trim() || null,
+            is_hot: catalogForm.is_hot,
             is_public: catalogForm.is_public,
           }],
         }),
@@ -211,7 +213,7 @@ export default function FFItemsPage() {
         return;
       }
       toast.success("Đã lưu vào catalog");
-      setCatalogForm({ id: "", label: "", category: "weapon", ob_version: "", is_public: true });
+      setCatalogForm({ id: "", label: "", category: "weapon", ob: "", is_hot: false, is_public: true });
       setAddCatalogModal(false);
       void loadCatalog();
     } finally {
@@ -244,6 +246,8 @@ export default function FFItemsPage() {
             id: item.id,
             label: item.label,
             category: item.category,
+            ob: item.ob ?? null,
+            is_hot: item.is_hot ?? false,
             is_public: item.is_public,
           }],
         }),
@@ -297,7 +301,8 @@ export default function FFItemsPage() {
     const res = await fetch("/api/admin/ff-items/catalog", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items }),
+      // Bulk từ Library: chỉ thêm mới, không ghi đè item đã curate trong catalog.
+      body: JSON.stringify({ items, ignoreDuplicates: true }),
     });
     if (res.ok) {
       toast.success(`Đã thêm ${items.length} item vào catalog`);
@@ -919,6 +924,12 @@ export default function FFItemsPage() {
                             {!item.is_public && (
                               <span className="absolute right-1 top-1 rounded bg-rose-500/20 text-rose-500 px-1 py-0.5 text-[8px] font-bold">RIÊNG</span>
                             )}
+                            {item.is_hot && (
+                              <span className="absolute left-1 bottom-1 rounded bg-orange-500/20 text-orange-500 px-1 py-0.5 text-[9px] font-bold" title="Hot / Mới ra">🔥</span>
+                            )}
+                            {item.ob && (
+                              <span className="absolute right-1 bottom-1 rounded bg-primary/15 text-primary dark:bg-amber-400/15 dark:text-amber-400 px-1 py-0.5 text-[8px] font-bold tabular-nums">{item.ob}</span>
+                            )}
                             <div className="absolute inset-0 flex items-center justify-center gap-1 bg-background/85 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                               <button onClick={() => downloadIcon(item.id)} title="Tải ảnh"
                                 className="flex size-7 items-center justify-center rounded-lg bg-card border border-border hover:border-emerald-500/40 hover:text-emerald-500">
@@ -1504,6 +1515,28 @@ export default function FFItemsPage() {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phiên bản OB</label>
+                <input
+                  type="text"
+                  value={editCatalogItem.ob ?? ""}
+                  onChange={(e) => setEditCatalogItem({ ...editCatalogItem, ob: e.target.value || null })}
+                  placeholder="VD: OB48"
+                  maxLength={20}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer rounded-xl border border-orange-500/30 bg-orange-500/5 px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={editCatalogItem.is_hot ?? false}
+                  onChange={(e) => setEditCatalogItem({ ...editCatalogItem, is_hot: e.target.checked })}
+                  className="size-4 rounded border-border accent-orange-500"
+                />
+                <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">🔥 Hot / Mới ra — hiện nhóm nổi bật</span>
+              </label>
+
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -1614,6 +1647,28 @@ export default function FFItemsPage() {
                   })}
                 </div>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phiên bản OB</label>
+                <input
+                  type="text"
+                  value={catalogForm.ob}
+                  onChange={(e) => setCatalogForm({ ...catalogForm, ob: e.target.value })}
+                  placeholder="VD: OB48"
+                  maxLength={20}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer rounded-xl border border-orange-500/30 bg-orange-500/5 px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={catalogForm.is_hot}
+                  onChange={(e) => setCatalogForm({ ...catalogForm, is_hot: e.target.checked })}
+                  className="size-4 rounded border-border accent-orange-500"
+                />
+                <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">🔥 Hot / Mới ra — hiện nhóm nổi bật</span>
+              </label>
 
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
