@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type IconProps = {
+export type IconProps = React.PropsWithChildren<{
   /** Tên Material Symbols (snake_case), vd "home", "local_fire_department". */
   name: string;
   /** Kích thước glyph (px). Material Symbols scale theo font-size. Mặc định 20. */
@@ -12,7 +12,7 @@ export type IconProps = {
   className?: string;
   style?: React.CSSProperties;
   title?: string;
-};
+}>;
 
 /**
  * Icon Google Material Symbols (Rounded). Thay cho lucide-react ở phần public.

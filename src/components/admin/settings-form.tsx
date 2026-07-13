@@ -2599,7 +2599,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   // ── Layout ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[224px_1fr] lg:items-start gap-5 lg:gap-6">
 
       {/* ── Sidebar nav (desktop) / Scroll nav (mobile) ── */}
       <nav className="lg:sticky lg:top-6 lg:w-56 lg:shrink-0">
