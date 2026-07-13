@@ -20,6 +20,15 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 
 const ALL = "all";
 
+const TIERS = ["S", "A", "B", "C", "D"] as const;
+const TIER_BG: Record<string, string> = {
+  S: "bg-[#ff7f7f]",
+  A: "bg-[#ffbf7f]",
+  B: "bg-[#ffff7f]",
+  C: "bg-[#7fff7f]",
+  D: "bg-[#7fbfff]",
+};
+
 function normalize(str: string) {
   return str
     .toLowerCase()
@@ -32,6 +41,7 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
   const [type, setType] = useState<string>(ALL);
+  const [tier, setTier] = useState<string>(ALL);
 
   // Chỉ hiện chip cho các thể loại thực sự có vũ khí.
   const availableTypes = useMemo(() => {
@@ -39,10 +49,13 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
     return WEAPON_TYPES.filter((t) => present.has(t.value));
   }, [weapons]);
 
+  const hasTiers = useMemo(() => weapons.some((w) => w.tier), [weapons]);
+
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
     const list = weapons.filter((w) => {
       if (type !== ALL && w.weapon_type !== type) return false;
+      if (tier !== ALL && w.tier !== tier) return false;
       if (q && !normalize(w.name).includes(q)) return false;
       return true;
     });
@@ -55,7 +68,7 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
     });
 
     return list;
-  }, [weapons, query, sort, type]);
+  }, [weapons, query, sort, type, tier]);
 
   return (
     <div className="space-y-6">
@@ -70,6 +83,21 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
             className="pl-9"
           />
         </div>
+        {hasTiers && (
+          <Select value={tier} onValueChange={(v) => setTier(v ?? ALL)}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Mọi tier</SelectItem>
+              {TIERS.map((t) => (
+                <SelectItem key={t} value={t}>
+                  Tier {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
           <SelectTrigger className="w-full sm:w-56">
             <ArrowDownUp className="size-4 text-muted-foreground" />
@@ -111,6 +139,16 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
               className="group flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
             >
               <div className="relative mx-auto flex size-24 items-center justify-center rounded-2xl bg-muted/40">
+                {w.tier && (
+                  <span
+                    className={cn(
+                      "absolute left-1 top-1 flex size-6 items-center justify-center rounded-md text-xs font-black text-background",
+                      TIER_BG[w.tier] ?? "bg-muted",
+                    )}
+                  >
+                    {w.tier}
+                  </span>
+                )}
                 {w.ob && (
                   <span className="absolute right-1 top-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                     {w.ob}

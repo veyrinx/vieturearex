@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getEvents, getNews } from "@/lib/data/content-service";
 import { getTmsTournaments } from "@/lib/tms/data";
-import { getAllWeapons } from "@/lib/data/ff-data";
+import { getAllWeapons, getAllLoadouts } from "@/lib/data/ff-data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { siteConfig } from "@/lib/constants/site";
@@ -42,12 +42,13 @@ function newsPriority(days: number): number {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [news, events, tournaments, wiki, weapons] = await Promise.all([
+  const [news, events, tournaments, wiki, weapons, loadouts] = await Promise.all([
     getNews("published", { includeContent: false }).catch(() => []),
     getEvents().catch(() => []),
     getTmsTournaments().catch(() => []),
     getPublishedWiki(),
     getAllWeapons().catch(() => []),
+    getAllLoadouts().catch(() => []),
   ]);
 
   const now = new Date();
@@ -264,11 +265,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.72,
     },
+    {
+      url: `${BASE}/vu-khi/so-sanh`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
+    {
+      url: `${BASE}/vu-khi/loadout`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.65,
+    },
     ...weapons.map((w) => ({
       url: `${BASE}/vu-khi/${w.slug}`,
       lastModified: now,
       changeFrequency: "monthly" as MetadataRoute.Sitemap[0]["changeFrequency"],
       priority: 0.60,
+    })),
+    ...loadouts.map((l) => ({
+      url: `${BASE}/vu-khi/loadout/${l.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+      priority: 0.55,
     })),
   ];
 

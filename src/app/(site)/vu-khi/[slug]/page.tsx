@@ -4,11 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "@/components/common/section-heading";
 import { siteConfig } from "@/lib/constants/site";
-import { getWeaponBySlug, getRelatedWeapons, getWeaponStatMaxes, getTierColor } from "@/lib/data/ff-data";
+import { getWeaponBySlug, getRelatedWeapons, getWeaponStatMaxes, getLoadoutsForWeapon, getTierColor } from "@/lib/data/ff-data";
 import { cn } from "@/lib/utils";
-import { weaponTypeLabel } from "@/lib/constants/weapon-types";
+import { weaponTypeLabel, attachmentSlotLabel, playstyleLabel } from "@/lib/constants/weapon-types";
 import { ItemInteractions } from "@/components/ff-items/item-interactions";
-import { Gauge, Box, Calendar, Crosshair, Tag } from "lucide-react";
+import { Gauge, Box, Calendar, Crosshair, Tag, TrendingUp, TrendingDown, Minus } from "lucide-react";
+
+const TIER_RANK: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -32,9 +34,10 @@ export default async function WeaponDetailPage({ params }: Props) {
   const weapon = await getWeaponBySlug(slug);
   if (!weapon) notFound();
 
-  const [statMax, related] = await Promise.all([
+  const [statMax, related, loadouts] = await Promise.all([
     getWeaponStatMaxes(),
     getRelatedWeapons(weapon.weapon_type, weapon.id),
+    getLoadoutsForWeapon(weapon.id),
   ]);
 
   const barStats = [
@@ -137,38 +140,96 @@ export default async function WeaponDetailPage({ params }: Props) {
               ))}
             </div>
           </div>
+
+          {/* Phụ kiện gợi ý */}
+          {weapon.attachments && weapon.attachments.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <h2 className="mb-4 font-heading text-lg font-bold uppercase tracking-wider">Phụ kiện gợi ý</h2>
+              <div className="space-y-2">
+                {weapon.attachments.map((a, i) => (
+                  <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3">
+                    <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+                      {attachmentSlotLabel(a.slot) ?? a.slot}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{a.name}</p>
+                      {a.note && <p className="text-xs text-muted-foreground">{a.note}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right: Tier Lists */}
+        {/* Right: Tier history */}
         <div className="space-y-4">
-          <SectionHeading title="Meta" eyebrow="Vị trí trong" align="left" />
+          <SectionHeading title="Lịch sử tier" eyebrow="Meta qua các OB" align="left" />
           {weapon.tier_lists.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
               <p className="text-sm text-muted-foreground">Chưa xuất hiện trong tier list nào.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {weapon.tier_lists.map((tl) => (
-                <div key={tl.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-                  <div className={cn(
-                    "flex size-9 items-center justify-center rounded-lg text-base font-black text-background",
-                    getTierColor(tl.tier).color,
-                    getTierColor(tl.tier).shadow,
-                  )}>
-                    {tl.tier}
+              {weapon.tier_lists.map((tl, i) => {
+                // Mảng đã sắp xếp patch mới → cũ; so với entry cũ hơn liền sau.
+                const older = weapon.tier_lists[i + 1];
+                const diff = older ? (TIER_RANK[tl.tier] ?? 0) - (TIER_RANK[older.tier] ?? 0) : 0;
+                const Trend = diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus;
+                const trendColor = diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : "text-muted-foreground";
+                return (
+                  <div key={tl.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                    <div className={cn(
+                      "flex size-9 items-center justify-center rounded-lg text-base font-black text-background",
+                      getTierColor(tl.tier).color,
+                      getTierColor(tl.tier).shadow,
+                    )}>
+                      {tl.tier}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">OB{tl.patch}</p>
+                      <p className="text-xs text-muted-foreground">Cập nhật {new Date(tl.updated_at).toLocaleDateString("vi-VN")}</p>
+                    </div>
+                    {older && (
+                      <Trend className={cn("size-4 shrink-0", trendColor)} />
+                    )}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {tl.kind === "character" ? "Nhân Vật" : "Vũ Khí"} OB{tl.patch}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Cập nhật {new Date(tl.updated_at).toLocaleDateString("vi-VN")}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
+
+      {/* Loadouts using this weapon */}
+      {loadouts.length > 0 && (
+        <section className="space-y-4">
+          <SectionHeading title="Combo dùng khẩu này" eyebrow="Gợi ý phối" align="left" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {loadouts.map((l) => (
+              <Link
+                key={l.id}
+                href={`/vu-khi/loadout/${l.slug}`}
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/50"
+              >
+                <div className="flex -space-x-2">
+                  {[l.primary_weapon, l.secondary_weapon].filter(Boolean).map((w, i) => (
+                    <div key={i} className="size-11 shrink-0 overflow-hidden rounded-xl border border-border bg-muted/40">
+                      <Image src={w!.image_url} alt={w!.name} width={44} height={44} className="size-full object-contain p-1" />
+                    </div>
+                  ))}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold uppercase tracking-wide text-foreground">{l.name}</p>
+                  {playstyleLabel(l.playstyle) && (
+                    <p className="truncate text-xs text-muted-foreground">{playstyleLabel(l.playstyle)}</p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Related weapons (same type) */}
       {related.length > 0 && (

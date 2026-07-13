@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, BarChartBig, ScrollText, History,
-  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, ListChecks, Swords,
+  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, ListChecks, Swords, Layers,
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
@@ -33,6 +33,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Wiki",      href: "/admin/wiki",     icon: BookOpen },
       { title: "FF Items",  href: "/admin/ff-items", icon: Grid2x2 },
       { title: "Vũ khí",    href: "/admin/weapons", icon: Swords },
+      { title: "Combo vũ khí", href: "/admin/loadouts", icon: Layers },
       { title: "Tier Lists", href: "/admin/tier-lists", icon: ListChecks },
       { title: "Pop-up",    href: "/admin/popup",    icon: Bell },
     ],

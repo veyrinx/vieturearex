@@ -4,9 +4,15 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
-import { WEAPON_TYPE_VALUES } from "@/lib/constants/weapon-types";
+import { WEAPON_TYPE_VALUES, ATTACHMENT_SLOT_VALUES } from "@/lib/constants/weapon-types";
 
 const nullableInt = z.number().int().min(0).max(100000).optional().nullable();
+
+const attachmentSchema = z.object({
+  slot: z.enum(ATTACHMENT_SLOT_VALUES as [string, ...string[]]),
+  name: z.string().min(1).max(120),
+  note: z.string().max(300).optional().nullable(),
+});
 
 const upsertSchema = z.object({
   id: z.string().uuid().optional().nullable(),
@@ -21,6 +27,7 @@ const upsertSchema = z.object({
   magazine: nullableInt,
   weapon_type: z.enum(WEAPON_TYPE_VALUES as [string, ...string[]]).optional().nullable(),
   ob: z.string().max(30).optional().nullable(),
+  attachments: z.array(attachmentSchema).max(20).optional(),
   released_at: z.string().max(30).optional().nullable(),
 });
 
@@ -37,6 +44,7 @@ type WeaponRow = {
   magazine: number | null;
   weapon_type: string | null;
   ob: string | null;
+  attachments: unknown;
   released_at: string | null;
   updated_at: string;
 };
@@ -53,7 +61,7 @@ export async function GET(req: NextRequest) {
   if (!db) return NextResponse.json({ weapons: [] });
 
   const { data } = await untypedFrom(db, "ff_weapons")
-    .select("id, slug, name, description, image_url, damage, range, rate_of_fire, reload, magazine, weapon_type, ob, released_at, updated_at")
+    .select("id, slug, name, description, image_url, damage, range, rate_of_fire, reload, magazine, weapon_type, ob, attachments, released_at, updated_at")
     .order("name", { ascending: true })
     .limit(500) as { data: WeaponRow[] | null };
 
@@ -90,6 +98,11 @@ export async function POST(req: NextRequest) {
     magazine: fields.magazine ?? null,
     weapon_type: fields.weapon_type || null,
     ob: fields.ob?.trim() || null,
+    attachments: (fields.attachments ?? []).map((a) => ({
+      slot: a.slot,
+      name: a.name.trim(),
+      note: a.note?.trim() || null,
+    })),
     released_at: fields.released_at || null,
   };
 

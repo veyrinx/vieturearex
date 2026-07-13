@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Plus, Save, Trash2, Pencil, Swords, ImagePlus } from "lucide-react";
+import { Plus, Save, Trash2, Pencil, Swords, ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
-import { WEAPON_TYPES } from "@/lib/constants/weapon-types";
+import { WEAPON_TYPES, ATTACHMENT_SLOTS, type WeaponAttachment } from "@/lib/constants/weapon-types";
 
 type Weapon = {
   id: string;
@@ -23,6 +23,7 @@ type Weapon = {
   magazine: number | null;
   weapon_type: string | null;
   ob: string | null;
+  attachments: WeaponAttachment[] | null;
   released_at: string | null;
   updated_at?: string;
 };
@@ -42,6 +43,7 @@ const emptyDraft = (): Draft => ({
   magazine: null,
   weapon_type: null,
   ob: "",
+  attachments: [],
   released_at: "",
 });
 
@@ -80,6 +82,20 @@ export function WeaponsManager() {
   useEffect(() => { void load(); }, [load]);
 
   const update = (patch: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...patch } : d));
+
+  const addAttachment = () =>
+    setDraft((d) =>
+      d ? { ...d, attachments: [...(d.attachments ?? []), { slot: "muzzle", name: "", note: "" }] } : d,
+    );
+  const updateAttachment = (i: number, patch: Partial<WeaponAttachment>) =>
+    setDraft((d) => {
+      if (!d) return d;
+      const list = [...(d.attachments ?? [])];
+      list[i] = { ...list[i], ...patch };
+      return { ...d, attachments: list };
+    });
+  const removeAttachment = (i: number) =>
+    setDraft((d) => (d ? { ...d, attachments: (d.attachments ?? []).filter((_, idx) => idx !== i) } : d));
 
   function num(v: string): number | null {
     const n = parseInt(v, 10);
@@ -128,6 +144,7 @@ export function WeaponsManager() {
           magazine: draft.magazine,
           weapon_type: draft.weapon_type || null,
           ob: draft.ob?.trim() || null,
+          attachments: (draft.attachments ?? []).filter((a) => a.name.trim()),
           released_at: draft.released_at || null,
         }),
       });
@@ -249,6 +266,39 @@ export function WeaponsManager() {
               <Input type="date" value={draft.released_at ?? ""} onChange={(e) => update({ released_at: e.target.value })} className="bg-background" />
             </Field>
           </div>
+
+          {/* Phụ kiện gợi ý */}
+          <div className="space-y-2 border-t border-border pt-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phụ kiện gợi ý</label>
+              <Button type="button" size="sm" variant="outline" onClick={addAttachment} className="gap-1 rounded-lg text-xs">
+                <Plus size={14} /> Thêm
+              </Button>
+            </div>
+            {(draft.attachments ?? []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">Chưa có phụ kiện nào.</p>
+            ) : (
+              <div className="space-y-2">
+                {(draft.attachments ?? []).map((a, i) => (
+                  <div key={i} className="flex flex-col gap-2 rounded-lg border border-border bg-background/60 p-2 sm:flex-row sm:items-center">
+                    <Select value={a.slot} onValueChange={(v) => updateAttachment(i, { slot: v || "muzzle" })}>
+                      <SelectTrigger className="bg-background sm:w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ATTACHMENT_SLOTS.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input value={a.name} onChange={(e) => updateAttachment(i, { name: e.target.value })} placeholder="Tên phụ kiện" className="bg-background sm:w-44" />
+                    <Input value={a.note ?? ""} onChange={(e) => updateAttachment(i, { note: e.target.value })} placeholder="Ghi chú (tuỳ chọn)" className="flex-1 bg-background" />
+                    <button type="button" onClick={() => removeAttachment(i)} className="self-end rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:self-center" title="Xoá">
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -285,7 +335,7 @@ export function WeaponsManager() {
                 <p className="truncate text-xs text-muted-foreground">/{w.slug} · ST {w.damage ?? "—"}</p>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => setDraft({ ...emptyDraft(), ...w, description: w.description ?? "", released_at: w.released_at ?? "" })} className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary" title="Sửa">
+                <button onClick={() => setDraft({ ...emptyDraft(), ...w, description: w.description ?? "", released_at: w.released_at ?? "", attachments: w.attachments ?? [] })} className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary" title="Sửa">
                   <Pencil className="size-4" />
                 </button>
                 <button onClick={() => remove(w)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Xóa">

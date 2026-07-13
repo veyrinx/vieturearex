@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Swords, Scale } from "lucide-react";
+import { Swords, Scale, Layers } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
 import { getAllWeapons } from "@/lib/data/ff-data";
@@ -25,12 +25,20 @@ export default async function WeaponsPage() {
           </div>
           <SectionHeading title="Vũ khí Free Fire" eyebrow="Thư viện" align="left" />
         </div>
-        <Link
-          href="/vu-khi/so-sanh"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-        >
-          <Scale className="size-4" /> So sánh vũ khí
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/vu-khi/loadout"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          >
+            <Layers className="size-4" /> Combo vũ khí
+          </Link>
+          <Link
+            href="/vu-khi/so-sanh"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          >
+            <Scale className="size-4" /> So sánh vũ khí
+          </Link>
+        </div>
       </div>
 
       {weapons.length === 0 ? (

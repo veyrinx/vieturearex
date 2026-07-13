@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_noStore as noStore } from "next/cache";
 import type { CommentWithAuthor } from "@/lib/types/content";
 import { FF_ITEM_IMAGE_BASE_URL } from "@/lib/constants/ff-items";
+import type { WeaponAttachment } from "@/lib/constants/weapon-types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const TIER_META: Record<string, { color: string; shadow: string }> = {
@@ -41,6 +42,7 @@ export type WeaponDetail = {
   magazine: number | null;
   weapon_type: string | null;
   ob: string | null;
+  attachments: WeaponAttachment[] | null;
   released_at: string | null;
   tier_lists: TierListInfo[];
   comments: CommentWithAuthor[];
@@ -151,17 +153,41 @@ export type WeaponListItem = {
   range: number | null;
   weapon_type: string | null;
   ob: string | null;
+  tier?: string | null;
 };
+
+// Tier hiện tại của mỗi vũ khí = tier trong tier list "weapon" có patch mới nhất.
+async function fetchWeaponTiers(supabase: Client): Promise<Map<string, string>> {
+  const { data } = await (supabase.from("tier_list_entries") as ReturnType<typeof supabase.from>)
+    .select("ref_id, tier, tier_lists!inner(kind, patch)")
+    .not("ref_id", "is", null)
+    .eq("tier_lists.kind", "weapon") as {
+      data: Array<{ ref_id: string; tier: string; tier_lists: { patch: string } | null }> | null;
+    };
+
+  const best = new Map<string, { tier: string; patch: number }>();
+  for (const row of data ?? []) {
+    if (!row.ref_id || !row.tier_lists) continue;
+    const patch = Number(row.tier_lists.patch) || 0;
+    const cur = best.get(row.ref_id);
+    if (!cur || patch > cur.patch) best.set(row.ref_id, { tier: row.tier, patch });
+  }
+
+  return new Map([...best].map(([id, v]) => [id, v.tier]));
+}
 
 export async function getAllWeapons(): Promise<WeaponListItem[]> {
   noStore();
   const supabase = createServerSupabaseClient();
   if (!supabase) return [];
 
-  const { data, error } = await (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
-    .select("id, slug, name, image_url, damage, range, weapon_type, ob")
-    .order("name", { ascending: true })
-    .limit(500) as { data: WeaponListItem[] | null; error: { message?: string } | null };
+  const [{ data, error }, tiers] = await Promise.all([
+    (supabase.from("ff_weapons") as ReturnType<typeof supabase.from>)
+      .select("id, slug, name, image_url, damage, range, weapon_type, ob")
+      .order("name", { ascending: true })
+      .limit(500) as Promise<{ data: WeaponListItem[] | null; error: { message?: string } | null }>,
+    fetchWeaponTiers(supabase),
+  ]);
 
   if (error || !data) {
     if (error) console.error("Error fetching weapons:", error);
@@ -171,6 +197,7 @@ export async function getAllWeapons(): Promise<WeaponListItem[]> {
   return data.map((w) => ({
     ...w,
     image_url: w.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${w.id}.png`,
+    tier: tiers.get(w.id) ?? null,
   }));
 }
 
@@ -248,5 +275,129 @@ export async function getRelatedWeapons(
   return (data ?? []).map((w) => ({
     ...w,
     image_url: w.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${w.id}.png`,
+  }));
+}
+
+// ── Combo / loadout vũ khí ──────────────────────────────────
+export type LoadoutWeaponRef = {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string;
+  weapon_type: string | null;
+} | null;
+
+export type Loadout = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  playstyle: string | null;
+  primary_weapon: LoadoutWeaponRef;
+  secondary_weapon: LoadoutWeaponRef;
+};
+
+const LOADOUT_SELECT =
+  "id, slug, name, description, image_url, playstyle, " +
+  "primary_weapon:ff_weapons!primary_weapon_id(id, slug, name, image_url, weapon_type), " +
+  "secondary_weapon:ff_weapons!secondary_weapon_id(id, slug, name, image_url, weapon_type)";
+
+function normalizeWeaponRef(ref: LoadoutWeaponRef): LoadoutWeaponRef {
+  if (!ref) return null;
+  return { ...ref, image_url: ref.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${ref.id}.png` };
+}
+
+export async function getAllLoadouts(): Promise<Loadout[]> {
+  noStore();
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data, error } = await (supabase.from("ff_loadouts") as ReturnType<typeof supabase.from>)
+    .select(LOADOUT_SELECT)
+    .order("position", { ascending: true })
+    .order("name", { ascending: true })
+    .limit(200) as { data: Loadout[] | null; error: { message?: string } | null };
+
+  if (error || !data) {
+    if (error) console.error("Error fetching loadouts:", error);
+    return [];
+  }
+
+  return data.map((l) => ({
+    ...l,
+    primary_weapon: normalizeWeaponRef(l.primary_weapon),
+    secondary_weapon: normalizeWeaponRef(l.secondary_weapon),
+  }));
+}
+
+// Combo kèm đủ chỉ số 2 khẩu — cho trang chi tiết combo.
+export type LoadoutWeaponFull = {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string;
+  weapon_type: string | null;
+  damage: number | null;
+  range: number | null;
+  rate_of_fire: number | null;
+  reload: number | null;
+  magazine: number | null;
+} | null;
+
+export type LoadoutDetail = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  playstyle: string | null;
+  primary_weapon: LoadoutWeaponFull;
+  secondary_weapon: LoadoutWeaponFull;
+};
+
+const LOADOUT_DETAIL_WEAPON = "(id, slug, name, image_url, weapon_type, damage, range, rate_of_fire, reload, magazine)";
+
+export async function getLoadoutBySlug(slug: string): Promise<LoadoutDetail | null> {
+  noStore();
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return null;
+
+  const { data, error } = await (supabase.from("ff_loadouts") as ReturnType<typeof supabase.from>)
+    .select(
+      "id, slug, name, description, image_url, playstyle, " +
+      `primary_weapon:ff_weapons!primary_weapon_id${LOADOUT_DETAIL_WEAPON}, ` +
+      `secondary_weapon:ff_weapons!secondary_weapon_id${LOADOUT_DETAIL_WEAPON}`,
+    )
+    .eq("slug", slug)
+    .maybeSingle() as { data: LoadoutDetail | null; error: { message?: string } | null };
+
+  if (error || !data) {
+    if (error) console.error(`Error fetching loadout ${slug}:`, error);
+    return null;
+  }
+
+  const fix = (w: LoadoutWeaponFull): LoadoutWeaponFull =>
+    w ? { ...w, image_url: w.image_url || `${FF_ITEM_IMAGE_BASE_URL}/${w.id}.png` } : null;
+
+  return { ...data, primary_weapon: fix(data.primary_weapon), secondary_weapon: fix(data.secondary_weapon) };
+}
+
+// Combo có chứa 1 khẩu vũ khí — cross-link ở trang chi tiết súng.
+export async function getLoadoutsForWeapon(weaponId: string, limit = 6): Promise<Loadout[]> {
+  noStore();
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data } = await (supabase.from("ff_loadouts") as ReturnType<typeof supabase.from>)
+    .select(LOADOUT_SELECT)
+    .or(`primary_weapon_id.eq.${weaponId},secondary_weapon_id.eq.${weaponId}`)
+    .order("position", { ascending: true })
+    .limit(limit) as { data: Loadout[] | null };
+
+  return (data ?? []).map((l) => ({
+    ...l,
+    primary_weapon: normalizeWeaponRef(l.primary_weapon),
+    secondary_weapon: normalizeWeaponRef(l.secondary_weapon),
   }));
 }

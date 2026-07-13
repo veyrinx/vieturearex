@@ -21,6 +21,7 @@ create table if not exists public.ff_weapons (
     'lmg', 'pistol', 'launcher', 'melee', 'throwable'
   )),
   ob            text,
+  attachments   jsonb not null default '[]'::jsonb,  -- [{ slot, name, note }]
   released_at   date,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
@@ -28,6 +29,24 @@ create table if not exists public.ff_weapons (
 
 create index if not exists ff_weapons_slug_idx on public.ff_weapons (slug);
 create index if not exists ff_weapons_weapon_type_idx on public.ff_weapons (weapon_type) where weapon_type is not null;
+
+-- ── Combo / loadout vũ khí ──────────────────────────────────
+create table if not exists public.ff_loadouts (
+  id                  uuid primary key default gen_random_uuid(),
+  slug                text not null unique check (slug ~ '^[a-z0-9-]{1,80}$'),
+  name                text not null check (char_length(name) between 1 and 120),
+  description         text,
+  image_url           text,
+  playstyle           text,
+  primary_weapon_id   uuid references public.ff_weapons(id) on delete set null,
+  secondary_weapon_id uuid references public.ff_weapons(id) on delete set null,
+  position            integer not null default 0,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
+);
+
+create index if not exists ff_loadouts_slug_idx on public.ff_loadouts (slug);
+create index if not exists ff_loadouts_position_idx on public.ff_loadouts (position);
 
 -- ── Tier lists (character | weapon) ─────────────────────────
 create table if not exists public.tier_lists (
@@ -86,6 +105,10 @@ drop trigger if exists tier_lists_updated_at on public.tier_lists;
 create trigger tier_lists_updated_at before update on public.tier_lists
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists ff_loadouts_updated_at on public.ff_loadouts;
+create trigger ff_loadouts_updated_at before update on public.ff_loadouts
+  for each row execute function public.handle_updated_at();
+
 drop trigger if exists item_ratings_updated_at on public.item_ratings;
 create trigger item_ratings_updated_at before update on public.item_ratings
   for each row execute function public.handle_updated_at();
@@ -119,6 +142,7 @@ grant execute on function public.get_item_ratings(uuid) to anon, authenticated;
 -- RLS
 -- ============================================================
 alter table public.ff_weapons        enable row level security;
+alter table public.ff_loadouts       enable row level security;
 alter table public.tier_lists        enable row level security;
 alter table public.tier_list_entries enable row level security;
 alter table public.item_comments     enable row level security;
@@ -127,6 +151,9 @@ alter table public.item_ratings      enable row level security;
 -- Public read
 drop policy if exists ff_weapons_public_read on public.ff_weapons;
 create policy ff_weapons_public_read on public.ff_weapons for select using (true);
+
+drop policy if exists ff_loadouts_public_read on public.ff_loadouts;
+create policy ff_loadouts_public_read on public.ff_loadouts for select using (true);
 
 drop policy if exists tier_lists_public_read on public.tier_lists;
 create policy tier_lists_public_read on public.tier_lists for select using (true);
@@ -143,6 +170,9 @@ create policy item_ratings_public_read on public.item_ratings for select using (
 -- Admin write (weapons + tier lists)
 drop policy if exists ff_weapons_admin_write on public.ff_weapons;
 create policy ff_weapons_admin_write on public.ff_weapons for all using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists ff_loadouts_admin_write on public.ff_loadouts;
+create policy ff_loadouts_admin_write on public.ff_loadouts for all using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists tier_lists_admin_write on public.tier_lists;
 create policy tier_lists_admin_write on public.tier_lists for all using (public.is_admin()) with check (public.is_admin());
