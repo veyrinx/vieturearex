@@ -46,8 +46,8 @@ export default async function WeaponDetailPage({ params }: Props) {
     { label: "Tốc độ bắn", value: weapon.rate_of_fire, max: statMax.rate_of_fire },
   ];
 
-  const metaStats = [
-    { label: "Thể loại", value: weaponTypeLabel(weapon.weapon_type), icon: Crosshair },
+  const metaStats: Array<{ label: string; value: React.ReactNode; icon: typeof Crosshair; href?: string }> = [
+    { label: "Thể loại", value: weaponTypeLabel(weapon.weapon_type), icon: Crosshair, href: weapon.weapon_type ? `/vu-khi/loai/${weapon.weapon_type}` : undefined },
     { label: "Phiên bản OB", value: weapon.ob, icon: Tag },
     { label: "Tốc độ thay đạn", value: weapon.reload, icon: Gauge },
     { label: "Băng đạn", value: weapon.magazine, icon: Box },
@@ -127,14 +127,20 @@ export default async function WeaponDetailPage({ params }: Props) {
 
             {/* Thông tin khác */}
             <div className="mt-6 grid grid-cols-2 gap-4 border-t border-border pt-5 sm:grid-cols-3">
-              {metaStats.map(({ label, value, icon: Icon }) => (
+              {metaStats.map(({ label, value, icon: Icon, href }) => (
                 <div key={label} className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground">
                     <Icon className="size-4" />
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-                    <p className="text-sm font-bold text-foreground">{value ?? "N/A"}</p>
+                    {href && value ? (
+                      <Link href={href} className="text-sm font-bold text-foreground transition-colors hover:text-primary">
+                        {value}
+                      </Link>
+                    ) : (
+                      <p className="text-sm font-bold text-foreground">{value ?? "N/A"}</p>
+                    )}
                   </div>
                 </div>
               ))}
