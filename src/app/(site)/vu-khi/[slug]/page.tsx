@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "@/components/common/section-heading";
+import { Breadcrumbs, type Crumb } from "@/components/common/breadcrumbs";
 import { siteConfig } from "@/lib/constants/site";
 import { getWeaponBySlug, getRelatedWeapons, getWeaponStatMaxes, getLoadoutsForWeapon, getTierColor } from "@/lib/data/ff-data";
 import { cn } from "@/lib/utils";
@@ -73,12 +74,18 @@ export default async function WeaponDetailPage({ params }: Props) {
     }),
   };
 
+  const typeLabel = weaponTypeLabel(weapon.weapon_type);
+  const crumbs: Crumb[] = [{ name: "Vũ khí", href: "/vu-khi" }];
+  if (typeLabel && weapon.weapon_type) crumbs.push({ name: typeLabel, href: `/vu-khi/loai/${weapon.weapon_type}` });
+  crumbs.push({ name: weapon.name, href: `/vu-khi/${weapon.slug}` });
+
   return (
     <main className="container-main my-8 space-y-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <Breadcrumbs items={crumbs} />
       {/* Header */}
       <div className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
         <Image

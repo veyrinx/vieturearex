@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Swords, Scale, Layers } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getAllWeapons } from "@/lib/data/ff-data";
 import { WeaponsBrowser } from "@/components/ff-items/weapons-browser";
 
@@ -18,6 +19,7 @@ export default async function WeaponsPage() {
 
   return (
     <main className="container-main my-8 space-y-8">
+      <Breadcrumbs items={[{ name: "Vũ khí", href: "/vu-khi" }]} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">

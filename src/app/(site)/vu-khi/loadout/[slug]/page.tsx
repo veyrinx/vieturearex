@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Plus, Layers } from "lucide-react";
+import { Plus, Layers } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getLoadoutBySlug, type LoadoutWeaponFull } from "@/lib/data/ff-data";
 import { playstyleLabel, weaponTypeLabel } from "@/lib/constants/weapon-types";
 import { cn } from "@/lib/utils";
@@ -90,12 +91,13 @@ export default async function LoadoutDetailPage({ params }: Props) {
     <main className="container-main my-8 max-w-3xl space-y-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <Link
-        href="/vu-khi/loadout"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" /> Tất cả combo
-      </Link>
+      <Breadcrumbs
+        items={[
+          { name: "Vũ khí", href: "/vu-khi" },
+          { name: "Combo", href: "/vu-khi/loadout" },
+          { name: loadout.name, href: `/vu-khi/loadout/${loadout.slug}` },
+        ]}
+      />
 
       <div className="space-y-2 text-center">
         <h1 className="font-heading text-3xl font-black uppercase tracking-wide text-foreground md:text-4xl">

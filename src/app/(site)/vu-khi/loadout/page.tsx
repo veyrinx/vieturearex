@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft, Layers } from "lucide-react";
+import { Layers } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getAllLoadouts } from "@/lib/data/ff-data";
 import { LoadoutBrowser } from "@/components/ff-items/loadout-browser";
 
@@ -18,12 +18,7 @@ export default async function LoadoutPage() {
 
   return (
     <main className="container-main my-8 space-y-8">
-      <Link
-        href="/vu-khi"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" /> Danh sách vũ khí
-      </Link>
+      <Breadcrumbs items={[{ name: "Vũ khí", href: "/vu-khi" }, { name: "Combo", href: "/vu-khi/loadout" }]} />
 
       <div className="flex items-center gap-3">
         <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft, Scale } from "lucide-react";
+import { Scale } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getWeaponsForCompare } from "@/lib/data/ff-data";
 import { WeaponCompare } from "@/components/ff-items/weapon-compare";
 
@@ -18,12 +18,7 @@ export default async function WeaponComparePage() {
 
   return (
     <main className="container-main my-8 max-w-3xl space-y-8">
-      <Link
-        href="/vu-khi"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" /> Danh sách vũ khí
-      </Link>
+      <Breadcrumbs items={[{ name: "Vũ khí", href: "/vu-khi" }, { name: "So sánh", href: "/vu-khi/so-sanh" }]} />
 
       <div className="flex items-center gap-3">
         <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
