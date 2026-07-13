@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, X, Swords, HeartHandshake, HeartPulse, Wind, Shield, Radar } from "lucide-react";
+import Link from "next/link";
+import { Search, X, Swords, HeartHandshake, HeartPulse, Wind, Shield, Radar, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-  FF_CHARACTERS, TIER_ORDER, TIER_META, ROLE_META,
+  FF_CHARACTERS, TIER_ORDER, TIER_META, ROLE_META, charSlug,
   type CharRole, type FFCharacter,
 } from "@/lib/data/ff-characters";
 
@@ -243,6 +244,12 @@ function CharDetail({ char, onClose }: { char: FFCharacter; onClose: () => void 
           <p className={cn("mt-4 text-xs font-semibold", tier.text)}>
             Đánh giá: {char.tier} · {tier.label}
           </p>
+          <Link
+            href={`/nhan-vat/${charSlug(char.name)}`}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Xem trang chi tiết <ArrowRight className="size-3.5" />
+          </Link>
         </div>
       </motion.div>
     </div>
