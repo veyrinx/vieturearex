@@ -1,6 +1,8 @@
 // Tier list nhân vật Free Fire — dữ liệu do cộng đồng đánh giá (chế độ Sinh Tồn).
 // Chỉ mang tính tham khảo, meta thay đổi theo mùa.
 
+import { supabaseUrl } from "@/lib/supabase/env";
+
 export type CharRole = "rush" | "support" | "heal" | "mobility" | "defense" | "info";
 export type Tier = "S" | "A" | "B" | "C" | "D";
 
@@ -95,3 +97,51 @@ export const FF_CHARACTERS: FFCharacter[] = [
   { name: "Misha",  tier: "D", role: "mobility", skill: "Afterburner — tăng tốc độ lái xe, giảm sát thương khi trên xe." },
   { name: "Antonio",tier: "D", role: "defense",  skill: "Gangster's Spirit — tăng HP khởi đầu mỗi trận." },
 ];
+
+// ── Helpers cho trang nhân vật (/nhan-vat) ──────────────────
+export const CHARACTER_IMG_BASE = supabaseUrl
+  ? `${supabaseUrl}/storage/v1/object/public/ff-items/characters/`
+  : "";
+
+export function characterImage(name: string, image?: string): string | null {
+  if (image) return image;
+  return CHARACTER_IMG_BASE ? `${CHARACTER_IMG_BASE}${charSlug(name)}.png` : null;
+}
+
+export type CharacterListItem = {
+  name: string;
+  slug: string;
+  tier: Tier;
+  role: CharRole;
+  skill: string;
+  skillType: SkillType;
+  image: string | null;
+};
+
+function toListItem(c: FFCharacter): CharacterListItem {
+  return {
+    name: c.name,
+    slug: charSlug(c.name),
+    tier: c.tier,
+    role: c.role,
+    skill: c.skill,
+    skillType: skillType(c.name),
+    image: characterImage(c.name, c.image),
+  };
+}
+
+export function getAllCharacters(): CharacterListItem[] {
+  return FF_CHARACTERS.map(toListItem);
+}
+
+export function getCharacterBySlug(slug: string): CharacterListItem | null {
+  const found = FF_CHARACTERS.find((c) => charSlug(c.name) === slug);
+  return found ? toListItem(found) : null;
+}
+
+// Tách phần "tên kỹ năng" và "mô tả" từ chuỗi skill "Tên — mô tả".
+export function splitSkill(skill: string): { name: string; desc: string } {
+  const idx = skill.indexOf("—");
+  if (idx === -1) return { name: skill.trim(), desc: "" };
+  return { name: skill.slice(0, idx).trim(), desc: skill.slice(idx + 1).trim() };
+}
