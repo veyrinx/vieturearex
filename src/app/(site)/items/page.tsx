@@ -26,6 +26,7 @@ export default function ItemsPublicPage() {
   const [hotOnly, setHotOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activePrefix, setActivePrefix] = useState<string>("all");
 
   // Catalog metadata (id → label, category, ob, hot)
   type CatalogEntry = { id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean };
@@ -80,12 +81,24 @@ export default function ItemsPublicPage() {
     [categoryCounts]
   );
 
+  // Nhóm tự động theo tiền tố ID (3 số đầu) — suy từ danh sách icon, không cần admin gắn tay.
+  const prefixGroups = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const idStr of ids) {
+      const m = idStr.match(/^(\d{3})/);
+      map.set(m ? m[1] : "other", (map.get(m ? m[1] : "other") ?? 0) + 1);
+    }
+    return [...map.entries()]
+      .sort(([, a], [, b]) => b - a)
+      .map(([prefix, count]) => ({ prefix, count }));
+  }, [ids]);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, activeCategory, activeOb, hotOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, activeCategory, activeOb, hotOnly, activePrefix]);
 
   // Lightbox keyboard nav
   useEffect(() => {
@@ -131,6 +144,7 @@ export default function ItemsPublicPage() {
 
   const filtered = useMemo(() => {
     let list = ids;
+    if (activePrefix !== "all") list = list.filter((x) => x.startsWith(activePrefix));
     if (hotOnly) list = list.filter((x) => catalog.get(x)?.is_hot ?? false);
     if (activeCategory !== "all") {
       list = list.filter((x) => catalog.get(x)?.category === activeCategory);
@@ -143,7 +157,7 @@ export default function ItemsPublicPage() {
       );
     }
     return list;
-  }, [ids, hotOnly, activeCategory, activeOb, debouncedSearch, catalog]);
+  }, [ids, activePrefix, hotOnly, activeCategory, activeOb, debouncedSearch, catalog]);
 
   // Search autocomplete suggestions
   const suggestions = useMemo(() => {
@@ -342,8 +356,41 @@ export default function ItemsPublicPage() {
           </div>
         )}
 
+        {/* Nhóm ID tự động (theo tiền tố) — luôn có, không cần admin gắn */}
+        {prefixGroups.length > 1 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nhóm ID (tự động)</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActivePrefix("all")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                  activePrefix === "all"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tất cả
+              </button>
+              {prefixGroups.map(({ prefix, count }) => (
+                <button
+                  key={prefix}
+                  onClick={() => setActivePrefix(prefix)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                    activePrefix === prefix
+                      ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
+                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className="font-mono">{prefix === "other" ? "khác" : `${prefix}xxx`}</span>
+                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count.toLocaleString()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Active filter pill — easy clear */}
-        {(hotOnly || activeCategory !== "all" || activeOb !== "all" || debouncedSearch) && (
+        {(hotOnly || activeCategory !== "all" || activeOb !== "all" || activePrefix !== "all" || debouncedSearch) && (
           <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đang lọc:</span>
             {hotOnly && (
@@ -370,6 +417,14 @@ export default function ItemsPublicPage() {
                 {activeOb} <X className="size-2.5" />
               </button>
             )}
+            {activePrefix !== "all" && (
+              <button
+                onClick={() => setActivePrefix("all")}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-mono font-bold hover:opacity-70"
+              >
+                {activePrefix === "other" ? "khác" : `${activePrefix}xxx`} <X className="size-2.5" />
+              </button>
+            )}
             {debouncedSearch && (
               <button
                 onClick={() => setSearch("")}
@@ -379,7 +434,7 @@ export default function ItemsPublicPage() {
               </button>
             )}
             <button
-              onClick={() => { setHotOnly(false); setActiveCategory("all"); setActiveOb("all"); setSearch(""); }}
+              onClick={() => { setHotOnly(false); setActiveCategory("all"); setActiveOb("all"); setActivePrefix("all"); setSearch(""); }}
               className="ml-auto text-[10px] text-muted-foreground hover:text-destructive transition-colors"
             >
               Xóa tất cả
@@ -416,7 +471,7 @@ export default function ItemsPublicPage() {
         <>
           {/* Result count */}
           <p className="text-xs text-muted-foreground px-1">
-            {debouncedSearch || hotOnly || activeCategory !== "all" || activeOb !== "all" ? (
+            {debouncedSearch || hotOnly || activeCategory !== "all" || activeOb !== "all" || activePrefix !== "all" ? (
               <>Tìm thấy <span className="font-bold text-foreground">{filtered.length.toLocaleString()}</span> icon</>
             ) : (
               <>Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} – {Math.min(currentPage * PAGE_SIZE, filtered.length)} / {filtered.length.toLocaleString()}</>
