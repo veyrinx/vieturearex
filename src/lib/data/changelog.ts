@@ -17,6 +17,18 @@ export const CHANGE_META: Record<ChangeType, { label: string; cls: string }> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.0",
+    date: "2026-07-15",
+    changes: [
+      { type: "feature", text: "Khu Vũ khí (/vu-khi): chỉ số chi tiết, tìm/lọc theo thể loại & tier, so sánh 2 vũ khí, phụ kiện gợi ý, lịch sử tier" },
+      { type: "feature", text: "Combo vũ khí (/vu-khi/loadout): các bộ súng chính + phụ theo lối chơi (rush, bắn tỉa, hỗ trợ...)" },
+      { type: "feature", text: "Khu Nhân vật (/nhan-vat): kỹ năng chủ động/bị động, tier, vai trò, so sánh 2 nhân vật" },
+      { type: "improvement", text: "Thư viện Icon (/items): 49 thể loại chuẩn + tên thật + độ hiếm cho từng icon, lọc theo loại/độ hiếm/OB" },
+      { type: "improvement", text: "Tìm kiếm toàn site (/search) giờ tìm được cả vũ khí, combo và nhân vật" },
+      { type: "improvement", text: "Ảnh chia sẻ (OG) đẹp + breadcrumb cho trang vũ khí & nhân vật (tốt cho Google)" },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-07-12",
     changes: [

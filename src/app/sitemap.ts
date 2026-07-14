@@ -152,6 +152,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     },
     {
+      url: `${BASE}/cap-nhat`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.50,
+    },
+    {
       url: `${BASE}/gui-bai-viet`,
       lastModified: now,
       changeFrequency: "monthly",

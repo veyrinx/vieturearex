@@ -20,6 +20,7 @@ const footerNav = [
   { label: "Sự Kiện", href: "/events" },
   { label: "Phát Trực Tiếp", href: "/esports" },
   { label: "Tin Tức", href: "/news" },
+  { label: "Cập Nhật", href: "/cap-nhat" },
   { label: "Về Chúng Tôi", href: "/about" },
   { label: "Liên Hệ", href: "/contact" },
 ];
