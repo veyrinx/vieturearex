@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
   Search, X, Image as ImageIcon, Copy, Check, ChevronLeft, ChevronRight,
   Loader2, Database, ExternalLink, Filter, Server, AlertCircle, Download, Eye,
 } from "lucide-react";
+import { ffItemTypeLabel, ffItemTypeStyle } from "@/lib/constants/ff-item-types";
 
 const FALLBACK_CDN = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
 const PAGE_SIZE = 60;
@@ -26,18 +27,21 @@ export default function ItemsPublicPage() {
   const [hotOnly, setHotOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [activePrefix, setActivePrefix] = useState<string>("all");
 
   // Catalog metadata (id → label, category, ob, hot)
   type CatalogEntry = { id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean };
   const [catalog, setCatalog] = useState<Map<string, CatalogEntry>>(new Map());
 
+  // Thể loại tự động (id → tên thể loại, 1 trong 49 loại) từ dữ liệu chuẩn cộng đồng.
+  const [autoType, setAutoType] = useState<Map<string, string>>(new Map());
+
   useEffect(() => {
-    // Load both storage list and catalog in parallel
+    // Load storage list + catalog + bản đồ thể loại tự động song song
     Promise.all([
       fetch("/api/ff-icons").then((r) => r.json()).catch(() => null),
       fetch("/api/ff-items/catalog").then((r) => r.json()).catch(() => null),
-    ]).then(([storage, cat]) => {
+      fetch("/ff-item-types.json").then((r) => r.json()).catch(() => null),
+    ]).then(([storage, cat, typeRaw]) => {
       const d = storage as { ids?: string[]; baseUrl?: string | null; bucketMissing?: boolean; error?: string } | null;
       if (d?.bucketMissing) setBucketMissing(true);
       setIds(d?.ids ?? []);
@@ -48,57 +52,49 @@ export default function ItemsPublicPage() {
       if (c?.items) {
         setCatalog(new Map(c.items.map((it) => [it.id, it])));
       }
+
+      // { types: [...49 tên...], ids: { itemID: chỉ số type } }
+      const raw = typeRaw as { types?: string[]; ids?: Record<string, number> } | null;
+      if (raw?.types && raw.ids) {
+        const t = raw.types;
+        const m = new Map<string, string>();
+        for (const id in raw.ids) { const name = t[raw.ids[id]]; if (name) m.set(id, name); }
+        setAutoType(m);
+      }
     }).finally(() => setLoading(false));
   }, []);
 
-  const CATEGORY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-    weapon:    { label: "Súng / Vũ khí",  color: "text-red-500",     bg: "bg-red-500/10" },
-    character: { label: "Nhân vật",        color: "text-blue-500",    bg: "bg-blue-500/10" },
-    pet:       { label: "Pet",             color: "text-pink-500",    bg: "bg-pink-500/10" },
-    outfit:    { label: "Trang phục",      color: "text-purple-500",  bg: "bg-purple-500/10" },
-    skin:      { label: "Skin",            color: "text-amber-500",   bg: "bg-amber-500/10" },
-    accessory: { label: "Phụ kiện",        color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    emote:     { label: "Emote",           color: "text-violet-500",  bg: "bg-violet-500/10" },
-    vehicle:   { label: "Xe",              color: "text-cyan-500",    bg: "bg-cyan-500/10" },
-    other:     { label: "Khác",            color: "text-muted-foreground", bg: "bg-muted" },
-  };
+  // Thể loại của 1 item = map tự động (49 loại chuẩn).
+  const categoryOf = useCallback(
+    (id: string): string | null => autoType.get(id) ?? null,
+    [autoType],
+  );
 
-  // Get category counts from catalog
+  // Đếm theo thể loại (49 loại) — tính trên toàn bộ icon
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const it of catalog.values()) {
-      const c = it.category ?? "other";
+    for (const id of ids) {
+      const c = categoryOf(id);
+      if (!c) continue;
       counts[c] = (counts[c] ?? 0) + 1;
     }
     return counts;
-  }, [catalog]);
+  }, [ids, categoryOf]);
 
+  // Các thể loại thực sự có item, sort theo số lượng giảm dần
   const categoriesWithCounts = useMemo(() =>
-    Object.entries(CATEGORY_LABELS)
-      .filter(([key]) => (categoryCounts[key] ?? 0) > 0)
-      .map(([key, meta]) => ({ key, ...meta, count: categoryCounts[key] ?? 0 })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    Object.entries(categoryCounts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([key, count]) => ({ key, label: ffItemTypeLabel(key), ...ffItemTypeStyle(key), count })),
     [categoryCounts]
   );
-
-  // Nhóm tự động theo tiền tố ID (3 số đầu) — suy từ danh sách icon, không cần admin gắn tay.
-  const prefixGroups = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const idStr of ids) {
-      const m = idStr.match(/^(\d{3})/);
-      map.set(m ? m[1] : "other", (map.get(m ? m[1] : "other") ?? 0) + 1);
-    }
-    return [...map.entries()]
-      .sort(([, a], [, b]) => b - a)
-      .map(([prefix, count]) => ({ prefix, count }));
-  }, [ids]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, activeCategory, activeOb, hotOnly, activePrefix]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, activeCategory, activeOb, hotOnly]);
 
   // Lightbox keyboard nav
   useEffect(() => {
@@ -144,10 +140,9 @@ export default function ItemsPublicPage() {
 
   const filtered = useMemo(() => {
     let list = ids;
-    if (activePrefix !== "all") list = list.filter((x) => x.startsWith(activePrefix));
     if (hotOnly) list = list.filter((x) => catalog.get(x)?.is_hot ?? false);
     if (activeCategory !== "all") {
-      list = list.filter((x) => catalog.get(x)?.category === activeCategory);
+      list = list.filter((x) => categoryOf(x) === activeCategory);
     }
     if (activeOb !== "all") list = list.filter((x) => catalog.get(x)?.ob === activeOb);
     if (debouncedSearch) {
@@ -157,7 +152,7 @@ export default function ItemsPublicPage() {
       );
     }
     return list;
-  }, [ids, activePrefix, hotOnly, activeCategory, activeOb, debouncedSearch, catalog]);
+  }, [ids, hotOnly, activeCategory, activeOb, debouncedSearch, catalog, categoryOf]);
 
   // Search autocomplete suggestions
   const suggestions = useMemo(() => {
@@ -356,41 +351,8 @@ export default function ItemsPublicPage() {
           </div>
         )}
 
-        {/* Nhóm ID tự động (theo tiền tố) — luôn có, không cần admin gắn */}
-        {prefixGroups.length > 1 && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nhóm ID (tự động)</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setActivePrefix("all")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                  activePrefix === "all"
-                    ? "bg-foreground text-background"
-                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Tất cả
-              </button>
-              {prefixGroups.map(({ prefix, count }) => (
-                <button
-                  key={prefix}
-                  onClick={() => setActivePrefix(prefix)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                    activePrefix === prefix
-                      ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
-                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span className="font-mono">{prefix === "other" ? "khác" : `${prefix}xxx`}</span>
-                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count.toLocaleString()}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Active filter pill — easy clear */}
-        {(hotOnly || activeCategory !== "all" || activeOb !== "all" || activePrefix !== "all" || debouncedSearch) && (
+        {(hotOnly || activeCategory !== "all" || activeOb !== "all" || debouncedSearch) && (
           <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đang lọc:</span>
             {hotOnly && (
@@ -406,7 +368,7 @@ export default function ItemsPublicPage() {
                 onClick={() => setActiveCategory("all")}
                 className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-bold hover:opacity-70"
               >
-                {CATEGORY_LABELS[activeCategory]?.label ?? activeCategory} <X className="size-2.5" />
+                {ffItemTypeLabel(activeCategory)} <X className="size-2.5" />
               </button>
             )}
             {activeOb !== "all" && (
@@ -415,14 +377,6 @@ export default function ItemsPublicPage() {
                 className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-mono font-bold hover:opacity-70"
               >
                 {activeOb} <X className="size-2.5" />
-              </button>
-            )}
-            {activePrefix !== "all" && (
-              <button
-                onClick={() => setActivePrefix("all")}
-                className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-mono font-bold hover:opacity-70"
-              >
-                {activePrefix === "other" ? "khác" : `${activePrefix}xxx`} <X className="size-2.5" />
               </button>
             )}
             {debouncedSearch && (
@@ -434,7 +388,7 @@ export default function ItemsPublicPage() {
               </button>
             )}
             <button
-              onClick={() => { setHotOnly(false); setActiveCategory("all"); setActiveOb("all"); setActivePrefix("all"); setSearch(""); }}
+              onClick={() => { setHotOnly(false); setActiveCategory("all"); setActiveOb("all"); setSearch(""); }}
               className="ml-auto text-[10px] text-muted-foreground hover:text-destructive transition-colors"
             >
               Xóa tất cả
@@ -471,7 +425,7 @@ export default function ItemsPublicPage() {
         <>
           {/* Result count */}
           <p className="text-xs text-muted-foreground px-1">
-            {debouncedSearch || hotOnly || activeCategory !== "all" || activeOb !== "all" || activePrefix !== "all" ? (
+            {debouncedSearch || hotOnly || activeCategory !== "all" || activeOb !== "all" ? (
               <>Tìm thấy <span className="font-bold text-foreground">{filtered.length.toLocaleString()}</span> icon</>
             ) : (
               <>Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} – {Math.min(currentPage * PAGE_SIZE, filtered.length)} / {filtered.length.toLocaleString()}</>
