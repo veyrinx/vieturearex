@@ -1,4 +1,4 @@
-# Báo cáo phiên làm việc — 2026-07-13 → 2026-07-14
+# Báo cáo phiên làm việc — 2026-07-13 → 2026-07-15
 
 Tổng hợp toàn bộ công việc đã **hoàn thành** trong phiên (đã commit + push lên `main`).
 Chủ đề chính: xây dựng gần như hoàn chỉnh 3 khu FF Wiki — **Vũ khí**, **Nhân vật**, **Thư viện Icon** — không đụng bảng xếp hạng người dùng hay tiền tệ.
@@ -40,6 +40,18 @@ Dựng mới hoàn toàn trên data tĩnh `FF_CHARACTERS` (37 nhân vật), khô
 - **Breadcrumbs + BreadcrumbList JSON-LD** xuyên suốt khu vũ khí (6 trang).
 - **Sitemap**: bổ sung trang thể loại vũ khí, vai trò nhân vật, so sánh, combo, từng vũ khí/combo/nhân vật.
 
+## 5. Thư viện Icon — phân loại chuẩn + tên thật + độ hiếm (2026-07-15)
+
+Lấy dữ liệu chuẩn cộng đồng từ **ff-item.netlify.app** (ShahGCreator): giải mã file `data.msgpack.gz` (gzip + msgpack) → **33.186 item** kèm `itemID → type + name + rarity`.
+
+- **Auto phân loại 49 thể loại thật** ở `/items` (Mũ, Áo, Quần, Skin súng, Tường gloo, Nhân vật, Pet...) — nhãn tiếng Việt + màu tự gán. Trang user chỉ **lọc**, không cần admin gắn tay, không cần migration. Bỏ bộ lọc "Nhóm ID prefix" tạm thời trước đó.
+- **Tên thật** hiển thị làm nhãn card (Alok, AWM, Nulla...) + **tìm kiếm theo tên**.
+- **Độ hiếm**: chấm màu trên card + hàng lọc "Độ hiếm" (Thường → Tối thượng, 8 mức).
+- **Trang chi tiết `/items/[id]`**: tên thật (+ metadata/OG), badge độ hiếm, dòng "Độ hiếm", nhãn loại theo 49 thể loại chuẩn. Đọc qua module server `ff-item-meta.ts` (bundle `public/ff-item-meta.json`, tra O(1)).
+- **Admin catalog** (`/admin/ff-items`): thêm lọc theo **Hot** + **phiên bản OB**.
+
+> Dữ liệu 49 loại + tên + độ hiếm nằm ở file tĩnh `public/ff-item-meta.json` (~294KB gzip) — **không cần migration**.
+
 ---
 
 ## Migration cần chạy khi deploy (Supabase — project `kjqqukageltvdohkakxb`)
@@ -69,6 +81,11 @@ e10706a  feat(nhan-vat): trang danh sach + chi tiet nhan vat Free Fire
 bbf1e3f  feat(nhan-vat): OG image dong + so sanh 2 nhan vat
 4572cde  feat(items): trang chi tiet /items/[id] hien OB + co Hot
 f2dac89  feat(nhan-vat): tier list link toi trang chi tiet nhan vat
+b228bcf  feat(items): loc tu dong theo nhom ID (tien to) o trang user
+1c74475  feat(items): auto phan loai 49 the loai chuan (bo nhom ID prefix)
+11a2a1b  feat(items): them ten that + do hiem cho tung icon
+a4aeb79  feat(admin/ff-items): loc catalog theo Hot + phien ban OB
+e5691d5  feat(items): trang chi tiet /items/[id] hien ten that + do hiem
 ```
 
 ## Còn để bước sau
