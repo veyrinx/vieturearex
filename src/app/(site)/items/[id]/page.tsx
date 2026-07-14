@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Hash, Tag, Layers } from "lucide-react";
+import { ArrowLeft, Hash, Tag, Layers, Gem } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
-import { getItemDetail, getRelatedItems, CATEGORY_META } from "@/lib/data/ff-items";
+import { getItemDetail, getRelatedItems } from "@/lib/data/ff-items";
+import { getItemMetaById } from "@/lib/data/ff-item-meta";
+import { ffItemTypeLabel, ffItemTypeStyle, ffRarityMeta } from "@/lib/constants/ff-item-types";
 import { ItemActions } from "@/components/items/item-actions";
 
 type Props = { params: Promise<{ id: string }> };
@@ -13,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const item = await getItemDetail(id);
   if (!item) return { title: "Không tìm thấy item — Arex" };
 
-  const name = item.label || `Item ${item.id}`;
+  const name = item.label || getItemMetaById(item.id).name || `Item ${item.id}`;
   const url = `${siteConfig.url}/items/${item.id}`;
   const desc = `Tra cứu ${name} (ID ${item.id}) trong Free Fire — ảnh chất lượng cao, copy URL & tải xuống. Thư viện icon cộng đồng Arex.`;
 
@@ -42,8 +44,12 @@ export default async function ItemDetailPage({ params }: Props) {
   if (!item) notFound();
 
   const related = await getRelatedItems(item);
-  const name = item.label || `Item ${item.id}`;
-  const cat = item.category ? CATEGORY_META[item.category] ?? CATEGORY_META.other : null;
+  const meta = getItemMetaById(item.id);
+  const name = item.label || meta.name || `Item ${item.id}`;
+  // Loại chuẩn (49 loại) — ưu tiên map chuẩn, fallback catalog admin.
+  const typeName = meta.type ?? null;
+  const cat = typeName ? { label: ffItemTypeLabel(typeName), ...ffItemTypeStyle(typeName) } : null;
+  const rarity = meta.rarity && meta.rarity !== "NONE" ? ffRarityMeta(meta.rarity) : null;
 
   return (
     <div className="mx-auto max-w-5xl py-6 md:py-10 space-y-8">
@@ -75,6 +81,11 @@ export default async function ItemDetailPage({ params }: Props) {
                   <Tag className="size-3" /> {cat.label}
                 </span>
               )}
+              {rarity && (
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${rarity.bg} ${rarity.text}`}>
+                  <span className={`size-2 rounded-full ${rarity.dot}`} /> {rarity.label}
+                </span>
+              )}
               {item.is_hot && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-600 dark:text-orange-400">
                   🔥 Hot / Mới ra
@@ -98,6 +109,7 @@ export default async function ItemDetailPage({ params }: Props) {
           <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
             <MetaRow icon={Hash} label="Item ID" value={item.id} mono />
             <MetaRow icon={Layers} label="Loại" value={cat?.label ?? "Chưa phân loại"} />
+            {rarity && <MetaRow icon={Gem} label="Độ hiếm" value={rarity.label} />}
             {item.ob && <MetaRow icon={Tag} label="Phiên bản" value={item.ob} />}
             <div className="pt-1">
               <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
