@@ -116,6 +116,8 @@ export default function FFItemsPage() {
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogFilter, setCatalogFilter] = useState<CategoryKey | "all">("all");
+  const [catalogObFilter, setCatalogObFilter] = useState<string>("all");
+  const [catalogHotOnly, setCatalogHotOnly] = useState(false);
   const [editCatalogItem, setEditCatalogItem] = useState<CatalogItem | null>(null);
   const [showAllCatalog, setShowAllCatalog] = useState(false);
 
@@ -267,8 +269,12 @@ export default function FFItemsPage() {
   // Filtered catalog
   const filteredCatalog = useMemo(() => {
     let list = catalog;
+    if (catalogHotOnly) list = list.filter((i) => i.is_hot);
     if (catalogFilter !== "all") {
       list = list.filter((i) => i.category === catalogFilter);
+    }
+    if (catalogObFilter !== "all") {
+      list = list.filter((i) => i.ob === catalogObFilter);
     }
     if (catalogSearch.trim()) {
       const q = catalogSearch.trim().toLowerCase();
@@ -278,7 +284,7 @@ export default function FFItemsPage() {
       );
     }
     return list;
-  }, [catalog, catalogFilter, catalogSearch]);
+  }, [catalog, catalogHotOnly, catalogFilter, catalogObFilter, catalogSearch]);
 
   const catalogCategoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -288,6 +294,21 @@ export default function FFItemsPage() {
     }
     return counts;
   }, [catalog]);
+
+  // OB groups (newest first) + hot count for admin catalog filters
+  const catalogObGroups = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const it of catalog) {
+      if (!it.ob) continue;
+      map.set(it.ob, (map.get(it.ob) ?? 0) + 1);
+    }
+    const numOf = (s: string) => { const m = s.match(/\d+/); return m ? parseInt(m[0], 10) : 0; };
+    return [...map.entries()]
+      .sort(([a], [b]) => numOf(b) - numOf(a) || a.localeCompare(b))
+      .map(([ob, count]) => ({ ob, count }));
+  }, [catalog]);
+
+  const catalogHotCount = useMemo(() => catalog.filter((i) => i.is_hot).length, [catalog]);
 
   // Push selected library items to catalog
   const pushSelectedToCatalog = async (category: CategoryKey) => {
@@ -884,7 +905,49 @@ export default function FFItemsPage() {
                     </button>
                   );
                 })}
+                {catalogHotCount > 0 && (
+                  <button
+                    onClick={() => setCatalogHotOnly((v) => !v)}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-all ${
+                      catalogHotOnly
+                        ? "bg-orange-500 text-white"
+                        : "border border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
+                    }`}
+                  >
+                    🔥 Hot ({catalogHotCount})
+                  </button>
+                )}
               </div>
+
+              {/* OB filter pills */}
+              {catalogObGroups.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 mr-0.5">OB</span>
+                  <button
+                    onClick={() => setCatalogObFilter("all")}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-all ${
+                      catalogObFilter === "all"
+                        ? "bg-foreground text-background"
+                        : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  {catalogObGroups.map(({ ob, count }) => (
+                    <button
+                      key={ob}
+                      onClick={() => setCatalogObFilter(ob)}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-all ${
+                        catalogObFilter === ob
+                          ? "bg-blue-600 text-white"
+                          : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span className="font-mono">{ob}</span> ({count})
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Items grid */}
