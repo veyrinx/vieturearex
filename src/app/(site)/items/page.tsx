@@ -7,7 +7,7 @@ import {
   Search, X, Image as ImageIcon, Copy, Check, ChevronLeft, ChevronRight,
   Loader2, Database, ExternalLink, Filter, Server, AlertCircle, Download, Eye,
 } from "lucide-react";
-import { ffItemTypeLabel, ffItemTypeStyle } from "@/lib/constants/ff-item-types";
+import { ffItemTypeLabel, ffItemTypeStyle, ffRarityMeta, FF_RARITY_ORDER } from "@/lib/constants/ff-item-types";
 
 const FALLBACK_CDN = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
 const PAGE_SIZE = 60;
@@ -27,21 +27,23 @@ export default function ItemsPublicPage() {
   const [hotOnly, setHotOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeRarity, setActiveRarity] = useState<string>("all");
 
   // Catalog metadata (id → label, category, ob, hot)
   type CatalogEntry = { id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean };
   const [catalog, setCatalog] = useState<Map<string, CatalogEntry>>(new Map());
 
-  // Thể loại tự động (id → tên thể loại, 1 trong 49 loại) từ dữ liệu chuẩn cộng đồng.
-  const [autoType, setAutoType] = useState<Map<string, string>>(new Map());
+  // Meta chuẩn cộng đồng: { types, rarities, items: { id: [typeIdx, name, rarityIdx] } }
+  type MetaFile = { types: string[]; rarities: string[]; items: Record<string, [number, string, number]> };
+  const [meta, setMeta] = useState<MetaFile | null>(null);
 
   useEffect(() => {
-    // Load storage list + catalog + bản đồ thể loại tự động song song
+    // Load storage list + catalog + meta chuẩn song song
     Promise.all([
       fetch("/api/ff-icons").then((r) => r.json()).catch(() => null),
       fetch("/api/ff-items/catalog").then((r) => r.json()).catch(() => null),
-      fetch("/ff-item-types.json").then((r) => r.json()).catch(() => null),
-    ]).then(([storage, cat, typeRaw]) => {
+      fetch("/ff-item-meta.json").then((r) => r.json()).catch(() => null),
+    ]).then(([storage, cat, metaRaw]) => {
       const d = storage as { ids?: string[]; baseUrl?: string | null; bucketMissing?: boolean; error?: string } | null;
       if (d?.bucketMissing) setBucketMissing(true);
       setIds(d?.ids ?? []);
@@ -53,21 +55,26 @@ export default function ItemsPublicPage() {
         setCatalog(new Map(c.items.map((it) => [it.id, it])));
       }
 
-      // { types: [...49 tên...], ids: { itemID: chỉ số type } }
-      const raw = typeRaw as { types?: string[]; ids?: Record<string, number> } | null;
-      if (raw?.types && raw.ids) {
-        const t = raw.types;
-        const m = new Map<string, string>();
-        for (const id in raw.ids) { const name = t[raw.ids[id]]; if (name) m.set(id, name); }
-        setAutoType(m);
-      }
+      const m = metaRaw as MetaFile | null;
+      if (m?.types && m.rarities && m.items) setMeta(m);
     }).finally(() => setLoading(false));
   }, []);
 
-  // Thể loại của 1 item = map tự động (49 loại chuẩn).
+  // Thể loại / tên / độ hiếm của 1 item từ meta chuẩn (49 loại).
   const categoryOf = useCallback(
-    (id: string): string | null => autoType.get(id) ?? null,
-    [autoType],
+    (id: string): string | null => (meta ? meta.types[meta.items[id]?.[0]] ?? null : null),
+    [meta],
+  );
+  const nameOf = useCallback(
+    (id: string): string | null => meta?.items[id]?.[1] || null,
+    [meta],
+  );
+  const rarityOf = useCallback(
+    (id: string): string | null => {
+      const i = meta?.items[id]?.[2];
+      return meta && i != null ? meta.rarities[i] ?? null : null;
+    },
+    [meta],
   );
 
   // Đếm theo thể loại (49 loại) — tính trên toàn bộ icon
@@ -89,12 +96,22 @@ export default function ItemsPublicPage() {
     [categoryCounts]
   );
 
+  // Đếm + danh sách độ hiếm có item (thứ tự cao → thấp, bỏ NONE)
+  const raritiesWithCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const id of ids) { const r = rarityOf(id); if (r && r !== "NONE") counts[r] = (counts[r] ?? 0) + 1; }
+    return [...FF_RARITY_ORDER]
+      .filter((r) => r !== "NONE" && (counts[r] ?? 0) > 0)
+      .reverse()
+      .map((key) => ({ key, ...ffRarityMeta(key), count: counts[key] }));
+  }, [ids, rarityOf]);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, activeCategory, activeOb, hotOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, activeCategory, activeOb, hotOnly, activeRarity]);
 
   // Lightbox keyboard nav
   useEffect(() => {
@@ -144,15 +161,17 @@ export default function ItemsPublicPage() {
     if (activeCategory !== "all") {
       list = list.filter((x) => categoryOf(x) === activeCategory);
     }
+    if (activeRarity !== "all") list = list.filter((x) => rarityOf(x) === activeRarity);
     if (activeOb !== "all") list = list.filter((x) => catalog.get(x)?.ob === activeOb);
     if (debouncedSearch) {
       list = list.filter((x) =>
         x.toLowerCase().includes(debouncedSearch) ||
-        (catalog.get(x)?.label?.toLowerCase().includes(debouncedSearch) ?? false),
+        (catalog.get(x)?.label?.toLowerCase().includes(debouncedSearch) ?? false) ||
+        (nameOf(x)?.toLowerCase().includes(debouncedSearch) ?? false),
       );
     }
     return list;
-  }, [ids, hotOnly, activeCategory, activeOb, debouncedSearch, catalog, categoryOf]);
+  }, [ids, hotOnly, activeCategory, activeRarity, activeOb, debouncedSearch, catalog, categoryOf, rarityOf, nameOf]);
 
   // Search autocomplete suggestions
   const suggestions = useMemo(() => {
@@ -286,6 +305,38 @@ export default function ItemsPublicPage() {
           </div>
         )}
 
+        {/* Độ hiếm */}
+        {raritiesWithCounts.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Độ hiếm</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActiveRarity("all")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                  activeRarity === "all"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tất cả
+              </button>
+              {raritiesWithCounts.map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setActiveRarity(r.key)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                    activeRarity === r.key ? `${r.bg} ${r.text}` : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className={`size-2 rounded-full ${r.dot}`} />
+                  {r.label}
+                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{r.count.toLocaleString()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Nhóm chính: Hot / Mới ra */}
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nhóm chính</p>
@@ -352,7 +403,7 @@ export default function ItemsPublicPage() {
         )}
 
         {/* Active filter pill — easy clear */}
-        {(hotOnly || activeCategory !== "all" || activeOb !== "all" || debouncedSearch) && (
+        {(hotOnly || activeCategory !== "all" || activeRarity !== "all" || activeOb !== "all" || debouncedSearch) && (
           <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Đang lọc:</span>
             {hotOnly && (
@@ -361,6 +412,14 @@ export default function ItemsPublicPage() {
                 className="inline-flex items-center gap-1 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400 px-2 py-0.5 text-[10px] font-bold hover:opacity-70"
               >
                 🔥 Hot <X className="size-2.5" />
+              </button>
+            )}
+            {activeRarity !== "all" && (
+              <button
+                onClick={() => setActiveRarity("all")}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400 px-2 py-0.5 text-[10px] font-bold hover:opacity-70"
+              >
+                {ffRarityMeta(activeRarity).label} <X className="size-2.5" />
               </button>
             )}
             {activeCategory !== "all" && (
@@ -388,7 +447,7 @@ export default function ItemsPublicPage() {
               </button>
             )}
             <button
-              onClick={() => { setHotOnly(false); setActiveCategory("all"); setActiveOb("all"); setSearch(""); }}
+              onClick={() => { setHotOnly(false); setActiveCategory("all"); setActiveRarity("all"); setActiveOb("all"); setSearch(""); }}
               className="ml-auto text-[10px] text-muted-foreground hover:text-destructive transition-colors"
             >
               Xóa tất cả
@@ -425,7 +484,7 @@ export default function ItemsPublicPage() {
         <>
           {/* Result count */}
           <p className="text-xs text-muted-foreground px-1">
-            {debouncedSearch || hotOnly || activeCategory !== "all" || activeOb !== "all" ? (
+            {debouncedSearch || hotOnly || activeCategory !== "all" || activeRarity !== "all" || activeOb !== "all" ? (
               <>Tìm thấy <span className="font-bold text-foreground">{filtered.length.toLocaleString()}</span> icon</>
             ) : (
               <>Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} – {Math.min(currentPage * PAGE_SIZE, filtered.length)} / {filtered.length.toLocaleString()}</>
@@ -442,12 +501,13 @@ export default function ItemsPublicPage() {
             <>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
                 {slice.map((id, idx) => {
-                  const meta = catalog.get(id);
+                  const cmeta = catalog.get(id);
                   return (
                     <ItemCard
                       key={id}
                       id={id}
-                      label={meta?.label ?? null}
+                      label={cmeta?.label ?? nameOf(id)}
+                      rarity={rarityOf(id)}
                       url={buildUrl(id)}
                       onCopy={() => copyUrl(id)}
                       onOpen={() => setLightboxIdx(idx)}
@@ -500,19 +560,27 @@ export default function ItemsPublicPage() {
   );
 }
 
-function ItemCard({ id, label, url, onCopy, onOpen, copied }: {
+function ItemCard({ id, label, rarity, url, onCopy, onOpen, copied }: {
   id: string;
   label?: string | null;
+  rarity?: string | null;
   url: string;
   onCopy: () => void;
   onOpen: () => void;
   copied: boolean;
 }) {
   const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
+  const rMeta = rarity && rarity !== "NONE" ? ffRarityMeta(rarity) : null;
 
   return (
     <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-background flex items-center justify-center">
+        {rMeta && (
+          <span
+            title={rMeta.label}
+            className={`absolute left-1 top-1 z-10 size-2.5 rounded-full ${rMeta.dot} ring-2 ring-background`}
+          />
+        )}
         <Link
           href={`/items/${id}`}
           aria-label={`Xem chi tiết ${id}`}

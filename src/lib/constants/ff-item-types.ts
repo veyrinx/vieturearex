@@ -1,5 +1,5 @@
 // Nhãn tiếng Việt cho 49 thể loại item Free Fire (khớp dữ liệu chuẩn ShahGCreator).
-// Dùng cho trang /items — auto phân loại theo file public/ff-item-types.json (id → chỉ số type).
+// Dùng cho trang /items — auto phân loại + độ hiếm theo file public/ff-item-meta.json.
 
 export const FF_ITEM_TYPE_LABELS: Record<string, string> = {
   "Bundle Create": "Bộ tạo Bundle",
@@ -76,4 +76,25 @@ export function ffItemTypeStyle(type: string): { color: string; bg: string } {
   let h = 0;
   for (let i = 0; i < type.length; i++) h = (h * 31 + type.charCodeAt(i)) >>> 0;
   return PALETTE[h % PALETTE.length];
+}
+
+// ── Độ hiếm (rarity) — thứ tự thấp → cao, khớp public/ff-item-meta.json ──
+export const FF_RARITY_ORDER = [
+  "WHITE", "GREEN", "BLUE", "PURPLE", "PURPLE_PLUS", "ORANGE", "ORANGE_PLUS", "RED", "NONE",
+] as const;
+
+export const FF_RARITY_META: Record<string, { label: string; dot: string; text: string; bg: string }> = {
+  WHITE:       { label: "Thường",        dot: "bg-zinc-400",    text: "text-zinc-400",    bg: "bg-zinc-400/10" },
+  GREEN:       { label: "Không phổ biến", dot: "bg-green-500",   text: "text-green-500",   bg: "bg-green-500/10" },
+  BLUE:        { label: "Hiếm",          dot: "bg-blue-500",    text: "text-blue-500",    bg: "bg-blue-500/10" },
+  PURPLE:      { label: "Sử thi",        dot: "bg-purple-500",  text: "text-purple-500",  bg: "bg-purple-500/10" },
+  PURPLE_PLUS: { label: "Sử thi+",       dot: "bg-fuchsia-500", text: "text-fuchsia-500", bg: "bg-fuchsia-500/10" },
+  ORANGE:      { label: "Huyền thoại",   dot: "bg-orange-500",  text: "text-orange-500",  bg: "bg-orange-500/10" },
+  ORANGE_PLUS: { label: "Huyền thoại+",  dot: "bg-amber-500",   text: "text-amber-500",   bg: "bg-amber-500/10" },
+  RED:         { label: "Tối thượng",    dot: "bg-red-500",     text: "text-red-500",     bg: "bg-red-500/10" },
+  NONE:        { label: "—",             dot: "bg-transparent", text: "text-muted-foreground", bg: "bg-muted" },
+};
+
+export function ffRarityMeta(r: string) {
+  return FF_RARITY_META[r] ?? FF_RARITY_META.NONE;
 }
