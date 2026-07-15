@@ -7,6 +7,7 @@ import { AutoReload } from "@/components/common/auto-reload";
 import { AutoTranslate } from "@/components/common/auto-translate";
 import { TranslateGuard } from "@/components/common/translate-guard";
 import { AnnouncementBanner } from "@/components/common/announcement-banner";
+import { AdminLockBanner } from "@/components/common/admin-lock-banner";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { DailyCheckinTrigger } from "@/components/common/daily-checkin-trigger";
 import { CskhChat } from "@/components/community/cskh-chat";
@@ -57,6 +58,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <PageTransition>
         <main className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-6">
           <AnnouncementBanner />
+          <AdminLockBanner />
           {children}
         </main>
       </PageTransition>
