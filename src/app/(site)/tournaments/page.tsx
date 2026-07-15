@@ -103,7 +103,7 @@ export default async function TournamentsPage({
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           {isAdmin && (
             <Link
-              href="/admin/tms"
+              href="/admin/tournaments/new"
               className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-sm font-bold text-amber-400 hover:border-amber-500/60 transition-colors"
             >
               <Plus className="size-4" /> Tạo giải đấu

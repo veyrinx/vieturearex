@@ -18,13 +18,13 @@ export const siteNav: SiteNavItem[] = [
   { label: "Nhân vật", href: "/nhan-vat", icon: UserRound, aliases: ["/characters"] },
   { label: "Công cụ", href: "/cong-cu", icon: Wrench, aliases: ["/tools"] },
   { label: "Giải đấu", href: "/tournaments", icon: Trophy, aliases: ["/giai-dau"] },
-  { label: "Cộng đồng", href: "/community", icon: Users, aliases: ["/cong-dong"] },
+  { label: "Cộng đồng", href: "/cong-dong", icon: Users, aliases: ["/community"] },
 ];
 
 export const moreNav: SiteNavItem[] = [
   { label: "Về chúng tôi", href: "/about" },
-  { label: "Điều khoản", href: "/terms" },
-  { label: "Bảo mật", href: "/privacy" },
+  { label: "Điều khoản", href: "/terms-of-use" },
+  { label: "Bảo mật", href: "/privacy-policy" },
   { label: "Liên hệ", href: "/contact" },
 ];
 

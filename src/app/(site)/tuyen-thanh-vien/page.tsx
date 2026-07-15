@@ -47,7 +47,7 @@ export default async function RecruitmentPage() {
             </p>
           </div>
           <Link
-            href="/teams/create"
+            href="/tournaments/my-team"
             className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-600 transition-colors"
           >
             <Plus className="size-4" /> Tạo Team
@@ -68,7 +68,7 @@ export default async function RecruitmentPage() {
         <div className="rounded-2xl border border-dashed border-border bg-card p-16 text-center space-y-4">
           <Users className="mx-auto size-10 text-muted-foreground/40" />
           <p className="text-muted-foreground">Chưa có team nào. Hãy là người đầu tiên tạo team!</p>
-          <Link href="/teams/create" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
+          <Link href="/tournaments/my-team" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
             <Plus className="size-4" /> Tạo Team ngay
           </Link>
         </div>
