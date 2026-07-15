@@ -1,0 +1,124 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Gem, Crown, Shirt, Sparkles, Star, Users, PawPrint, Trophy } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const RANKS = [
+  { key: "bronze", label: "Đồng", pts: 2 },
+  { key: "silver", label: "Bạc", pts: 4 },
+  { key: "gold", label: "Vàng", pts: 7 },
+  { key: "plat", label: "Bạch Kim", pts: 11 },
+  { key: "diamond", label: "Kim Cương", pts: 18 },
+  { key: "heroic", label: "Cao Thủ", pts: 28 },
+  { key: "gm", label: "Đại Cao Thủ", pts: 45 },
+];
+
+type NumField = { key: string; label: string; icon: typeof Gem; weight: number; hint?: string };
+
+const FIELDS: NumField[] = [
+  { key: "level", label: "Level tài khoản", icon: Star, weight: 0.15, hint: "vd: 65" },
+  { key: "gunSkins", label: "Số skin súng", icon: Sparkles, weight: 1.5 },
+  { key: "bundles", label: "Trang phục / bộ hiếm", icon: Shirt, weight: 4 },
+  { key: "limited", label: "Vật phẩm giới hạn", icon: Crown, weight: 9, hint: "skin/bộ ngừng phát hành" },
+  { key: "characters", label: "Số nhân vật sở hữu", icon: Users, weight: 1 },
+  { key: "pets", label: "Số pet sở hữu", icon: PawPrint, weight: 1 },
+  { key: "diamonds", label: "Kim cương hiện có", icon: Gem, weight: 0.002, hint: "vd: 5000" },
+];
+
+function num(v: string) {
+  const n = parseInt(v.replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const TIERS = [
+  { min: 0, label: "Nick thường", cls: "text-zinc-400", bar: "bg-zinc-400" },
+  { min: 40, label: "Nick khá", cls: "text-emerald-500", bar: "bg-emerald-500" },
+  { min: 90, label: "Nick ngon", cls: "text-blue-500", bar: "bg-blue-500" },
+  { min: 170, label: "Nick VIP", cls: "text-violet-500", bar: "bg-violet-500" },
+  { min: 300, label: "Nick khủng", cls: "text-amber-500", bar: "bg-amber-500" },
+  { min: 500, label: "Nick huyền thoại", cls: "text-rose-500", bar: "bg-rose-500" },
+];
+
+export function AccountValuator() {
+  const [rank, setRank] = useState("diamond");
+  const [v, setV] = useState<Record<string, string>>({});
+  const set = (k: string, val: string) => setV((p) => ({ ...p, [k]: val }));
+
+  const { score, tier, breakdown, hasInput } = useMemo(() => {
+    const rankPts = RANKS.find((r) => r.key === rank)?.pts ?? 0;
+    const parts = FIELDS.map((f) => ({ label: f.label, pts: num(v[f.key] ?? "") * f.weight }));
+    const total = rankPts + parts.reduce((s, p) => s + p.pts, 0);
+    const t = [...TIERS].reverse().find((x) => total >= x.min) ?? TIERS[0];
+    const hi = parts.filter((p) => p.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
+    return {
+      score: Math.round(total),
+      tier: t,
+      breakdown: [{ label: `Rank ${RANKS.find((r) => r.key === rank)?.label}`, pts: rankPts }, ...hi],
+      hasInput: total > rankPts || Object.values(v).some((x) => num(x) > 0),
+    };
+  }, [rank, v]);
+
+  const pct = Math.min(100, (score / 600) * 100);
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rank cao nhất</label>
+        <div className="flex flex-wrap gap-1.5">
+          {RANKS.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => setRank(r.key)}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
+                rank === r.key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {FIELDS.map((f) => (
+          <div key={f.key} className="space-y-1">
+            <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <f.icon className="size-3.5" /> {f.label}
+            </label>
+            <input
+              inputMode="numeric"
+              value={v[f.key] ?? ""}
+              onChange={(e) => set(f.key, e.target.value)}
+              placeholder={f.hint ?? "0"}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-base tabular-nums outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        ))}
+      </div>
+
+      {hasInput && (
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-muted/20 p-6 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Độ khủng của nick</p>
+          <p className={cn("mt-1 font-heading text-4xl font-black tabular-nums", tier.cls)}>{score.toLocaleString()} <span className="text-lg">điểm</span></p>
+          <p className={cn("mt-1 font-heading text-lg font-black uppercase", tier.cls)}>{tier.label}</p>
+          <div className="mx-auto mt-3 h-2 max-w-xs overflow-hidden rounded-full bg-muted">
+            <div className={cn("h-full rounded-full transition-all", tier.bar)} style={{ width: `${pct}%` }} />
+          </div>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {breakdown.map((b, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground">
+                <Trophy className="size-3" /> {b.label}: <b className="text-foreground">+{Math.round(b.pts)}</b>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="text-center text-[11px] text-muted-foreground/70">
+        Chỉ là điểm vui tham khảo — <b>không phải giá bán</b>. Mua/bán tài khoản vi phạm điều khoản Garena và rất dễ bị lừa/khoá nick.
+      </p>
+    </div>
+  );
+}

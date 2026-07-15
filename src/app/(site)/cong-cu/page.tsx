@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, Sparkles, CalendarClock, Activity, Skull, type LucideIcon,
+  Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, Sparkles, CalendarClock, Activity, Skull, Gem, type LucideIcon,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 
@@ -29,6 +29,7 @@ const TOOLS: Tool[] = [
   { title: "Đếm Ngược Sự Kiện", desc: "Đồng hồ đếm ngược tới bản cập nhật OB, reset rank và sự kiện sắp diễn ra.",  href: "/dem-nguoc", icon: CalendarClock, color: "text-cyan-500 bg-cyan-500/10" },
   { title: "Trạng Thái Máy Chủ", desc: "Free Fire có đang bảo trì / sự cố không + lịch bảo trì sắp tới.",             href: "/trang-thai", icon: Activity,     color: "text-rose-500 bg-rose-500/10" },
   { title: "Máy Tính K/D",     desc: "Tính K/D, tỉ lệ thắng, hạ gục trung bình mỗi trận từ chỉ số của bạn.",          href: "/tinh-kd",   icon: Skull,       color: "text-red-500 bg-red-500/10" },
+  { title: "Ước Tính Nick",    desc: "Tính điểm độ khủng tài khoản từ rank, level, skin & đồ hiếm (cho vui).",       href: "/dinh-gia-nick", icon: Gem,     color: "text-fuchsia-500 bg-fuchsia-500/10" },
 ];
 
 export default function ToolsHubPage() {
