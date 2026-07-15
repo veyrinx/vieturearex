@@ -128,6 +128,8 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://googlevideo.com" />
         {/* Preload font chính để giảm blocking */}
         <link rel="preload" href="/fonts/GFF-Latin-Regular.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
+        {/* Font tiếng Việt (có dấu) — fallback cho GFF Latin thiếu glyph */}
+        <link rel="preload" href="/fonts/GFF-VN-ExtraBold.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         {/* Google Material Symbols (Rounded) — icon set phần public */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

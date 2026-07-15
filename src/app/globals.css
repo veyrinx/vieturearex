@@ -150,8 +150,8 @@ body, .font-body {
     --input: 214 32% 91%;
     --ring: 221 100% 50%;
     --radius: 1rem;
-    --font-heading: "GFF Latin", system-ui, -apple-system, sans-serif;
-    --font-body: "GFF Latin", system-ui, -apple-system, sans-serif;
+    --font-heading: "GFF Latin", "GFF VN", system-ui, -apple-system, sans-serif;
+    --font-body: "GFF Latin", "GFF VN", system-ui, -apple-system, sans-serif;
     --sidebar: 0 0% 98%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 221 100% 50%;
