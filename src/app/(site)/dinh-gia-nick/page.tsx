@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Gem } from "lucide-react";
+import Link from "next/link";
+import { Gem, Trophy } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -25,6 +26,12 @@ export default function DinhGiaNickPage() {
       />
 
       <AccountValuator />
+
+      <div className="flex justify-center">
+        <Link href="/bxh-nick" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
+          <Trophy className="size-4" /> Xem BXH nick khủng nhất
+        </Link>
+      </div>
     </main>
   );
 }

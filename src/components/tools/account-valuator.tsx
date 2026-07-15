@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Gem, Crown, Shirt, Sparkles, Star, Users, PawPrint, Trophy } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { Gem, Crown, Shirt, Sparkles, Star, Users, PawPrint, Trophy, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const RANKS = [
@@ -44,6 +46,9 @@ export function AccountValuator() {
   const [rank, setRank] = useState("diamond");
   const [v, setV] = useState<Record<string, string>>({});
   const set = (k: string, val: string) => setV((p) => ({ ...p, [k]: val }));
+  const [ffName, setFfName] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [posted, setPosted] = useState(false);
 
   const { score, tier, breakdown, hasInput } = useMemo(() => {
     const rankPts = RANKS.find((r) => r.key === rank)?.pts ?? 0;
@@ -60,6 +65,24 @@ export function AccountValuator() {
   }, [rank, v]);
 
   const pct = Math.min(100, (score / 600) * 100);
+
+  async function postToLeaderboard() {
+    if (ffName.trim().length < 2) return toast.error("Nhập tên Free Fire (≥2 ký tự).");
+    setPosting(true);
+    try {
+      const res = await fetch("/api/account-scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ff_name: ffName.trim(), score, tier: tier.label }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return toast.error(json.error ?? "Đăng thất bại.");
+      setPosted(true);
+      toast.success("Đã đăng lên BXH!");
+    } finally {
+      setPosting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -112,6 +135,33 @@ export function AccountValuator() {
                 <Trophy className="size-3" /> {b.label}: <b className="text-foreground">+{Math.round(b.pts)}</b>
               </span>
             ))}
+          </div>
+
+          {/* Đăng lên BXH */}
+          <div className="mt-5 border-t border-border pt-4">
+            {posted ? (
+              <p className="text-sm font-semibold text-emerald-500">
+                Đã đăng! Xem{" "}
+                <Link href="/bxh-nick" className="underline">bảng xếp hạng nick</Link>.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={ffName}
+                  onChange={(e) => setFfName(e.target.value)}
+                  maxLength={30}
+                  placeholder="Tên Free Fire của bạn..."
+                  className="h-10 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  onClick={postToLeaderboard}
+                  disabled={posting}
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+                >
+                  <Upload className="size-4" /> {posting ? "Đang đăng..." : "Đăng lên BXH"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
