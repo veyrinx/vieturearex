@@ -506,7 +506,7 @@ function ItemCard({ id, label, rarity, url, onCopy, onOpen, copied }: {
 
   return (
     <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-background flex items-center justify-center">
+      <div className={`relative aspect-square w-full overflow-hidden rounded-lg flex items-center justify-center ${rMeta ? rMeta.bg : "bg-background"}`}>
         {rMeta && (
           <span
             title={rMeta.label}
