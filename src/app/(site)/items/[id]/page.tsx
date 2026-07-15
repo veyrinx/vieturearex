@@ -15,9 +15,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const item = await getItemDetail(id);
   if (!item) return { title: "Không tìm thấy item — Arex" };
 
-  const name = item.label || getItemMetaById(item.id).name || `Item ${item.id}`;
+  const m = getItemMetaById(item.id);
+  const name = item.label || m.name || `Item ${item.id}`;
   const url = `${siteConfig.url}/items/${item.id}`;
-  const desc = `Tra cứu ${name} (ID ${item.id}) trong Free Fire — ảnh chất lượng cao, copy URL & tải xuống. Thư viện icon cộng đồng Arex.`;
+  const desc = m.description
+    ? `${name} — ${m.description.slice(0, 150)}`
+    : `Tra cứu ${name} (ID ${item.id}) trong Free Fire — ảnh chất lượng cao, copy URL & tải xuống. Thư viện icon cộng đồng Arex.`;
 
   return {
     title: `${name} — Item Free Fire | Arex`,
@@ -105,9 +108,11 @@ export default async function ItemDetailPage({ params }: Props) {
             <h1 className="font-heading text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
               {name}
             </h1>
-            {item.label && (
+            {meta.description ? (
+              <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
+            ) : item.label ? (
               <p className="text-sm text-muted-foreground">Icon Free Fire trong thư viện cộng đồng Arex.</p>
-            )}
+            ) : null}
           </div>
 
           {/* Meta rows */}
