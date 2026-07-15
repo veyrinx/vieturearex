@@ -273,121 +273,64 @@ export default function ItemsPublicPage() {
           )}
         </div>
 
-        {/* Theo loại — dropdown (49 loại, thu gọn cho đẹp) */}
-        {categoriesWithCounts.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Theo loại</p>
-            <Select value={activeCategory} onValueChange={(v) => setActiveCategory(v ?? "all")}>
-              <SelectTrigger className="h-9 w-full text-xs sm:w-72">
-                <Filter className="size-3.5 text-muted-foreground" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả loại ({ids.length.toLocaleString()})</SelectItem>
-                {categoriesWithCounts.map((cat) => (
-                  <SelectItem key={cat.key} value={cat.key}>
-                    {cat.label} ({cat.count.toLocaleString()})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        {/* Bộ lọc gọn — tất cả dropdown trên 1 hàng */}
+        {(categoriesWithCounts.length > 0 || raritiesWithCounts.length > 0 || obGroups.length > 0 || hotCount > 0) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {categoriesWithCounts.length > 0 && (
+              <Select value={activeCategory} onValueChange={(v) => setActiveCategory(v ?? "all")}>
+                <SelectTrigger className="h-9 w-full text-xs sm:w-56">
+                  <Filter className="size-3.5 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả loại ({ids.length.toLocaleString()})</SelectItem>
+                  {categoriesWithCounts.map((cat) => (
+                    <SelectItem key={cat.key} value={cat.key}>{cat.label} ({cat.count.toLocaleString()})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-        {/* Độ hiếm */}
-        {raritiesWithCounts.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Độ hiếm</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setActiveRarity("all")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                  activeRarity === "all"
-                    ? "bg-foreground text-background"
-                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Tất cả
-              </button>
-              {raritiesWithCounts.map((r) => (
-                <button
-                  key={r.key}
-                  onClick={() => setActiveRarity(r.key)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                    activeRarity === r.key ? `${r.bg} ${r.text}` : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span className={`size-2 rounded-full ${r.dot}`} />
-                  {r.label}
-                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{r.count.toLocaleString()}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+            {raritiesWithCounts.length > 0 && (
+              <Select value={activeRarity} onValueChange={(v) => setActiveRarity(v ?? "all")}>
+                <SelectTrigger className="h-9 w-full text-xs sm:w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Mọi độ hiếm</SelectItem>
+                  {raritiesWithCounts.map((r) => (
+                    <SelectItem key={r.key} value={r.key}>
+                      <span className={`mr-1.5 inline-block size-2 rounded-full align-middle ${r.dot}`} />
+                      {r.label} ({r.count.toLocaleString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-        {/* Nhóm chính: Hot / Mới ra */}
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nhóm chính</p>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              onClick={() => setHotOnly(false)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                !hotOnly
-                  ? "bg-foreground text-background"
-                  : "border border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Filter className="size-3" />
-              Tất cả
-              <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{ids.length.toLocaleString()}</span>
-            </button>
+            {obGroups.length > 0 && (
+              <Select value={activeOb} onValueChange={(v) => setActiveOb(v ?? "all")}>
+                <SelectTrigger className="h-9 w-full text-xs sm:w-36"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Mọi OB</SelectItem>
+                  {obGroups.map(({ ob, count }) => (
+                    <SelectItem key={ob} value={ob}>{ob} ({count.toLocaleString()})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             {hotCount > 0 && (
               <button
-                onClick={() => setHotOnly(true)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
+                onClick={() => setHotOnly((v) => !v)}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition-all ${
                   hotOnly
-                    ? "bg-orange-500 text-white"
-                    : "border border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
+                    ? "border-orange-500 bg-orange-500 text-white"
+                    : "border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
                 }`}
               >
                 🔥 Hot / Mới ra
                 <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{hotCount.toLocaleString()}</span>
               </button>
             )}
-          </div>
-        </div>
-
-        {/* Phiên bản OB */}
-        {obGroups.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phiên bản OB</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setActiveOb("all")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                  activeOb === "all"
-                    ? "bg-foreground text-background"
-                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Tất cả OB
-              </button>
-              {obGroups.map(({ ob, count }) => (
-                <button
-                  key={ob}
-                  onClick={() => setActiveOb(ob)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                    activeOb === ob
-                      ? "bg-primary text-primary-foreground dark:bg-amber-500 dark:text-background"
-                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span className="font-mono">{ob}</span>
-                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{count.toLocaleString()}</span>
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
