@@ -176,6 +176,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     },
     {
+      url: `${BASE}/tinh-kd`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
+    {
       url: `${BASE}/gui-bai-viet`,
       lastModified: now,
       changeFrequency: "monthly",
