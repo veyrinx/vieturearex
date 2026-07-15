@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Sparkles } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
-import { SectionHeading } from "@/components/common/section-heading";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
+import { PageHero } from "@/components/common/page-hero";
 import { NameGenerator } from "@/components/tools/name-generator";
 
 export const metadata: Metadata = {
@@ -17,12 +17,12 @@ export default function TaoTenPage() {
     <main className="container-main my-8 max-w-2xl space-y-8">
       <Breadcrumbs items={[{ name: "Tạo tên kí tự", href: "/tao-ten" }]} />
 
-      <div className="flex items-center gap-3">
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Sparkles className="size-5" />
-        </div>
-        <SectionHeading title="Tạo tên kí tự đặc biệt" eyebrow="Nickname Free Fire" align="left" />
-      </div>
+      <PageHero
+        icon={Sparkles}
+        eyebrow="Nickname Free Fire"
+        title="Tạo tên kí tự đặc biệt"
+        subtitle="Nhập tên → ra hàng loạt kiểu chữ đẹp + khung trang trí, bấm copy vào game."
+      />
 
       <NameGenerator />
     </main>

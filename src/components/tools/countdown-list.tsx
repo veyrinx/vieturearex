@@ -47,17 +47,34 @@ export function CountdownList({ items }: { items: FFCountdown[] }) {
     [items],
   );
 
+  // Sự kiện gần nhất chưa diễn ra → làm nổi
+  const nextKey = useMemo(() => {
+    if (now == null) return null;
+    const next = sorted.find((it) => new Date(it.date).getTime() > now);
+    return next ? next.label + next.date : null;
+  }, [sorted, now]);
+
   return (
     <div className="space-y-3">
       {sorted.map((it) => {
         const target = new Date(it.date).getTime();
         const done = now != null && now >= target;
+        const isNext = nextKey === it.label + it.date;
         const p = parts(now != null ? target - now : 0);
         return (
-          <div key={it.label + it.date} className="rounded-2xl border border-border bg-card p-4">
+          <div
+            key={it.label + it.date}
+            className={cn(
+              "rounded-2xl border bg-card p-4 transition-colors",
+              isNext ? "border-primary/60 shadow-[0_0_24px_-6px] shadow-primary/30" : "border-border",
+            )}
+          >
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <CalendarClock className="size-4 text-primary" />
               <h2 className="font-heading text-base font-bold text-foreground">{it.label}</h2>
+              {isNext && !done && (
+                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary">Gần nhất</span>
+              )}
               {it.tag && (
                 <span className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase", TAG_CLS[it.tag] ?? "bg-muted text-muted-foreground")}>
                   {it.tag}
