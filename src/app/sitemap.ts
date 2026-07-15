@@ -158,6 +158,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.50,
     },
     {
+      url: `${BASE}/tao-ten`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.60,
+    },
+    {
+      url: `${BASE}/dem-nguoc`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.55,
+    },
+    {
       url: `${BASE}/gui-bai-viet`,
       lastModified: now,
       changeFrequency: "monthly",

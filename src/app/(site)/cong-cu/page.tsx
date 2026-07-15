@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, type LucideIcon,
+  Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, Sparkles, CalendarClock, type LucideIcon,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 
@@ -25,6 +25,8 @@ const TOOLS: Tool[] = [
   { title: "Tier List Nhân Vật", desc: "Xếp hạng nhân vật S/A/B/C/D theo meta cộng đồng, lọc theo vai trò.",       href: "/tier-list", icon: ListOrdered, color: "text-amber-500 bg-amber-500/10" },
   { title: "Combo Kỹ Năng",   desc: "Ghép 1 kỹ năng chủ động + 3 bị động thành combo tối ưu cho lối chơi.",       href: "/combo",     icon: Layers,      color: "text-violet-500 bg-violet-500/10" },
   { title: "Thư Viện Icon",   desc: "Tra cứu hơn 33.000 icon Free Fire (vũ khí, nhân vật, skin...), copy & tải.",  href: "/items",     icon: ImageIcon,   color: "text-emerald-500 bg-emerald-500/10" },
+  { title: "Tạo Tên Kí Tự",   desc: "Tạo nickname kí tự đặc biệt + khung trang trí phong cách, bấm copy vào game.", href: "/tao-ten",   icon: Sparkles,    color: "text-pink-500 bg-pink-500/10" },
+  { title: "Đếm Ngược Sự Kiện", desc: "Đồng hồ đếm ngược tới bản cập nhật OB, reset rank và sự kiện sắp diễn ra.",  href: "/dem-nguoc", icon: CalendarClock, color: "text-cyan-500 bg-cyan-500/10" },
 ];
 
 export default function ToolsHubPage() {
