@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, Sparkles, CalendarClock, type LucideIcon,
+  Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, Sparkles, CalendarClock, Activity, type LucideIcon,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 
@@ -27,6 +27,7 @@ const TOOLS: Tool[] = [
   { title: "Thư Viện Icon",   desc: "Tra cứu hơn 33.000 icon Free Fire (vũ khí, nhân vật, skin...), copy & tải.",  href: "/items",     icon: ImageIcon,   color: "text-emerald-500 bg-emerald-500/10" },
   { title: "Tạo Tên Kí Tự",   desc: "Tạo nickname kí tự đặc biệt + khung trang trí phong cách, bấm copy vào game.", href: "/tao-ten",   icon: Sparkles,    color: "text-pink-500 bg-pink-500/10" },
   { title: "Đếm Ngược Sự Kiện", desc: "Đồng hồ đếm ngược tới bản cập nhật OB, reset rank và sự kiện sắp diễn ra.",  href: "/dem-nguoc", icon: CalendarClock, color: "text-cyan-500 bg-cyan-500/10" },
+  { title: "Trạng Thái Máy Chủ", desc: "Free Fire có đang bảo trì / sự cố không + lịch bảo trì sắp tới.",             href: "/trang-thai", icon: Activity,     color: "text-rose-500 bg-rose-500/10" },
 ];
 
 export default function ToolsHubPage() {
