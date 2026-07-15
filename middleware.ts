@@ -204,13 +204,6 @@ export async function middleware(request: NextRequest) {
     return notFound();
   }
 
-  // ── Khóa theo từng chức năng ("đang cập nhật") — không phải bảo trì cả web ──
-  if (isPageRequest && !isAdminPath && pathname !== "/dang-cap-nhat" && findFeatureLock(pathname)) {
-    const url = new URL("/dang-cap-nhat", request.url);
-    url.searchParams.set("from", pathname);
-    return NextResponse.redirect(url);
-  }
-
   // ── Maintenance mode (authenticated users only) ───────────────────────
   if (isPageRequest && !isAdminPath) {
     const now = Date.now();
@@ -241,6 +234,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const isAdmin = !!(profile?.role && (ADMIN_ROLES as readonly string[]).includes(profile.role));
+
+  // ── Khóa theo từng chức năng ("đang cập nhật") — KHÔNG phải bảo trì cả web ──
+  // User thường → /dang-cap-nhat. ADMIN được vào xem trước (để kiểm tra).
+  const featureLock =
+    isPageRequest && !isAdminPath && pathname !== "/dang-cap-nhat"
+      ? findFeatureLock(pathname)
+      : null;
+  if (featureLock && !isAdmin) {
+    const url = new URL("/dang-cap-nhat", request.url);
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
+
   // ── Admin path access control ─────────────────────────────────────────
   if (isAdminPath) {
     if (error || !profile || !profile.role) {
@@ -258,8 +265,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Public site: admin-role users → redirect to /admin ───────────────
-  // Prevents admins from appearing on the public site (protects identity)
-  if (profile?.role && (ADMIN_ROLES as readonly string[]).includes(profile.role)) {
+  // Prevents admins from appearing on the public site (protects identity).
+  // Ngoại lệ: đang xem trước 1 chức năng bị khóa thì cho admin vào xem.
+  if (isAdmin) {
+    if (featureLock) return response;
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
