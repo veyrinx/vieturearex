@@ -182,6 +182,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     },
     {
+      url: `${BASE}/dang-hot`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.70,
+    },
+    {
+      url: `${BASE}/nap-an-toan`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
+    {
+      url: `${BASE}/nhan-vat-mien-phi`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.60,
+    },
+    {
+      url: `${BASE}/lich-noi-dung`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.60,
+    },
+    {
+      url: `${BASE}/dang-ky-tin`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.50,
+    },
+    {
       url: `${BASE}/cong-cu`,
       lastModified: now,
       changeFrequency: "weekly",
