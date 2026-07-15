@@ -17,13 +17,13 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-type Row = { ff_name: string; score: number; tier: string | null };
+type Row = { ff_id: string | null; display_name: string | null; avatar_url: string | null; score: number; tier: string | null };
 
 async function getTop(): Promise<Row[]> {
   const db = createAdminSupabaseClient();
   if (!db) return [];
   const { data } = await untypedFrom(db, "account_scores")
-    .select("ff_name, score, tier")
+    .select("ff_id, display_name, avatar_url, score, tier")
     .order("score", { ascending: false })
     .limit(100) as { data: Row[] | null };
   return data ?? [];
@@ -57,18 +57,31 @@ export default async function BxhNickPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((r, i) => (
-            <div key={r.ff_name} className={cn("flex items-center gap-3 rounded-2xl border bg-card p-3", i < 3 ? "border-primary/40" : "border-border")}>
-              <span className={cn("flex w-8 shrink-0 justify-center font-heading text-lg font-black", i < 3 ? MEDAL[i] : "text-muted-foreground")}>
-                {i < 3 ? <Crown className="size-5" /> : i + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-sm font-bold uppercase tracking-wide text-foreground">{r.ff_name}</p>
-                {r.tier && <p className="text-[11px] text-muted-foreground">{r.tier}</p>}
+          {rows.map((r, i) => {
+            const name = r.display_name || (r.ff_id ? `FF ${r.ff_id}` : "Người chơi");
+            return (
+              <div key={i} className={cn("flex items-center gap-3 rounded-2xl border bg-card p-3", i < 3 ? "border-primary/40" : "border-border")}>
+                <span className={cn("flex w-8 shrink-0 justify-center font-heading text-lg font-black", i < 3 ? MEDAL[i] : "text-muted-foreground")}>
+                  {i < 3 ? <Crown className="size-5" /> : i + 1}
+                </span>
+                <div className="size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted/40">
+                  {r.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.avatar_url} alt={name} className="size-full object-cover" />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-sm font-black text-muted-foreground">{name.slice(0, 1).toUpperCase()}</div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-heading text-sm font-bold uppercase tracking-wide text-foreground">{name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {r.ff_id ? `ID: ${r.ff_id}` : ""}{r.ff_id && r.tier ? " · " : ""}{r.tier ?? ""}
+                  </p>
+                </div>
+                <span className="shrink-0 font-heading text-lg font-black tabular-nums text-primary">{r.score.toLocaleString()}</span>
               </div>
-              <span className="shrink-0 font-heading text-lg font-black tabular-nums text-primary">{r.score.toLocaleString()}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
