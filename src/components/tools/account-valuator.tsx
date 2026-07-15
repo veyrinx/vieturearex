@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Gem, Crown, Shirt, Sparkles, Star, Users, PawPrint, Trophy, Upload, LogIn } from "lucide-react";
+import { Gem, Crown, Shirt, Sparkles, Star, Users, PawPrint, Trophy, Upload, LogIn, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -50,6 +50,30 @@ export function AccountValuator() {
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [fetching, setFetching] = useState(false);
+
+  async function fetchFromFfId() {
+    setFetching(true);
+    try {
+      const res = await fetch("/api/ff-info");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (json.needFfId) {
+          toast.error(json.error, { action: { label: "Mở hồ sơ", onClick: () => { window.location.href = "/profile"; } } });
+        } else {
+          toast.error(json.error ?? "Không lấy được dữ liệu.");
+        }
+        return;
+      }
+      if (json.level) set("level", String(json.level));
+      if (json.rankKey && RANKS.some((r) => r.key === json.rankKey)) setRank(json.rankKey);
+      toast.success(
+        `Đã lấy dữ liệu${json.nickname ? ` của ${json.nickname}` : ""}. Skin/đồ hiếm hãy nhập tay giúp mình.`,
+      );
+    } finally {
+      setFetching(false);
+    }
+  }
 
   useEffect(() => {
     const sb = createClient();
@@ -99,6 +123,23 @@ export function AccountValuator() {
 
   return (
     <div className="space-y-6">
+      {loggedIn && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">Tự động lấy từ ID Free Fire</p>
+            <p className="text-[11px] text-muted-foreground">Điền sẵn level &amp; rank từ ID trong hồ sơ. Skin/đồ hiếm vẫn nhập tay (game không cho lấy).</p>
+          </div>
+          <button
+            onClick={fetchFromFfId}
+            disabled={fetching}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {fetching ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {fetching ? "Đang lấy..." : "Lấy dữ liệu"}
+          </button>
+        </div>
+      )}
+
       <div className="space-y-1">
         <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rank cao nhất</label>
         <div className="flex flex-wrap gap-1.5">
