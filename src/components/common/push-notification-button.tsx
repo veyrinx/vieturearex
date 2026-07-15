@@ -50,7 +50,15 @@ export function PushNotificationButton({ className }: { className?: string }) {
       const reg = await navigator.serviceWorker.ready;
       if (subscribed) {
         const sub = await reg.pushManager.getSubscription();
-        await sub?.unsubscribe();
+        if (sub) {
+          // Báo server xoá sub trước khi huỷ ở client (tránh giữ sub chết)
+          await fetch("/api/push/subscribe", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sub),
+          }).catch(() => null);
+          await sub.unsubscribe();
+        }
         setSubscribed(false);
       } else {
         const permission = await Notification.requestPermission();
