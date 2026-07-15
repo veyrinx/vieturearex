@@ -82,7 +82,14 @@ export function AccountValuator() {
         body: JSON.stringify({ score, tier: tier.label }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) return toast.error(json.error ?? "Đăng thất bại.");
+      if (!res.ok) {
+        if (json.needFfId) {
+          toast.error(json.error, { action: { label: "Mở hồ sơ", onClick: () => { window.location.href = "/profile"; } } });
+        } else {
+          toast.error(json.error ?? "Đăng thất bại.");
+        }
+        return;
+      }
       setPosted(true);
       toast.success("Đã đăng lên BXH!");
     } finally {

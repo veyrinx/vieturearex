@@ -33,10 +33,18 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .maybeSingle() as { data: { ff_id: string | null; display_name: string | null; avatar_url: string | null } | null };
 
+  const ffId = profile?.ff_id?.trim();
+  if (!ffId) {
+    return NextResponse.json(
+      { error: "Hãy liên kết ID Free Fire trong hồ sơ trước khi đăng BXH.", needFfId: true },
+      { status: 400 },
+    );
+  }
+
   const { error } = await untypedFrom(db, "account_scores").upsert(
     {
       user_id: user.id,
-      ff_id: profile?.ff_id ?? null,
+      ff_id: ffId,
       display_name: profile?.display_name ?? null,
       avatar_url: profile?.avatar_url ?? null,
       score: parsed.data.score,
