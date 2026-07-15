@@ -84,15 +84,23 @@ export default async function ItemDetailPage({ params }: Props) {
         <div className="flex flex-col gap-5">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              {cat && (
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${cat.bg} ${cat.color}`}>
+              {cat && typeName && (
+                <Link
+                  href={`/items?loai=${encodeURIComponent(typeName)}`}
+                  title={`Xem tất cả ${cat.label}`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-opacity hover:opacity-80 ${cat.bg} ${cat.color}`}
+                >
                   <Tag className="size-3" /> {cat.label}
-                </span>
+                </Link>
               )}
-              {rarity && (
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${rarity.bg} ${rarity.text}`}>
+              {rarity && meta.rarity && (
+                <Link
+                  href={`/items?rarity=${encodeURIComponent(meta.rarity)}`}
+                  title={`Xem tất cả ${rarity.label}`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-opacity hover:opacity-80 ${rarity.bg} ${rarity.text}`}
+                >
                   <span className={`size-2 rounded-full ${rarity.dot}`} /> {rarity.label}
-                </span>
+                </Link>
               )}
               {item.is_hot && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-600 dark:text-orange-400">

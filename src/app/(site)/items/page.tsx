@@ -78,6 +78,15 @@ export default function ItemsPublicPage() {
     [meta],
   );
 
+  // Deep-link: đọc ?loai= / ?rarity= lúc mở trang → set sẵn bộ lọc.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const loai = sp.get("loai");
+    const rar = sp.get("rarity");
+    if (loai) setActiveCategory(loai);
+    if (rar) setActiveRarity(rar);
+  }, []);
+
   // Đếm theo thể loại (49 loại) — tính trên toàn bộ icon
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
