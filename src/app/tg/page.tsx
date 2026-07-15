@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Newspaper, CalendarDays, Trophy, Flame, Radio, BarChart2 } from "lucide-react";
+import {
+  Newspaper, CalendarDays, Trophy, Flame, Radio, BarChart2,
+  Medal, Brain, User, ChevronRight,
+} from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { NotificationButton } from "./_components/notification-button";
+import { haptic } from "./_lib/tg";
 
 type TgUser = {
   first_name: string;
@@ -13,42 +17,15 @@ type TgUser = {
   photo_url?: string;
 };
 
-const QUICK_LINKS = [
-  {
-    href: "/tg/tin-tuc",
-    icon: Newspaper,
-    label: "Tin tức",
-    desc: "Cập nhật mới nhất",
-    color: "#3b82f6",
-  },
-  {
-    href: "/tg/su-kien",
-    icon: CalendarDays,
-    label: "Sự kiện",
-    desc: "Sự kiện in-game",
-    color: "#10b981",
-  },
-  {
-    href: "/tg/giai-dau",
-    icon: Trophy,
-    label: "Giải đấu",
-    desc: "Bracket & kết quả",
-    color: "#f59e0b",
-  },
-  {
-    href: "/tg/stream",
-    icon: Radio,
-    label: "Stream",
-    desc: "Livestream & VOD",
-    color: "#ef4444",
-  },
-  {
-    href: "/tg/poll",
-    icon: BarChart2,
-    label: "Bình chọn",
-    desc: "Poll cộng đồng",
-    color: "#8b5cf6",
-  },
+const LINKS = [
+  { href: "/tg/tin-tuc",    icon: Newspaper,    label: "Tin tức",   desc: "Mới nhất",     color: "#3b82f6" },
+  { href: "/tg/su-kien",    icon: CalendarDays, label: "Sự kiện",   desc: "In-game",      color: "#10b981" },
+  { href: "/tg/giai-dau",   icon: Trophy,       label: "Giải đấu",  desc: "Bracket",      color: "#f59e0b" },
+  { href: "/tg/leaderboard",icon: Medal,        label: "BXH",       desc: "Xếp hạng",     color: "#eab308" },
+  { href: "/tg/stream",     icon: Radio,        label: "Stream",    desc: "Live & VOD",   color: "#ef4444" },
+  { href: "/tg/poll",       icon: BarChart2,    label: "Bình chọn", desc: "Poll",         color: "#8b5cf6" },
+  { href: "/tg/quiz",       icon: Brain,        label: "Quiz",      desc: "Đố vui",       color: "#ec4899" },
+  { href: "/tg/profile",    icon: User,         label: "Hồ sơ",     desc: "Của tôi",      color: "#06b6d4" },
 ];
 
 export default function TgHomePage() {
@@ -56,70 +33,64 @@ export default function TgHomePage() {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      setUser(tg.initDataUnsafe.user);
-    }
+    if (tg?.initDataUnsafe?.user) setUser(tg.initDataUnsafe.user);
   }, []);
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* Header */}
+      {/* Hero header */}
       <div
-        className="rounded-2xl p-4 flex items-center gap-3"
-        style={{ backgroundColor: "var(--tg-theme-secondary-bg-color, #111)" }}
+        className="relative overflow-hidden rounded-3xl p-5"
+        style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%)" }}
       >
-        {user?.photo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.photo_url}
-            alt="avatar"
-            className="w-12 h-12 rounded-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold"
-            style={{ backgroundColor: "var(--tg-theme-button-color, #f97316)" }}
-          >
-            {user ? user.first_name[0].toUpperCase() : "A"}
+        <Flame
+          size={130}
+          className="pointer-events-none absolute -right-6 -top-6 opacity-15"
+          style={{ color: "#fff" }}
+        />
+        <div className="relative flex items-center gap-3">
+          {user?.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.photo_url}
+              alt="avatar"
+              className="h-14 w-14 rounded-full border-2 border-white/40 object-cover"
+            />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/20 text-2xl font-black text-white">
+              {user ? user.first_name[0].toUpperCase() : "A"}
+            </div>
+          )}
+          <div className="min-w-0 flex-1 text-white">
+            <p className="truncate text-lg font-black leading-tight">
+              {user ? `Chào ${user.first_name}!` : "Chào mừng!"}
+            </p>
+            <p className="truncate text-xs font-medium text-white/80">
+              Cộng đồng Free Fire · Arex
+            </p>
           </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">
-            {user
-              ? `Xin chào, ${user.first_name}${user.last_name ? " " + user.last_name : ""}!`
-              : "Xin chào!"}
-          </p>
-          <p
-            className="text-xs truncate"
-            style={{ color: "var(--tg-theme-hint-color, #888)" }}
-          >
-            Cộng đồng Free Fire – Arex
-          </p>
         </div>
-        <Flame size={28} className="shrink-0" style={{ color: "#f97316" }} />
       </div>
 
-      {/* Quick links */}
+      {/* Feature grid */}
       <div className="grid grid-cols-2 gap-3">
-        {QUICK_LINKS.map(({ href, icon: Icon, label, desc, color }, idx) => (
+        {LINKS.map(({ href, icon: Icon, label, desc, color }) => (
           <Link
             key={href}
             href={href}
-            className={`rounded-2xl p-3 flex flex-col items-center gap-2 text-center active:opacity-70 transition-opacity${idx === QUICK_LINKS.length - 1 && QUICK_LINKS.length % 2 !== 0 ? " col-span-2 flex-row justify-center gap-4" : ""}`}
-            style={{ backgroundColor: "var(--tg-theme-secondary-bg-color, #111)" }}
+            onClick={() => haptic("light")}
+            className="flex items-center gap-3 rounded-2xl p-3 transition-transform active:scale-95"
+            style={{ backgroundColor: "var(--tg-theme-secondary-bg-color, #1c1c1f)" }}
           >
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ backgroundColor: `${color}22` }}
             >
-              <Icon size={20} style={{ color }} />
+              <Icon size={22} style={{ color }} />
             </div>
-            <div>
-              <p className="text-xs font-semibold">{label}</p>
-              <p
-                className="text-[10px]"
-                style={{ color: "var(--tg-theme-hint-color, #888)" }}
-              >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold">{label}</p>
+              <p className="truncate text-[11px]" style={{ color: "var(--tg-theme-hint-color, #8b8b8b)" }}>
                 {desc}
               </p>
             </div>
@@ -130,19 +101,23 @@ export default function TgHomePage() {
       {/* Notification opt-in */}
       <NotificationButton />
 
-      {/* Open website */}
+      {/* Open full website */}
       <a
         href={siteConfig.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-2xl p-4 flex items-center justify-between active:opacity-70 transition-opacity"
-        style={{ backgroundColor: "var(--tg-theme-button-color, #f97316)", color: "var(--tg-theme-button-text-color, #fff)" }}
+        onClick={() => haptic("medium")}
+        className="flex items-center justify-between rounded-2xl p-4 transition-transform active:scale-[0.98]"
+        style={{
+          backgroundColor: "var(--tg-theme-button-color, #f97316)",
+          color: "var(--tg-theme-button-text-color, #fff)",
+        }}
       >
-        <div>
-          <p className="font-bold text-sm">Mở trang web đầy đủ</p>
-          <p className="text-xs opacity-80">arexnetwork.site</p>
+        <div className="min-w-0">
+          <p className="text-sm font-black">Mở trang web đầy đủ</p>
+          <p className="truncate text-xs opacity-80">arexnetwork.site</p>
         </div>
-        <span className="text-xl">→</span>
+        <ChevronRight size={22} className="shrink-0" />
       </a>
     </div>
   );

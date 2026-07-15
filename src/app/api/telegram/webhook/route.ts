@@ -72,11 +72,51 @@ async function handleBotCommand(
     await sendTelegramMessageWithKeyboard(
       token,
       chatId,
-      `👋 Xin chào <b>${e(firstName)}</b>!\n\nChào mừng bạn đến với <b>Arex</b> – cổng thông tin cộng đồng Free Fire hàng đầu.\n\n📰 Tin tức mới nhất\n📅 Sự kiện in-game\n🏆 Giải đấu & bracket\n\nNhấn nút bên dưới để mở Mini App:`,
+      `👋 Xin chào <b>${e(firstName)}</b>!\n\nChào mừng đến với <b>Arex</b> – cổng thông tin cộng đồng Free Fire.\n\n📰 Tin tức &amp; sự kiện in-game\n🏆 Giải đấu, BXH &amp; bình chọn\n🧠 Quiz đố vui nhận thưởng\n\nChọn nút bên dưới để bắt đầu:`,
       {
         inline_keyboard: [
           [{ text: "🎮 Mở Arex Mini App", web_app: { url: MINI_APP_URL } }],
+          [
+            { text: "🏆 Giải đấu", web_app: { url: `${MINI_APP_URL}/giai-dau` } },
+            { text: "🏅 BXH", web_app: { url: `${MINI_APP_URL}/leaderboard` } },
+            { text: "🧠 Quiz", web_app: { url: `${MINI_APP_URL}/quiz` } },
+          ],
           [{ text: "🌐 Mở trang web", url: siteConfig.url }],
+        ],
+      },
+    );
+    return true;
+  }
+
+  if (base === "/bxh" || base === "/leaderboard") {
+    await sendTelegramMessageWithKeyboard(
+      token,
+      chatId,
+      `🏅 <b>Bảng xếp hạng cộng đồng</b>\n\nXem thứ hạng người chơi &amp; nick khủng ngay trong Mini App:`,
+      { inline_keyboard: [[{ text: "🏅 Mở BXH", web_app: { url: `${MINI_APP_URL}/leaderboard` } }]] },
+    );
+    return true;
+  }
+
+  if (base === "/quiz") {
+    await sendTelegramMessageWithKeyboard(
+      token,
+      chatId,
+      `🧠 <b>Quiz Free Fire</b>\n\nTrả lời câu đố, kiểm tra kiến thức &amp; leo hạng:`,
+      { inline_keyboard: [[{ text: "🧠 Chơi Quiz", web_app: { url: `${MINI_APP_URL}/quiz` } }]] },
+    );
+    return true;
+  }
+
+  if (base === "/giaidau" || base === "/tournaments") {
+    await sendTelegramMessageWithKeyboard(
+      token,
+      chatId,
+      `🏆 <b>Giải đấu Free Fire</b>\n\nTheo dõi bracket, lịch thi đấu &amp; kết quả:`,
+      {
+        inline_keyboard: [
+          [{ text: "🏆 Mở giải đấu", web_app: { url: `${MINI_APP_URL}/giai-dau` } }],
+          [{ text: "🌐 Xem trên web", url: `${siteConfig.url}/tournaments` }],
         ],
       },
     );
@@ -120,7 +160,7 @@ async function handleBotCommand(
     await sendTelegramMessage(
       token,
       chatId,
-      `🤖 <b>Arex Bot – Danh sách lệnh</b>\n\n/start – Mở Mini App\n/news – Tin tức mới nhất\n/events – Sự kiện đang diễn ra\n/help – Danh sách lệnh\n\n<a href="${MINI_APP_URL}">🎮 Mở Mini App</a>  ·  <a href="${siteConfig.url}">🌐 Trang web</a>`,
+      `🤖 <b>Arex Bot – Danh sách lệnh</b>\n\n/start – Mở Mini App\n/news – Tin tức mới nhất\n/events – Sự kiện đang diễn ra\n/giaidau – Giải đấu &amp; bracket\n/bxh – Bảng xếp hạng\n/quiz – Quiz đố vui\n/help – Danh sách lệnh\n\n<a href="${MINI_APP_URL}">🎮 Mở Mini App</a>  ·  <a href="${siteConfig.url}">🌐 Trang web</a>`,
     );
     return true;
   }

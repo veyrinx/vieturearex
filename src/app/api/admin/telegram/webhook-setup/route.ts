@@ -49,6 +49,35 @@ export async function POST(request: NextRequest) {
   }
 
   const data = (await res.json()) as { ok: boolean; description?: string };
+
+  // Khi bật webhook: đăng ký thêm menu lệnh cố định + nút Menu mở Mini App (best-effort).
+  if (action === "set" && data.ok) {
+    const miniAppUrl = `${siteUrl}/tg`;
+    const api = (method: string, payload: Record<string, unknown>) =>
+      fetch(`https://api.telegram.org/bot${token}/${method}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => null);
+
+    await Promise.all([
+      api("setMyCommands", {
+        commands: [
+          { command: "start", description: "Mở Arex Mini App" },
+          { command: "news", description: "Tin tức mới nhất" },
+          { command: "events", description: "Sự kiện đang diễn ra" },
+          { command: "giaidau", description: "Giải đấu & bracket" },
+          { command: "bxh", description: "Bảng xếp hạng" },
+          { command: "quiz", description: "Quiz đố vui" },
+          { command: "help", description: "Danh sách lệnh" },
+        ],
+      }),
+      api("setChatMenuButton", {
+        menu_button: { type: "web_app", text: "Mini App", web_app: { url: miniAppUrl } },
+      }),
+    ]);
+  }
+
   return NextResponse.json({ ok: data.ok, action, webhook_url: action === "set" ? webhookUrl : null });
 }
 
