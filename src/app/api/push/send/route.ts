@@ -2,9 +2,8 @@ import type { PushSubscription } from "web-push";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
-import { getSettings } from "@/lib/data/content-service";
-
-const PUSH_SUBS_KEY = "push.subscriptions";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
 
 const sendSchema = z.object({
   title: z.string().min(1),
@@ -12,12 +11,7 @@ const sendSchema = z.object({
   url: z.string().optional().default("/"),
 });
 
-async function getStoredSubs(): Promise<string[]> {
-  const settings = await getSettings();
-  const raw = settings.find((s) => s.key === PUSH_SUBS_KEY)?.value;
-  if (!raw) return [];
-  try { return JSON.parse(raw) as string[]; } catch { return []; }
-}
+type SubRow = { endpoint: string; subscription: PushSubscription };
 
 export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "push-send", limit: 10, windowMs: 60_000 });
@@ -38,8 +32,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "VAPID keys chưa được cấu hình." }, { status: 500 });
   }
 
-  const subs = await getStoredSubs();
-  if (subs.length === 0) return NextResponse.json({ sent: 0, message: "Không có subscriber nào." });
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+
+  const { data } = await untypedFrom(db, "push_subscriptions")
+    .select("endpoint, subscription")
+    .limit(10000) as { data: SubRow[] | null };
+
+  const subs = data ?? [];
+  if (subs.length === 0) return NextResponse.json({ sent: 0, total: 0, message: "Không có subscriber nào." });
 
   const webpush = await import("web-push");
   webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
@@ -52,17 +53,24 @@ export async function POST(request: NextRequest) {
   });
 
   let sent = 0;
+  const expired: string[] = [];
   await Promise.allSettled(
-    subs.map(async (subStr) => {
+    subs.map(async (row) => {
       try {
-        const sub = JSON.parse(subStr) as PushSubscription;
-        await webpush.sendNotification(sub, notification);
+        await webpush.sendNotification(row.subscription, notification);
         sent++;
-      } catch {
-        // subscription expired - bỏ qua
+      } catch (err) {
+        // Sub hết hạn / không còn hợp lệ → đánh dấu để xoá
+        const code = (err as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) expired.push(row.endpoint);
       }
     })
   );
 
-  return NextResponse.json({ sent, total: subs.length });
+  // Dọn sub chết
+  if (expired.length > 0) {
+    await untypedFrom(db, "push_subscriptions").delete().in("endpoint", expired);
+  }
+
+  return NextResponse.json({ sent, total: subs.length, cleaned: expired.length });
 }

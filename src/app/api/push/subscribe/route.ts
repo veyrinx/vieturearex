@@ -1,42 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
-import { updateSetting, getSettings } from "@/lib/data/content-service";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
 
-const PUSH_SUBS_KEY = "push.subscriptions";
+type SubBody = { endpoint?: string } & Record<string, unknown>;
 
-async function getStoredSubs(): Promise<string[]> {
-  const settings = await getSettings();
-  const raw = settings.find((s) => s.key === PUSH_SUBS_KEY)?.value;
-  if (!raw) return [];
-  try { return JSON.parse(raw) as string[]; } catch { return []; }
-}
-
+// POST — lưu / cập nhật 1 subscription (theo endpoint)
 export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "push-subscribe", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
 
-  const sub = await request.json().catch(() => null);
+  const sub = (await request.json().catch(() => null)) as SubBody | null;
   if (!sub?.endpoint) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
 
-  const subStr = JSON.stringify(sub);
-  const current = await getStoredSubs();
-  if (!current.includes(subStr)) {
-    await updateSetting(PUSH_SUBS_KEY, JSON.stringify([...current, subStr]));
-  }
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+
+  const { error } = await untypedFrom(db, "push_subscriptions")
+    .upsert({ endpoint: sub.endpoint, subscription: sub } as never, { onConflict: "endpoint" });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
 
+// DELETE — gỡ subscription theo endpoint
 export async function DELETE(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "push-subscribe", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
 
-  const sub = await request.json().catch(() => null);
+  const sub = (await request.json().catch(() => null)) as SubBody | null;
   if (!sub?.endpoint) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
 
-  const subStr = JSON.stringify(sub);
-  const current = await getStoredSubs();
-  await updateSetting(PUSH_SUBS_KEY, JSON.stringify(current.filter((s) => s !== subStr)));
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
+  await untypedFrom(db, "push_subscriptions").delete().eq("endpoint", sub.endpoint);
   return NextResponse.json({ ok: true });
 }

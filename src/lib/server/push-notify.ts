@@ -1,9 +1,11 @@
 import "server-only";
 import type { PushSubscription } from "web-push";
-import { getSettings } from "@/lib/data/content-service";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { untypedFrom } from "@/lib/supabase/untyped";
 
-const PUSH_SUBS_KEY = "push.subscriptions";
+type SubRow = { endpoint: string; subscription: PushSubscription };
 
+/** Gửi web push tới toàn bộ subscriber (đọc từ bảng push_subscriptions). */
 export async function sendPushNotification(title: string, body: string, url = "/") {
   const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
@@ -11,12 +13,14 @@ export async function sendPushNotification(title: string, body: string, url = "/
 
   if (!vapidPublic || !vapidPrivate) return;
 
-  const settings = await getSettings();
-  const raw = settings.find((s) => s.key === PUSH_SUBS_KEY)?.value;
-  if (!raw) return;
+  const db = createAdminSupabaseClient();
+  if (!db) return;
 
-  let subs: string[] = [];
-  try { subs = JSON.parse(raw) as string[]; } catch { return; }
+  const { data } = await untypedFrom(db, "push_subscriptions")
+    .select("endpoint, subscription")
+    .limit(10000) as { data: SubRow[] | null };
+
+  const subs = data ?? [];
   if (subs.length === 0) return;
 
   const webpush = await import("web-push");
@@ -29,12 +33,19 @@ export async function sendPushNotification(title: string, body: string, url = "/
     icon: "https://ik.imagekit.io/oyvgbkwyt/SGM%20NETWORK/29032026/b21232026.png?updatedAt=1774797861035",
   });
 
+  const expired: string[] = [];
   await Promise.allSettled(
-    subs.map(async (subStr) => {
+    subs.map(async (row) => {
       try {
-        const sub = JSON.parse(subStr) as PushSubscription;
-        await webpush.sendNotification(sub, notification);
-      } catch { /* expired subscription */ }
+        await webpush.sendNotification(row.subscription, notification);
+      } catch (err) {
+        const code = (err as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) expired.push(row.endpoint);
+      }
     })
   );
+
+  if (expired.length > 0) {
+    await untypedFrom(db, "push_subscriptions").delete().in("endpoint", expired);
+  }
 }
