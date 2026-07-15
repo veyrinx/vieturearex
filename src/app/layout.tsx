@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/constants/site";
@@ -118,6 +119,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const activeSite = await getSiteConfig();
+  const country = (await headers()).get("x-vercel-ip-country");
 
   return (
     <html lang="vi" suppressHydrationWarning>
@@ -211,7 +213,7 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
       <body className={cn("font-body min-h-screen bg-background text-foreground antialiased")}>
         <AppProviders>{children}</AppProviders>
         <ConsoleBanner />
-        <CookieConsent />
+        <CookieConsent country={country} />
         <PageViewTracker />
         <Analytics />
         <SpeedInsights />

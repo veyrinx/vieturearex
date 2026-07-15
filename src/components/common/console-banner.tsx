@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect } from "react";
 
 /**
@@ -25,20 +24,20 @@ export function ConsoleBanner() {
 
     const mono = "font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;";
     const s = {
-      logo: `color:#22d3ee;font-weight:bold;font-size:13px;line-height:1.15;text-shadow:0 0 8px rgba(34,211,238,.45);${mono}`,
-      sub: `color:#38bdf8;font-weight:bold;font-size:12px;letter-spacing:6px;${mono}`,
-      brand: `color:#e2e8f0;font-size:13px;font-weight:600;${mono}`,
-      tag: `color:#64748b;font-size:12px;${mono}`,
-      rule: `color:#1e293b;${mono}`,
-      ok: `color:#22c55e;font-weight:bold;${mono}`,
-      key: `color:#94a3b8;${mono}`,
-      val: `color:#e2e8f0;${mono}`,
-      prompt: `color:#475569;${mono}`,
-      stop: "color:#fff;background:#dc2626;font-size:22px;font-weight:900;padding:6px 16px;border-radius:6px;" + mono,
-      warnHead: `color:#f8fafc;font-size:14px;font-weight:700;${mono}`,
-      warn: `color:#fca5a5;font-size:13px;line-height:1.5;${mono}`,
-      link: `color:#22d3ee;text-decoration:underline;${mono}`,
-      foot: `color:#64748b;font-size:12px;${mono}`,
+      logo: `color:#0ea5e9;font-weight:bold;font-size:14px;line-height:1.1;text-shadow:0 0 10px rgba(14,165,233,.4);${mono}`,
+      sub: `color:#38bdf8;font-weight:bold;font-size:12px;letter-spacing:4px;${mono}`,
+      brand: `color:#f8fafc;font-size:14px;font-weight:600;${mono}`,
+      tag: `color:#94a3b8;font-size:12px;${mono}`,
+      rule: `color:#334155;${mono}`,
+      ok: `background:#16a34a;color:white;padding:1px 6px;border-radius:4px;font-weight:bold;font-size:10px;`,
+      key: `color:#a1a1aa;${mono}`,
+      val: `color:#f4f4f5;font-weight:600;${mono}`,
+      prompt: `color:#52525b;${mono}`,
+      stop: "color:#fff;background:#ef4444;font-size:24px;font-weight:900;padding:8px 18px;border-radius:8px;text-shadow:0 2px 4px rgba(0,0,0,.2);" + mono,
+      warnHead: `color:#fecaca;font-size:16px;font-weight:700;${mono}`,
+      warn: `color:#fca5a5;font-size:14px;line-height:1.6;${mono}`,
+      link: `color:#38bdf8;text-decoration:underline;${mono}`,
+      foot: `color:#71717a;font-size:12px;${mono}`,
     };
 
     const logo = [
@@ -60,12 +59,12 @@ export function ConsoleBanner() {
 
     c.log("%cvisitor@arexnetwork:~$ ./boot", s.prompt);
     const ok = (name: string, val: string) =>
-      c.log(`%c [ OK ] %c${name.padEnd(11)}%c${val}`, s.ok, s.key, s.val);
+      c.log(`%c OK %c ${name.padEnd(11)} %c${val}`, s.ok, s.key, s.val);
     ok("Version", `v${VERSION}`);
     ok("Env", env);
     ok("Region", "sin1 · Vietnam");
     ok("Website", "https://arexnetwork.site");
-    c.log("%c [ OK ] %cHệ thống sẵn sàng.", s.ok, s.val);
+    c.log("%c OK %c Hệ thống sẵn sàng.", s.ok, s.val);
     c.log(`%c${rule}`, s.rule);
 
     // Cảnh báo Self-XSS
