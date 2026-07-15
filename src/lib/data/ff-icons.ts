@@ -27,7 +27,8 @@ export async function getAllIconIds(): Promise<string[]> {
   try {
     const res = await fetch(TREE_API, {
       headers: { "User-Agent": "arex-network", Accept: "application/vnd.github+json" },
-      next: { revalidate: 3600 },
+      // Response ~10MB > giới hạn 2MB của Next data cache → tự lo bằng cache in-memory ở trên.
+      cache: "no-store",
     });
     if (!res.ok) return cache?.ids ?? [];
     const data = (await res.json()) as GhTree;
