@@ -8,6 +8,7 @@ import {
   Loader2, Database, ExternalLink, Filter, Server, AlertCircle, Download, Eye,
 } from "lucide-react";
 import { ffItemTypeLabel, ffItemTypeStyle, ffRarityMeta, FF_RARITY_ORDER } from "@/lib/constants/ff-item-types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const FALLBACK_CDN = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
 const PAGE_SIZE = 60;
@@ -272,36 +273,24 @@ export default function ItemsPublicPage() {
           )}
         </div>
 
-        {/* Category filter (Vietnamese) — only when catalog has data */}
+        {/* Theo loại — dropdown (49 loại, thu gọn cho đẹp) */}
         {categoriesWithCounts.length > 0 && (
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Theo loại</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setActiveCategory("all")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                  activeCategory === "all"
-                    ? "bg-foreground text-background"
-                    : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Tất cả loại
-              </button>
-              {categoriesWithCounts.map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => setActiveCategory(cat.key)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
-                    activeCategory === cat.key
-                      ? `${cat.bg} ${cat.color}`
-                      : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {cat.label}
-                  <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{cat.count}</span>
-                </button>
-              ))}
-            </div>
+            <Select value={activeCategory} onValueChange={(v) => setActiveCategory(v ?? "all")}>
+              <SelectTrigger className="h-9 w-full text-xs sm:w-72">
+                <Filter className="size-3.5 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại ({ids.length.toLocaleString()})</SelectItem>
+                {categoriesWithCounts.map((cat) => (
+                  <SelectItem key={cat.key} value={cat.key}>
+                    {cat.label} ({cat.count.toLocaleString()})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
