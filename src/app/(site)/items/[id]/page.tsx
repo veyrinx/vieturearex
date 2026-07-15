@@ -44,6 +44,11 @@ export default async function ItemDetailPage({ params }: Props) {
   if (!item) notFound();
 
   const related = await getRelatedItems(item);
+  const relatedEnriched = related.map((r) => {
+    const m = getItemMetaById(r.id);
+    const rr = m.rarity && m.rarity !== "NONE" ? ffRarityMeta(m.rarity) : null;
+    return { ...r, displayName: m.name ?? r.label ?? r.id, rarityBg: rr?.bg ?? null };
+  });
   const meta = getItemMetaById(item.id);
   const name = item.label || meta.name || `Item ${item.id}`;
   // Loại chuẩn (49 loại) — ưu tiên map chuẩn, fallback catalog admin.
@@ -64,7 +69,7 @@ export default async function ItemDetailPage({ params }: Props) {
       {/* Detail */}
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_1.15fr]">
         {/* Ảnh */}
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-muted/50 to-background">
+        <div className={`relative overflow-hidden rounded-3xl border border-border ${rarity ? rarity.bg : "bg-gradient-to-br from-muted/50 to-background"}`}>
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
           <div className="flex aspect-square items-center justify-center p-8 md:p-12">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -137,23 +142,23 @@ export default async function ItemDetailPage({ params }: Props) {
             </span>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-            {related.map((r) => (
+            {relatedEnriched.map((r) => (
               <Link
                 key={r.id}
                 href={`/items/${r.id}`}
                 className="group rounded-xl border border-border bg-muted/30 p-2 transition-colors hover:border-primary/40"
               >
-                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-background">
+                <div className={`flex aspect-square items-center justify-center overflow-hidden rounded-lg ${r.rarityBg ?? "bg-background"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={r.imageUrl}
-                    alt={r.label ?? r.id}
+                    alt={r.displayName}
                     loading="lazy"
                     className="size-full object-contain p-1 transition-transform group-hover:scale-105"
                   />
                 </div>
-                <p className="mt-1 truncate text-center font-mono text-[10px] text-muted-foreground">
-                  {r.label ?? r.id}
+                <p className="mt-1 truncate text-center text-[10px] font-semibold text-foreground/80">
+                  {r.displayName}
                 </p>
               </Link>
             ))}
