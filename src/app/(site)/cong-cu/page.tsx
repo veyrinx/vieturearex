@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { findFeatureLock, LOCK_LABELS } from "@/lib/constants/feature-locks";
+import { getFeatureLocks } from "@/lib/server/feature-locks";
 
 export const metadata: Metadata = {
   title: "Công Cụ Free Fire — Arex",
@@ -34,7 +35,8 @@ const TOOLS: Tool[] = [
   { title: "Máy Tính Nạp",     desc: "Tính kim cương & tiền cần cho vật phẩm hoặc vòng quay — chi tiêu hợp lý.",     href: "/tinh-nap",  icon: Wallet,      color: "text-teal-500 bg-teal-500/10" },
 ];
 
-export default function ToolsHubPage() {
+export default async function ToolsHubPage() {
+  const featureLocks = await getFeatureLocks();
   return (
     <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-8">
       {/* Header */}
@@ -59,7 +61,7 @@ export default function ToolsHubPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         {TOOLS.map((t) => {
           const Icon = t.icon;
-          const lock = findFeatureLock(t.href);
+          const lock = findFeatureLock(t.href, featureLocks);
           const badge = (
             <div className={`flex size-12 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-110 ${t.color}`}>
               <Icon className="size-6" />

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Wrench, Lock, Clock3, Home, ArrowLeft } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { findFeatureLock, LOCK_LABELS, type FeatureLockStatus } from "@/lib/constants/feature-locks";
+import { getFeatureLocks } from "@/lib/server/feature-locks";
 
 export const metadata: Metadata = {
   title: "Đang cập nhật | Arex",
@@ -21,7 +22,7 @@ export default async function FeatureLockedPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
-  const lock = from ? findFeatureLock(from) : null;
+  const lock = from ? findFeatureLock(from, await getFeatureLocks()) : null;
   const status: FeatureLockStatus = lock?.status ?? "maintenance";
   const title = lock?.title ?? LOCK_LABELS[status];
   const message =

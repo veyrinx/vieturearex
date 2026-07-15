@@ -1,17 +1,29 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { useAdminRole } from "@/hooks/use-admin-role";
-import { findFeatureLock, LOCK_LABELS } from "@/lib/constants/feature-locks";
+import { findFeatureLock, LOCK_LABELS, type FeatureLock } from "@/lib/constants/feature-locks";
 
 // Banner chỉ hiện khi: (1) trang hiện tại đang bị khóa, VÀ (2) người xem là admin.
 // User thường không bao giờ tới được đây (middleware đã chuyển sang /dang-cap-nhat).
 export function AdminLockBanner() {
   const pathname = usePathname();
   const { isAdmin, loading } = useAdminRole();
+  const [locks, setLocks] = useState<FeatureLock[] | null>(null);
 
-  const lock = pathname ? findFeatureLock(pathname) : null;
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    fetch("/api/feature-locks")
+      .then((r) => (r.ok ? r.json() : { locks: [] }))
+      .then((d) => { if (!cancelled) setLocks(Array.isArray(d.locks) ? d.locks : []); })
+      .catch(() => { if (!cancelled) setLocks([]); });
+    return () => { cancelled = true; };
+  }, [isAdmin]);
+
+  const lock = pathname && locks ? findFeatureLock(pathname, locks) : null;
   if (loading || !isAdmin || !lock) return null;
 
   const label = LOCK_LABELS[lock.status ?? "maintenance"];

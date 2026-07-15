@@ -7,7 +7,7 @@ import { isBlockedInMemory, refreshBlockedCache, shouldRefreshCache } from "@/li
 import { signRedirectCookie, COOKIE_NAME } from "@/lib/server/next-token";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { getClientIp } from "@/lib/server/get-client-ip";
-import { findFeatureLock } from "@/lib/constants/feature-locks";
+import { findFeatureLock, parseFeatureLocks, SETTINGS_KEY_FEATURE_LOCKS, type FeatureLock } from "@/lib/constants/feature-locks";
 // ── Always accessible without auth (auth flow + legal + maintenance + all API) ──
 const PUBLIC_PATHS = [
   "/login",
@@ -39,6 +39,7 @@ const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"] as cons
 
 let maintenanceCache: { on: boolean; expires: number } | null = null;
 let whitelistCache: { ips: string[]; expires: number } | null = null;
+let featureLocksCache: { locks: FeatureLock[]; expires: number } | null = null;
 const WHITELIST_TTL = 30_000;
 
 function isPublicPath(pathname: string) {
@@ -238,10 +239,23 @@ export async function middleware(request: NextRequest) {
 
   // ── Khóa theo từng chức năng ("đang cập nhật") — KHÔNG phải bảo trì cả web ──
   // User thường → /dang-cap-nhat. ADMIN được vào xem trước (để kiểm tra).
-  const featureLock =
-    isPageRequest && !isAdminPath && pathname !== "/dang-cap-nhat"
-      ? findFeatureLock(pathname)
-      : null;
+  let featureLock: FeatureLock | null = null;
+  if (isPageRequest && !isAdminPath && pathname !== "/dang-cap-nhat") {
+    const now = Date.now();
+    if (!featureLocksCache || now > featureLocksCache.expires) {
+      try {
+        const { data } = await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", SETTINGS_KEY_FEATURE_LOCKS)
+          .maybeSingle() as { data: { value: string } | null };
+        featureLocksCache = { locks: parseFeatureLocks(data?.value ?? null), expires: now + 30_000 };
+      } catch {
+        featureLocksCache = { locks: [], expires: now + 30_000 };
+      }
+    }
+    featureLock = findFeatureLock(pathname, featureLocksCache.locks);
+  }
   if (featureLock && !isAdmin) {
     const url = new URL("/dang-cap-nhat", request.url);
     url.searchParams.set("from", pathname);

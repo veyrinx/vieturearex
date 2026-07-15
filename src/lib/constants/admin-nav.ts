@@ -69,6 +69,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: SlidersHorizontal,
     items: [
       { title: "Cài đặt",   href: "/admin/settings",  icon: Settings },
+      { title: "Khóa chức năng", href: "/admin/feature-locks", icon: Lock },
       { title: "Bảo mật",   href: "/admin/security",  icon: Lock },
       { title: "API Docs",  href: "/admin/api-docs",  icon: FileCode },
       { title: "Hồ sơ",     href: "/admin/profile",   icon: CircleUser },
