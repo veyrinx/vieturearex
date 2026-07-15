@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Home, Newspaper, Calendar, Radio, Trophy, Users, ListChecks, Swords, UserRound, Wrench, Flame, Crown } from "lucide-react";
+import { Home, Newspaper, Calendar, Radio, Trophy, Users, ListChecks, Swords, UserRound, Wrench, Flame } from "lucide-react";
 
 export type SiteNavItem = {
   label: string;
@@ -18,7 +18,6 @@ export const siteNav: SiteNavItem[] = [
   { label: "Vũ khí", href: "/vu-khi", icon: Swords, aliases: ["/weapons"] },
   { label: "Nhân vật", href: "/nhan-vat", icon: UserRound, aliases: ["/characters"] },
   { label: "Công cụ", href: "/cong-cu", icon: Wrench, aliases: ["/tools"] },
-  { label: "BXH Nick", href: "/bxh-nick", icon: Crown },
   { label: "Giải đấu", href: "/tournaments", icon: Trophy, aliases: ["/giai-dau"] },
   { label: "Cộng đồng", href: "/cong-dong", icon: Users, aliases: ["/community"] },
 ];
