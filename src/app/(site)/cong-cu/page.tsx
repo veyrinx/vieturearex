@@ -4,6 +4,7 @@ import {
   Crosshair, ListOrdered, Layers, Image as ImageIcon, ArrowRight, Wrench, Sparkles, CalendarClock, Activity, Skull, Gem, Wallet, type LucideIcon,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
+import { findFeatureLock, LOCK_LABELS } from "@/lib/constants/feature-locks";
 
 export const metadata: Metadata = {
   title: "Công Cụ Free Fire — Arex",
@@ -58,15 +59,42 @@ export default function ToolsHubPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         {TOOLS.map((t) => {
           const Icon = t.icon;
+          const lock = findFeatureLock(t.href);
+          const badge = (
+            <div className={`flex size-12 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-110 ${t.color}`}>
+              <Icon className="size-6" />
+            </div>
+          );
+
+          // Chức năng đang khóa/cập nhật → thẻ mờ, không bấm được, có nhãn trạng thái
+          if (lock) {
+            return (
+              <div
+                key={t.href}
+                className="relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-dashed border-border bg-card/60 p-5 opacity-70"
+              >
+                <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                  <Wrench className="size-3" /> {LOCK_LABELS[lock.status ?? "maintenance"]}
+                </span>
+                {badge}
+                <div className="space-y-1">
+                  <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">{t.title}</h2>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{t.desc}</p>
+                </div>
+                <span className="mt-auto text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
+                  Tạm thời chưa mở
+                </span>
+              </div>
+            );
+          }
+
           return (
             <Link
               key={t.href}
               href={t.href}
               className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg"
             >
-              <div className={`flex size-12 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-110 ${t.color}`}>
-                <Icon className="size-6" />
-              </div>
+              {badge}
               <div className="space-y-1">
                 <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">{t.title}</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">{t.desc}</p>

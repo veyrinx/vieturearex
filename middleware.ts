@@ -7,6 +7,7 @@ import { isBlockedInMemory, refreshBlockedCache, shouldRefreshCache } from "@/li
 import { signRedirectCookie, COOKIE_NAME } from "@/lib/server/next-token";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { getClientIp } from "@/lib/server/get-client-ip";
+import { findFeatureLock } from "@/lib/constants/feature-locks";
 // ── Always accessible without auth (auth flow + legal + maintenance + all API) ──
 const PUBLIC_PATHS = [
   "/login",
@@ -20,6 +21,7 @@ const PUBLIC_PATHS = [
   "/api/",          // All /api/* routes enforce their own auth
   "/team-join",     // Public token-based team registration
   "/maintenance",
+  "/dang-cap-nhat",
   "/terms-of-use",
   "/privacy-policy",
   "/cookie-policy",
@@ -200,6 +202,13 @@ export async function middleware(request: NextRequest) {
     }
     // All other private paths → 404 (stealth — no hint that a login exists)
     return notFound();
+  }
+
+  // ── Khóa theo từng chức năng ("đang cập nhật") — không phải bảo trì cả web ──
+  if (isPageRequest && !isAdminPath && pathname !== "/dang-cap-nhat" && findFeatureLock(pathname)) {
+    const url = new URL("/dang-cap-nhat", request.url);
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
   }
 
   // ── Maintenance mode (authenticated users only) ───────────────────────
