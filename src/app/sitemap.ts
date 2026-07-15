@@ -182,6 +182,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     },
     {
+      url: `${BASE}/cong-cu`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.70,
+    },
+    {
+      url: `${BASE}/do-nhay`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.60,
+    },
+    {
+      url: `${BASE}/tier-list`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.60,
+    },
+    {
+      url: `${BASE}/combo`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.58,
+    },
+    {
       url: `${BASE}/gui-bai-viet`,
       lastModified: now,
       changeFrequency: "monthly",
