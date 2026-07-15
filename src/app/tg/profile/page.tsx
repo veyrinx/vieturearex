@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, User, CheckCircle, ExternalLink, AlertCircle } from "lucide-react";
+import { Mi } from "../_components/mi";
 
 type TgUser = { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string };
 
@@ -75,7 +75,7 @@ export default function TgProfilePage() {
             className="flex size-20 items-center justify-center rounded-full"
             style={{ backgroundColor: "var(--tg-theme-button-color,#f97316)" }}
           >
-            <User size={36} color="white" />
+            <Mi name="person" size={36} fill={1} color="white" />
           </div>
         )}
         <div className="text-center">
@@ -99,7 +99,7 @@ export default function TgProfilePage() {
           className="rounded-2xl p-4 flex items-start gap-3"
           style={{ backgroundColor: "rgba(239,68,68,0.1)" }}
         >
-          <AlertCircle size={18} color="#ef4444" className="shrink-0 mt-0.5" />
+          <Mi name="error" size={18} color="#ef4444" className="shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "#ef4444" }}>Chưa mở trong Telegram</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
@@ -115,7 +115,7 @@ export default function TgProfilePage() {
           className="rounded-2xl p-4 flex items-start gap-3"
           style={{ backgroundColor: "rgba(245,158,11,0.1)" }}
         >
-          <AlertCircle size={18} color="#f59e0b" className="shrink-0 mt-0.5" />
+          <Mi name="warning" size={18} color="#f59e0b" className="shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "#f59e0b" }}>Bot chưa được cấu hình</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
@@ -137,8 +137,8 @@ export default function TgProfilePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {subscribed
-                ? <Bell size={20} style={{ color: "var(--tg-theme-button-color,#f97316)" }} />
-                : <BellOff size={20} style={{ color: "var(--tg-theme-hint-color,#888)" }} />
+                ? <Mi name="notifications_active" size={20} fill={1} color="var(--tg-theme-button-color,#f97316)" />
+                : <Mi name="notifications_off" size={20} color="var(--tg-theme-hint-color,#888)" />
               }
               <div>
                 <p className="text-sm font-semibold">
@@ -174,7 +174,7 @@ export default function TgProfilePage() {
           </div>
           {subscribed && (
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ backgroundColor: "rgba(16,185,129,0.1)" }}>
-              <CheckCircle size={14} color="#10b981" />
+              <Mi name="check_circle" size={14} fill={1} color="#10b981" />
               <p className="text-xs" style={{ color: "#10b981" }}>Bạn sẽ nhận DM khi có nội dung mới</p>
             </div>
           )}
@@ -203,7 +203,7 @@ export default function TgProfilePage() {
             style={{ backgroundColor: "var(--tg-theme-bg-color,#000)" }}
           >
             <span className="text-sm">{label}</span>
-            <ExternalLink size={14} style={{ color: "var(--tg-theme-hint-color,#888)" }} />
+            <Mi name="open_in_new" size={14} color="var(--tg-theme-hint-color,#888)" />
           </a>
         ))}
       </div>

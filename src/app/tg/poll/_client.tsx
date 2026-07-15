@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { BarChart2, CheckCircle2, Clock, Loader2, Users } from "lucide-react";
+import { Mi } from "../_components/mi";
 
 type PollOption = { id: string; label: string; votes: number; percent: number };
 
@@ -89,7 +89,7 @@ function PollCard({ poll: initial, initData }: { poll: Poll; initData: string })
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <BarChart2 size={16} style={{ color: "var(--tg-theme-button-color,#f97316)" }} />
+          <Mi name="bar_chart" size={16} color="var(--tg-theme-button-color,#f97316)" />
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
             Bình chọn
           </p>
@@ -97,12 +97,12 @@ function PollCard({ poll: initial, initData }: { poll: Poll; initData: string })
         <div className="flex items-center gap-2 text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
           {tl && (
             <span className="flex items-center gap-0.5">
-              <Clock size={9} />
+              <Mi name="schedule" size={9} />
               {tl}
             </span>
           )}
           <span className="flex items-center gap-0.5">
-            <Users size={9} />
+            <Mi name="group" size={9} />
             {poll.totalVotes}
           </span>
         </div>
@@ -146,7 +146,7 @@ function PollCard({ poll: initial, initData }: { poll: Poll; initData: string })
               )}
               <div className="relative flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  {isMyVote && <CheckCircle2 size={13} style={{ color: "var(--tg-theme-button-color,#f97316)", flexShrink: 0 }} />}
+                  {isMyVote && <Mi name="check_circle" size={13} fill={1} style={{ color: "var(--tg-theme-button-color,#f97316)", flexShrink: 0 }} />}
                   <span className="text-sm truncate">{opt.label}</span>
                 </div>
                 {showResult && (
@@ -179,7 +179,7 @@ function PollCard({ poll: initial, initData }: { poll: Poll; initData: string })
         >
           {submitting ? (
             <span className="flex items-center justify-center gap-2">
-              <Loader2 size={14} className="animate-spin" /> Đang gửi…
+              <Mi name="progress_activity" size={14} className="animate-spin" /> Đang gửi…
             </span>
           ) : "Bình chọn"}
         </button>
@@ -187,7 +187,7 @@ function PollCard({ poll: initial, initData }: { poll: Poll; initData: string })
 
       {hasVoted && (
         <p className="text-[11px] flex items-center gap-1" style={{ color: "#10b981" }}>
-          <CheckCircle2 size={11} /> Đã bình chọn
+          <Mi name="check_circle" size={11} fill={1} /> Đã bình chọn
         </p>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { siteConfig } from "@/lib/constants/site";
-import { Trophy, ExternalLink } from "lucide-react";
+import { Mi } from "../_components/mi";
 
 export default function TgTournamentsPage() {
   return (
@@ -13,7 +13,7 @@ export default function TgTournamentsPage() {
           className="w-16 h-16 rounded-2xl flex items-center justify-center"
           style={{ backgroundColor: "#f59e0b22" }}
         >
-          <Trophy size={32} style={{ color: "#f59e0b" }} />
+          <Mi name="emoji_events" size={32} fill={1} color="#f59e0b" />
         </div>
         <div>
           <p className="font-bold text-base">Bracket & Kết quả</p>
@@ -34,7 +34,7 @@ export default function TgTournamentsPage() {
             color: "var(--tg-theme-button-text-color, #fff)",
           }}
         >
-          <ExternalLink size={16} />
+          <Mi name="open_in_new" size={16} />
           Mở trên web
         </a>
       </div>

@@ -3,7 +3,7 @@ import type { EventItem } from "@/lib/types/content";
 import { siteConfig } from "@/lib/constants/site";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarDays, ExternalLink } from "lucide-react";
+import { Mi } from "../_components/mi";
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   active: { label: "Đang diễn ra", color: "#10b981" },
@@ -44,7 +44,7 @@ function EventCard({ item }: { item: EventItem }) {
           className="flex items-center gap-1.5 text-[11px]"
           style={{ color: "var(--tg-theme-hint-color, #888)" }}
         >
-          <CalendarDays size={12} />
+          <Mi name="calendar_month" size={12} />
           <span>{start} – {end}</span>
         </div>
         {item.server_region && (
@@ -65,7 +65,7 @@ function EventCard({ item }: { item: EventItem }) {
             color: "var(--tg-theme-button-text-color, #fff)",
           }}
         >
-          <ExternalLink size={13} />
+          <Mi name="open_in_new" size={13} />
           Xem chi tiết
         </a>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, XCircle, RotateCcw, Trophy } from "lucide-react";
+import { Mi } from "../_components/mi";
 
 const QUESTIONS = [
   {
@@ -97,7 +97,7 @@ export default function TgQuizPage() {
   if (done) {
     return (
       <div className="flex flex-col items-center gap-6 p-6 pb-24">
-        <Trophy size={56} style={{ color: "var(--tg-theme-button-color,#f97316)" }} />
+        <Mi name="emoji_events" size={56} fill={1} color="var(--tg-theme-button-color,#f97316)" />
         <div className="text-center space-y-1">
           <p className="font-bold text-2xl">{score}/{QUESTIONS.length}</p>
           <p className="font-semibold text-lg">{grade}</p>
@@ -129,7 +129,7 @@ export default function TgQuizPage() {
             color: "var(--tg-theme-button-text-color,#fff)",
           }}
         >
-          <RotateCcw size={16} />
+          <Mi name="replay" size={16} />
           Làm lại
         </button>
       </div>
@@ -182,8 +182,8 @@ export default function TgQuizPage() {
               style={{ backgroundColor: bg, color, border: answered && isCorrect ? "1px solid rgba(16,185,129,0.4)" : "1px solid transparent" }}
             >
               <span>{opt}</span>
-              {answered && isCorrect && <CheckCircle size={16} color="#10b981" />}
-              {answered && isSelected && !isCorrect && <XCircle size={16} color="#ef4444" />}
+              {answered && isCorrect && <Mi name="check_circle" size={16} fill={1} color="#10b981" />}
+              {answered && isSelected && !isCorrect && <Mi name="cancel" size={16} fill={1} color="#ef4444" />}
             </button>
           );
         })}

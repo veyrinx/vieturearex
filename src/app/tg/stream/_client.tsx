@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Eye, Users, ExternalLink } from "lucide-react";
+import { Mi } from "../_components/mi";
 import { siteConfig } from "@/lib/constants/site";
 import { extractYouTubeId, buildEmbedUrl } from "@/lib/utils/stream-utils";
 import type { StreamItem } from "@/lib/types/content";
@@ -45,13 +45,13 @@ function EmbedPlayer({ stream, onClose }: { stream: EnrichedStream; onClose: () 
             )}
             {stream.concurrent_viewers != null && (
               <span className="flex items-center gap-1 text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
-                <Users size={10} />
+                <Mi name="group" size={10} />
                 {formatCount(stream.concurrent_viewers)} đang xem
               </span>
             )}
             {stream.view_count != null && stream.status !== "live" && (
               <span className="flex items-center gap-1 text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
-                <Eye size={10} />
+                <Mi name="visibility" size={10} />
                 {formatCount(stream.view_count)} lượt xem
               </span>
             )}
@@ -72,7 +72,7 @@ function EmbedPlayer({ stream, onClose }: { stream: EnrichedStream; onClose: () 
             style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
             title="Mở YouTube"
           >
-            <ExternalLink size={14} style={{ color: "var(--tg-theme-hint-color,#888)" }} />
+            <Mi name="open_in_new" size={14} color="var(--tg-theme-hint-color,#888)" />
           </a>
           <button
             type="button"
@@ -80,7 +80,7 @@ function EmbedPlayer({ stream, onClose }: { stream: EnrichedStream; onClose: () 
             className="p-1.5 rounded-lg"
             style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
           >
-            <X size={14} style={{ color: "var(--tg-theme-hint-color,#888)" }} />
+            <Mi name="close" size={14} color="var(--tg-theme-hint-color,#888)" />
           </button>
         </div>
       </div>
@@ -154,13 +154,13 @@ function StreamCard({
           </span>
           {item.concurrent_viewers != null && (
             <span className="flex items-center gap-0.5 text-[10px]" style={{ color: "#ef4444" }}>
-              <Users size={9} />
+              <Mi name="group" size={9} />
               {formatCount(item.concurrent_viewers)}
             </span>
           )}
           {item.view_count != null && item.status !== "live" && (
             <span className="flex items-center gap-0.5 text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
-              <Eye size={9} />
+              <Mi name="visibility" size={9} />
               {formatCount(item.view_count)}
             </span>
           )}

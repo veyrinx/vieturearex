@@ -13,6 +13,11 @@ export default function TelegramMiniAppLayout({ children }: { children: ReactNod
   return (
     <>
       <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+      {/* Icon Google (Material Symbols) cho Mini App */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+      />
       <TgInit />
       <div
         className="flex flex-col min-h-screen"

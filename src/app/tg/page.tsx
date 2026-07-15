@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Newspaper, CalendarDays, Trophy, Flame, Radio, BarChart2,
-  Medal, Brain, User, ChevronRight,
-} from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { NotificationButton } from "./_components/notification-button";
+import { Mi } from "./_components/mi";
 import { haptic } from "./_lib/tg";
 
 type TgUser = {
@@ -18,14 +15,14 @@ type TgUser = {
 };
 
 const LINKS = [
-  { href: "/tg/tin-tuc",    icon: Newspaper,    label: "Tin tức",   desc: "Mới nhất",     color: "#3b82f6" },
-  { href: "/tg/su-kien",    icon: CalendarDays, label: "Sự kiện",   desc: "In-game",      color: "#10b981" },
-  { href: "/tg/giai-dau",   icon: Trophy,       label: "Giải đấu",  desc: "Bracket",      color: "#f59e0b" },
-  { href: "/tg/leaderboard",icon: Medal,        label: "BXH",       desc: "Xếp hạng",     color: "#eab308" },
-  { href: "/tg/stream",     icon: Radio,        label: "Stream",    desc: "Live & VOD",   color: "#ef4444" },
-  { href: "/tg/poll",       icon: BarChart2,    label: "Bình chọn", desc: "Poll",         color: "#8b5cf6" },
-  { href: "/tg/quiz",       icon: Brain,        label: "Quiz",      desc: "Đố vui",       color: "#ec4899" },
-  { href: "/tg/profile",    icon: User,         label: "Hồ sơ",     desc: "Của tôi",      color: "#06b6d4" },
+  { href: "/tg/tin-tuc",    icon: "newspaper",             label: "Tin tức",   desc: "Mới nhất",   color: "#3b82f6" },
+  { href: "/tg/su-kien",    icon: "calendar_month",        label: "Sự kiện",   desc: "In-game",    color: "#10b981" },
+  { href: "/tg/giai-dau",   icon: "emoji_events",          label: "Giải đấu",  desc: "Bracket",    color: "#f59e0b" },
+  { href: "/tg/leaderboard",icon: "military_tech",         label: "BXH",       desc: "Xếp hạng",   color: "#eab308" },
+  { href: "/tg/stream",     icon: "live_tv",               label: "Stream",    desc: "Live & VOD", color: "#ef4444" },
+  { href: "/tg/poll",       icon: "how_to_vote",           label: "Bình chọn", desc: "Poll",       color: "#8b5cf6" },
+  { href: "/tg/quiz",       icon: "psychology",            label: "Quiz",      desc: "Đố vui",     color: "#ec4899" },
+  { href: "/tg/profile",    icon: "person",                label: "Hồ sơ",     desc: "Của tôi",    color: "#06b6d4" },
 ];
 
 export default function TgHomePage() {
@@ -43,10 +40,12 @@ export default function TgHomePage() {
         className="relative overflow-hidden rounded-3xl p-5"
         style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%)" }}
       >
-        <Flame
-          size={130}
-          className="pointer-events-none absolute -right-6 -top-6 opacity-15"
-          style={{ color: "#fff" }}
+        <Mi
+          name="local_fire_department"
+          size={150}
+          fill={1}
+          className="pointer-events-none absolute -right-6 -top-8 opacity-15"
+          color="#fff"
         />
         <div className="relative flex items-center gap-3">
           {user?.photo_url ? (
@@ -74,7 +73,7 @@ export default function TgHomePage() {
 
       {/* Feature grid */}
       <div className="grid grid-cols-2 gap-3">
-        {LINKS.map(({ href, icon: Icon, label, desc, color }) => (
+        {LINKS.map(({ href, icon, label, desc, color }) => (
           <Link
             key={href}
             href={href}
@@ -86,7 +85,7 @@ export default function TgHomePage() {
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ backgroundColor: `${color}22` }}
             >
-              <Icon size={22} style={{ color }} />
+              <Mi name={icon} size={24} fill={1} color={color} />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold">{label}</p>
@@ -117,7 +116,7 @@ export default function TgHomePage() {
           <p className="text-sm font-black">Mở trang web đầy đủ</p>
           <p className="truncate text-xs opacity-80">arexnetwork.site</p>
         </div>
-        <ChevronRight size={22} className="shrink-0" />
+        <Mi name="chevron_right" size={24} />
       </a>
     </div>
   );

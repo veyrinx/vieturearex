@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Mi } from "./mi";
 
 type Status = "loading" | "subscribed" | "unsubscribed" | "unavailable";
 
@@ -102,11 +102,11 @@ export function NotificationButton() {
           }}
         >
           {isLoading ? (
-            <Loader2 size={20} className="animate-spin" style={{ color: "var(--tg-theme-hint-color, #888)" }} />
+            <Mi name="progress_activity" size={20} className="animate-spin" color="var(--tg-theme-hint-color, #888)" />
           ) : isSubscribed ? (
-            <Bell size={20} style={{ color: "#10b981" }} />
+            <Mi name="notifications_active" size={20} fill={1} color="#10b981" />
           ) : (
-            <BellOff size={20} style={{ color: "var(--tg-theme-hint-color, #888)" }} />
+            <Mi name="notifications_off" size={20} color="var(--tg-theme-hint-color, #888)" />
           )}
         </div>
         <div className="text-left">
