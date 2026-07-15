@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
   let raw: Record<string, unknown>;
   try {
-    const ctrl = AbortSignal.timeout(9000);
+    const ctrl = AbortSignal.timeout(20000); // Render free hay cold-start, cho rong thoi gian
     const res = await fetch(url, { signal: ctrl, headers: { accept: "application/json" } });
     if (!res.ok) {
       return NextResponse.json(
