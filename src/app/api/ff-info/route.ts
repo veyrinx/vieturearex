@@ -75,21 +75,37 @@ export async function GET(request: NextRequest) {
     .replace(/\{uid\}/gi, encodeURIComponent(ffId))
     .replace(/\{region\}/gi, encodeURIComponent(region));
 
-  let raw: Record<string, unknown>;
-  try {
-    const ctrl = AbortSignal.timeout(20000); // Render free hay cold-start, cho rong thoi gian
-    const res = await fetch(url, { signal: ctrl, headers: { accept: "application/json" } });
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Không lấy được dữ liệu (ID không tồn tại hoặc API lỗi ${res.status}).` },
-        { status: 502 },
-      );
+  // Render free hay cold-start (~30-60s): thu ngan roi retry de "danh thuc" service.
+  // Lan 1 timeout ngan de kich wake; loi transient (timeout/5xx) -> cho roi thu lai.
+  const TIMEOUTS = [8000, 22000]; // ms cho tung lan
+  let raw: Record<string, unknown> | null = null;
+  for (let attempt = 0; attempt < TIMEOUTS.length; attempt++) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(TIMEOUTS[attempt]),
+        headers: { accept: "application/json" },
+      });
+      if (res.ok) {
+        raw = (await res.json()) as Record<string, unknown>;
+        break;
+      }
+      // 5xx = service dang thuc day / loi tam thoi -> retry. 4xx = ID sai -> tra ngay.
+      if (res.status < 500) {
+        return NextResponse.json(
+          { error: `Không lấy được dữ liệu (ID không tồn tại hoặc API lỗi ${res.status}).` },
+          { status: 502 },
+        );
+      }
+    } catch {
+      // timeout / network -> coi la cold-start, se retry
     }
-    raw = (await res.json()) as Record<string, unknown>;
-  } catch {
+    if (attempt < TIMEOUTS.length - 1) await new Promise((r) => setTimeout(r, 2500));
+  }
+
+  if (!raw) {
     return NextResponse.json(
-      { error: "API dữ liệu FF đang không phản hồi. Vui lòng nhập tay." },
-      { status: 502 },
+      { error: "API dữ liệu FF đang khởi động hoặc không phản hồi. Thử lại sau vài giây.", retryable: true },
+      { status: 503 },
     );
   }
 
