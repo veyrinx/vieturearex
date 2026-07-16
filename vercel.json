@@ -33,6 +33,10 @@
     {
       "path": "/api/cron/purge-expired",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/checkin-reminder",
+      "schedule": "0 13 * * *"
     }
   ],
   "functions": {
@@ -48,7 +52,8 @@
     "src/app/api/cron/publish-scheduled/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/digest/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/hide-expired/route.ts": { "maxDuration": 30 },
-    "src/app/api/cron/purge-expired/route.ts": { "maxDuration": 30 }
+    "src/app/api/cron/purge-expired/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/checkin-reminder/route.ts": { "maxDuration": 30 }
   },
   "headers": [
     {
