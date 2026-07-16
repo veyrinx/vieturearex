@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Trophy, Crown, Gem } from "lucide-react";
+import { Trophy, Gem } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { cn } from "@/lib/utils";
+import { NickList } from "./_list";
 
 export const metadata: Metadata = {
   title: "BXH độ khủng nick Free Fire | Arex",
@@ -28,8 +28,6 @@ async function getTop(): Promise<Row[]> {
     .limit(100) as { data: Row[] | null };
   return data ?? [];
 }
-
-const MEDAL = ["text-amber-400", "text-zinc-400", "text-orange-600"];
 
 export default async function BxhNickPage() {
   const rows = await getTop();
@@ -56,33 +54,7 @@ export default async function BxhNickPage() {
           <p className="text-sm text-muted-foreground">Chưa có ai đăng. Hãy là người đầu tiên!</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {rows.map((r, i) => {
-            const name = r.display_name || (r.ff_id ? `FF ${r.ff_id}` : "Người chơi");
-            return (
-              <div key={i} className={cn("flex items-center gap-3 rounded-2xl border bg-card p-3", i < 3 ? "border-primary/40" : "border-border")}>
-                <span className={cn("flex w-8 shrink-0 justify-center font-heading text-lg font-black", i < 3 ? MEDAL[i] : "text-muted-foreground")}>
-                  {i < 3 ? <Crown className="size-5" /> : i + 1}
-                </span>
-                <div className="size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted/40">
-                  {r.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={r.avatar_url} alt={name} className="size-full object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center text-sm font-black text-muted-foreground">{name.slice(0, 1).toUpperCase()}</div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-heading text-sm font-bold uppercase tracking-wide text-foreground">{name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {r.ff_id ? `ID: ${r.ff_id}` : ""}{r.ff_id && r.tier ? " · " : ""}{r.tier ?? ""}
-                  </p>
-                </div>
-                <span className="shrink-0 font-heading text-lg font-black tabular-nums text-primary">{r.score.toLocaleString()}</span>
-              </div>
-            );
-          })}
-        </div>
+        <NickList rows={rows} />
       )}
 
       <p className="text-center text-[11px] text-muted-foreground/70">
