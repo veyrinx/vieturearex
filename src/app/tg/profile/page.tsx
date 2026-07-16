@@ -11,7 +11,7 @@ export default function TgProfilePage() {
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [notInTg, setNotInTg] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [me, setMe] = useState<{ linked: boolean; display_name?: string | null; streak?: number; points?: number; alreadyCheckedIn?: boolean } | null>(null);
+  const [me, setMe] = useState<{ linked: boolean; display_name?: string | null; streak?: number; points?: number; alreadyCheckedIn?: boolean; achievements?: { id: string; name: string; icon: string; rarity: string }[] } | null>(null);
   const [codeInput, setCodeInput] = useState("");
   const [linking, setLinking] = useState(false);
   const [checkingIn, setCheckingIn] = useState(false);
@@ -280,6 +280,25 @@ export default function TgProfilePage() {
                 <Mi name={me.alreadyCheckedIn ? "check_circle" : "event_available"} size={16} fill={1} />
                 {checkingIn ? "Đang điểm danh…" : me.alreadyCheckedIn ? "Đã điểm danh hôm nay" : "Điểm danh (+2 điểm)"}
               </button>
+              {me.achievements && me.achievements.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
+                    Thành tựu ({me.achievements.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {me.achievements.slice(0, 16).map((a) => (
+                      <span
+                        key={a.id}
+                        title={a.name}
+                        className="flex size-8 items-center justify-center rounded-lg text-base"
+                        style={{ backgroundColor: "var(--tg-theme-bg-color,#000)" }}
+                      >
+                        {a.icon}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={unlink}

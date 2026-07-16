@@ -3,6 +3,8 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { resolveTgUser } from "@/lib/server/tg-miniapp-auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { getUserAchievementIds } from "@/lib/server/award-achievement";
+import { ACHIEVEMENTS_BY_ID } from "@/lib/constants/achievements";
 
 // GET — Mini App lấy hồ sơ site đã liên kết (streak, điểm...) theo telegram id.
 export async function GET(req: NextRequest) {
@@ -35,6 +37,12 @@ export async function GET(req: NextRequest) {
     new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }),
   ).toISOString().slice(0, 10);
 
+  const earnedIds = await getUserAchievementIds(link.user_id).catch(() => []);
+  const achievements = earnedIds
+    .map((id) => ACHIEVEMENTS_BY_ID[id])
+    .filter(Boolean)
+    .map((a) => ({ id: a.id, name: a.name, icon: a.icon, rarity: a.rarity }));
+
   return NextResponse.json({
     linked: true,
     display_name: profile?.display_name ?? null,
@@ -42,5 +50,6 @@ export async function GET(req: NextRequest) {
     streak: profile?.login_streak ?? 0,
     points: profile?.points ?? 0,
     alreadyCheckedIn: profile?.last_login_date === todayVN,
+    achievements,
   });
 }
