@@ -25,3 +25,11 @@ export function notifyHaptic(type: "error" | "success" | "warning" = "success") 
     /* noop */
   }
 }
+
+// Chia sẻ nội dung ra Telegram (mở hộp chọn chat). Ngoài Telegram thì mở tab mới.
+export function shareToTelegram(text: string, url: string) {
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+  const tg = window.Telegram?.WebApp;
+  if (tg?.openTelegramLink) tg.openTelegramLink(shareUrl);
+  else window.open(shareUrl, "_blank");
+}

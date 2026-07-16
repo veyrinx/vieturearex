@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Mi } from "../_components/mi";
-import { selectionHaptic } from "../_lib/tg";
+import { selectionHaptic, shareToTelegram, haptic } from "../_lib/tg";
 
 export type PlayerRow = {
   user_id: string;
@@ -42,6 +42,16 @@ export function LeaderboardTabs({ players, nicks }: { players: PlayerRow[]; nick
     { key: "nicks" as const, label: "Nick khủng", icon: "diamond" },
   ];
 
+  function share() {
+    haptic("light");
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const text =
+      tab === "players"
+        ? "🏆 BXH tuyển thủ Free Fire cộng đồng Arex — xem ai đứng top!"
+        : "💎 BXH nick khủng Free Fire trên Arex — nick của bạn hạng mấy?";
+    shareToTelegram(text, `${origin}/tg/leaderboard`);
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {/* Tab switch */}
@@ -67,6 +77,14 @@ export function LeaderboardTabs({ players, nicks }: { players: PlayerRow[]; nick
           );
         })}
       </div>
+
+      <button
+        onClick={share}
+        className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-transform active:scale-[0.98]"
+        style={{ backgroundColor: "var(--tg-theme-secondary-bg-color,#1c1c1f)", color: "var(--tg-theme-button-color,#f97316)" }}
+      >
+        <Mi name="share" size={15} /> Chia sẻ bảng xếp hạng
+      </button>
 
       {tab === "players" ? (
         players.length === 0 ? (

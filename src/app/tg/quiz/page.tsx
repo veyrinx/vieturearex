@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Mi } from "../_components/mi";
+import { shareToTelegram, haptic } from "../_lib/tg";
 import type { QuizQuestion } from "@/lib/constants/quiz";
 
 export default function TgQuizPage() {
@@ -85,14 +86,31 @@ export default function TgQuizPage() {
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={restart}
-          className="flex items-center gap-2 rounded-xl px-6 py-3 font-semibold"
-          style={{ backgroundColor: "var(--tg-theme-button-color,#f97316)", color: "var(--tg-theme-button-text-color,#fff)" }}
-        >
-          <Mi name="replay" size={16} /> Làm lại
-        </button>
+        <div className="flex w-full gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              haptic("light");
+              const origin = typeof window !== "undefined" ? window.location.origin : "";
+              shareToTelegram(
+                `🎯 Mình đúng ${score}/${questions.length} câu Quiz Free Fire trên Arex! Thử tài xem bạn được bao nhiêu 👇`,
+                `${origin}/tg/quiz`,
+              );
+            }}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 font-semibold"
+            style={{ backgroundColor: "var(--tg-theme-secondary-bg-color,#1c1c1f)", color: "var(--tg-theme-button-color,#f97316)" }}
+          >
+            <Mi name="share" size={16} /> Chia sẻ
+          </button>
+          <button
+            type="button"
+            onClick={restart}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 font-semibold"
+            style={{ backgroundColor: "var(--tg-theme-button-color,#f97316)", color: "var(--tg-theme-button-text-color,#fff)" }}
+          >
+            <Mi name="replay" size={16} /> Làm lại
+          </button>
+        </div>
       </div>
     );
   }

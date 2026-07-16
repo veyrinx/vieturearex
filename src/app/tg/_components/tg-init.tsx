@@ -25,6 +25,7 @@ declare global {
         colorScheme: "light" | "dark";
         themeParams: Record<string, string>;
         requestWriteAccess?(callback: (granted: boolean) => void): void;
+        openTelegramLink?(url: string): void;
         showAlert?(message: string, callback?: () => void): void;
         showConfirm?(message: string, callback: (confirmed: boolean) => void): void;
         HapticFeedback?: {
