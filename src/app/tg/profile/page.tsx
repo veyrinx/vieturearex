@@ -11,6 +11,16 @@ export default function TgProfilePage() {
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [notInTg, setNotInTg] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [me, setMe] = useState<{ linked: boolean; display_name?: string | null; streak?: number; points?: number } | null>(null);
+  const [codeInput, setCodeInput] = useState("");
+  const [linking, setLinking] = useState(false);
+
+  function loadMe(initData: string) {
+    fetch("/api/telegram/me", { headers: { "x-telegram-init-data": initData } })
+      .then((r) => r.json())
+      .then(setMe)
+      .catch(() => setMe({ linked: false }));
+  }
 
   useEffect(() => {
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -31,7 +41,35 @@ export default function TgProfilePage() {
         setConfigured(d.configured ?? true);
       })
       .catch(() => { setSubscribed(false); setConfigured(false); });
+
+    loadMe(initData);
   }, []);
+
+  async function linkAccount() {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData || linking || !codeInput.trim()) return;
+    setLinking(true);
+    try {
+      const res = await fetch("/api/telegram/link", {
+        method: "POST",
+        headers: { "x-telegram-init-data": initData, "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeInput.trim() }),
+      });
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) { window.Telegram?.WebApp?.showAlert?.(d.error ?? "Liên kết thất bại"); return; }
+      setCodeInput("");
+      loadMe(initData);
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  async function unlink() {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+    await fetch("/api/telegram/link", { method: "DELETE", headers: { "x-telegram-init-data": initData } }).catch(() => {});
+    setMe({ linked: false });
+  }
 
   async function toggleSubscription() {
     const initData = window.Telegram?.WebApp?.initData;
@@ -177,6 +215,82 @@ export default function TgProfilePage() {
               <Mi name="check_circle" size={14} fill={1} color="#10b981" />
               <p className="text-xs" style={{ color: "#10b981" }}>Bạn sẽ nhận DM khi có nội dung mới</p>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Account link */}
+      {!notInTg && (
+        <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: "var(--tg-theme-secondary-bg-color,#111)" }}>
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
+            Tài khoản Arex
+          </p>
+
+          {me === null ? (
+            <p className="text-sm" style={{ color: "var(--tg-theme-hint-color,#888)" }}>Đang kiểm tra…</p>
+          ) : me.linked ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Mi name="check_circle" size={18} fill={1} color="#10b981" />
+                <p className="text-sm font-semibold">
+                  Đã liên kết{me.display_name ? `: ${me.display_name}` : ""}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl p-3 text-center" style={{ backgroundColor: "var(--tg-theme-bg-color,#000)" }}>
+                  <Mi name="local_fire_department" size={22} fill={1} color="#f97316" />
+                  <p className="mt-1 text-lg font-bold">{me.streak ?? 0}</p>
+                  <p className="text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>ngày điểm danh</p>
+                </div>
+                <div className="rounded-xl p-3 text-center" style={{ backgroundColor: "var(--tg-theme-bg-color,#000)" }}>
+                  <Mi name="stars" size={22} fill={1} color="#eab308" />
+                  <p className="mt-1 text-lg font-bold">{(me.points ?? 0).toLocaleString("vi-VN")}</p>
+                  <p className="text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>điểm</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={unlink}
+                className="w-full rounded-xl py-2 text-xs font-semibold"
+                style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#ef4444" }}
+              >
+                Hủy liên kết
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
+                Nhập mã tạo trên web để đồng bộ chuỗi điểm danh, điểm & hồ sơ.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                  placeholder="Mã 6 ký tự"
+                  maxLength={6}
+                  className="h-10 flex-1 rounded-xl px-3 text-center text-sm font-bold tracking-[0.3em] outline-none"
+                  style={{ backgroundColor: "var(--tg-theme-bg-color,#000)", color: "inherit" }}
+                />
+                <button
+                  type="button"
+                  onClick={linkAccount}
+                  disabled={linking || codeInput.trim().length < 4}
+                  className="rounded-xl px-4 text-sm font-bold disabled:opacity-50"
+                  style={{ backgroundColor: "var(--tg-theme-button-color,#f97316)", color: "var(--tg-theme-button-text-color,#fff)" }}
+                >
+                  {linking ? "…" : "Liên kết"}
+                </button>
+              </div>
+              <a
+                href={`${siteUrl}/lien-ket-telegram`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-semibold"
+                style={{ color: "var(--tg-theme-button-color,#f97316)" }}
+              >
+                Lấy mã trên web <Mi name="open_in_new" size={12} />
+              </a>
+            </>
           )}
         </div>
       )}
