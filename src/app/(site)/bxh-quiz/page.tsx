@@ -7,6 +7,7 @@ import { PageHero } from "@/components/common/page-hero";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { cn } from "@/lib/utils";
+import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
   title: "BXH Quiz Free Fire | Arex",
@@ -52,10 +53,11 @@ export default async function BxhQuizPage() {
         subtitle="Ai hiểu game nhất? Xếp theo điểm quiz cao nhất. Chơi trong Mini App Telegram để lưu điểm."
       />
 
-      <div className="flex justify-center">
+      <div className="flex flex-wrap justify-center gap-3">
         <Link href="/quiz" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90">
           <Play className="size-4" /> Chơi Quiz ngay
         </Link>
+        <ShareButton title="BXH Quiz Free Fire" text="Ai hiểu Free Fire nhất? Xem BXH Quiz cộng đồng Arex!" />
       </div>
 
       {rows.length === 0 ? (

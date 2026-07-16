@@ -5,6 +5,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { AccountValuator } from "@/components/tools/account-valuator";
+import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
   title: "Ước tính độ khủng tài khoản Free Fire | Arex",
@@ -27,10 +28,11 @@ export default function DinhGiaNickPage() {
 
       <AccountValuator />
 
-      <div className="flex justify-center">
+      <div className="flex flex-wrap justify-center gap-3">
         <Link href="/bxh-nick" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
           <Trophy className="size-4" /> Xem BXH nick khủng nhất
         </Link>
+        <ShareButton title="Ước tính độ khủng nick Free Fire" text="Nick của bạn khủng cỡ nào? Tính thử trên Arex!" className="px-4 py-2 text-xs" />
       </div>
     </main>
   );

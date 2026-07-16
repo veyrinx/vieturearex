@@ -7,6 +7,7 @@ import { PageHero } from "@/components/common/page-hero";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { NickList } from "./_list";
+import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
   title: "BXH độ khủng nick Free Fire | Arex",
@@ -43,10 +44,11 @@ export default async function BxhNickPage() {
         subtitle="Xếp hạng tài khoản khủng nhất do cộng đồng tự khai — cho vui."
       />
 
-      <div className="flex justify-center">
+      <div className="flex flex-wrap justify-center gap-3">
         <Link href="/dinh-gia-nick" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90">
           <Gem className="size-4" /> Tính & đăng nick của bạn
         </Link>
+        <ShareButton title="BXH độ khủng nick Free Fire" text="Xem bảng xếp hạng nick khủng nhất cộng đồng Arex!" />
       </div>
 
       {rows.length === 0 ? (
