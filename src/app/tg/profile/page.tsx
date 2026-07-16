@@ -11,9 +11,10 @@ export default function TgProfilePage() {
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [notInTg, setNotInTg] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [me, setMe] = useState<{ linked: boolean; display_name?: string | null; streak?: number; points?: number } | null>(null);
+  const [me, setMe] = useState<{ linked: boolean; display_name?: string | null; streak?: number; points?: number; alreadyCheckedIn?: boolean } | null>(null);
   const [codeInput, setCodeInput] = useState("");
   const [linking, setLinking] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
 
   function loadMe(initData: string) {
     fetch("/api/telegram/me", { headers: { "x-telegram-init-data": initData } })
@@ -69,6 +70,24 @@ export default function TgProfilePage() {
     if (!initData) return;
     await fetch("/api/telegram/link", { method: "DELETE", headers: { "x-telegram-init-data": initData } }).catch(() => {});
     setMe({ linked: false });
+  }
+
+  async function checkin() {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData || checkingIn || me?.alreadyCheckedIn) return;
+    setCheckingIn(true);
+    try {
+      const res = await fetch("/api/telegram/checkin", {
+        method: "POST",
+        headers: { "x-telegram-init-data": initData },
+      });
+      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; streak?: number; error?: string };
+      if (!res.ok || !d.ok) { window.Telegram?.WebApp?.showAlert?.(d.error ?? "Điểm danh thất bại"); return; }
+      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
+      setMe((m) => (m ? { ...m, streak: d.streak ?? m.streak, alreadyCheckedIn: true, points: (m.points ?? 0) + 2 } : m));
+    } finally {
+      setCheckingIn(false);
+    }
   }
 
   async function toggleSubscription() {
@@ -248,6 +267,19 @@ export default function TgProfilePage() {
                   <p className="text-[10px]" style={{ color: "var(--tg-theme-hint-color,#888)" }}>điểm</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={checkin}
+                disabled={checkingIn || me.alreadyCheckedIn}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold disabled:opacity-60"
+                style={{
+                  backgroundColor: me.alreadyCheckedIn ? "rgba(16,185,129,0.12)" : "var(--tg-theme-button-color,#f97316)",
+                  color: me.alreadyCheckedIn ? "#10b981" : "var(--tg-theme-button-text-color,#fff)",
+                }}
+              >
+                <Mi name={me.alreadyCheckedIn ? "check_circle" : "event_available"} size={16} fill={1} />
+                {checkingIn ? "Đang điểm danh…" : me.alreadyCheckedIn ? "Đã điểm danh hôm nay" : "Điểm danh (+2 điểm)"}
+              </button>
               <button
                 type="button"
                 onClick={unlink}

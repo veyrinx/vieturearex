@@ -25,11 +25,15 @@ export async function GET(req: NextRequest) {
   if (!link) return NextResponse.json({ linked: false });
 
   const { data: profile } = (await untypedFrom(db, "users")
-    .select("display_name, avatar_url, login_streak, points")
+    .select("display_name, avatar_url, login_streak, points, last_login_date")
     .eq("id", link.user_id)
     .maybeSingle()) as {
-    data: { display_name: string | null; avatar_url: string | null; login_streak: number | null; points: number | null } | null;
+    data: { display_name: string | null; avatar_url: string | null; login_streak: number | null; points: number | null; last_login_date: string | null } | null;
   };
+
+  const todayVN = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }),
+  ).toISOString().slice(0, 10);
 
   return NextResponse.json({
     linked: true,
@@ -37,5 +41,6 @@ export async function GET(req: NextRequest) {
     avatar_url: profile?.avatar_url ?? null,
     streak: profile?.login_streak ?? 0,
     points: profile?.points ?? 0,
+    alreadyCheckedIn: profile?.last_login_date === todayVN,
   });
 }
