@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSettings, getNews, getEvents } from "@/lib/data/content-service";
 import { getGlobalPlayerLeaderboard } from "@/lib/tms/data";
+import { untypedFrom } from "@/lib/supabase/untyped";
+import { performCheckin } from "@/lib/server/checkin";
 import { sanitizePlainText } from "@/lib/server/sanitize";
 import { siteConfig } from "@/lib/constants/site";
 import { subscribeUser } from "@/lib/server/telegram-broadcast";
@@ -66,8 +68,43 @@ async function handleBotCommand(
   chatId: number,
   cmd: string,
   firstName: string,
+  fromId?: number,
 ): Promise<boolean> {
   const base = cmd.split("@")[0].toLowerCase();
+
+  if (base === "/diemdanh" || base === "/checkin") {
+    const db = fromId ? createAdminSupabaseClient() : null;
+    if (!db || !fromId) {
+      await sendTelegramMessage(token, chatId, "Không điểm danh được lúc này, thử lại sau.");
+      return true;
+    }
+    const { data: link } = await untypedFrom(db, "telegram_account_links")
+      .select("user_id")
+      .eq("telegram_user_id", fromId)
+      .maybeSingle() as { data: { user_id: string } | null };
+    if (!link) {
+      await sendTelegramMessageWithKeyboard(
+        token,
+        chatId,
+        `🔗 Bạn chưa liên kết tài khoản Arex.\n\nMở Mini App → tab <b>Hồ sơ</b> để liên kết, sau đó điểm danh ngay trong chat bằng <code>/diemdanh</code>.`,
+        { inline_keyboard: [[{ text: "🔗 Mở Hồ sơ để liên kết", web_app: { url: `${MINI_APP_URL}/profile` } }]] },
+      );
+      return true;
+    }
+    const result = await performCheckin(link.user_id);
+    if (!result) {
+      await sendTelegramMessage(token, chatId, "Có lỗi khi điểm danh, thử lại sau.");
+      return true;
+    }
+    await sendTelegramMessage(
+      token,
+      chatId,
+      result.alreadyCheckedIn
+        ? `✅ Hôm nay bạn đã điểm danh rồi.\nChuỗi hiện tại: <b>${result.streak}</b> ngày 🔥`
+        : `🎉 Điểm danh thành công! <b>+2 điểm</b>\nChuỗi: <b>${result.streak}</b> ngày 🔥`,
+    );
+    return true;
+  }
 
   if (base === "/start" || base === "/app") {
     await sendTelegramMessageWithKeyboard(
@@ -172,7 +209,7 @@ async function handleBotCommand(
     await sendTelegramMessage(
       token,
       chatId,
-      `🤖 <b>Arex Bot – Danh sách lệnh</b>\n\n/start – Mở Mini App\n/news – Tin tức mới nhất\n/events – Sự kiện đang diễn ra\n/giaidau – Giải đấu &amp; bracket\n/bxh – Bảng xếp hạng\n/quiz – Quiz đố vui\n/help – Danh sách lệnh\n\n<a href="${MINI_APP_URL}">🎮 Mở Mini App</a>  ·  <a href="${siteConfig.url}">🌐 Trang web</a>`,
+      `🤖 <b>Arex Bot – Danh sách lệnh</b>\n\n/start – Mở Mini App\n/diemdanh – Điểm danh nhận điểm\n/news – Tin tức mới nhất\n/events – Sự kiện đang diễn ra\n/giaidau – Giải đấu &amp; bracket\n/bxh – Bảng xếp hạng\n/quiz – Quiz đố vui\n/help – Danh sách lệnh\n\n<a href="${MINI_APP_URL}">🎮 Mở Mini App</a>  ·  <a href="${siteConfig.url}">🌐 Trang web</a>`,
     );
     return true;
   }
@@ -225,7 +262,7 @@ export async function POST(req: NextRequest) {
       if ((base === "/start" || base === "/app") && message.from?.id) {
         void subscribeUser(message.from.id, firstName, message.from.username).catch(() => null);
       }
-      const handled = await handleBotCommand(token, chatId, text, firstName);
+      const handled = await handleBotCommand(token, chatId, text, firstName, message.from?.id);
       if (handled) return NextResponse.json({ ok: true });
     }
   }

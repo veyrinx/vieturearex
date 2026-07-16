@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       api("setMyCommands", {
         commands: [
           { command: "start", description: "Mở Arex Mini App" },
+          { command: "diemdanh", description: "Điểm danh nhận điểm" },
           { command: "news", description: "Tin tức mới nhất" },
           { command: "events", description: "Sự kiện đang diễn ra" },
           { command: "giaidau", description: "Giải đấu & bracket" },
