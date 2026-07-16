@@ -4,6 +4,34 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
+function todayInVN(): string {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }),
+  ).toISOString().slice(0, 10);
+}
+
+// GET — đọc chuỗi điểm danh hiện tại (không thay đổi dữ liệu). Dùng cho UI hiển thị.
+export async function GET() {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return NextResponse.json({ loggedIn: false });
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  if (!user) return NextResponse.json({ loggedIn: false });
+
+  const db = createAdminSupabaseClient();
+  if (!db) return NextResponse.json({ loggedIn: true, streak: 0, alreadyCheckedIn: false });
+
+  const { data: row } = await untypedFrom(db, "users")
+    .select("login_streak, last_login_date")
+    .eq("id", user.id)
+    .single() as { data: { login_streak: number | null; last_login_date: string | null } | null };
+
+  return NextResponse.json({
+    loggedIn: true,
+    streak: row?.login_streak ?? 0,
+    alreadyCheckedIn: row?.last_login_date === todayInVN(),
+  });
+}
+
 // Called once per session to track daily login + award streak achievements.
 // Returns quickly — all heavy work is fire-and-forget.
 export async function POST(req: NextRequest) {
@@ -19,9 +47,7 @@ export async function POST(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false });
 
-  const todayVN = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }),
-  ).toISOString().slice(0, 10);
+  const todayVN = todayInVN();
 
   // Fetch current streak data
   const { data: row } = await untypedFrom(db, "users")
