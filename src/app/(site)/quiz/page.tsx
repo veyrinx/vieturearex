@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Brain } from "lucide-react";
+import Link from "next/link";
+import { Brain, Trophy } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -27,6 +28,11 @@ export default function QuizPage() {
         title="Quiz Free Fire"
         subtitle="Kiểm tra kiến thức về nhân vật, vũ khí, chế độ chơi & meta. Chơi trong Mini App Telegram để lưu điểm & lên BXH."
       />
+      <div className="flex justify-center">
+        <Link href="/bxh-quiz" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
+          <Trophy className="size-4 text-amber-500" /> Xem BXH Quiz
+        </Link>
+      </div>
       <QuizGame />
     </main>
   );

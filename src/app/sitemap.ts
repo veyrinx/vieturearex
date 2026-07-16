@@ -230,6 +230,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.62,
     },
     {
+      url: `${BASE}/bxh-quiz`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.55,
+    },
+    {
       url: `${BASE}/bxh-nick`,
       lastModified: now,
       changeFrequency: "daily",
