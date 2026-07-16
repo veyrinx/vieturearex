@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSettings, getNews, getEvents } from "@/lib/data/content-service";
+import { getGlobalPlayerLeaderboard } from "@/lib/tms/data";
 import { sanitizePlainText } from "@/lib/server/sanitize";
 import { siteConfig } from "@/lib/constants/site";
 import { subscribeUser } from "@/lib/server/telegram-broadcast";
@@ -89,11 +90,22 @@ async function handleBotCommand(
   }
 
   if (base === "/bxh" || base === "/leaderboard") {
+    const players = await getGlobalPlayerLeaderboard(5).catch(() => []);
+    const medals = ["🥇", "🥈", "🥉", "4.", "5."];
+    const lines = ["🏅 <b>Top tuyển thủ cộng đồng</b>\n"];
+    if (players.length === 0) {
+      lines.push("<i>Chưa có dữ liệu xếp hạng giải đấu.</i>");
+    } else {
+      players.forEach((p, i) => {
+        const name = p.display_name || (p.ff_id ? `FF ${p.ff_id}` : "Người chơi");
+        lines.push(`${medals[i] ?? `${i + 1}.`} ${e(name)} — <b>${p.total_points.toLocaleString("vi-VN")}</b> điểm`);
+      });
+    }
     await sendTelegramMessageWithKeyboard(
       token,
       chatId,
-      `🏅 <b>Bảng xếp hạng cộng đồng</b>\n\nXem thứ hạng người chơi &amp; nick khủng ngay trong Mini App:`,
-      { inline_keyboard: [[{ text: "🏅 Mở BXH", web_app: { url: `${MINI_APP_URL}/leaderboard` } }]] },
+      lines.join("\n"),
+      { inline_keyboard: [[{ text: "🏅 Xem đầy đủ (Tuyển thủ + Nick khủng)", web_app: { url: `${MINI_APP_URL}/leaderboard` } }]] },
     );
     return true;
   }
