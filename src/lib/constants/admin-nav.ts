@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, BarChartBig, ScrollText, History,
-  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, ListChecks, Swords, Layers,
+  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, Brain, ListChecks, Swords, Layers,
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
@@ -36,6 +36,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Combo vũ khí", href: "/admin/loadouts", icon: Layers },
       { title: "Tier Lists", href: "/admin/tier-lists", icon: ListChecks },
       { title: "Pop-up",    href: "/admin/popup",    icon: Bell },
+      { title: "Quiz",      href: "/admin/quiz",     icon: Brain },
     ],
   },
   {
