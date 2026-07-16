@@ -21,6 +21,14 @@ export type NickRow = {
   tier: string | null;
 };
 
+export type QuizRow = {
+  display_name: string | null;
+  avatar_url: string | null;
+  best_score: number;
+  best_total: number;
+  plays: number;
+};
+
 const medals = ["🥇", "🥈", "🥉"];
 
 function Rank({ i }: { i: number }) {
@@ -34,12 +42,13 @@ function Rank({ i }: { i: number }) {
   );
 }
 
-export function LeaderboardTabs({ players, nicks }: { players: PlayerRow[]; nicks: NickRow[] }) {
-  const [tab, setTab] = useState<"players" | "nicks">("players");
+export function LeaderboardTabs({ players, nicks, quizzes }: { players: PlayerRow[]; nicks: NickRow[]; quizzes: QuizRow[] }) {
+  const [tab, setTab] = useState<"players" | "nicks" | "quiz">("players");
 
   const TABS = [
     { key: "players" as const, label: "Tuyển thủ", icon: "military_tech" },
     { key: "nicks" as const, label: "Nick khủng", icon: "diamond" },
+    { key: "quiz" as const, label: "Quiz", icon: "psychology" },
   ];
 
   function share() {
@@ -48,7 +57,9 @@ export function LeaderboardTabs({ players, nicks }: { players: PlayerRow[]; nick
     const text =
       tab === "players"
         ? "🏆 BXH tuyển thủ Free Fire cộng đồng Arex — xem ai đứng top!"
-        : "💎 BXH nick khủng Free Fire trên Arex — nick của bạn hạng mấy?";
+        : tab === "nicks"
+        ? "💎 BXH nick khủng Free Fire trên Arex — nick của bạn hạng mấy?"
+        : "🧠 BXH Quiz Free Fire trên Arex — thử tài xem bạn top mấy?";
     shareToTelegram(text, `${origin}/tg/leaderboard`);
   }
 
@@ -86,7 +97,7 @@ export function LeaderboardTabs({ players, nicks }: { players: PlayerRow[]; nick
         <Mi name="share" size={15} /> Chia sẻ bảng xếp hạng
       </button>
 
-      {tab === "players" ? (
+      {tab === "players" && (
         players.length === 0 ? (
           <Empty text="Chưa có dữ liệu xếp hạng giải đấu." />
         ) : (
@@ -111,37 +122,74 @@ export function LeaderboardTabs({ players, nicks }: { players: PlayerRow[]; nick
             ))}
           </div>
         )
-      ) : nicks.length === 0 ? (
-        <Empty text="Chưa có ai đăng BXH nick. Tính & đăng trên web nhé!" />
-      ) : (
-        <div className="space-y-2">
-          {nicks.map((n, i) => {
-            const name = n.display_name || (n.ff_id ? `FF ${n.ff_id}` : "Người chơi");
-            return (
-              <Row key={i} i={i}>
-                <div className="size-8 shrink-0 overflow-hidden rounded-full" style={{ backgroundColor: "var(--tg-theme-bg-color,#111)" }}>
-                  {n.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={n.avatar_url} alt={name} className="size-full object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center text-xs font-black" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>
-                      {name.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{name}</p>
-                  {n.tier && (
-                    <p className="text-[11px]" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>{n.tier}</p>
-                  )}
-                </div>
-                <p className="shrink-0 text-sm font-bold" style={{ color: "var(--tg-theme-button-color,#f97316)" }}>
-                  {n.score.toLocaleString("vi-VN")} điểm
-                </p>
-              </Row>
-            );
-          })}
-        </div>
+      )}
+
+      {tab === "nicks" && (
+        nicks.length === 0 ? (
+          <Empty text="Chưa có ai đăng BXH nick. Tính & đăng trên web nhé!" />
+        ) : (
+          <div className="space-y-2">
+            {nicks.map((n, i) => {
+              const name = n.display_name || (n.ff_id ? `FF ${n.ff_id}` : "Người chơi");
+              return (
+                <Row key={i} i={i}>
+                  <div className="size-8 shrink-0 overflow-hidden rounded-full" style={{ backgroundColor: "var(--tg-theme-bg-color,#111)" }}>
+                    {n.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={n.avatar_url} alt={name} className="size-full object-cover" />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-xs font-black" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>
+                        {name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{name}</p>
+                    {n.tier && (
+                      <p className="text-[11px]" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>{n.tier}</p>
+                    )}
+                  </div>
+                  <p className="shrink-0 text-sm font-bold" style={{ color: "var(--tg-theme-button-color,#f97316)" }}>
+                    {n.score.toLocaleString("vi-VN")} điểm
+                  </p>
+                </Row>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {tab === "quiz" && (
+        quizzes.length === 0 ? (
+          <Empty text="Chưa có ai chơi Quiz. Liên kết tài khoản & chơi để lên bảng!" />
+        ) : (
+          <div className="space-y-2">
+            {quizzes.map((qz, i) => {
+              const name = qz.display_name || "Người chơi";
+              return (
+                <Row key={i} i={i}>
+                  <div className="size-8 shrink-0 overflow-hidden rounded-full" style={{ backgroundColor: "var(--tg-theme-bg-color,#111)" }}>
+                    {qz.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={qz.avatar_url} alt={name} className="size-full object-cover" />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-xs font-black" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>
+                        {name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{name}</p>
+                    <p className="text-[11px]" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>{qz.plays} lượt chơi</p>
+                  </div>
+                  <p className="shrink-0 text-sm font-bold" style={{ color: "var(--tg-theme-button-color,#f97316)" }}>
+                    {qz.best_score}/{qz.best_total}
+                  </p>
+                </Row>
+              );
+            })}
+          </div>
+        )
       )}
     </div>
   );

@@ -19,6 +19,19 @@ export default function TgQuizPage() {
       .catch(() => setQuestions([]));
   }, []);
 
+  // Lưu điểm cho tài khoản đã liên kết (nếu chưa liên kết thì API bỏ qua).
+  useEffect(() => {
+    if (!done || !questions) return;
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+    fetch("/api/telegram/quiz/score", {
+      method: "POST",
+      headers: { "x-telegram-init-data": initData, "Content-Type": "application/json" },
+      body: JSON.stringify({ score, total: questions.length }),
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
+
   if (questions === null) {
     return (
       <div className="flex items-center justify-center gap-2 p-10" style={{ color: "var(--tg-theme-hint-color,#888)" }}>
