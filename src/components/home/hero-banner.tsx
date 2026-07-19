@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Icon } from "@/components/common/icon";
 import { Button } from "@/components/ui/button";
 import type { HeroSliderEffect } from "@/lib/utils/site-settings";
@@ -93,6 +93,7 @@ export function HeroBanner({
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const countdown = useCountdown(nextEventDate);
+  const reduceMotion = useReducedMotion();
 
   const goTo = useCallback(
     (i: number) => setIndex(((i % allImages.length) + allImages.length) % allImages.length),
@@ -171,26 +172,28 @@ export function HeroBanner({
 
         {/* Ambient glow orbs */}
         <motion.div
-          animate={{ opacity: [0.35, 0.65, 0.35], scale: [1, 1.08, 1] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          animate={reduceMotion ? { opacity: 0.5 } : { opacity: [0.35, 0.65, 0.35], scale: [1, 1.08, 1] }}
+          transition={reduceMotion ? undefined : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
           className="absolute bottom-0 left-0 h-[420px] w-[520px] rounded-full blur-[120px]"
           style={{ background: "radial-gradient(circle, hsl(var(--primary)/0.28) 0%, transparent 70%)" }}
         />
         <motion.div
-          animate={{ opacity: [0.2, 0.4, 0.2], scale: [1, 1.12, 1] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          animate={reduceMotion ? { opacity: 0.3 } : { opacity: [0.2, 0.4, 0.2], scale: [1, 1.12, 1] }}
+          transition={reduceMotion ? undefined : { duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
           className="absolute right-[10%] top-[20%] h-[300px] w-[300px] rounded-full blur-[90px]"
           style={{ background: "radial-gradient(circle, rgba(147,51,234,0.18) 0%, transparent 70%)" }}
         />
 
-        {/* Animated light streak */}
-        <motion.div
-          initial={{ x: "-100%", opacity: 0 }}
-          animate={{ x: "200%", opacity: [0, 0.7, 0] }}
-          transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 6, ease: [0.4, 0, 0.6, 1] }}
-          className="absolute top-[38%] h-px w-48 -rotate-12"
-          style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary)/0.9), rgba(255,255,255,0.8), transparent)" }}
-        />
+        {/* Animated light streak — tắt khi giảm chuyển động */}
+        {!reduceMotion && (
+          <motion.div
+            initial={{ x: "-100%", opacity: 0 }}
+            animate={{ x: "200%", opacity: [0, 0.7, 0] }}
+            transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 6, ease: [0.4, 0, 0.6, 1] }}
+            className="absolute top-[38%] h-px w-48 -rotate-12"
+            style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary)/0.9), rgba(255,255,255,0.8), transparent)" }}
+          />
+        )}
 
         {/* Scanline texture */}
         <div
@@ -324,8 +327,8 @@ export function HeroBanner({
                   {countdown.map((unit, i) => (
                     <motion.div
                       key={unit.label}
-                      animate={i === countdown.length - 1 ? { scale: [1, 1.04, 1] } : {}}
-                      transition={{ duration: 1, repeat: Infinity }}
+                      animate={i === countdown.length - 1 && !reduceMotion ? { scale: [1, 1.04, 1] } : {}}
+                      transition={reduceMotion ? undefined : { duration: 1, repeat: Infinity }}
                       className="flex min-w-[44px] flex-col items-center rounded-xl border border-primary/40 bg-primary/18 px-2 py-1.5 backdrop-blur-sm dark:border-amber-400/40 dark:bg-amber-400/12"
                       style={{ boxShadow: "0 0 14px hsl(var(--primary)/0.25), inset 0 1px 0 hsl(var(--primary)/0.2)" }}
                     >

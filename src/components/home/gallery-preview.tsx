@@ -5,6 +5,7 @@ import { X, ZoomIn, ArrowRight, Images } from "lucide-react";
 import Link from "next/link";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import type { GalleryItem } from "@/lib/types/content";
 
@@ -91,10 +92,19 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-16 text-center">
-          <Images className="size-10 mx-auto mb-3 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">Chưa có ảnh nào.</p>
-        </div>
+        <EmptyState
+          icon={Images}
+          title="Chưa có ảnh"
+          description="Khoảnh khắc đẹp từ cộng đồng sẽ được đăng tại đây."
+          action={
+            <Button asChild size="sm" variant="outline" className="rounded-xl">
+              <Link href="/gallery">
+                Tới thư viện
+                <ArrowRight className="ml-1.5 size-3.5" />
+              </Link>
+            </Button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-3 grid-rows-2 gap-2.5 sm:gap-3">
           {items.map((item, index) => {

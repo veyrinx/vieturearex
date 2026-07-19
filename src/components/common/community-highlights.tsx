@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { Crown, Trophy, Star, Newspaper, CalendarDays, type LucideIcon } from "lucide-react";
+import { Crown, Trophy, Star, Newspaper, CalendarDays, ArrowRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SectionHeading } from "@/components/common/section-heading";
+import { EmptyState } from "@/components/common/empty-state";
+import { Button } from "@/components/ui/button";
 import { getGlobalPlayerLeaderboard } from "@/lib/tms/data";
 import { getNews, getEvents } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -59,20 +62,23 @@ export async function CommunityHighlights() {
   if (latestEvent) activities.push({ text: latestEvent.title, icon: CalendarDays, tone: "red", href: `/su-kien/${latestEvent.id}` });
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-heading text-base font-bold uppercase tracking-wider text-foreground">
-            Tâm Điểm Cộng Đồng
-          </h3>
-          <p className="text-xs text-muted-foreground">Bảng xếp hạng và hoạt động nổi bật</p>
-        </div>
-        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Crown className="size-5" />
-        </div>
+    <section className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <SectionHeading
+          eyebrow="Cộng đồng"
+          icon={Crown}
+          title="TÂM ĐIỂM CỘNG ĐỒNG"
+          description="Bảng xếp hạng tuyển thủ và hoạt động nổi bật"
+        />
+        <Button asChild size="sm" variant="outline" className="shrink-0 rounded-xl">
+          <Link href="/cong-dong">
+            Xem tất cả
+            <ArrowRight className="ml-1.5 size-3.5" />
+          </Link>
+        </Button>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2 md:gap-6">
+      <div className="grid gap-4 rounded-2xl border border-border bg-card p-5 md:grid-cols-2 md:gap-6">
       {/* Leaderboard */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -84,9 +90,12 @@ export async function CommunityHighlights() {
           </Link>
         </div>
         {top.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border py-6 text-center">
-            <p className="text-xs text-muted-foreground">Chưa có dữ liệu xếp hạng giải đấu.</p>
-          </div>
+          <EmptyState
+            icon={Trophy}
+            title="Chưa có xếp hạng"
+            description="Bảng xếp hạng tuyển thủ sẽ cập nhật sau giải đấu."
+            className="py-8"
+          />
         ) : (
           top.map((user) => (
             <div
@@ -143,6 +152,6 @@ export async function CommunityHighlights() {
         </div>
       )}
       </div>
-    </div>
+    </section>
   );
 }

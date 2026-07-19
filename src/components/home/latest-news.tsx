@@ -8,6 +8,7 @@ import { Clock, ArrowRight, MessageSquare, Pencil, Trash2, Plus, User, Newspaper
 import { toast } from "sonner";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
+import { EmptyState } from "@/components/common/empty-state";
 import { MediaFrame } from "@/components/common/media-frame";
 import { NewsEditorDialog } from "@/components/admin/news-editor-dialog";
 import { Button } from "@/components/ui/button";
@@ -241,9 +242,11 @@ export function LatestNews({ news }: LatestNewsProps) {
       </div>
 
       {localNews.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed p-10 text-center text-sm text-muted-foreground">
-          Chưa có bài viết nào.
-        </div>
+        <EmptyState
+          icon={Newspaper}
+          title="Chưa có bài viết"
+          description="Tin tức và bài viết mới sẽ xuất hiện tại đây."
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
           {featured && <FeaturedCard item={featured} {...adminProps} />}
