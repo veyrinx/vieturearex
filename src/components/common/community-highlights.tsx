@@ -72,8 +72,9 @@ export async function CommunityHighlights() {
         </div>
       </div>
 
+      <div className="mt-4 grid gap-4 md:grid-cols-2 md:gap-6">
       {/* Leaderboard */}
-      <div className="mt-4 space-y-2">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             Top 3 Tuyển Thủ
@@ -111,7 +112,10 @@ export async function CommunityHighlights() {
 
       {/* Real activities */}
       {activities.length > 0 && (
-        <div className="mt-4 space-y-2 border-t border-border pt-4">
+        <div className="space-y-2 border-t border-border pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Hoạt động nổi bật
+          </p>
           {activities.map((activity, index) => {
             const Icon = activity.icon;
             return (
@@ -138,6 +142,7 @@ export async function CommunityHighlights() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

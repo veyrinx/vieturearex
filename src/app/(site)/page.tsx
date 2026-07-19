@@ -9,7 +9,6 @@ import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
 import { NewsTicker } from "@/components/home/news-ticker";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
-import { DailyCheckin } from "@/components/common/daily-checkin";
 import { CommunityHighlights } from "@/components/common/community-highlights";
 import { ToolsShowcase } from "@/components/common/tools-showcase";
 import {
@@ -175,13 +174,14 @@ export default async function HomePage() {
         <LatestNews news={newsForDisplay.slice(0, 6)} />
         <GalleryPreview gallery={gallery.slice(0, 6)} />
 
-        {/* Tương tác cộng đồng + công cụ */}
-        <div className="container-main grid gap-6 md:grid-cols-2">
-          <DailyCheckin />
-          <CommunityHighlights />
-        </div>
+        {/* Công cụ (cuộn ngang) */}
         <div className="container-main">
           <ToolsShowcase />
+        </div>
+
+        {/* Tâm điểm cộng đồng */}
+        <div className="container-main">
+          <CommunityHighlights />
         </div>
       </div>
 

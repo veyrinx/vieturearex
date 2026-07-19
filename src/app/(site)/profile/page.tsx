@@ -14,6 +14,7 @@ import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
 import { PRIVACY_SECTIONS, type PrivacyMap, isSectionVisible } from "@/lib/constants/profile-privacy";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
+import { DailyCheckin } from "@/components/common/daily-checkin";
 import Image from "next/image";
 import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import Link from "next/link";
@@ -628,6 +629,10 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
+
+            {/* Điểm danh hằng ngày */}
+            <DailyCheckin />
+
             {/* Thông tin cá nhân */}
             <div className="rounded-2xl border border-border bg-card p-6">
               <div className="mb-5 flex items-center gap-2.5">

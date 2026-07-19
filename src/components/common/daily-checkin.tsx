@@ -113,7 +113,7 @@ export function DailyCheckin() {
           </button>
         ) : !state.loggedIn ? (
           <Link
-            href="/login?next=/"
+            href="/login?next=/profile"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
           >
             <LogIn className="size-4" /> Đăng nhập để điểm danh
