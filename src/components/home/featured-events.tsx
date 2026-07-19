@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
+import { EmptyState } from "@/components/common/empty-state";
 import { MediaFrame } from "@/components/common/media-frame";
 import { EventModal } from "@/components/timeline/event-modal";
 import { EventFormDialog } from "@/components/admin/event-form-dialog";
@@ -119,7 +120,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
       {/* Filter tabs */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none md:mx-0 md:px-0">
         {TABS.map((tab) => {
-          const count = tab.value === "all" ? events.length : events.filter((e) => e.status === tab.value).length;
+          const count = tab.value === "all" ? localEvents.length : localEvents.filter((e) => e.status === tab.value).length;
           return (
             <button
               key={tab.value}
@@ -152,9 +153,23 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
       )}
 
       {visible.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed p-10 text-center text-sm text-muted-foreground">
-          Không có sự kiện nào.
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title={activeTab === "all" ? "Chưa có sự kiện" : `Không có sự kiện "${TABS.find((t) => t.value === activeTab)?.label}"`}
+          description={
+            activeTab === "all"
+              ? "Sự kiện đang diễn ra và sắp mở sẽ xuất hiện tại đây."
+              : "Thử xem toàn bộ sự kiện của cộng đồng."
+          }
+          action={
+            activeTab !== "all" ? (
+              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setActiveTab("all")}>
+                Xem tất cả sự kiện
+                <ArrowRight className="ml-1.5 size-3.5" />
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((event, index) => {

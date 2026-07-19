@@ -49,7 +49,7 @@ export async function CommunityHighlights() {
 
   const top = players.slice(0, 3).map((p, i) => ({
     name: p.display_name || p.team_name || "Ẩn danh",
-    points: p.total_points,
+    points: p.total_points ?? 0,
     rank: i + 1,
   }));
 
@@ -58,8 +58,8 @@ export async function CommunityHighlights() {
 
   const activities: Activity[] = [];
   if (poll) activities.push({ text: `Bình chọn: ${poll.question}`, icon: Star, tone: "blue", href: "/cong-dong" });
-  if (latestNews) activities.push({ text: latestNews.title, icon: Newspaper, tone: "amber", href: `/tin-tuc/${latestNews.slug}` });
-  if (latestEvent) activities.push({ text: latestEvent.title, icon: CalendarDays, tone: "red", href: `/su-kien/${latestEvent.id}` });
+  if (latestNews) activities.push({ text: latestNews.title, icon: Newspaper, tone: "amber", href: `/news/${latestNews.slug}` });
+  if (latestEvent) activities.push({ text: latestEvent.title, icon: CalendarDays, tone: "red", href: `/events/${latestEvent.id}` });
 
   return (
     <section className="space-y-6">
