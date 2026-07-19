@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarCheck, Newspaper, Image as ImageIcon, Users } from "lucide-react";
+import { CalendarCheck, Newspaper, Image as ImageIcon, Users, Wrench } from "lucide-react";
 
 type StatItem = {
   icon: React.ReactNode;
@@ -48,15 +48,18 @@ type StatsBarProps = {
   newsCount: number;
   galleryCount: number;
   memberCount?: number;
+  toolCount?: number;
 };
 
-export function StatsBar({ eventCount, newsCount, galleryCount, memberCount }: StatsBarProps) {
+export function StatsBar({ eventCount, newsCount, galleryCount, memberCount, toolCount }: StatsBarProps) {
   const stats: StatItem[] = [
     { icon: <CalendarCheck className="size-5 shrink-0" />, value: eventCount, label: "Sự kiện" },
     { icon: <Newspaper className="size-5 shrink-0" />, value: newsCount, label: "Bài viết" },
     { icon: <ImageIcon className="size-5 shrink-0" />, value: galleryCount, label: "Ảnh cộng đồng" },
     ...(memberCount !== undefined
       ? [{ icon: <Users className="size-5 shrink-0" />, value: memberCount, suffix: "+", label: "Thành viên" }]
+      : toolCount !== undefined
+      ? [{ icon: <Wrench className="size-5 shrink-0" />, value: toolCount, label: "Công cụ" }]
       : []),
   ];
 

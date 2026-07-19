@@ -8,9 +8,11 @@ import { GalleryPreview } from "@/components/home/gallery-preview";
 import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
 import { NewsTicker } from "@/components/home/news-ticker";
+import { StatsBar } from "@/components/home/stats-bar";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
 import { CommunityHighlights } from "@/components/common/community-highlights";
 import { ToolsShowcase } from "@/components/common/tools-showcase";
+import { TOOLS } from "@/lib/constants/tools";
 import {
   getEvents,
   getGalleryItems,
@@ -123,6 +125,13 @@ export default async function HomePage() {
       />
 
       <NewsTicker news={newsForDisplay.slice(0, 8)} />
+
+      <StatsBar
+        eventCount={events.length}
+        newsCount={news.length}
+        galleryCount={gallery.length}
+        toolCount={TOOLS.length}
+      />
 
       {/* Subtle ambient background for content sections */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>

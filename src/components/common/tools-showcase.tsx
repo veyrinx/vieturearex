@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SectionHeading } from "@/components/common/section-heading";
 import { FEATURED_TOOLS as TOOLS } from "@/lib/constants/tools";
 
 /**
@@ -69,16 +70,14 @@ export function ToolsShowcase() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end justify-between gap-4">
-        <div className="space-y-1">
-          <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-primary dark:text-amber-400">
-            <Wrench className="size-3" /> Người Chơi
-          </p>
-          <h3 className="font-heading text-lg font-black uppercase tracking-tight text-foreground md:text-xl">
-            Công Cụ Cho Game Thủ
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <SectionHeading
+          eyebrow="Người chơi"
+          icon={Wrench}
+          title="CÔNG CỤ CHO GAME THỦ"
+          description="Bộ công cụ miễn phí tối ưu lối chơi Free Fire"
+        />
+        <div className="flex shrink-0 items-center gap-2">
           {/* Nút điều hướng — chỉ hiện trên desktop */}
           <div className="hidden items-center gap-1.5 md:flex">
             <button
