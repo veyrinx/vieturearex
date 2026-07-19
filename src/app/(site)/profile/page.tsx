@@ -15,6 +15,7 @@ import { PRIVACY_SECTIONS, type PrivacyMap, isSectionVisible } from "@/lib/const
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
 import { DailyCheckin } from "@/components/common/daily-checkin";
+import { FfPlayerLookup } from "@/components/tools/ff-player-lookup";
 import Image from "next/image";
 import { getRank, getSubRank, getRankProgress, getPointsToNextRank } from "@/lib/constants/ranks";
 import Link from "next/link";
@@ -723,6 +724,16 @@ export default function ProfilePage() {
                     <p className="text-[11px] text-muted-foreground">Mỗi tài khoản chỉ được liên kết 1 FF ID.</p>
                   </div>
                 </div>
+
+                {/* Xác minh FF ID với dữ liệu thật từ máy chủ Free Fire */}
+                {/^\d{6,12}$/.test(ffId) && (
+                  <div className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-3.5">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                      <Gamepad2 className="size-3.5" /> Kiểm tra ID Free Fire
+                    </p>
+                    <FfPlayerLookup initialUid={ffId} />
+                  </div>
+                )}
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">

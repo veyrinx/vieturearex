@@ -5,6 +5,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { AccountValuator } from "@/components/tools/account-valuator";
+import { FfPlayerLookup } from "@/components/tools/ff-player-lookup";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
@@ -25,6 +26,19 @@ export default function DinhGiaNickPage() {
         title="Ước tính độ khủng nick"
         subtitle="Nhập rank, level, skin, đồ hiếm → ra điểm độ khủng của tài khoản."
       />
+
+      {/* Tra cứu dữ liệu THẬT từ UID (HL Gaming FF API) */}
+      <section className="space-y-3 rounded-2xl border border-primary/20 bg-primary/[0.03] p-5">
+        <div>
+          <h2 className="font-heading text-base font-black uppercase tracking-wide text-foreground">
+            Tra cứu tài khoản thật
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Nhập UID để lấy dữ liệu chính xác (cấp độ, rank, guild, pet…) trực tiếp từ máy chủ Free Fire.
+          </p>
+        </div>
+        <FfPlayerLookup />
+      </section>
 
       <AccountValuator />
 
