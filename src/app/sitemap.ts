@@ -224,6 +224,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.58,
     },
     {
+      url: `${BASE}/so-sanh-nick`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.56,
+    },
+    {
       url: `${BASE}/tinh-nap`,
       lastModified: now,
       changeFrequency: "monthly",

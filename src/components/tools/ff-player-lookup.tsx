@@ -65,6 +65,20 @@ function fmtDate(v: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString("vi-VN");
 }
 
+/** Tuổi tài khoản từ unix seconds (tạo) -> "X năm Y tháng" / "X ngày". */
+function fmtAge(v: unknown): string | null {
+  const n = num(v);
+  if (n === null || n <= 0) return null;
+  const ms = n < 1e12 ? n * 1000 : n;
+  const days = Math.floor((Date.now() - ms) / 86_400_000);
+  if (days < 0) return null;
+  if (days < 30) return `${days} ngày tuổi`;
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  if (years > 0) return `${years} năm${months > 0 ? ` ${months} tháng` : ""} tuổi`;
+  return `${months} tháng tuổi`;
+}
+
 function fmtGender(v?: string): string | null {
   if (!v) return null;
   if (/female/i.test(v)) return "Nữ";
@@ -215,6 +229,7 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
               <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Globe className="size-3" /> {a.AccountRegion || "?"}
                 {fmtDate(a.AccountCreateTime) && <> · Tạo {fmtDate(a.AccountCreateTime)}</>}
+                {fmtAge(a.AccountCreateTime) && <> · {fmtAge(a.AccountCreateTime)}</>}
               </p>
             </div>
             <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-lg font-black text-white">

@@ -11,6 +11,7 @@ import {
   Brain,
   Wallet,
   Search,
+  Swords,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +50,17 @@ export const TOOLS: Tool[] = [
     gradient: "from-indigo-500 to-blue-500",
     featured: true,
     shortDesc: "Nhập UID → xem thông tin tài khoản FF.",
+    badge: "MỚI",
+  },
+  {
+    href: "/so-sanh-nick",
+    title: "So Sánh Nick",
+    desc: "Nhập 2 UID để so kè cấp độ, lượt thích, rank, EXP, pet — xem nick nào trâu hơn.",
+    icon: Swords,
+    accent: "text-rose-500 bg-rose-500/10",
+    gradient: "from-rose-500 to-red-500",
+    featured: true,
+    shortDesc: "So kè 2 nick FF xem ai trâu hơn.",
     badge: "MỚI",
   },
   {
