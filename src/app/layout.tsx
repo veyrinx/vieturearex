@@ -191,7 +191,7 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
                   height: 512,
                 },
                 description: activeSite.description,
-                email: "admin@arex.tech",
+                email: "contact@arexnetwork.site",
                 foundingDate: "2024",
                 knowsAbout: ["Free Fire", "Garena Free Fire", "Esports Việt Nam", "Game Mobile"],
                 sameAs: [
@@ -201,7 +201,7 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
                 ].filter((u) => Boolean(u) && !["https://youtube.com","https://facebook.com","https://tiktok.com"].includes(u as string)),
                 contactPoint: {
                   "@type": "ContactPoint",
-                  email: "admin@arex.tech",
+                  email: "contact@arexnetwork.site",
                   contactType: "customer support",
                   availableLanguage: ["Vietnamese"],
                 },

@@ -113,8 +113,8 @@ export default function SubmitArticlePage() {
       {/* Contact note */}
       <p className="text-center text-xs text-muted-foreground/60">
         Có câu hỏi? Liên hệ{" "}
-        <a href="mailto:admin@arex.tech" className="underline hover:text-foreground">
-          admin@arex.tech
+        <a href="mailto:contact@arexnetwork.site" className="underline hover:text-foreground">
+          contact@arexnetwork.site
         </a>{" "}
         · Xem thêm{" "}
         <a href="/about" className="underline hover:text-foreground">Về chúng tôi</a>

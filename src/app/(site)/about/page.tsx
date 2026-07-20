@@ -97,8 +97,8 @@ const CONTACT_INFO = [
   {
     icon: Mail,
     label: "Email chính thức",
-    value: "admin@arex.tech",
-    href: "mailto:admin@arex.tech",
+    value: "contact@arexnetwork.site",
+    href: "mailto:contact@arexnetwork.site",
     desc: "Hợp tác, báo lỗi, góp ý",
   },
   {

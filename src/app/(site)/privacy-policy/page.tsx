@@ -244,7 +244,7 @@ export default function PrivacyPolicyPage() {
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
           {[
             ["Đơn vị quản lý","Arex"],
-            ["Email liên hệ","admin@arex.tech"],
+            ["Email liên hệ","contact@arexnetwork.site"],
             ["Ngày hiệu lực","02/04/2026"],
             ["Luật áp dụng","NĐ 13/2023 · Luật ATTTM 2015"],
             ["Phạm vi","Mọi người dùng truy cập"],
@@ -385,12 +385,12 @@ export default function PrivacyPolicyPage() {
               <Item><strong className="text-foreground">Ghi nguồn bắt buộc:</strong> Mọi hình ảnh từ Garena đều được chú thích rõ «Ảnh: Garena Free Fire» hoặc nguồn tương đương theo quy định.</Item>
               <Item><strong className="text-foreground">Mục đích phi thương mại:</strong> Hình ảnh chỉ được sử dụng để cung cấp thông tin, bình luận và tổng hợp tin tức — tuân thủ <em>Điều 25, Luật SHTT</em> về trích dẫn hợp lý.</Item>
               <Item><strong className="text-foreground">Không xác nhận quyền sở hữu:</strong> Arex tuyên bố rõ ràng rằng tất cả thương hiệu, logo, nhân vật và tài sản thuộc quyền sở hữu của <strong className="text-foreground">Garena / Sea Limited</strong>.</Item>
-              <Item><strong className="text-foreground">Quyền yêu cầu gỡ bỏ:</strong> Chủ sở hữu bản quyền có quyền yêu cầu gỡ bỏ nội dung bất kỳ lúc nào qua email <strong className="text-foreground">admin@arex.tech</strong>. Chúng tôi sẽ xử lý trong vòng 24 giờ.</Item>
+              <Item><strong className="text-foreground">Quyền yêu cầu gỡ bỏ:</strong> Chủ sở hữu bản quyền có quyền yêu cầu gỡ bỏ nội dung bất kỳ lúc nào qua email <strong className="text-foreground">contact@arexnetwork.site</strong>. Chúng tôi sẽ xử lý trong vòng 24 giờ.</Item>
               <Item><strong className="text-foreground">Font GFF Latin:</strong> Font chữ được sử dụng trên website mang phong cách thương hiệu Free Fire. Arex sử dụng font này cho mục đích nhận diện cộng đồng.</Item>
             </div>
             <Alert kind="info">
               Nếu bạn là đại diện của Garena và có yêu cầu về bản quyền, vui lòng liên hệ trực tiếp:{" "}
-              <strong className="text-foreground">admin@arex.tech</strong> — chúng tôi cam kết xử lý trong 24 giờ.
+              <strong className="text-foreground">contact@arexnetwork.site</strong> — chúng tôi cam kết xử lý trong 24 giờ.
             </Alert>
           </Card>
 
@@ -410,7 +410,7 @@ export default function PrivacyPolicyPage() {
             </div>
             <div className="rounded-xl border border-primary/20 bg-primary/5 dark:border-amber-400/20 dark:bg-amber-400/5 px-4 py-3">
               <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-primary dark:text-amber-400">Cách thực hiện quyền</p>
-              <p className="text-sm">Gửi yêu cầu đến <strong className="text-foreground">admin@arex.tech</strong> với tiêu đề <em>«YÊU CẦU QUYỀN DỮ LIỆU»</em>. Chúng tôi phản hồi trong <strong className="text-foreground">15 ngày làm việc</strong>.</p>
+              <p className="text-sm">Gửi yêu cầu đến <strong className="text-foreground">contact@arexnetwork.site</strong> với tiêu đề <em>«YÊU CẦU QUYỀN DỮ LIỆU»</em>. Chúng tôi phản hồi trong <strong className="text-foreground">15 ngày làm việc</strong>.</p>
             </div>
           </Card>
 
@@ -471,7 +471,7 @@ export default function PrivacyPolicyPage() {
               <Item><strong className="text-foreground">Thông báo người dùng bị ảnh hưởng</strong> qua email và thông báo nổi bật trên website kịp thời.</Item>
               <Item>Mô tả rõ bản chất vi phạm, loại dữ liệu bị ảnh hưởng và <strong className="text-foreground">các biện pháp khắc phục</strong> đã thực hiện.</Item>
             </div>
-            <Alert kind="warn">Nếu bạn phát hiện rủi ro bảo mật, liên hệ ngay: <strong className="text-foreground">admin@arex.tech</strong></Alert>
+            <Alert kind="warn">Nếu bạn phát hiện rủi ro bảo mật, liên hệ ngay: <strong className="text-foreground">contact@arexnetwork.site</strong></Alert>
           </Card>
 
           <Card id="s13" num="13" title="Giải Quyết Tranh Chấp" Icon={Icons.Court}>
@@ -479,7 +479,7 @@ export default function PrivacyPolicyPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl border border-border/60 bg-background/50 px-4 py-3">
                 <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-primary dark:text-amber-400">Liên hệ Arex</p>
-                <p className="text-sm font-semibold text-foreground">admin@arex.tech</p>
+                <p className="text-sm font-semibold text-foreground">contact@arexnetwork.site</p>
                 <p className="mt-0.5 text-xs">Phản hồi trong 15 ngày làm việc</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/50 px-4 py-3">

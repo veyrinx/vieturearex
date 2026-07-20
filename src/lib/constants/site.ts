@@ -15,7 +15,7 @@ export const siteConfig = {
     tiktok: "https://tiktok.com/vieturetechnologycenter",
     youtube: "https://youtube.com",
   },
-  contactEmail: "admin@vieture.tech",
+  contactEmail: "contact@arexnetwork.site",
 } as const;
 
 // ── ISC Network config ─────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ export const iscConfig = {
     tiktok: "https://tiktok.com",
     youtube: "https://youtube.com",
   },
-  contactEmail: "admin@iscnetwork.site",
+  contactEmail: "contact@iscnetwork.site",
 } as const;
 
 export type SiteConfig = typeof siteConfig | typeof iscConfig;

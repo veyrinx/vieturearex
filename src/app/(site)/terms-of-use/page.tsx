@@ -244,7 +244,7 @@ export default function TermsOfUsePage() {
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
           {[
             ["Bên cung cấp","Arex"],
-            ["Email pháp lý","admin@arex.tech"],
+            ["Email pháp lý","contact@arexnetwork.site"],
             ["Ngày hiệu lực","02/04/2026"],
             ["Văn bản chính","Luật SHTT · NĐ 17/2023 · NĐ 72/2013"],
             ["Phạm vi","Mọi người dùng truy cập Arex"],
@@ -339,7 +339,7 @@ export default function TermsOfUsePage() {
             <div className="space-y-2">
               <Item>Truy cập và đọc toàn bộ nội dung tin tức, sự kiện mà không cần đăng ký.</Item>
               <Item>Yêu cầu Arex chỉnh sửa hoặc xóa nội dung cá nhân mà bạn đã đăng tải.</Item>
-              <Item>Báo cáo nội dung vi phạm qua email <strong className="text-foreground">admin@arex.tech</strong>.</Item>
+              <Item>Báo cáo nội dung vi phạm qua email <strong className="text-foreground">contact@arexnetwork.site</strong>.</Item>
               <Item>Khiếu nại và yêu cầu giải thích về quyết định xóa nội dung của bạn.</Item>
             </div>
             <p className="font-semibold text-foreground mt-1">Người dùng có nghĩa vụ:</p>
@@ -398,7 +398,7 @@ export default function TermsOfUsePage() {
             <p>Quy trình 6 bước khi nhận thông báo vi phạm bản quyền:</p>
             <div className="space-y-3 mt-1">
               {[
-                ["01","Tiếp nhận","Nhận báo cáo qua admin@arex.tech và lập biên bản tiếp nhận ngay."],
+                ["01","Tiếp nhận","Nhận báo cáo qua contact@arexnetwork.site và lập biên bản tiếp nhận ngay."],
                 ["02","Xác minh ban đầu","Kiểm tra tính hợp lệ và so sánh với nội dung đang hiển thị trên website."],
                 ["03","Hành động tạm","Nếu có bằng chứng rõ ràng: gỡ bỏ hoặc ẩn nội dung trong tối đa 24 giờ."],
                 ["04","Xác minh chi tiết","Nếu không vi phạm (trích dẫn hợp lý theo Điều 25 SHTT), phản hồi giải thích."],
@@ -417,7 +417,7 @@ export default function TermsOfUsePage() {
               ))}
             </div>
             <Alert kind="info" title="Gửi thông báo vi phạm bản quyền">
-              Email: <strong className="text-foreground">admin@arex.tech</strong> — kèm theo: (a) thông tin liên hệ, (b) URL nội dung vi phạm, (c) bằng chứng quyền sở hữu, (d) yêu cầu cụ thể.
+              Email: <strong className="text-foreground">contact@arexnetwork.site</strong> — kèm theo: (a) thông tin liên hệ, (b) URL nội dung vi phạm, (c) bằng chứng quyền sở hữu, (d) yêu cầu cụ thể.
             </Alert>
           </Card>
 
@@ -476,7 +476,7 @@ export default function TermsOfUsePage() {
             <p>Mọi tranh chấp được giải quyết theo các bước:</p>
             <div className="space-y-2">
               {[
-                ["①","Thương lượng trực tiếp","Ưu tiên giải quyết thiện chí. Liên hệ admin@arex.tech trong 30 ngày làm việc."],
+                ["①","Thương lượng trực tiếp","Ưu tiên giải quyết thiện chí. Liên hệ contact@arexnetwork.site trong 30 ngày làm việc."],
                 ["②","Hòa giải","Nếu thương lượng không thành, đề nghị hòa giải qua tổ chức có thẩm quyền."],
                 ["③","Tòa án","Tranh chấp không giải quyết qua thương lượng đưa lên tòa án Việt Nam có thẩm quyền."],
               ].map(([n,t,d]) => (
@@ -492,9 +492,9 @@ export default function TermsOfUsePage() {
           <Card id="s12" num="12" title="Thông Tin Liên Hệ" Icon={Icons.Mail}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                ["Pháp Lý & Bản Quyền","admin@arex.tech","Vi phạm bản quyền, yêu cầu gỡ bỏ, khiếu nại pháp lý"],
-                ["Bảo Mật Dữ Liệu","admin@arex.tech","Báo cáo lỗ hổng bảo mật, vi phạm dữ liệu cá nhân"],
-                ["Hỗ Trợ Chung","admin@arex.tech","Câu hỏi chung, phản hồi, góp ý về website"],
+                ["Pháp Lý & Bản Quyền","contact@arexnetwork.site","Vi phạm bản quyền, yêu cầu gỡ bỏ, khiếu nại pháp lý"],
+                ["Bảo Mật Dữ Liệu","contact@arexnetwork.site","Báo cáo lỗ hổng bảo mật, vi phạm dữ liệu cá nhân"],
+                ["Hỗ Trợ Chung","contact@arexnetwork.site","Câu hỏi chung, phản hồi, góp ý về website"],
                 ["Thời Gian Phản Hồi","15 ngày làm việc","Khẩn cấp (vi phạm bản quyền): trong 24 giờ"],
               ].map(([b,e,d]) => (
                 <div key={b} className="rounded-xl border border-border/60 bg-background/50 px-5 py-4">
