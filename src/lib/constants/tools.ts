@@ -10,6 +10,7 @@ import {
   Gem,
   Brain,
   Wallet,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +40,17 @@ export type Tool = {
  * Sửa ở đây, cả hai nơi cùng cập nhật.
  */
 export const TOOLS: Tool[] = [
+  {
+    href: "/tra-cuu-nick",
+    title: "Tra Cứu Nick",
+    desc: "Nhập UID để xem tên, cấp độ, rank BR/CS, lượt thích, guild, pet của tài khoản Free Fire.",
+    icon: Search,
+    accent: "text-indigo-500 bg-indigo-500/10",
+    gradient: "from-indigo-500 to-blue-500",
+    featured: true,
+    shortDesc: "Nhập UID → xem thông tin tài khoản FF.",
+    badge: "MỚI",
+  },
   {
     href: "/do-nhay",
     title: "Chỉnh Độ Nhạy",

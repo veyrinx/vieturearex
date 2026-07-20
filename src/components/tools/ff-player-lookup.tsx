@@ -20,6 +20,7 @@ type FfResult = {
     BrRankPoint?: number | string;
     CsMaxRank?: number | string;
     CsRankPoint?: number | string;
+    ReleaseVersion?: string;
     AccountCreateTime?: number | string;
     AccountLastLogin?: number | string;
   };
@@ -31,6 +32,12 @@ type FfResult = {
   };
   petInfo?: { level?: number | string };
   creditScoreInfo?: { creditScore?: number | string };
+  socialinfo?: {
+    Gender?: string;
+    AccountLanguage?: string;
+    ModePreference?: string;
+    AccountSignature?: string;
+  };
 };
 
 type FfResponse = {
@@ -56,6 +63,20 @@ function fmtDate(v: unknown): string | null {
   const ms = n < 1e12 ? n * 1000 : n; // giây → ms
   const d = new Date(ms);
   return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString("vi-VN");
+}
+
+function fmtGender(v?: string): string | null {
+  if (!v) return null;
+  if (/female/i.test(v)) return "Nữ";
+  if (/male/i.test(v)) return "Nam";
+  return null;
+}
+
+function fmtMode(v?: string): string | null {
+  if (!v) return null;
+  if (/_CS$/i.test(v)) return "Clash Squad";
+  if (/_BR$/i.test(v)) return "Battle Royale";
+  return null;
 }
 
 function Stat({ icon: Icon, label, value, accent }: {
@@ -145,6 +166,7 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
 
   const a = data?.AccountInfo;
   const g = data?.GuildInfo;
+  const s = data?.socialinfo;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -200,12 +222,22 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
             </div>
           </div>
 
+          {/* Chữ ký cá nhân */}
+          {s?.AccountSignature && (
+            <p className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-sm italic text-muted-foreground">
+              “{s.AccountSignature}”
+            </p>
+          )}
+
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <Stat icon={Star} label="Cấp độ" value={fmtNum(a.AccountLevel)} />
             <Stat icon={Heart} label="Lượt thích" value={fmtNum(a.AccountLikes)} accent="bg-rose-500/10 text-rose-500" />
             <Stat icon={Trophy} label="Rank BR" value={fmtNum(a.BrRankPoint)} accent="bg-amber-500/10 text-amber-500" />
             <Stat icon={Trophy} label="Rank CS" value={fmtNum(a.CsRankPoint)} accent="bg-sky-500/10 text-sky-500" />
+            {a.AccountEXP != null && (
+              <Stat icon={Star} label="EXP" value={fmtNum(a.AccountEXP)} accent="bg-indigo-500/10 text-indigo-500" />
+            )}
             {data?.petInfo?.level != null && (
               <Stat icon={PawPrint} label="Pet Lv" value={fmtNum(data.petInfo.level)} accent="bg-emerald-500/10 text-emerald-500" />
             )}
@@ -213,6 +245,27 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
               <Stat icon={Shield} label="Điểm tín nhiệm" value={fmtNum(data.creditScoreInfo.creditScore)} accent="bg-violet-500/10 text-violet-500" />
             )}
           </div>
+
+          {/* Meta chips: giới tính · chế độ · phiên bản */}
+          {(fmtGender(s?.Gender) || fmtMode(s?.ModePreference) || a.ReleaseVersion) && (
+            <div className="flex flex-wrap gap-1.5">
+              {fmtGender(s?.Gender) && (
+                <span className="rounded-full border border-border bg-muted/30 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                  {fmtGender(s?.Gender)}
+                </span>
+              )}
+              {fmtMode(s?.ModePreference) && (
+                <span className="rounded-full border border-border bg-muted/30 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                  Thích: {fmtMode(s?.ModePreference)}
+                </span>
+              )}
+              {a.ReleaseVersion && (
+                <span className="rounded-full border border-border bg-muted/30 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                  {a.ReleaseVersion}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Guild */}
           {g?.GuildName && (
