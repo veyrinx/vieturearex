@@ -5,6 +5,7 @@ import {
   normalizePlayerUid,
   getPlayerAllData,
 } from "@/lib/server/ff-api";
+import { recordVnAccount } from "@/lib/server/ff-auto-score";
 
 // axios (trong client HL) cần Node runtime, không chạy được ở Edge.
 export const runtime = "nodejs";
@@ -34,6 +35,8 @@ export async function GET(
 
   try {
     const data = await getPlayerAllData(playerUid);
+    // Tự ghi nhận vào BXH nếu là nick VN (không chặn response nếu lỗi).
+    await recordVnAccount(playerUid, data);
     return NextResponse.json(data, {
       headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" },
     });

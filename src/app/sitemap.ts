@@ -230,6 +230,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.56,
     },
     {
+      url: `${BASE}/bxh-nick-vn`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.6,
+    },
+    {
       url: `${BASE}/tinh-nap`,
       lastModified: now,
       changeFrequency: "monthly",
