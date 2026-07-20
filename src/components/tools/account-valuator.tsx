@@ -43,10 +43,24 @@ const TIERS = [
   { min: 500, label: "Nick huyền thoại", cls: "text-rose-500", bar: "bg-rose-500" },
 ];
 
-export function AccountValuator() {
+type Prefill = { level?: number | null; rankKey?: string | null; nonce?: number };
+
+export function AccountValuator({ prefill }: { prefill?: Prefill } = {}) {
   const [rank, setRank] = useState("diamond");
   const [v, setV] = useState<Record<string, string>>({});
   const set = (k: string, val: string) => setV((p) => ({ ...p, [k]: val }));
+
+  // Tự điền level & rank khi có dữ liệu từ tra cứu UID (nonce đổi mỗi lần tra cứu).
+  useEffect(() => {
+    if (!prefill) return;
+    if (typeof prefill.level === "number" && prefill.level > 0) {
+      setV((p) => ({ ...p, level: String(prefill.level) }));
+    }
+    if (prefill.rankKey && RANKS.some((r) => r.key === prefill.rankKey)) {
+      setRank(prefill.rankKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill?.nonce]);
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);

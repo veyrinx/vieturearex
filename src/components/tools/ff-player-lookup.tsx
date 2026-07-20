@@ -74,15 +74,23 @@ function Stat({ icon: Icon, label, value, accent }: {
   );
 }
 
+export type FfLookupData = {
+  level: number | null;
+  brRankPoint: number | null;
+  nickname: string | null;
+};
+
 type Props = {
   /** UID điền sẵn (vd lấy từ hồ sơ). */
   initialUid?: string;
   /** Tự tra cứu ngay khi mount nếu có initialUid. */
   autoLookup?: boolean;
+  /** Nhận dữ liệu mỗi khi tra cứu thành công (để tự điền nơi khác). */
+  onData?: (data: FfLookupData) => void;
   className?: string;
 };
 
-export function FfPlayerLookup({ initialUid = "", autoLookup = false, className }: Props) {
+export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, className }: Props) {
   const [uid, setUid] = useState(initialUid);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +115,16 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, className 
       } else {
         setData(json.result ?? null);
         setRemaining(json.usage?.remainingToday ?? null);
-        if (!json.result?.AccountInfo) setError("Không tìm thấy tài khoản với UID này.");
+        const info = json.result?.AccountInfo;
+        if (!info) {
+          setError("Không tìm thấy tài khoản với UID này.");
+        } else if (onData) {
+          onData({
+            level: num(info.AccountLevel),
+            brRankPoint: num(info.BrRankPoint),
+            nickname: info.AccountName ?? null,
+          });
+        }
       }
     } catch {
       setError("Lỗi mạng, thử lại sau.");
