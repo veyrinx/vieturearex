@@ -209,7 +209,7 @@ export function AccountValuator({ prefill }: { prefill?: Prefill } = {}) {
           <div className="mt-5 border-t border-border pt-4">
             {posted ? (
               <p className="text-sm font-semibold text-emerald-500">
-                Đã đăng! Xem <Link href="/bxh-nick" className="underline">bảng xếp hạng nick</Link>.
+                Đã đăng! Xem <Link href="/bxh-nick-vn#cong-dong" className="underline">bảng xếp hạng nick</Link>.
               </p>
             ) : loggedIn ? (
               <button

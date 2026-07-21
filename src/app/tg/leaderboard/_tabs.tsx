@@ -15,10 +15,11 @@ export type PlayerRow = {
 
 export type NickRow = {
   ff_id: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
+  nickname: string | null;
+  level: number | null;
+  likes: number | null;
+  br_rank_point: number | null;
   score: number;
-  tier: string | null;
 };
 
 export type QuizRow = {
@@ -47,7 +48,7 @@ export function LeaderboardTabs({ players, nicks, quizzes }: { players: PlayerRo
 
   const TABS = [
     { key: "players" as const, label: "Tuyển thủ", icon: "military_tech" },
-    { key: "nicks" as const, label: "Nick khủng", icon: "diamond" },
+    { key: "nicks" as const, label: "Nick khủng VN", icon: "diamond" },
     { key: "quiz" as const, label: "Quiz", icon: "psychology" },
   ];
 
@@ -58,7 +59,7 @@ export function LeaderboardTabs({ players, nicks, quizzes }: { players: PlayerRo
       tab === "players"
         ? "🏆 BXH tuyển thủ Free Fire cộng đồng Arex — xem ai đứng top!"
         : tab === "nicks"
-        ? "💎 BXH nick khủng Free Fire trên Arex — nick của bạn hạng mấy?"
+        ? "💎 BXH nick khủng Free Fire VN trên Arex — nick của bạn hạng mấy?"
         : "🧠 BXH Quiz Free Fire trên Arex — thử tài xem bạn top mấy?";
     shareToTelegram(text, `${origin}/tg/leaderboard`);
   }
@@ -126,28 +127,22 @@ export function LeaderboardTabs({ players, nicks, quizzes }: { players: PlayerRo
 
       {tab === "nicks" && (
         nicks.length === 0 ? (
-          <Empty text="Chưa có ai đăng BXH nick. Tính & đăng trên web nhé!" />
+          <Empty text="Chưa có nick VN nào. Tra cứu một nick trên web để tự động lên BXH!" />
         ) : (
           <div className="space-y-2">
             {nicks.map((n, i) => {
-              const name = n.display_name || (n.ff_id ? `FF ${n.ff_id}` : "Người chơi");
+              const name = n.nickname || (n.ff_id ? `FF ${n.ff_id}` : "Người chơi");
               return (
-                <Row key={i} i={i}>
-                  <div className="size-8 shrink-0 overflow-hidden rounded-full" style={{ backgroundColor: "var(--tg-theme-bg-color,#111)" }}>
-                    {n.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={n.avatar_url} alt={name} className="size-full object-cover" />
-                    ) : (
-                      <div className="flex size-full items-center justify-center text-xs font-black" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>
-                        {name.slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
+                <Row key={n.ff_id ?? i} i={i}>
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-black"
+                    style={{ backgroundColor: "var(--tg-theme-bg-color,#111)", color: "var(--tg-theme-hint-color,#8b8b8b)" }}>
+                    {name.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{name}</p>
-                    {n.tier && (
-                      <p className="text-[11px]" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>{n.tier}</p>
-                    )}
+                    <p className="text-[11px]" style={{ color: "var(--tg-theme-hint-color,#8b8b8b)" }}>
+                      Lv {n.level ?? "—"} · ❤️ {(n.likes ?? 0).toLocaleString("vi-VN")} · 🏆 {(n.br_rank_point ?? 0).toLocaleString("vi-VN")}
+                    </p>
                   </div>
                   <p className="shrink-0 text-sm font-bold" style={{ color: "var(--tg-theme-button-color,#f97316)" }}>
                     {n.score.toLocaleString("vi-VN")} điểm

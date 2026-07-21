@@ -3,12 +3,14 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { LeaderboardTabs, type NickRow, type QuizRow } from "./_tabs";
 
+/** BXH nick khủng VN — tự chấm điểm từ dữ liệu thật khi có người tra cứu. */
 async function getNicks(): Promise<NickRow[]> {
   const db = createAdminSupabaseClient();
   if (!db) return [];
   try {
-    const { data } = (await untypedFrom(db, "account_scores")
-      .select("ff_id, display_name, avatar_url, score, tier")
+    const { data } = (await untypedFrom(db, "ff_auto_scores")
+      .select("ff_id, nickname, level, likes, br_rank_point, score")
+      .eq("region", "VN")
       .order("score", { ascending: false })
       .limit(20)) as { data: NickRow[] | null };
     return data ?? [];

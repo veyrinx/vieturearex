@@ -12,6 +12,7 @@ import {
   Wallet,
   Search,
   Swords,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 
@@ -139,6 +140,17 @@ export const TOOLS: Tool[] = [
     gradient: "from-red-500 to-rose-600",
     featured: true,
     shortDesc: "Tính K/D, tỉ lệ thắng & hạ gục mỗi trận.",
+  },
+  {
+    href: "/bxh-nick-vn",
+    title: "BXH Nick Khủng VN",
+    desc: "Top nick Free Fire khủng nhất khu vực VN — tự chấm điểm từ dữ liệu thật (level, likes, EXP, rank) mỗi khi có người tra cứu.",
+    icon: Trophy,
+    accent: "text-amber-500 bg-amber-500/10",
+    gradient: "from-amber-500 to-orange-500",
+    featured: true,
+    shortDesc: "Top nick FF khủng nhất VN, tự cập nhật.",
+    badge: "MỚI",
   },
   {
     href: "/dinh-gia-nick",

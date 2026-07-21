@@ -32,7 +32,6 @@ const CORE_ROUTES = [
   "/tra-cuu-nick",
   "/so-sanh-nick",
   "/bxh-nick-vn",
-  "/bxh-nick",
   "/dinh-gia-nick",
   "/quiz",
   "/cua-hang-prime",

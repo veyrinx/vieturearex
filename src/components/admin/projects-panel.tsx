@@ -17,7 +17,6 @@ const ROUTE_SUGGESTIONS = Array.from(
   new Set([
     ...TOOLS.map((t) => t.href),
     "/bxh-nick-vn",
-    "/bxh-nick",
     "/bxh-quiz",
     "/tra-cuu-nick",
     "/so-sanh-nick",

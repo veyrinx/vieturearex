@@ -13,7 +13,7 @@ import {
 // Gợi ý route hay khóa (hiện trong datalist)
 const ROUTE_SUGGESTIONS = [
   "/dinh-gia-nick", "/tinh-nap", "/tinh-kd", "/do-nhay", "/combo", "/tier-list",
-  "/items", "/tao-ten", "/dem-nguoc", "/trang-thai", "/bxh-nick", "/cong-cu",
+  "/items", "/tao-ten", "/dem-nguoc", "/trang-thai", "/bxh-nick-vn", "/cong-cu",
   "/vu-khi", "/nhan-vat", "/tournaments",
 ];
 

@@ -43,7 +43,7 @@ const COMMUNITY_ITEMS = [
   { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    desc: "Hot posts & top contributors" },
   { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
   { title: "Quiz FF",        href: "/quiz",                  icon: Brain,         desc: "Đố vui kiến thức Free Fire" },
-  { title: "BXH Nick",       href: "/bxh-nick",              icon: Crown,         desc: "Nick khủng nhất cộng đồng" },
+  { title: "BXH Nick VN",    href: "/bxh-nick-vn",           icon: Crown,         desc: "Top nick FF khủng nhất VN (tự động)" },
   { title: "BXH Quiz",       href: "/bxh-quiz",              icon: Brain,         desc: "Ai hiểu game nhất cộng đồng" },
   { title: "TikTok",         href: "/tiktok",                icon: Music2,        desc: "Video Free Fire cộng đồng" },
   { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         desc: "Tìm clan & guild" },
