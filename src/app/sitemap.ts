@@ -206,6 +206,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.60,
     },
     {
+      url: `${BASE}/sap-ra-mat`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.55,
+    },
+    {
       url: `${BASE}/dang-ky-tin`,
       lastModified: now,
       changeFrequency: "monthly",

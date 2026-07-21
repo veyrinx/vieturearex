@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, BarChartBig, ScrollText, History,
+  LayoutDashboard, BarChartBig, ScrollText, History, Rocket,
   Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, Brain, ListChecks, Swords, Layers,
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
@@ -19,6 +19,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Dashboard",  href: "/admin",          icon: LayoutDashboard },
       { title: "Thống kê",   href: "/admin/stats",    icon: BarChartBig },
       { title: "Nhật ký",    href: "/admin/logs",     icon: ScrollText },
+      { title: "Dự án",      href: "/admin/projects", icon: Rocket },
       { title: "Phiên bản",  href: "/admin/changelog", icon: History },
     ],
   },
