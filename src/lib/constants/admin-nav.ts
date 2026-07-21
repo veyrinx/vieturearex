@@ -4,7 +4,7 @@ import {
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
-  FileText, Users2, SlidersHorizontal,
+  FileText, Users2, SlidersHorizontal, Eye,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,8 +19,15 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Dashboard",  href: "/admin",          icon: LayoutDashboard },
       { title: "Thống kê",   href: "/admin/stats",    icon: BarChartBig },
       { title: "Nhật ký",    href: "/admin/logs",     icon: ScrollText },
-      { title: "Dự án",      href: "/admin/projects", icon: Rocket },
       { title: "Phiên bản",  href: "/admin/changelog", icon: History },
+    ],
+  },
+  {
+    label: "Dự án",
+    icon: Rocket,
+    items: [
+      { title: "Quản lý dự án", href: "/admin/projects", icon: Rocket },
+      { title: "Xem Roadmap",   href: "/sap-ra-mat",     icon: Eye },
     ],
   },
   {
