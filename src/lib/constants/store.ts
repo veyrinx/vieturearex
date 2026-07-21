@@ -13,6 +13,8 @@ export type PrimeItem = {
   price: number;
   /** Mô tả thời hạn/phụ đề, vd "30 ngày". */
   duration?: string;
+  /** Ảnh vật phẩm (skin/nhân vật) hiển thị trong banner. */
+  image?: string;
   /** Quyền lợi (chỉ dùng cho membership). */
   perks?: string[];
   featured?: boolean;
@@ -46,6 +48,7 @@ export function parsePrimeItems(raw: string | null | undefined): PrimeItem[] {
       type,
       price: clampInt(o.price),
       duration: typeof o.duration === "string" ? o.duration.slice(0, 60) : undefined,
+      image: typeof o.image === "string" && /^https?:\/\//i.test(o.image) ? o.image.slice(0, 400) : undefined,
       perks: Array.isArray(o.perks)
         ? o.perks.filter((p): p is string => typeof p === "string").map((p) => p.slice(0, 120)).slice(0, 12)
         : undefined,
@@ -65,6 +68,7 @@ export function serializePrimeItems(items: PrimeItem[]): string {
       type: i.type,
       price: clampInt(i.price),
       ...(i.duration ? { duration: i.duration } : {}),
+      ...(i.image ? { image: i.image } : {}),
       ...(i.perks && i.perks.length ? { perks: i.perks } : {}),
       ...(i.featured ? { featured: true } : {}),
       ...(i.enabled === false ? { enabled: false } : {}),

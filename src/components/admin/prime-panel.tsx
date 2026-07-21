@@ -93,6 +93,12 @@ export function PrimePanel({ initialItems, canEdit }: { initialItems: PrimeItem[
                   placeholder="vd: 30 ngày Prime"
                   className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60" />
               </label>
+              <label className="space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Ảnh vật phẩm (URL)</span>
+                <input value={r.image ?? ""} disabled={!canEdit} onChange={(e) => patch(r._rid, { image: e.target.value })}
+                  placeholder="https://... (skin/nhân vật)"
+                  className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60" />
+              </label>
               {r.type === "membership" && (
                 <label className="space-y-1">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quyền lợi (mỗi dòng 1 mục)</span>
