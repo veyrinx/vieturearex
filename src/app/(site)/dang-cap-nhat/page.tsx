@@ -4,6 +4,7 @@ import { Wrench, Lock, Clock3, Home, ArrowLeft } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { findFeatureLock, LOCK_LABELS, type FeatureLockStatus } from "@/lib/constants/feature-locks";
 import { getFeatureLocks } from "@/lib/server/feature-locks";
+import { LockCountdown } from "@/components/common/lock-countdown";
 
 export const metadata: Metadata = {
   title: "Đang cập nhật | Arex",
@@ -33,11 +34,7 @@ export default async function FeatureLockedPage({
     <main className="container-main my-16 max-w-lg space-y-8 text-center">
       <PageHero icon={Icon} eyebrow={LOCK_LABELS[status]} title={title} subtitle={message} />
 
-      {lock?.until && (
-        <p className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-muted-foreground">
-          <Clock3 className="size-4" /> Dự kiến mở lại: <b className="text-foreground">{lock.until}</b>
-        </p>
-      )}
+      {lock?.until && <LockCountdown until={lock.until} />}
 
       <div className="flex flex-wrap justify-center gap-3">
         <Link
