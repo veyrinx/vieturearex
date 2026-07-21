@@ -3,18 +3,20 @@ import { Music2, Play, Clock, ExternalLink } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
+import { getSocialVideos } from "@/lib/server/social";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "TikTok cộng đồng — Video Free Fire | Arex",
   description:
-    "Tuyển tập video TikTok Free Fire nổi bật từ cộng đồng Arex: khoảnh khắc highlight, mẹo chơi, sự kiện. Sắp ra mắt.",
+    "Tuyển tập video TikTok Free Fire nổi bật từ cộng đồng Arex: khoảnh khắc highlight, mẹo chơi, sự kiện.",
   alternates: { canonical: `${siteConfig.url}/tiktok` },
 };
 
-// Placeholder (scaffold) — sẽ thay bằng nội dung nhúng thật từ /admin/social.
-const SLOTS = Array.from({ length: 6 });
+export default async function TiktokPage() {
+  const videos = (await getSocialVideos()).filter((v) => v.enabled !== false);
 
-export default function TiktokPage() {
   return (
     <main className="container-main my-8 max-w-3xl space-y-8">
       <Breadcrumbs items={[{ name: "TikTok", href: "/tiktok" }]} />
@@ -26,29 +28,40 @@ export default function TiktokPage() {
         subtitle="Highlight, mẹo chơi và khoảnh khắc nổi bật từ cộng đồng — cập nhật liên tục."
       />
 
-      <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3">
-        <Clock className="size-5 shrink-0 text-amber-500" />
-        <p className="text-sm text-foreground">
-          <b>Sắp ra mắt.</b> Video TikTok sẽ được quản lý & nhúng từ trang quản trị.
-        </p>
-      </div>
-
-      {/* Lưới video (khung 9:16 kiểu TikTok) */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {SLOTS.map((_, i) => (
-          <div
-            key={i}
-            className="group relative flex aspect-[9/16] items-center justify-center overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-muted/10"
-          >
-            <div className="flex size-12 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground/40 transition-transform group-hover:scale-110">
-              <Play className="size-5" />
-            </div>
-            <span className="absolute bottom-2 left-2 rounded-md bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white/70 backdrop-blur-sm">
-              Video #{i + 1}
-            </span>
-          </div>
-        ))}
-      </div>
+      {videos.length === 0 ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3">
+          <Clock className="size-5 shrink-0 text-amber-500" />
+          <p className="text-sm text-foreground"><b>Sắp có video.</b> Nội dung TikTok đang được cập nhật.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {videos.map((v) => (
+            <a
+              key={v.id}
+              href={v.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex aspect-[9/16] items-end overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-muted/10"
+            >
+              {v.thumbnail ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={v.thumbnail} alt={v.title} loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Play className="size-8 text-muted-foreground/30" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              <div className="absolute right-2 top-2 flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
+                <Play className="size-4" />
+              </div>
+              {v.title && (
+                <p className="relative z-10 line-clamp-2 p-2.5 text-xs font-semibold text-white drop-shadow">{v.title}</p>
+              )}
+            </a>
+          ))}
+        </div>
+      )}
 
       <a
         href="https://tiktok.com/vieturetechnologycenter"
