@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
   BookOpenText, Users, MessageSquare, Trophy,
-  TrendingUp, Palette, Rss, Image as ImageIcon, Wrench, Crown, Brain,
+  TrendingUp, Palette, Rss, Image as ImageIcon, Wrench, Crown, Brain, Rocket,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -66,6 +66,7 @@ const MOBILE_NAV_SECTIONS: {
       { title: "Lịch",     href: "/calendar", icon: CalendarDays },
       { title: "Sự Kiện",  href: "/events",   icon: Flame },
       { title: "Trực Tiếp", href: "/esports", icon: MonitorPlay },
+      { title: "Sắp Ra Mắt", href: "/sap-ra-mat", icon: Rocket },
     ],
   },
   {
