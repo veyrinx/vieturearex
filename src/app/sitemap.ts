@@ -242,6 +242,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
     {
+      url: `${BASE}/cua-hang-prime`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/tiktok`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.55,
+    },
+    {
       url: `${BASE}/tinh-nap`,
       lastModified: now,
       changeFrequency: "monthly",

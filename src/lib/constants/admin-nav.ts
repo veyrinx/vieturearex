@@ -5,6 +5,7 @@ import {
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
   FileText, Users2, SlidersHorizontal, Eye,
+  ShoppingBag, Share2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,14 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Tier Lists", href: "/admin/tier-lists", icon: ListChecks },
       { title: "Pop-up",    href: "/admin/popup",    icon: Bell },
       { title: "Quiz",      href: "/admin/quiz",     icon: Brain },
+      { title: "Mạng xã hội", href: "/admin/social", icon: Share2 },
+    ],
+  },
+  {
+    label: "Cửa hàng",
+    icon: ShoppingBag,
+    items: [
+      { title: "Cửa hàng Prime", href: "/admin/prime", icon: ShoppingBag },
     ],
   },
   {

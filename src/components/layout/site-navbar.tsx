@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
   BookOpenText, Users, MessageSquare, Trophy,
-  TrendingUp, Palette, Rss, Image as ImageIcon, Wrench, Crown, Brain, Rocket,
+  TrendingUp, Palette, Rss, Image as ImageIcon, Wrench, Crown, Brain, Rocket, Music2,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -34,6 +34,7 @@ const ABOUT_ITEMS = [
 ];
 
 const COMMUNITY_ITEMS = [
+  { title: "Cửa Hàng Prime", href: "/cua-hang-prime",        icon: Crown,         desc: "Gói thành viên & ưu đãi độc quyền" },
   { title: "Công Cụ FF",     href: "/cong-cu",               icon: Wrench,        desc: "Độ nhạy · Tier list · Combo · Icon" },
   { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
   { title: "Feed",            href: "/feed",                  icon: Rss,           desc: "Hoạt động từ người bạn theo dõi" },
@@ -44,6 +45,7 @@ const COMMUNITY_ITEMS = [
   { title: "Quiz FF",        href: "/quiz",                  icon: Brain,         desc: "Đố vui kiến thức Free Fire" },
   { title: "BXH Nick",       href: "/bxh-nick",              icon: Crown,         desc: "Nick khủng nhất cộng đồng" },
   { title: "BXH Quiz",       href: "/bxh-quiz",              icon: Brain,         desc: "Ai hiểu game nhất cộng đồng" },
+  { title: "TikTok",         href: "/tiktok",                icon: Music2,        desc: "Video Free Fire cộng đồng" },
   { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         desc: "Tìm clan & guild" },
   { title: "Trang Cá Nhân",  href: "/cong-dong/cosmetics",   icon: Palette,       desc: "Khung & Danh Hiệu" },
 ];

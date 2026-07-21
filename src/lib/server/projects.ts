@@ -35,6 +35,8 @@ const CORE_ROUTES = [
   "/bxh-nick",
   "/dinh-gia-nick",
   "/quiz",
+  "/cua-hang-prime",
+  "/tiktok",
 ];
 
 function buildKnownRoutes(): Set<string> {
