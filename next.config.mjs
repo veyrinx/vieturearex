@@ -120,7 +120,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       `script-src ${scriptSrc}`,
       `connect-src ${connectSrc}`,
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://www.twitch.tv https://www.facebook.com https://web.facebook.com https://translate.google.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://www.twitch.tv https://www.facebook.com https://web.facebook.com https://translate.google.com https://www.tiktok.com",
       "form-action 'self' https://mail.google.com https://accounts.google.com",
       "upgrade-insecure-requests",
     ].join("; ");

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Crown, Clock, Check, ShoppingCart, Flame } from "lucide-react";
+import { Clock, Check, ShoppingCart, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { PrimeItem } from "@/lib/constants/store";
+import { RARITY_BG, RARITY_LABEL, type PrimeItem, type PrimeRarity } from "@/lib/constants/store";
 
 type Tab = "all" | "membership" | "pack";
 
@@ -13,105 +13,72 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "pack", label: "Gói thời hạn" },
 ];
 
-/** Rarity: featured = huyền thoại (vàng), membership = sử thi (tím), pack = hiếm (lam). */
-function rarity(item: PrimeItem) {
-  if (item.featured)
-    return {
-      fill: "from-amber-500/35 via-orange-600/20 to-transparent",
-      edge: "border-amber-300/70",
-      glow: "shadow-[0_0_28px_rgba(251,191,36,0.25)]",
-      accent: "text-amber-300",
-      label: "Huyền thoại",
-      ribbon: "bg-amber-400/90 text-slate-900",
-    };
-  if (item.type === "membership")
-    return {
-      fill: "from-violet-600/35 via-fuchsia-600/18 to-transparent",
-      edge: "border-violet-300/50",
-      glow: "",
-      accent: "text-violet-200",
-      label: "Sử thi",
-      ribbon: "bg-violet-400/90 text-slate-900",
-    };
-  return {
-    fill: "from-sky-600/35 via-blue-700/18 to-transparent",
-    edge: "border-sky-300/45",
-    glow: "",
-    accent: "text-sky-200",
-    label: "Hiếm",
-    ribbon: "bg-sky-400/90 text-slate-900",
-  };
-}
+const rarityOf = (i: PrimeItem): PrimeRarity => i.rarity ?? (i.featured ? "ARTIFACT" : "COMMON");
 
-/** Kim cương Free Fire (SVG nhỏ, tự vẽ để khỏi phụ thuộc ảnh). */
-function Diamond({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path d="M6 3h12l4 6-10 12L2 9l4-6z" fill="#22d3ee" />
-      <path d="M6 3h12l4 6H2l4-6z" fill="#67e8f9" />
-      <path d="M12 21 2 9h20L12 21z" fill="#0891b2" opacity=".55" />
-      <path d="M9 3 7 9l5 12M15 3l2 6-5 12" stroke="#0e7490" strokeWidth=".8" fill="none" opacity=".6" />
-    </svg>
-  );
-}
-
-/** Đếm ngược tới đợt reset Prime kế tiếp (đầu tháng). */
+/** Đếm ngược tới đợt reset Prime kế tiếp (đầu tháng), khớp định dạng "Xd Yh Zm". */
 function useResetCountdown() {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
   if (now === null) return null;
   const d = new Date(now);
-  const target = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
-  const diff = Math.max(0, target - now);
-  const days = Math.floor(diff / 86_400_000);
-  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
-  const mins = Math.floor((diff % 3_600_000) / 60_000);
-  return `${days}d ${hours}h ${mins}m`;
+  const diff = Math.max(0, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() - now);
+  return `${Math.floor(diff / 86_400_000)}d ${Math.floor((diff % 86_400_000) / 3_600_000)}h ${Math.floor((diff % 3_600_000) / 60_000)}m`;
 }
 
 export function PrimeStore({ items }: { items: PrimeItem[] }) {
   const [tab, setTab] = useState<Tab>("all");
+  const [active, setActive] = useState<PrimeItem | null>(null);
   const visible = useMemo(() => (tab === "all" ? items : items.filter((i) => i.type === tab)), [items, tab]);
   const countdown = useResetCountdown();
 
+  // Đóng modal bằng phím Esc + khóa cuộn nền khi modal mở.
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setActive(null); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [active]);
+
   return (
-    <div
-      className="relative overflow-hidden rounded-[26px] border-2 border-amber-400/50 bg-[#0d1420] p-3 shadow-[0_0_50px_rgba(251,191,36,0.12)] sm:p-4"
-      style={{ backgroundImage: "radial-gradient(120% 60% at 50% -10%, rgba(251,191,36,0.12), transparent 60%)" }}
-    >
-      {/* Header shop */}
-      <div className="mb-4 flex items-center justify-between gap-3 px-1">
-        <div className="flex items-baseline gap-2">
-          <h2 className="font-heading text-2xl font-black uppercase italic tracking-tight sm:text-3xl">
-            <span className="text-slate-100">Prime</span>{" "}
-            <span className="bg-gradient-to-b from-amber-200 to-amber-500 bg-clip-text text-transparent">Store</span>
-          </h2>
-          <span className="hidden text-[11px] font-bold text-amber-100/50 sm:inline">{items.length} vật phẩm</span>
-        </div>
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-black/40 px-3 py-1 font-heading text-xs font-bold tabular-nums text-amber-200"
-          title="Đếm ngược tới đợt reset đầu tháng"
+    <div className="space-y-3">
+      <style>{`@keyframes primeTitleShine{to{background-position:200% center}}
+@keyframes primeModalPop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}`}</style>
+
+      {/* Tiêu đề + đếm ngược */}
+      <div className="flex items-end justify-between gap-3 px-1">
+        <h2
+          className="font-heading text-[clamp(1.4rem,5vw,2.2rem)] font-black uppercase leading-tight text-transparent"
+          style={{
+            backgroundImage: "linear-gradient(to right,#fff,#FFD700,#fff)",
+            backgroundSize: "200% auto",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            animation: "primeTitleShine 3s linear infinite",
+          }}
         >
-          <Clock className="size-3.5" /> Reset {countdown ? `sau ${countdown}` : "--"}
+          Prime Store
+        </h2>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-[20px] border border-amber-400/30 bg-black/60 px-3 py-1 text-sm font-bold text-[#FFD700]">
+          <Clock className="size-4" /> {countdown ?? "--"}
         </span>
       </div>
 
-      {/* Tabs lọc */}
-      <div className="mb-4 flex flex-wrap gap-1.5 px-1">
+      {/* Lọc theo loại */}
+      <div className="flex flex-wrap gap-1.5 px-1">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             aria-pressed={tab === t.key}
             className={cn(
-              "rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60",
-              tab === t.key
-                ? "bg-amber-400 text-slate-900 shadow"
-                : "text-amber-100/50 hover:text-amber-100",
+              "rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors",
+              tab === t.key ? "bg-[#FFD700] text-slate-900 shadow" : "bg-black/40 text-amber-100/60 hover:text-amber-100",
             )}
           >
             {t.label}
@@ -119,98 +86,127 @@ export function PrimeStore({ items }: { items: PrimeItem[] }) {
         ))}
       </div>
 
-      {/* Các banner xếp chồng */}
-      <div className="space-y-3">
-        {visible.map((item) => {
-          const r = rarity(item);
-          const Icon = item.type === "membership" ? Crown : Clock;
-          return (
-            <div
-              key={item.id}
-              className={cn(
-                "group relative flex h-28 overflow-hidden rounded-2xl border bg-[#111a28] transition-transform duration-300 hover:scale-[1.01] sm:h-32",
-                r.edge, r.glow,
-              )}
-            >
-              {/* Nền gradient rarity + vệt chéo */}
-              <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-r", r.fill)} />
-              <div
-                className="pointer-events-none absolute inset-y-0 right-0 w-2/3 opacity-30"
-                style={{ backgroundImage: "repeating-linear-gradient(115deg, transparent 0 22px, rgba(255,255,255,0.05) 22px 24px)" }}
-              />
-              {/* Vệt sáng quét khi hover */}
-              <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+      {/* Khung cửa hàng + lớp phủ vật phẩm (tỉ lệ % lấy theo reference) */}
+      <div className="relative w-full">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/prime/FF_UI_Prime_Store.png" alt="" className="block h-auto w-full select-none" draggable={false} />
 
-              {item.featured && (
-                <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-md bg-amber-500 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-900 shadow">
-                  <Flame className="size-2.5" /> Hot
-                </span>
-              )}
+        <div className="absolute bottom-[6%] left-[4.5%] right-[4.5%] top-[12.5%] grid grid-cols-1 content-start gap-2.5 overflow-y-auto overflow-x-hidden pr-1 [scrollbar-color:#FFD700_transparent] [scrollbar-width:thin]">
+          {visible.map((item) => {
+            const bg = RARITY_BG[rarityOf(item)];
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActive(item)}
+                className="relative flex aspect-[3.17/1] w-full items-center justify-center transition-transform duration-200 hover:scale-[1.02] hover:brightness-110"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/prime/FF_UI_Prime_Item${bg}.png`}
+                  alt=""
+                  className="absolute inset-0 z-[1] size-full rounded object-fill"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/prime/FF_UI_Prime_Item1.png"; }}
+                />
 
-              {/* Nhãn độ hiếm */}
-              <span className={cn("absolute right-3 top-3 z-10 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest shadow", r.ribbon)}>
-                {r.label}
-              </span>
-
-              {/* Thông tin bên trái */}
-              <div className="relative z-10 flex flex-1 flex-col justify-center gap-1 p-4 pr-2">
-                <p className="font-heading text-base font-black uppercase tracking-tight text-slate-50 line-clamp-1 sm:text-lg">
+                {/* Tên gói — reference chỉ có icon, ta cần tên vì đây là gói dịch vụ */}
+                <span className="absolute left-[5%] top-[8%] z-[3] max-w-[55%] truncate text-left font-heading text-[11px] font-black uppercase tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] sm:text-sm">
                   {item.name}
-                </p>
-                {item.duration && (
-                  <p className={cn("text-[11px] font-semibold", r.accent)}>{item.duration}</p>
-                )}
-                {item.type === "membership" && item.perks && item.perks.length > 0 && (
-                  <ul className="mt-0.5 hidden space-y-0.5 sm:block">
-                    {item.perks.slice(0, 2).map((p) => (
-                      <li key={p} className="flex items-center gap-1 text-[10px] leading-tight text-slate-300">
-                        <Check className="size-2.5 shrink-0 text-emerald-400" /> <span className="line-clamp-1">{p}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                </span>
 
-                {/* Giá kim cương */}
-                <div className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-md bg-black/55 px-2.5 py-1 ring-1 ring-white/10">
-                  <Diamond className="size-4" />
-                  <span className="font-heading text-sm font-black tabular-nums text-cyan-100">
-                    {item.price.toLocaleString("vi-VN")}
-                  </span>
-                </div>
-              </div>
-
-              {/* Ảnh vật phẩm bên phải */}
-              <div className="relative z-10 flex w-32 shrink-0 items-center justify-center sm:w-44">
-                {item.image ? (
+                {item.image && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="h-full w-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform duration-300 group-hover:scale-105"
+                    className="relative z-[2] max-h-[85%] max-w-[60%] object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)]"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
-                ) : (
-                  <Icon className={cn("size-14 drop-shadow-lg transition-transform duration-300 group-hover:scale-110", r.accent)} />
                 )}
-              </div>
 
-              {/* Nút mua — luôn hiện (chạm được trên mobile), sáng lên khi hover */}
-              <button
-                disabled
-                title="Sắp mở bán"
-                aria-label={`Mua ${item.name} — sắp mở bán`}
-                className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1 rounded-lg bg-amber-400/90 px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-900 opacity-80 shadow transition-all duration-200 group-hover:bg-amber-400 group-hover:opacity-100 disabled:cursor-not-allowed"
-              >
-                <ShoppingCart className="size-3" /> Mua
+                {/* Hộp giá kim cương */}
+                <div className="absolute bottom-[8%] left-[5%] z-[3] flex items-center rounded-[20px] border border-white/10 bg-black/60 px-3 py-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/prime/icon-diamond.png" alt="" className="mr-1.5 size-[18px]" />
+                  <span className="text-sm font-bold tabular-nums text-white sm:text-base">
+                    {item.price.toLocaleString("vi-VN")}
+                  </span>
+                </div>
               </button>
-            </div>
-          );
-        })}
+            );
+          })}
+
+          {visible.length === 0 && (
+            <p className="mt-6 text-center text-sm font-semibold text-white/70 drop-shadow">
+              Chưa có vật phẩm trong mục này.
+            </p>
+          )}
+        </div>
       </div>
 
-      {visible.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-amber-400/30 p-10 text-center text-sm text-amber-100/50">
-          Chưa có vật phẩm trong mục này.
+      {/* Modal chi tiết */}
+      {active && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={active.name}
+          onClick={() => setActive(null)}
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-[rgba(2,6,15,0.85)] p-5 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: "primeModalPop .4s cubic-bezier(0.175,0.885,0.32,1.275)" }}
+            className="relative w-full max-w-[450px] rounded-2xl border border-white/10 bg-[rgba(7,25,50,0.92)] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+          >
+            <button
+              onClick={() => setActive(null)}
+              aria-label="Đóng"
+              className="absolute right-4 top-4 text-white/60 transition-colors hover:text-white"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="relative mx-auto mb-4 flex aspect-[3.17/1] w-full items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/prime/FF_UI_Prime_Item${RARITY_BG[rarityOf(active)]}.png`} alt="" className="absolute inset-0 size-full rounded object-fill" />
+              {active.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={active.image} alt={active.name} className="relative max-h-[85%] max-w-[60%] object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)]" />
+              )}
+            </div>
+
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#FFD700]">
+              {RARITY_LABEL[rarityOf(active)]}
+            </p>
+            <h3 className="font-heading text-xl font-black uppercase tracking-tight text-white">{active.name}</h3>
+            {active.duration && <p className="mt-0.5 text-sm text-[#e0e8f2]/70">{active.duration}</p>}
+
+            {active.perks && active.perks.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {active.perks.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-sm text-[#e0e8f2]">
+                    <Check className="mt-0.5 size-4 shrink-0 text-emerald-400" /> {p}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+              <div className="flex items-center rounded-[20px] border border-white/10 bg-black/60 px-3 py-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/prime/icon-diamond.png" alt="" className="mr-1.5 size-5" />
+                <span className="font-heading text-lg font-bold tabular-nums text-white">
+                  {active.price.toLocaleString("vi-VN")}
+                </span>
+              </div>
+              <button
+                disabled
+                title="Sắp mở"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#FFD700] px-5 py-2.5 text-sm font-black uppercase tracking-wide text-slate-900 transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ShoppingCart className="size-4" /> Mua
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

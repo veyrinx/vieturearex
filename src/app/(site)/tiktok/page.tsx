@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Music2, Play, Clock, ExternalLink } from "lucide-react";
+import { Music2, Clock, ExternalLink } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { getSocialVideos } from "@/lib/server/social";
+import { SocialVideoGrid } from "@/components/tools/social-video-grid";
 
 export const dynamic = "force-dynamic";
 
@@ -34,33 +35,7 @@ export default async function TiktokPage() {
           <p className="text-sm text-foreground"><b>Sắp có video.</b> Nội dung TikTok đang được cập nhật.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {videos.map((v) => (
-            <a
-              key={v.id}
-              href={v.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex aspect-[9/16] items-end overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-muted/10"
-            >
-              {v.thumbnail ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={v.thumbnail} alt={v.title} loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Play className="size-8 text-muted-foreground/30" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              <div className="absolute right-2 top-2 flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
-                <Play className="size-4" />
-              </div>
-              {v.title && (
-                <p className="relative z-10 line-clamp-2 p-2.5 text-xs font-semibold text-white drop-shadow">{v.title}</p>
-              )}
-            </a>
-          ))}
-        </div>
+        <SocialVideoGrid videos={videos} />
       )}
 
       <a

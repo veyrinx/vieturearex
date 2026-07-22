@@ -14,6 +14,22 @@ export type SocialVideo = {
   enabled?: boolean;
 };
 
+/**
+ * URL nhúng để phát ngay trong trang. Trả null nếu không tách được ID
+ * (vd link rút gọn vm.tiktok.com) — khi đó UI mở tab ngoài như cũ.
+ */
+export function getEmbedUrl(video: Pick<SocialVideo, "url" | "platform">): string | null {
+  if (video.platform === "youtube") {
+    const id =
+      video.url.match(/[?&]v=([\w-]{11})/)?.[1] ??
+      video.url.match(/youtu\.be\/([\w-]{11})/)?.[1] ??
+      video.url.match(/\/shorts\/([\w-]{11})/)?.[1];
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  }
+  const id = video.url.match(/\/video\/(\d{6,})/)?.[1];
+  return id ? `https://www.tiktok.com/embed/v2/${id}` : null;
+}
+
 export function parseSocialVideos(raw: string | null | undefined): SocialVideo[] {
   if (!raw) return [];
   let data: unknown;

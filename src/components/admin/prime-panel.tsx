@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ShoppingBag, Plus, Trash2, Save, Loader2, ExternalLink, Star, Crown, Gem } from "lucide-react";
 import Link from "next/link";
-import type { PrimeItem, PrimeItemType } from "@/lib/constants/store";
+import { PRIME_RARITIES, RARITY_LABEL, type PrimeItem, type PrimeItemType, type PrimeRarity } from "@/lib/constants/store";
 
 type Row = PrimeItem & { _rid: string };
 const rid = () => Math.random().toString(36).slice(2);
@@ -98,6 +98,15 @@ export function PrimePanel({ initialItems, canEdit }: { initialItems: PrimeItem[
                 <input value={r.image ?? ""} disabled={!canEdit} onChange={(e) => patch(r._rid, { image: e.target.value })}
                   placeholder="https://... (skin/nhân vật)"
                   className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Độ hiếm (nền thẻ)</span>
+                <select value={r.rarity ?? "COMMON"} disabled={!canEdit} onChange={(e) => patch(r._rid, { rarity: e.target.value as PrimeRarity })}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60">
+                  {PRIME_RARITIES.map((rar) => (
+                    <option key={rar} value={rar}>{RARITY_LABEL[rar]} ({rar})</option>
+                  ))}
+                </select>
               </label>
               {r.type === "membership" && (
                 <label className="space-y-1">
