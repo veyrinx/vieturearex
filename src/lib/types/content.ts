@@ -102,7 +102,10 @@ export type UserItem = {
   id: string;
   email: string;
   display_name: string | null;
+  /** Quyền hạn — 1 giá trị. Nhãn hiển thị nằm ở `badges`. */
   role: UserRole;
+  /** Nhãn hiển thị — nhiều giá trị, không cấp quyền. Xem constants/user-badges.ts */
+  badges?: string[];
   views: number;
   is_banned: boolean;
   is_verified?: boolean;
@@ -156,6 +159,7 @@ export type PublicUserProfile = {
   avatar_url: string | null;
   banner_url?: string | null;
   role: UserRole;
+  badges?: string[];
   is_verified: boolean;
   created_at: string;
   bio?: string | null;

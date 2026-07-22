@@ -28,6 +28,7 @@ import type {
   UserRole,
 } from "@/lib/types/content";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
+import { normalizeBadges } from "@/lib/constants/user-badges";
 
 type EventQuery = {
   search?: string;
@@ -139,7 +140,14 @@ function getSupabaseReadClientOrThrow() {
   return supabaseReadClient;
 }
 
-const VALID_USER_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support", "user"];
+/**
+ * Giữ nguyên key role miễn là hợp lệ về mặt hình thức — role tuỳ biến tạo ở
+ * /admin/settings → Phân quyền không nằm trong danh sách builtin nhưng vẫn phải
+ * đọc ra đúng, nếu không user bị tụt về "user" mỗi lần load.
+ */
+function normalizeRole(raw: unknown): UserRole {
+  return typeof raw === "string" && /^[a-z0-9_]{1,32}$/.test(raw) ? (raw as UserRole) : "user";
+}
 
 function normalizeUserItem(row: Partial<UserItem>): UserItem {
   const views = Number(row.views ?? 0);
@@ -147,7 +155,8 @@ function normalizeUserItem(row: Partial<UserItem>): UserItem {
     id: String(row.id ?? ""),
     email: String(row.email ?? ""),
     display_name: row.display_name ?? null,
-    role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
+    role: normalizeRole(row.role),
+    badges: normalizeBadges((row as { badges?: unknown }).badges),
     views: Number.isFinite(views) ? views : 0,
     is_banned: Boolean(row.is_banned),
     is_verified: row.is_verified === true,
@@ -728,6 +737,32 @@ export async function updateUserRole(id: string, role: UserRole) {
   return normalizeUserItem(data as Partial<UserItem>);
 }
 
+/**
+ * Ghi đè toàn bộ danh sách nhãn hiển thị của user. Nhãn KHÔNG cấp quyền —
+ * việc ai được gán nhãn nào do API kiểm tra (xem canAssignBadge).
+ */
+export async function updateUserBadges(id: string, badges: string[]): Promise<UserItem> {
+  const clean = normalizeBadges(badges);
+
+  if (!hasSupabaseEnv) {
+    const demo = getDemoStore();
+    const idx = demo.users.findIndex((u) => u.id === id);
+    if (idx < 0) throw new Error("User not found.");
+    demo.users[idx].badges = clean;
+    return demo.users[idx];
+  }
+
+  const supabase = getSupabaseAdminOrThrow();
+  const { data, error } = await supabase
+    .from("users")
+    .update({ badges: clean } as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return normalizeUserItem(data as Partial<UserItem>);
+}
+
 export async function deleteUser(id: string): Promise<void> {
   if (!hasSupabaseEnv) {
     const demo = getDemoStore();
@@ -786,7 +821,7 @@ export async function updateUserIsVerified(id: string, is_verified: boolean): Pr
 }
 
 const ADMIN_PROFILE_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
-const PROFILE_SELECT_FULL = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank";
+const PROFILE_SELECT_FULL = "id, display_name, avatar_url, role, badges, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank";
 const PROFILE_SELECT_SAFE = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url";
 
 export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
@@ -827,7 +862,8 @@ export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
 
   return (result.data ?? []).map((row) => ({
     ...row,
-    role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
+    role: normalizeRole(row.role),
+    badges: normalizeBadges((row as { badges?: unknown }).badges),
     is_verified: Boolean(row.is_verified),
   }));
 }
@@ -855,7 +891,8 @@ export async function getAllStaffProfiles(): Promise<PublicUserProfile[]> {
 
   return (result.data ?? []).map((row) => ({
     ...row,
-    role: VALID_USER_ROLES.includes(row.role as UserRole) ? (row.role as UserRole) : "user",
+    role: normalizeRole(row.role),
+    badges: normalizeBadges((row as { badges?: unknown }).badges),
     is_verified: Boolean(row.is_verified),
   }));
 }
@@ -871,7 +908,7 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
 
   let result = await client
     .from("users")
-    .select("id, display_name, avatar_url, banner_url, role, is_verified, created_at, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, last_seen_at, points, rank, views, privacy")
+    .select("id, display_name, avatar_url, banner_url, role, badges, is_verified, created_at, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, last_seen_at, points, rank, views, privacy")
     .eq("id", id)
     .maybeSingle() as { data: PublicUserProfile | null; error: { message?: string } | null };
 
@@ -884,8 +921,13 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
   }
 
   if (!result.data) return null;
-  const role = VALID_USER_ROLES.includes(result.data.role as UserRole) ? (result.data.role as UserRole) : "user";
-  return { ...result.data, role, is_verified: Boolean(result.data.is_verified) };
+  const role = normalizeRole(result.data.role);
+  return {
+    ...result.data,
+    role,
+    badges: normalizeBadges(result.data.badges),
+    is_verified: Boolean(result.data.is_verified),
+  };
 }
 
 export async function resetUserPassword(id: string): Promise<{ tempPassword: string }> {

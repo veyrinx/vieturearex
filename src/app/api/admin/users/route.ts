@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getUsers, updateUserRole, updateUserInfo, deleteUser, banUser, getUserByEmail, updateUserIsVerified, getSettings } from "@/lib/data/content-service";
+import { getUsers, updateUserRole, updateUserBadges, updateUserInfo, deleteUser, banUser, getUserByEmail, updateUserIsVerified, getSettings } from "@/lib/data/content-service";
+import { MAX_USER_BADGES, USER_BADGE_MAP, normalizeBadges } from "@/lib/constants/user-badges";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -25,6 +26,12 @@ async function getCallerRole(): Promise<string | null> {
 const updateRoleSchema = z.object({
   id: z.string().min(1),
   role: z.string().regex(/^[a-z0-9_]{1,32}$/, "Role không hợp lệ"),
+});
+
+const updateBadgesSchema = z.object({
+  id: z.string().min(1),
+  action: z.literal("update_badges"),
+  badges: z.array(z.string().regex(/^[a-z0-9_]{1,32}$/)).max(MAX_USER_BADGES),
 });
 
 const updateBanSchema = z.object({
@@ -86,6 +93,65 @@ export async function PATCH(request: NextRequest) {
       targetType: "USER",
       targetId: user.id,
       summary: `Cập nhật thông tin tài khoản ${user.email}`,
+    });
+    return NextResponse.json({ user });
+  }
+
+  // Handle badges — nhãn hiển thị, tách riêng khỏi role (không cấp quyền gì).
+  // Ai gán được nhãn nào phụ thuộc cấp bậc: cấp của người gán phải >= minLevel
+  // của nhãn, và phải cao hơn cấp của người bị gán.
+  const badgesParsed = updateBadgesSchema.safeParse(payload);
+  if (badgesParsed.success) {
+    const denied = await enforceAdminApiAuth({ minimumRole: "support" });
+    if (denied) return denied;
+
+    const settings = await getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>);
+    const resolved = getResolvedRoles(
+      settings.find((s) => s.key === "permissions.custom_roles")?.value,
+      settings.find((s) => s.key === "permissions.role_capabilities")?.value,
+    );
+
+    const callerRole = await getCallerRole();
+    const callerLevel = getRoleLevel(callerRole, resolved);
+
+    const allUsers = await getUsers();
+    const target = allUsers.find((u) => u.id === badgesParsed.data.id);
+    if (!target) return NextResponse.json({ error: "User not found." }, { status: 404 });
+
+    if (callerRole !== "super_admin" && getRoleLevel(target.role, resolved) >= callerLevel) {
+      return NextResponse.json(
+        { error: "Không thể gán nhãn cho người có quyền bằng hoặc cao hơn bạn." },
+        { status: 403 },
+      );
+    }
+
+    const next = normalizeBadges(badgesParsed.data.badges);
+    const before = normalizeBadges(target.badges);
+    // Chỉ những nhãn thực sự thêm/bớt mới cần quyền — nhãn cấp cao sẵn có của
+    // target được giữ nguyên mà không chặn người cấp thấp sửa các nhãn khác.
+    const changed = [
+      ...next.filter((b) => !before.includes(b)),
+      ...before.filter((b) => !next.includes(b)),
+    ];
+    const blocked = changed.filter((b) => callerLevel < (USER_BADGE_MAP[b]?.minLevel ?? Infinity));
+    if (blocked.length > 0) {
+      const names = blocked.map((b) => USER_BADGE_MAP[b]?.label ?? b).join(", ");
+      return NextResponse.json(
+        { error: `Bạn không đủ quyền gán / thu hồi nhãn: ${names}.` },
+        { status: 403 },
+      );
+    }
+
+    if (changed.length === 0) {
+      return NextResponse.json({ user: target });
+    }
+
+    const user = await updateUserBadges(badgesParsed.data.id, next);
+    await logAdminActivity({
+      action: "USER_BADGES_UPDATED",
+      targetType: "USER",
+      targetId: user.id,
+      summary: `Cập nhật nhãn ${user.email}: ${next.length ? next.join(", ") : "(trống)"}`,
     });
     return NextResponse.json({ user });
   }
