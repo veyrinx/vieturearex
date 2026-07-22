@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { UserBadgeList } from "@/components/common/user-badges";
 import type { UserItem, UserRole } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 import { UserEditDialog } from "@/components/admin/user-edit-dialog";
@@ -461,7 +462,8 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                   </td>
                 </tr>
               ) : filtered.map((user) => {
-                const meta = ROLE_META[user.role];
+                // Role tuỳ biến (tạo ở /admin/settings) không có trong ROLE_META
+                const meta = ROLE_META[user.role] ?? ROLE_META.user;
                 const targetLevel = ROLE_META[user.role]?.level ?? 20;
                 const isSelf = user.email === currentUserEmail;
                 const canManage = isAdmin && targetLevel < callerLevel && !isSelf;
@@ -499,6 +501,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
                             )}
                           </div>
                           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                          <UserBadgeList badges={user.badges} size="sm" max={3} className="mt-1" />
                         </div>
                       </div>
                     </td>

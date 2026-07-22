@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { checkProfileAchievements } from "@/lib/server/award-achievement";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
+import { normalizeBadges } from "@/lib/constants/user-badges";
 
 const urlOrEmpty = z.string().max(300).optional().default("").transform((v) => {
   if (!v) return null;
@@ -95,6 +96,13 @@ export async function GET() {
     .eq("id", user.id)
     .maybeSingle() as { data: { privacy?: Record<string, boolean> | null } | null };
 
+  // Nhãn hiển thị — cũng tách riêng vì cột badges đến từ migration-user-badges.sql
+  const { data: badgeRow } = await roleClient
+    .from("users")
+    .select("badges")
+    .eq("id", user.id)
+    .maybeSingle() as { data: { badges?: unknown } | null };
+
   // Fallback role from app_metadata if DB query was blocked
   const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
 
@@ -103,6 +111,7 @@ export async function GET() {
     email: user.email,
     display_name: profile?.display_name ?? null,
     role: profile?.role ?? appMetaRole ?? "user",
+    badges: normalizeBadges(badgeRow?.badges),
     views: profile?.views ?? 0,
     created_at: profile?.created_at ?? user.created_at,
     is_verified: profile?.is_verified ?? false,

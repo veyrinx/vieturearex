@@ -4,8 +4,10 @@ import { Handshake, ExternalLink, Mail, Star } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
+import { PageContentOverride } from "@/components/common/page-content-override";
 import { getPartners } from "@/lib/server/partners";
-import { PARTNER_TIERS, TIER_LABEL, type Partner } from "@/lib/constants/partners";
+import { SOCIAL_DEFS } from "@/lib/constants/social-links";
+import { PARTNER_TIERS, TIER_LABEL, isPartnerLive, type Partner } from "@/lib/constants/partners";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -17,45 +19,91 @@ export const metadata: Metadata = {
   alternates: { canonical: `${siteConfig.url}/hop-tac` },
 };
 
+function PartnerLogo({ src, alt }: { src?: string; alt: string }) {
+  if (!src) return null;
+  return (
+    <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/40">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} loading="lazy" className="size-full object-contain" />
+    </span>
+  );
+}
+
 function PartnerCard({ p }: { p: Partner }) {
-  const inner = (
-    <>
-      <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/40">
+  const socials = SOCIAL_DEFS.filter((s) => p.socials?.[s.key]);
+  // Không có logo nào thì lấy chữ cái đầu làm ảnh đại diện bên trái.
+  const hasLogo = !!(p.logo || p.logoRight);
+
+  const title = (
+    <span className="inline-flex min-w-0 items-center gap-1.5 font-heading text-sm font-black uppercase tracking-tight text-foreground">
+      <span className="truncate">{p.name}</span>
+      {p.featured && <Star className="size-3.5 shrink-0 text-amber-500" />}
+      {p.url && <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />}
+    </span>
+  );
+
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border bg-card p-4 transition-colors",
+        p.featured ? "border-amber-400/40" : "border-border",
+        p.url && "hover:border-primary/50",
+      )}
+    >
+      {/* Logo hai bên tên — trái / phải đều tùy chọn. */}
+      <div className="flex items-center justify-center gap-3">
         {p.logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.logo} alt={p.name} loading="lazy" className="size-full object-contain" />
-        ) : (
-          <span className="font-heading text-lg font-black text-muted-foreground">
+          <PartnerLogo src={p.logo} alt={p.name} />
+        ) : !hasLogo ? (
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 font-heading text-lg font-black text-muted-foreground">
             {p.name.slice(0, 1).toUpperCase()}
           </span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 font-heading text-sm font-black uppercase tracking-tight text-foreground">
-          <span className="truncate">{p.name}</span>
-          {p.featured && <Star className="size-3.5 shrink-0 text-amber-500" />}
-        </p>
-        {p.desc && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{p.desc}</p>}
-      </div>
-      {p.url && <ExternalLink className="size-4 shrink-0 text-muted-foreground" />}
-    </>
-  );
+        ) : null}
 
-  const cls = cn(
-    "flex items-center gap-3 rounded-2xl border bg-card p-4 transition-colors",
-    p.featured ? "border-amber-400/40" : "border-border",
-    p.url && "hover:border-primary/50",
-  );
+        <div className="min-w-0 flex-1 text-center">
+          {p.url ? (
+            <a href={p.url} target="_blank" rel="noopener noreferrer nofollow" className="hover:text-primary">
+              {title}
+            </a>
+          ) : (
+            title
+          )}
+          {p.desc && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{p.desc}</p>}
+        </div>
 
-  return p.url ? (
-    <a href={p.url} target="_blank" rel="noopener noreferrer nofollow" className={cls}>{inner}</a>
-  ) : (
-    <div className={cls}>{inner}</div>
+        <PartnerLogo src={p.logoRight} alt={p.name} />
+      </div>
+
+      {socials.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+          {socials.map((s) => {
+            const Icon = s.icon;
+            return (
+              <a
+                key={s.key}
+                href={p.socials?.[s.key]}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                title={s.label}
+                aria-label={`${p.name} — ${s.label}`}
+                className={cn(
+                  "inline-flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors",
+                  s.brand,
+                )}
+              >
+                <Icon className="size-4" />
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
 export default async function HopTacPage() {
-  const partners = (await getPartners()).filter((p) => p.enabled !== false);
+  // Ẩn thủ công (enabled) hoặc tự ẩn khi quá ngày hết hợp tác.
+  const partners = (await getPartners()).filter((p) => isPartnerLive(p));
 
   // Nổi bật lên trước trong từng nhóm.
   const byTier = PARTNER_TIERS.map((tier) => ({
@@ -97,7 +145,8 @@ export default async function HopTacPage() {
         ))
       )}
 
-      {/* CTA hợp tác */}
+      {/* CTA hợp tác — admin đè được ở /admin/noi-dung-trang */}
+      <PageContentOverride pageKey="hop-tac">
       <section className="rounded-2xl border border-primary/30 bg-primary/[0.04] p-6 text-center">
         <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">
           Muốn hợp tác với Arex?
@@ -113,6 +162,7 @@ export default async function HopTacPage() {
           <Mail className="size-4" /> Liên hệ hợp tác
         </Link>
       </section>
+      </PageContentOverride>
     </main>
   );
 }

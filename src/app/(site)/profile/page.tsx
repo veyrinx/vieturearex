@@ -10,7 +10,7 @@ import {
   Bookmark, Bell, X, Trophy, MessageSquare, BookOpen, ExternalLink,
 } from "lucide-react";
 import { getRoleMeta } from "@/lib/constants/roles";
-import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
+import { RoleBadge, UserBadgeList, VerifiedBadge } from "@/components/common/user-badges";
 import { PRIVACY_SECTIONS, type PrivacyMap, isSectionVisible } from "@/lib/constants/profile-privacy";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
@@ -47,6 +47,7 @@ type ProfileData = {
   email: string;
   display_name: string | null;
   role: string;
+  badges?: string[];
   views: number;
   created_at: string;
   is_verified?: boolean;
@@ -509,8 +510,9 @@ export default function ProfilePage() {
             <div className="min-w-0 flex-1 pb-1">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="font-heading text-2xl font-black uppercase tracking-[0.06em] text-foreground">{label}</h1>
-                <VerifiedBadge role={profile.role} isVerified={profile.is_verified} size="lg" className="size-6" />
+                <VerifiedBadge role={profile.role} badges={profile.badges} isVerified={profile.is_verified} size="lg" className="size-6" />
                 <RoleBadge role={profile.role} size="lg" showMember bordered className="text-[11px] tracking-wide" />
+                <UserBadgeList badges={profile.badges} size="md" bordered />
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
               <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:justify-start">

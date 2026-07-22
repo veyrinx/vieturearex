@@ -17,6 +17,7 @@ export const EDITABLE_PAGES: EditablePage[] = [
   { key: "about",          slug: "/about",          label: "Về chúng tôi" },
   { key: "nap-an-toan",    slug: "/nap-an-toan",    label: "Nạp an toàn" },
   { key: "dang-ky-tin",    slug: "/dang-ky-tin",    label: "Đăng ký nhận tin" },
+  { key: "hop-tac",        slug: "/hop-tac",        label: "Hợp tác & Đối tác", note: "Chỉ phần lời mời hợp tác — danh sách đối tác quản lý ở /admin/hop-tac" },
   { key: "privacy-policy", slug: "/privacy-policy", label: "Chính sách bảo mật", note: "Văn bản pháp lý" },
   { key: "terms-of-use",   slug: "/terms-of-use",   label: "Điều khoản sử dụng", note: "Văn bản pháp lý" },
   { key: "cookie-policy",  slug: "/cookie-policy",  label: "Chính sách cookie",  note: "Văn bản pháp lý" },

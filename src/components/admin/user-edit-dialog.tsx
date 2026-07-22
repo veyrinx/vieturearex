@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/select";
 import type { UserItem, UserRole } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
+import { BUILTIN_ROLE_LEVELS } from "@/lib/permissions";
+import {
+  BADGE_GROUP_LABELS,
+  MAX_USER_BADGES,
+  USER_BADGES,
+  type BadgeGroup,
+} from "@/lib/constants/user-badges";
 
 const ROLE_META: Record<string, { label: string; color: string; bg: string; dot: string; level: number }> = {
   super_admin: { label: "Super Admin", color: "text-red-500",    bg: "bg-red-500/10 border-red-500/30",       dot: "bg-red-500",    level: 200 },
@@ -81,6 +88,8 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
   const [copiedPw, setCopiedPw] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>("user");
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [isUpdatingBadges, setIsUpdatingBadges] = useState(false);
 
   const { register, reset, handleSubmit, formState: { errors, isDirty } } = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
@@ -92,6 +101,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
       setTempPassword(null);
       setCopiedPw(false);
       setSelectedRole(user.role);
+      setSelectedBadges(user.badges ?? []);
     }
   }, [user, open, reset]);
 
@@ -99,13 +109,24 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
 
   const meta = ROLE_META[user.role] ?? ROLE_META.user;
   const isSelf = user.email === currentUserEmail;
-  const callerLevel = ROLE_META[callerRole ?? "user"]?.level ?? 20;
+  const callerLevel =
+    ROLE_META[callerRole ?? "user"]?.level
+    ?? BUILTIN_ROLE_LEVELS[(callerRole ?? "user") as keyof typeof BUILTIN_ROLE_LEVELS]
+    ?? 20;
   const targetLevel = ROLE_META[user.role]?.level ?? 20;
   const canManage = !isSelf && targetLevel < callerLevel;
   const canEditEmail = callerRole === "super_admin" || callerRole === "it";
   const canVerify = callerRole === "it";
   const canDelete = callerRole === "super_admin" && !isSelf;
   const assignableRoles = ROLE_ORDER.filter((r) => (ROLE_META[r]?.level ?? 0) < callerLevel);
+  // Nhãn tách khỏi role: chỉ hiện nhãn mà cấp của người đang thao tác gán được.
+  const canManageBadges = callerRole === "super_admin" || targetLevel < callerLevel;
+  const visibleBadges = USER_BADGES.filter((b) => callerLevel >= b.minLevel);
+  const badgeGroups = [...new Set(visibleBadges.map((b) => b.group))] as BadgeGroup[];
+  const savedBadges = user.badges ?? [];
+  const badgesDirty =
+    selectedBadges.length !== savedBadges.length
+    || selectedBadges.some((b) => !savedBadges.includes(b));
   const avatarGradient = getAvatarColor(user.email);
   const displayName = user.display_name || user.email.split("@")[0];
   const joinDate = new Date(user.created_at || "").toLocaleDateString("vi-VN");
@@ -150,6 +171,34 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
       toast.error(err.error ?? "Không thể cập nhật vai trò."); return;
     }
     toast.success(`Đã đổi vai trò thành ${ROLE_META[selectedRole]?.label}.`);
+    onOpenChange(false);
+    await onSaved();
+  };
+
+  const toggleBadge = (key: string) => {
+    setSelectedBadges((prev) => {
+      if (prev.includes(key)) return prev.filter((b) => b !== key);
+      if (prev.length >= MAX_USER_BADGES) {
+        toast.error(`Tối đa ${MAX_USER_BADGES} nhãn.`);
+        return prev;
+      }
+      return [...prev, key];
+    });
+  };
+
+  const updateBadges = async () => {
+    setIsUpdatingBadges(true);
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, action: "update_badges", badges: selectedBadges }),
+    });
+    setIsUpdatingBadges(false);
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(err.error ?? "Không thể cập nhật nhãn."); return;
+    }
+    toast.success("Đã cập nhật nhãn hiển thị.");
     onOpenChange(false);
     await onSaved();
   };
@@ -424,6 +473,68 @@ export function UserEditDialog({ user, open, onOpenChange, onSaved, currentUserE
                 <p className="mt-2 text-[10px] text-muted-foreground">
                   Vai trò hiện tại: <span className={cn("font-bold", meta.color)}>{meta.label}</span> · Cấp độ {ROLE_META[user.role]?.level ?? 20}
                 </p>
+              </div>
+            </section>
+          )}
+
+          {/* ── Nhãn hiển thị (tách khỏi vai trò) ── */}
+          {canManageBadges && visibleBadges.length > 0 && (
+            <section>
+              <SectionLabel>Nhãn hiển thị</SectionLabel>
+              <div className="space-y-3 rounded-2xl border border-border bg-muted/20 p-4">
+                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  Nhãn chỉ để trưng bày trên hồ sơ, <b>không cấp quyền</b>. Một người có thể mang
+                  nhiều nhãn cùng lúc — quyền hạn vẫn do vai trò ở trên quyết định.
+                </p>
+
+                {badgeGroups.map((group) => (
+                  <div key={group}>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                      {BADGE_GROUP_LABELS[group]}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {visibleBadges
+                        .filter((b) => b.group === group)
+                        .map((b) => {
+                          const Icon = b.icon;
+                          const active = selectedBadges.includes(b.key);
+                          return (
+                            <button
+                              key={b.key}
+                              type="button"
+                              title={b.description}
+                              onClick={() => toggleBadge(b.key)}
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition",
+                                active
+                                  ? cn(b.color, b.border)
+                                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+                              )}
+                            >
+                              <Icon className="size-3" />
+                              {b.label}
+                              {b.verified && <BadgeCheck className="size-3 text-blue-500" />}
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <span className="text-[10px] text-muted-foreground">
+                    Đã chọn {selectedBadges.length}/{MAX_USER_BADGES}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isUpdatingBadges || !badgesDirty}
+                    onClick={updateBadges}
+                    className="gap-1.5 rounded-xl bg-background px-3"
+                  >
+                    {isUpdatingBadges ? "Đang lưu..." : "Lưu nhãn"}
+                  </Button>
+                </div>
               </div>
             </section>
           )}

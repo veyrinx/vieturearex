@@ -6,7 +6,7 @@ import {
   CalendarDays, Phone, Mail, Eye, Trophy, Sparkles, Gamepad2,
 } from "lucide-react";
 import { getRoleMeta } from "@/lib/constants/roles";
-import { RoleBadge, VerifiedBadge } from "@/components/common/user-badges";
+import { RoleBadge, UserBadgeList, VerifiedBadge } from "@/components/common/user-badges";
 import { isSectionVisible } from "@/lib/constants/profile-privacy";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -166,10 +166,11 @@ export default async function PublicProfilePage({ params }: Props) {
               <h1 className="font-heading text-2xl font-black uppercase tracking-[0.04em] text-foreground">
                 {name}
               </h1>
-              <VerifiedBadge role={profile.role} isVerified={profile.is_verified} size="lg" className="size-6" />
+              <VerifiedBadge role={profile.role} badges={profile.badges} isVerified={profile.is_verified} size="lg" className="size-6" />
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <RoleBadge role={profile.role} size="lg" showMember bordered className="tracking-[0.06em]" />
+              <UserBadgeList badges={profile.badges} size="lg" bordered className="gap-2" />
               <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.06em]", rankMeta.bg, rankMeta.color)}>
                 <span className="text-sm leading-none">{rankMeta.icon}</span>
                 {rankLabel}
