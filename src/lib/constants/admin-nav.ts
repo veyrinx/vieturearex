@@ -1,11 +1,11 @@
 import {
   LayoutDashboard, BarChartBig, ScrollText, History, Rocket,
-  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, Brain, ListChecks, Swords, Layers,
+  Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, Brain, ListChecks, Swords, Layers, CalendarClock,
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
   FileText, Users2, SlidersHorizontal, Eye,
-  ShoppingBag, Share2,
+  ShoppingBag, Share2, Handshake,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,6 +47,8 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Pop-up",    href: "/admin/popup",    icon: Bell },
       { title: "Quiz",      href: "/admin/quiz",     icon: Brain },
       { title: "Mạng xã hội", href: "/admin/social", icon: Share2 },
+      { title: "Đếm ngược",  href: "/admin/dem-nguoc", icon: CalendarClock },
+      { title: "Nội dung trang", href: "/admin/noi-dung-trang", icon: FileText },
     ],
   },
   {
@@ -79,6 +81,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Danh hiệu",    href: "/admin/danh-hieu",    icon: Award },
       { title: "Cosmetics",    href: "/admin/cosmetics",    icon: Palette },
       { title: "Contributors", href: "/admin/contributors", icon: HandHeart },
+      { title: "Hợp tác",      href: "/admin/hop-tac",      icon: Handshake },
       { title: "Phân quyền",   href: "/admin/permissions",  icon: ShieldCheck },
     ],
   },

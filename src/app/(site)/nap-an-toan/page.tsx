@@ -3,6 +3,10 @@ import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
+import { PageContentOverride } from "@/components/common/page-content-override";
+
+// Admin có thể thay nội dung ở /admin/noi-dung-trang.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Nạp Free Fire an toàn — Tránh lừa đảo | Arex",
@@ -44,6 +48,7 @@ export default function NapAnToanPage() {
         subtitle="Nạp qua kênh chính thức, nhận biết lừa đảo, giữ tài khoản an toàn."
       />
 
+      <PageContentOverride pageKey="nap-an-toan">
       <section className="space-y-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-5">
         <h2 className="flex items-center gap-2 font-heading text-base font-bold text-emerald-600 dark:text-emerald-400">
           <CheckCircle2 className="size-5" /> Kênh nạp chính thức
@@ -86,6 +91,7 @@ export default function NapAnToanPage() {
       <p className="text-center text-[11px] text-muted-foreground/70">
         Arex không bán/nạp kim cương và không thu tiền người dùng. Mọi lời mời nạp lậu đều là lừa đảo.
       </p>
+      </PageContentOverride>
     </main>
   );
 }

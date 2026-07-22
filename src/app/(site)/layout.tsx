@@ -4,7 +4,6 @@ import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
-import { AutoTranslate } from "@/components/common/auto-translate";
 import { TranslateGuard } from "@/components/common/translate-guard";
 import { AnnouncementBanner } from "@/components/common/announcement-banner";
 import { AdminLockBanner } from "@/components/common/admin-lock-banner";
@@ -65,7 +64,6 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <SiteFooter />
       <ScrollToTop />
       <TranslateGuard />
-      <AutoTranslate />
       <DailyCheckinTrigger />
       <CskhChat />
     </div>

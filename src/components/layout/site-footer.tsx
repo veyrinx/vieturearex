@@ -25,6 +25,7 @@ const footerNav = [
   { label: "Nạp An Toàn", href: "/nap-an-toan" },
   { label: "Cập Nhật", href: "/cap-nhat" },
   { label: "Về Chúng Tôi", href: "/about" },
+  { label: "Hợp Tác", href: "/hop-tac" },
   { label: "Liên Hệ", href: "/contact" },
 ];
 

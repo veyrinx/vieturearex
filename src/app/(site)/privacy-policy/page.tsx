@@ -3,6 +3,10 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { CopyableLegalLink } from "../../../components/CopyableLegalLink";
 import { Reveal } from "@/components/common/reveal";
+import { PageContentOverride } from "@/components/common/page-content-override";
+
+// Admin có thể thay nội dung ở /admin/noi-dung-trang.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Chính Sách Bảo Mật | Arex",
@@ -259,6 +263,7 @@ export default function PrivacyPolicyPage() {
       </div>
       </Reveal>
 
+      <PageContentOverride pageKey="privacy-policy">
       {/* Layout */}
       <div className="space-y-6 xl:space-y-7 2xl:grid 2xl:grid-cols-[18rem_minmax(0,1fr)] 2xl:items-start 2xl:gap-7 2xl:space-y-0">
 
@@ -542,6 +547,7 @@ export default function PrivacyPolicyPage() {
         <p className="mt-3 text-[10px] text-muted-foreground/40">© 2026 Arex · Chính Sách Bảo Mật v2.0 · Hiệu lực 02/04/2026 · Font: GFF Latin™ Garena Free Fire</p>
       </div>
       </Reveal>
+      </PageContentOverride>
     </div>
   );
 }

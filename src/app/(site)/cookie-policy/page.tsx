@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { siteConfig } from "@/lib/constants/site";
+import { PageContentOverride } from "@/components/common/page-content-override";
+
+// Admin có thể thay nội dung ở /admin/noi-dung-trang.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Chính Sách Cookie | Arex",
@@ -190,6 +194,7 @@ export default function CookiePolicyPage() {
         </div>
       </section>
 
+      <PageContentOverride pageKey="cookie-policy">
       {/* Quick nav */}
       <nav className="sticky top-11 z-30 border-b border-border bg-background/95 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl overflow-x-auto px-6">
@@ -333,6 +338,7 @@ export default function CookiePolicyPage() {
           </div>
         </div>
       </div>
+      </PageContentOverride>
     </main>
   );
 }

@@ -451,7 +451,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
                 <div className="flex items-center gap-1">
-                  <LanguageToggle className="theme-control-surface" />
+                  <LanguageToggle className="theme-control-surface" openUp />
                   <NotificationBell />
                   <PushNotificationButton />
                   <ThemeToggle />

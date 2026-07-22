@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Mail, Shield, FileText, Send } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
+import { PageContentOverride } from "@/components/common/page-content-override";
 
 export const metadata: Metadata = {
   title: "Về Chúng Tôi — Arex Network",
@@ -156,6 +157,7 @@ export default function AboutPage() {
         </div>
       </div>
 
+      <PageContentOverride pageKey="about">
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {STATS.map(({ label, value, desc }) => (
@@ -258,6 +260,8 @@ export default function AboutPage() {
           ))}
         </div>
       </div>
+
+      </PageContentOverride>
 
       {/* Footer note */}
       <p className="text-center text-xs text-muted-foreground/50 pb-4">

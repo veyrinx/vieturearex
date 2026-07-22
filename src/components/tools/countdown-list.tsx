@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { FFCountdown } from "@/lib/data/ff-countdowns";
+import type { FFCountdown } from "@/lib/constants/countdowns";
 
 const TAG_CLS: Record<string, string> = {
   Update: "bg-blue-500/12 text-blue-500",

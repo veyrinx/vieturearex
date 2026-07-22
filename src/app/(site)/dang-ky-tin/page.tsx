@@ -4,6 +4,10 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { NewsletterForm } from "@/components/common/newsletter-form";
+import { PageContentOverride } from "@/components/common/page-content-override";
+
+// Admin có thể thay nội dung ở /admin/noi-dung-trang.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Đăng ký nhận tin Free Fire qua email | Arex",
@@ -31,13 +35,16 @@ export default function DangKyTinPage() {
       />
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <ul className="space-y-2">
-          {PERKS.map(({ icon: Icon, text }, i) => (
-            <li key={i} className="flex items-center gap-2.5 text-sm text-foreground/90">
-              <Icon className="size-4 shrink-0 text-primary" /> {text}
-            </li>
-          ))}
-        </ul>
+        {/* Chỉ bọc phần mô tả — form đăng ký phải luôn còn. */}
+        <PageContentOverride pageKey="dang-ky-tin">
+          <ul className="space-y-2">
+            {PERKS.map(({ icon: Icon, text }, i) => (
+              <li key={i} className="flex items-center gap-2.5 text-sm text-foreground/90">
+                <Icon className="size-4 shrink-0 text-primary" /> {text}
+              </li>
+            ))}
+          </ul>
+        </PageContentOverride>
         <NewsletterForm />
         <p className="text-[11px] text-muted-foreground/70">
           Miễn phí, không spam. Bạn cũng có thể bật 🔔 thông báo đẩy trên thanh điều hướng.
