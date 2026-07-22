@@ -1,41 +1,6 @@
 import "server-only";
 import { siteConfig } from "@/lib/constants/site";
-
-type SmtpConfig = {
-  host: string; port: number;
-  user: string; pass: string;
-  fromName: string; fromEmail: string;
-};
-
-async function resolveSmtpConfig(): Promise<SmtpConfig | null> {
-  try {
-    const { getSettings } = await import("@/lib/data/content-service");
-    const settings = await getSettings();
-    const get = (key: string) => settings.find((s) => s.key === key)?.value?.trim() ?? "";
-    const host = get("mail.smtp_host");
-    const user = get("mail.smtp_user");
-    const pass = get("mail.smtp_pass");
-    if (host && user && pass) {
-      return {
-        host, port: parseInt(get("mail.smtp_port") || "587", 10),
-        user, pass,
-        fromName: get("mail.from_name") || "Arex",
-        fromEmail: get("mail.from_email") || user,
-      };
-    }
-  } catch { /* fall through */ }
-
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  if (gmailUser && gmailPass) {
-    return {
-      host: "smtp.gmail.com", port: 587,
-      user: gmailUser, pass: gmailPass,
-      fromName: "Arex", fromEmail: gmailUser,
-    };
-  }
-  return null;
-}
+import { sendMail } from "@/lib/server/email";
 
 function buildResetEmailHtml(resetLink: string) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Đặt lại mật khẩu</title></head>
@@ -68,30 +33,9 @@ function buildResetEmailHtml(resetLink: string) {
 }
 
 export async function sendPasswordResetEmail(input: { email: string; resetLink: string }): Promise<{ sent: boolean; configured: boolean; error?: string }> {
-  const config = await resolveSmtpConfig();
-  if (!config) {
-    return { sent: false, configured: false, error: "Chưa cấu hình SMTP." };
-  }
-
-  try {
-    const nodemailer = await import("nodemailer");
-    const transporter = nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.port === 465,
-      auth: { user: config.user, pass: config.pass },
-    });
-
-    await transporter.sendMail({
-      from: `"${config.fromName}" <${config.fromEmail}>`,
-      to: input.email,
-      subject: "[Arex] Đặt lại mật khẩu của bạn",
-      html: buildResetEmailHtml(input.resetLink),
-    });
-
-    return { sent: true, configured: true };
-  } catch (err) {
-    console.error("[password-reset] Gửi email thất bại:", err);
-    return { sent: false, configured: true, error: String(err) };
-  }
+  return sendMail({
+    to: input.email,
+    subject: "[Arex] Đặt lại mật khẩu của bạn",
+    html: buildResetEmailHtml(input.resetLink),
+  });
 }

@@ -8,13 +8,14 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
-  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send,
 } from "lucide-react";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MailTestButton } from "@/components/admin/mail-test-button";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { defaultSiteSettingValues, defaultIscSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS, SITE_SPECIFIC_SETTING_KEYS } from "@/lib/utils/site-settings";
@@ -2013,6 +2014,50 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
         </Card>
 
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Mail} title="Loại email tự gửi" desc="Bật/tắt từng loại email hệ thống dùng cấu hình ở trên" />
+          </div>
+          <div className="space-y-2 px-1 pb-2">
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Email đăng ký thành công</p>
+                <p className="text-xs text-muted-foreground">Gửi email chào mừng khi có người đăng ký tài khoản mới.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={v("mail.send_welcome") !== "false"}
+                onChange={(e) => set("mail.send_welcome", e.target.checked ? "true" : "false")}
+                className="mt-1 size-4 cursor-pointer accent-primary"
+              />
+            </label>
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Email cho thông báo hệ thống</p>
+                <p className="text-xs text-muted-foreground">Gửi kèm email mỗi khi tạo thông báo trong web (bình luận, huy hiệu…). Tắt để tránh nhiều email.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={v("mail.send_notifications") === "true"}
+                onChange={(e) => set("mail.send_notifications", e.target.checked ? "true" : "false")}
+                className="mt-1 size-4 cursor-pointer accent-primary"
+              />
+            </label>
+            <p className="px-1 pt-1 text-[11px] text-muted-foreground">
+              Email quên mật khẩu &amp; mời admin luôn bật (chạy khi có yêu cầu). Thêm loại mới: viết hàm trong <code className="font-mono">lib/server/email.ts</code>.
+            </p>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Send} title="Kiểm tra gửi email" desc="Gửi 1 email thử để chắc SMTP/Gmail hoạt động" />
+          </div>
+          <div className="px-1 pb-2">
+            <MailTestButton />
+          </div>
+        </Card>
+
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 text-amber-500" />
@@ -2021,8 +2066,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <ul className="space-y-1 text-[11px] text-muted-foreground list-disc list-inside">
             <li>Thông tin SMTP được lưu trong Supabase settings — chỉ admin mới xem được.</li>
             <li>Gmail: Bật &quot;App Password&quot; tại myaccount.google.com → Bảo mật → Mật khẩu ứng dụng.</li>
-            <li>Để xác thực email hoạt động, cấu hình SMTP trong Supabase Dashboard → Authentication → Email.</li>
-            <li>Supabase tự xử lý email gửi đi — cài đặt này chỉ để tham chiếu hoặc dùng cho API tự gửi.</li>
+            <li>Email hệ thống (quên mật khẩu, đăng ký, thông báo…) gửi trực tiếp qua SMTP ở trên — không phụ thuộc Supabase.</li>
+            <li>Lưu cấu hình trước, rồi bấm &quot;Gửi thử&quot; để kiểm tra.</li>
           </ul>
         </div>
 

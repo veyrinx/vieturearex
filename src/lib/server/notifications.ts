@@ -37,8 +37,32 @@ export async function createNotification(input: CreateNotificationInput): Promis
   try {
     const db = getDb();
     await untypedFrom(db, "notifications").insert(input);
+    // Gửi bản email của thông báo nếu admin bật (mặc định tắt để tránh spam).
+    void maybeEmailNotification(input);
   } catch {
     // Non-fatal — notifications are best-effort
+  }
+}
+
+/** Gương thông báo qua email — chỉ chạy khi toggle mail.send_notifications bật. */
+async function maybeEmailNotification(input: CreateNotificationInput): Promise<void> {
+  try {
+    const { isMailTypeEnabled, sendNotificationEmail } = await import("@/lib/server/email");
+    if (!(await isMailTypeEnabled("mail.send_notifications", false))) return;
+    const db = getDb();
+    const { data } = (await untypedFrom(db, "users")
+      .select("email")
+      .eq("id", input.user_id)
+      .maybeSingle()) as { data: { email: string | null } | null };
+    if (!data?.email) return;
+    await sendNotificationEmail({
+      to: data.email,
+      title: input.title,
+      body: input.body ?? null,
+      url: input.entity_url ?? null,
+    });
+  } catch {
+    // best-effort
   }
 }
 

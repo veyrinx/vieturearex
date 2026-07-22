@@ -5,6 +5,7 @@ import { ensureUserAccount } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { awardAchievement } from "@/lib/server/award-achievement";
+import { sendWelcomeEmail } from "@/lib/server/email";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 
 const schema = z.object({
@@ -63,6 +64,9 @@ export async function POST(request: NextRequest) {
     targetId: authUser.id,
     summary: `Tài khoản mới đăng ký: ${email}${displayName ? ` (${displayName})` : ""}`,
   }).catch(() => {});
+
+  // Email chào mừng cho người dùng (tôn trọng toggle mail.send_welcome).
+  void sendWelcomeEmail({ to: email, name: displayName }).catch(() => null);
 
   void sendTelegramNotification({
     title: "👤 THÀNH VIÊN MỚI ĐĂNG KÝ",

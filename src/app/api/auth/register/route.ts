@@ -12,6 +12,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { sendWelcomeEmail } from "@/lib/server/email";
 
 const schema = z.object({
   email: z.string().email().refine((val) => val.endsWith(`@${ADMIN_EMAIL_DOMAIN}`), {
@@ -70,6 +71,9 @@ export async function POST(request: NextRequest) {
     targetId: user.id,
     summary: `Tạo tài khoản admin qua thư mời cho ${email}`,
   });
+
+  // Email chào mừng cho tài khoản admin mới (toggle mail.send_welcome).
+  void sendWelcomeEmail({ to: email, name: user.display_name }).catch(() => null);
 
   // Notify admin channels
   void Promise.allSettled([
