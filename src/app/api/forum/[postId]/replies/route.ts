@@ -109,11 +109,12 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id).eq("status", "active") as { count: number | null };
 
-      const [{ checkForumAchievements, checkForumPopularAchievement }, { syncContributorPoints }] = await Promise.all([
+      const [{ checkForumAchievements, checkForumPopularAchievement, evaluateAutoAchievements }, { syncContributorPoints }] = await Promise.all([
         import("@/lib/server/award-achievement"),
         import("@/lib/server/contributor-sync"),
       ]);
       await checkForumAchievements(user.id, 0, replyCount ?? 1);
+      void evaluateAutoAchievements(user.id).catch(() => null);
       await syncContributorPoints(
         user.id,
         profile?.display_name ?? user.email?.split("@")[0] ?? "Ẩn danh",

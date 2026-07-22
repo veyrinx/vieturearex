@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NewsList } from "@/components/news/news-list";
 import { NewsSidebar } from "@/components/news/news-sidebar";
 import { SectionHeading } from "@/components/common/section-heading";
+import { ArticleAd } from "@/components/common/article-ad";
 import { getNews } from "@/lib/data/content-service";
 import { siteConfig } from "@/lib/constants/site";
 
@@ -62,8 +63,13 @@ export default async function NewsPage() {
         title="TIN TỨC CỘNG ĐỒNG"
         description="Sự kiện in-game, cập nhật patch, esports và hoạt động cộng đồng"
       />
+      {/* Banner quảng cáo đầu trang (chỉ hiện khi đã cấu hình slot) */}
+      <ArticleAd slotKey="ads.slot_news_top" />
       <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
-        <NewsList news={newsForList} />
+        <div className="space-y-6">
+          <NewsList news={newsForList} />
+          <ArticleAd slotKey="ads.slot_news_inline" />
+        </div>
         <NewsSidebar categories={categories} recentPosts={newsForList.slice(0, 4)} />
       </div>
     </div>

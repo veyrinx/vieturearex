@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const db = createAdminSupabaseClient();
     if (db && playerUserIds.length > 0) {
       void (async () => {
-        const { checkTournamentAchievements, checkRankAchievements } = await import("@/lib/server/award-achievement");
+        const { checkTournamentAchievements, checkRankAchievements, evaluateAutoAchievements } = await import("@/lib/server/award-achievement");
         await Promise.allSettled(playerUserIds.map(async (userId) => {
           try {
             const { data: career } = await untypedFrom(db, "tms_player_leaderboard")
@@ -83,6 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             const { data: userRow } = await untypedFrom(db, "users")
               .select("points").eq("id", userId).single() as { data: { points: number } | null };
             if (userRow) await checkRankAchievements(userId, userRow.points);
+            void evaluateAutoAchievements(userId).catch(() => null);
           } catch { /* non-critical */ }
         }));
       })();

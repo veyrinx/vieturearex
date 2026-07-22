@@ -83,10 +83,11 @@ export async function POST(req: NextRequest) {
       .rpc("increment_user_points", { uid: user.id, amount: 2 });
   } catch { /* non-critical */ }
 
-  // Check streak achievements (fire-and-forget)
-  void import("@/lib/server/award-achievement").then(({ checkLoginStreakAchievements }) =>
-    checkLoginStreakAchievements(user.id, newStreak).catch(() => null)
-  );
+  // Check streak achievements + custom auto badges (fire-and-forget)
+  void import("@/lib/server/award-achievement").then(({ checkLoginStreakAchievements, evaluateAutoAchievements }) => {
+    void checkLoginStreakAchievements(user.id, newStreak).catch(() => null);
+    void evaluateAutoAchievements(user.id).catch(() => null);
+  });
 
   return NextResponse.json({ ok: true, streak: newStreak, alreadyCheckedIn: false });
 }

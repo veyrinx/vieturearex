@@ -8,7 +8,7 @@ import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { POINTS } from "@/lib/constants/ranks";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { awardAchievement } from "@/lib/server/award-achievement";
+import { awardAchievement, evaluateAutoAchievements } from "@/lib/server/award-achievement";
 import { notifyCommentReply } from "@/lib/server/notifications";
 
 const postSchema = z.object({
@@ -35,18 +35,18 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
   const comments = data ?? [];
   const userIds = Array.from(new Set(comments.map((c) => c.user_id).filter(Boolean))) as string[];
-  const userMap: Record<string, { avatar_url: string | null; role: string | null; is_verified: boolean }> = {};
+  const userMap: Record<string, { avatar_url: string | null; role: string | null; is_verified: boolean; badges: string[] | null }> = {};
   if (userIds.length > 0) {
     const { data: profiles } = await supabase
-      .from("users").select("id, avatar_url, role, is_verified").in("id", userIds) as
-      { data: Array<{ id: string; avatar_url: string | null; role: string | null; is_verified: boolean | null }> | null };
-    (profiles ?? []).forEach((p) => { userMap[p.id] = { avatar_url: p.avatar_url, role: p.role, is_verified: Boolean(p.is_verified) }; });
+      .from("users").select("id, avatar_url, role, is_verified, badges").in("id", userIds) as
+      { data: Array<{ id: string; avatar_url: string | null; role: string | null; is_verified: boolean | null; badges: string[] | null }> | null };
+    (profiles ?? []).forEach((p) => { userMap[p.id] = { avatar_url: p.avatar_url, role: p.role, is_verified: Boolean(p.is_verified), badges: p.badges ?? null }; });
   }
 
   return NextResponse.json({
     comments: comments.map((c) => {
       const u = c.user_id ? userMap[c.user_id] : undefined;
-      return { ...c, avatar_url: u?.avatar_url ?? null, role: u?.role ?? null, is_verified: u?.is_verified ?? false };
+      return { ...c, avatar_url: u?.avatar_url ?? null, role: u?.role ?? null, is_verified: u?.is_verified ?? false, badges: u?.badges ?? null };
     }),
   });
 }
@@ -112,6 +112,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         .catch(() => null);
     }
     void awardAchievement(user.id, "first_comment");
+    void evaluateAutoAchievements(user.id).catch(() => null);
 
     // Notify parent comment author on reply
     if (parsed.data.parent_id) {

@@ -46,7 +46,7 @@ export function ProfileActions({ targetUserId, profileUrl, title }: Props) {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors disabled:cursor-default disabled:hover:text-muted-foreground"
         >
           <Users className="size-3.5" />
-          <strong className="text-foreground tabular-nums">{followers ?? "—"}</strong> followers
+          <strong className="text-foreground tabular-nums">{followers ?? "—"}</strong> người theo dõi
         </button>
         <span className="text-muted-foreground/40">·</span>
         <button
@@ -55,20 +55,18 @@ export function ProfileActions({ targetUserId, profileUrl, title }: Props) {
           disabled={following === null || following === 0}
           className="text-muted-foreground hover:text-foreground transition-colors disabled:cursor-default disabled:hover:text-muted-foreground"
         >
-          <strong className="text-foreground tabular-nums">{following ?? "—"}</strong> following
+          <strong className="text-foreground tabular-nums">{following ?? "—"}</strong> đang theo dõi
         </button>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Action row: nút theo dõi bên trái, chia sẻ bên phải — không tràn dòng */}
+      <div className="flex items-center justify-between gap-3">
         <FollowUserButton
           targetUserId={targetUserId}
           currentUserId={currentUserId}
           onChange={(count) => setFollowers(count)}
         />
-        <div className="ml-auto">
-          <ShareButtons url={profileUrl} title={title} showLabel={false} />
-        </div>
+        <ShareButtons url={profileUrl} title={title} showLabel={false} />
       </div>
 
       {/* Modal */}

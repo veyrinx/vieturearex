@@ -3,7 +3,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { logAdminActivity } from "@/lib/server/admin-activity";
-import { ACHIEVEMENTS_BY_ID } from "@/lib/constants/achievements";
+import { getMergedAchievementsById } from "@/lib/server/achievements";
 
 // GET — list all user achievements (with user info)
 export async function GET(req: NextRequest) {
@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
   if (!body?.user_id || !body?.achievement) {
     return NextResponse.json({ error: "Thiếu user_id hoặc achievement." }, { status: 400 });
   }
-  if (!ACHIEVEMENTS_BY_ID[body.achievement]) {
+  // Chấp nhận cả huy hiệu code lẫn loại tuỳ chỉnh admin tạo.
+  const byId = await getMergedAchievementsById();
+  if (!byId[body.achievement]) {
     return NextResponse.json({ error: "Achievement không tồn tại." }, { status: 400 });
   }
 

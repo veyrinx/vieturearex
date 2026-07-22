@@ -2,19 +2,37 @@ import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { ACHIEVEMENTS_BY_ID } from "@/lib/constants/achievements";
+import { getSettings } from "@/lib/data/content-service";
+import { createNotification } from "@/lib/server/notifications";
+import { getCustomAchievements } from "@/lib/server/achievements";
+import { ACHIEVEMENTS_BY_ID, type AchievementDef } from "@/lib/constants/achievements";
 
 function getAdmin() {
   return createAdminSupabaseClient();
 }
 
+function escapeHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Resolve def cho 1 id: ưu tiên code, sau đó custom (settings). */
+async function resolveDef(achievementId: string): Promise<AchievementDef | undefined> {
+  const code = ACHIEVEMENTS_BY_ID[achievementId];
+  if (code) return code;
+  const custom = await getCustomAchievements();
+  return custom.find((d) => d.id === achievementId);
+}
+
 /**
  * Award an achievement to a user. Safe to call multiple times — duplicate is ignored.
- * Returns true if newly awarded.
+ * Chấp nhận cả huy hiệu code lẫn custom. Returns true if newly awarded.
  */
 export async function awardAchievement(userId: string, achievementId: string): Promise<boolean> {
   const admin = getAdmin();
-  if (!admin || !ACHIEVEMENTS_BY_ID[achievementId]) return false;
+  if (!admin) return false;
+
+  const def = await resolveDef(achievementId);
+  if (!def) return false;
 
   const { error } = await untypedFrom(admin, "user_achievements")
     .insert({ user_id: userId, achievement: achievementId });
@@ -27,13 +45,80 @@ export async function awardAchievement(userId: string, achievementId: string): P
   }
 
   // Award bonus points if achievement has points reward
-  const def = ACHIEVEMENTS_BY_ID[achievementId];
   if (def.points > 0) {
     await (admin as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
       .rpc("increment_user_points", { uid: userId, amount: def.points });
   }
 
+  // Thông báo cho người nhận (in-app + Telegram nếu đã liên kết) — best-effort.
+  void notifyAchievementEarned(userId, def).catch(() => null);
+
   return true;
+}
+
+/** Thông báo khi user nhận huy hiệu mới: inbox trong web + DM Telegram. */
+async function notifyAchievementEarned(userId: string, def: AchievementDef): Promise<void> {
+  await createNotification({
+    user_id: userId,
+    type: "achievement",
+    title: `🏆 Mở khóa huy hiệu: ${def.name}`,
+    body: def.description || undefined,
+    entity_type: "achievement",
+    entity_id: def.id,
+    entity_url: `/u/${userId}`,
+  });
+
+  try {
+    const admin = getAdmin();
+    if (!admin) return;
+    const { data: link } = (await untypedFrom(admin, "telegram_account_links")
+      .select("telegram_user_id")
+      .eq("user_id", userId)
+      .maybeSingle()) as { data: { telegram_user_id: number } | null };
+    if (!link) return;
+
+    const settings = await getSettings();
+    const token = settings.find((s) => s.key === "integrations.telegram_bot_token")?.value;
+    if (!token) return;
+
+    const text =
+      `🏆 <b>Mở khóa huy hiệu mới!</b>\n\n${def.icon} <b>${escapeHtml(def.name)}</b>` +
+      (def.description ? `\n${escapeHtml(def.description)}` : "") +
+      (def.points > 0 ? `\n\n<b>+${def.points} điểm</b>` : "");
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: link.telegram_user_id, text, parse_mode: "HTML", disable_web_page_preview: true }),
+    }).catch(() => null);
+  } catch {
+    // best-effort
+  }
+}
+
+/**
+ * Tự động trao các huy hiệu custom có điều kiện (điểm / chuỗi điểm danh) khi user
+ * đạt ngưỡng. Gọi ở nơi cập nhật điểm/streak (vd điểm danh). Best-effort.
+ */
+export async function evaluateAutoAchievements(userId: string): Promise<void> {
+  const custom = await getCustomAchievements();
+  const autos = custom.filter((d) => d.auto);
+  if (autos.length === 0) return;
+
+  const admin = getAdmin();
+  if (!admin) return;
+
+  const { data: u } = (await untypedFrom(admin, "users")
+    .select("points, login_streak")
+    .eq("id", userId)
+    .maybeSingle()) as { data: { points: number | null; login_streak: number | null } | null };
+  if (!u) return;
+
+  const value: Record<string, number> = { points: u.points ?? 0, streak: u.login_streak ?? 0 };
+  for (const d of autos) {
+    if (d.auto && value[d.auto.metric] >= d.auto.threshold) {
+      await awardAchievement(userId, d.id);
+    }
+  }
 }
 
 // ── Rank achievements ──────────────────────────────────────────────────────

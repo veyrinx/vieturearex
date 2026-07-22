@@ -4,22 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { Languages, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  LANGS, buildLangUrl, canTranslate, currentLang, langOption, type SiteLang,
+  LANGS, applyLang, readCurrentLang, langOption, type SiteLang,
 } from "@/lib/utils/translate-lang";
 
 /**
- * Bộ chọn ngôn ngữ trên navbar. Điều hướng sang proxy translate.goog của Google
- * (widget nhúng cũ đã bị Google ngừng hỗ trợ — xem translate-lang.ts).
+ * Bộ chọn ngôn ngữ trên navbar. Đổi cookie `googtrans` rồi reload — Google Dịch
+ * dịch tại chỗ trên CÙNG 1 URL (xem google-translate.tsx / translate-lang.ts).
  */
 export function LanguageToggle({ className, openUp }: { className?: string; openUp?: boolean }) {
   const [lang, setLang] = useState<SiteLang>("vi");
-  const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setLang(currentLang(location.hostname, location.search));
-    setShow(canTranslate(location.hostname));
+    setLang(readCurrentLang());
   }, []);
 
   // Đóng khi bấm ra ngoài hoặc nhấn Esc.
@@ -34,10 +32,14 @@ export function LanguageToggle({ className, openUp }: { className?: string; open
     return () => { document.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  // Ẩn khi chạy local/IP — Google không truy cập được site nội bộ.
-  if (!show) return null;
-
   const cur = langOption(lang);
+
+  const choose = (code: SiteLang) => {
+    if (code === lang) { setOpen(false); return; }
+    applyLang(code);
+    // Reload để widget áp bản dịch mới ngay từ đầu trang (giữ nguyên URL).
+    window.location.reload();
+  };
 
   return (
     <div ref={boxRef} className="relative" translate="no">
@@ -73,7 +75,7 @@ export function LanguageToggle({ className, openUp }: { className?: string; open
                 key={l.code}
                 role="option"
                 aria-selected={active}
-                onClick={() => { window.location.href = buildLangUrl(location, l.code); }}
+                onClick={() => choose(l.code)}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                   active ? "bg-primary/10 font-bold text-primary" : "text-foreground hover:bg-muted",

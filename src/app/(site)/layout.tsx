@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { TranslateGuard } from "@/components/common/translate-guard";
+import { GoogleTranslate } from "@/components/common/google-translate";
 import { AnnouncementBanner } from "@/components/common/announcement-banner";
 import { AdminLockBanner } from "@/components/common/admin-lock-banner";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
@@ -64,6 +65,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
       <SiteFooter />
       <ScrollToTop />
       <TranslateGuard />
+      <GoogleTranslate />
       <DailyCheckinTrigger />
       <CskhChat />
     </div>

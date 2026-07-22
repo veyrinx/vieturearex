@@ -32,6 +32,12 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/admin", "/api/", "/auth/", "/*.map"],
       },
+      // ── AdSense: bot phải vào được nội dung để phục vụ + duyệt quảng cáo ──
+      {
+        userAgent: ["Mediapartners-Google", "AdsBot-Google", "AdsBot-Google-Mobile"],
+        allow: "/",
+        disallow: ["/admin", "/admin/", "/api/admin/", "/auth/", "/*.map"],
+      },
       // ── Bingbot — limited ────────────────────────────────────────────────
       {
         userAgent: "Bingbot",

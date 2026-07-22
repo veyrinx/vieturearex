@@ -1,6 +1,17 @@
 export type AchievementRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 export type AchievementCategory = "account" | "content" | "forum" | "wiki" | "tournament" | "rank" | "social" | "loyalty";
 
+/** Chỉ số dùng để tự động trao huy hiệu tuỳ chỉnh. */
+export type AchievementMetric = "points" | "streak";
+
+export type AchievementAuto = { metric: AchievementMetric; threshold: number };
+
+export const ACHIEVEMENT_METRICS: AchievementMetric[] = ["points", "streak"];
+export const METRIC_LABEL: Record<AchievementMetric, string> = {
+  points: "Điểm tích luỹ",
+  streak: "Chuỗi điểm danh (ngày)",
+};
+
 export type AchievementDef = {
   id: string;
   name: string;
@@ -10,6 +21,10 @@ export type AchievementDef = {
   category: AchievementCategory;
   points: number;
   hidden?: boolean;
+  /** true = loại huy hiệu do admin tự tạo (lưu trong settings), không phải định nghĩa trong code. */
+  custom?: boolean;
+  /** Điều kiện tự động trao (chỉ dùng cho huy hiệu custom). */
+  auto?: AchievementAuto;
 };
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
@@ -298,3 +313,86 @@ export const RARITY_META: Record<AchievementRarity, { label: string; color: stri
   epic:      { label: "Sử Thi",      color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/30", glow: "shadow-purple-500/20" },
   legendary: { label: "Huyền Thoại", color: "text-amber-400",  bg: "bg-amber-400/10 border-amber-400/30",  glow: "shadow-amber-500/25" },
 };
+
+export const ALL_RARITIES: AchievementRarity[] = ["common", "uncommon", "rare", "epic", "legendary"];
+export const ALL_CATEGORIES = Object.keys(ACHIEVEMENT_CATEGORIES) as AchievementCategory[];
+
+// ── Huy hiệu tuỳ chỉnh (admin tạo, lưu ở settings key dưới đây) ───────────────
+
+export const SETTINGS_KEY_CUSTOM_ACHIEVEMENTS = "achievements.custom";
+
+const CODE_ACHIEVEMENT_IDS = new Set(ACHIEVEMENT_DEFS.map((a) => a.id));
+const CUSTOM_ID_RE = /^[a-z0-9][a-z0-9_-]{1,39}$/;
+
+/** Chuẩn hoá 1 chuỗi thành id hợp lệ (chữ thường, gạch dưới). */
+export function slugifyAchievementId(raw: string): string {
+  return raw
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+}
+
+/** Parse + làm sạch danh sách huy hiệu tuỳ chỉnh từ settings (JSON string). */
+export function parseCustomAchievements(raw: string | null | undefined): AchievementDef[] {
+  if (!raw) return [];
+  let data: unknown;
+  try { data = JSON.parse(raw); } catch { return []; }
+  if (!Array.isArray(data)) return [];
+
+  const seen = new Set<string>();
+  const out: AchievementDef[] = [];
+  for (const item of data) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id.trim().toLowerCase() : "";
+    // id phải hợp lệ, không trùng code, không trùng nhau.
+    if (!CUSTOM_ID_RE.test(id) || CODE_ACHIEVEMENT_IDS.has(id) || seen.has(id)) continue;
+    const name = typeof o.name === "string" ? o.name.trim().slice(0, 80) : "";
+    if (!name) continue;
+    const rarity = ALL_RARITIES.includes(o.rarity as AchievementRarity) ? (o.rarity as AchievementRarity) : "common";
+    const category = ALL_CATEGORIES.includes(o.category as AchievementCategory) ? (o.category as AchievementCategory) : "account";
+    const points = typeof o.points === "number" && Number.isFinite(o.points) ? Math.max(0, Math.min(1000, Math.round(o.points))) : 0;
+    const icon = typeof o.icon === "string" && o.icon.trim() ? o.icon.trim().slice(0, 8) : "🏅";
+    // Điều kiện tự trao (tuỳ chọn).
+    let auto: AchievementAuto | undefined;
+    const rawAuto = o.auto as Record<string, unknown> | undefined;
+    if (rawAuto && ACHIEVEMENT_METRICS.includes(rawAuto.metric as AchievementMetric)) {
+      const threshold = Number(rawAuto.threshold);
+      if (Number.isFinite(threshold) && threshold > 0) {
+        auto = { metric: rawAuto.metric as AchievementMetric, threshold: Math.round(threshold) };
+      }
+    }
+    seen.add(id);
+    out.push({
+      id, name,
+      description: typeof o.description === "string" ? o.description.trim().slice(0, 200) : "",
+      icon, rarity, category, points,
+      ...(o.hidden === true ? { hidden: true } : {}),
+      ...(auto ? { auto } : {}),
+      custom: true,
+    });
+    if (out.length >= 100) break;
+  }
+  return out;
+}
+
+export function serializeCustomAchievements(defs: AchievementDef[]): string {
+  return JSON.stringify(
+    defs.map((d) => ({
+      id: d.id, name: d.name, description: d.description, icon: d.icon,
+      rarity: d.rarity, category: d.category, points: d.points,
+      ...(d.hidden ? { hidden: true } : {}),
+      ...(d.auto ? { auto: d.auto } : {}),
+    })),
+  );
+}
+
+/** Gộp huy hiệu code + custom thành map theo id (custom KHÔNG ghi đè code). */
+export function mergeAchievementsById(custom: AchievementDef[]): Record<string, AchievementDef> {
+  const map: Record<string, AchievementDef> = { ...ACHIEVEMENTS_BY_ID };
+  for (const c of custom) if (!map[c.id]) map[c.id] = c;
+  return map;
+}

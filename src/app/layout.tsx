@@ -152,7 +152,8 @@ gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personali
 try{if(localStorage.getItem('arex-cookie-consent')==='accepted'){gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});}}catch(e){}
 gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         </Script>
-        {/* Google AdSense */}
+        {/* Google AdSense — meta xác minh + loader */}
+        <meta name="google-adsense-account" content="ca-pub-6400047965945515" />
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6400047965945515"
           strategy="afterInteractive"

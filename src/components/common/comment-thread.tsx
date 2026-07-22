@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { MentionedText } from "@/components/common/mentioned-text";
 import { MentionAutocomplete } from "@/components/common/mention-autocomplete";
-import { VerifiedBadge } from "@/components/common/user-badges";
+import { VerifiedBadge, UserBadgeList } from "@/components/common/user-badges";
 
 export type Comment = {
   id: string;
@@ -20,6 +20,7 @@ export type Comment = {
   avatar_url: string | null;
   role?: string | null;
   is_verified?: boolean;
+  badges?: string[] | null;
   content: string;
   created_at: string;
   status: "pending" | "approved" | "rejected";
@@ -86,7 +87,8 @@ function ReplyItem({ reply }: { reply: Comment }) {
           {reply.user_id ? (
             <Link href={`/u/${reply.user_id}`} className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:text-primary transition-colors">
               {reply.display_name}
-              <VerifiedBadge role={reply.role} isVerified={reply.is_verified} size="sm" />
+              <VerifiedBadge role={reply.role} badges={reply.badges} isVerified={reply.is_verified} size="sm" />
+              <UserBadgeList badges={reply.badges} size="sm" max={2} />
             </Link>
           ) : (
             <span className="text-[13px] font-semibold text-foreground">{reply.display_name}</span>
@@ -147,7 +149,8 @@ function CommentItem({ comment, replies, userEmail, onReplySubmit }: CommentItem
             {comment.user_id ? (
               <Link href={`/u/${comment.user_id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors">
                 {comment.display_name}
-                <VerifiedBadge role={comment.role} isVerified={comment.is_verified} size="sm" />
+                <VerifiedBadge role={comment.role} badges={comment.badges} isVerified={comment.is_verified} size="sm" />
+                <UserBadgeList badges={comment.badges} size="sm" max={2} />
               </Link>
             ) : (
               <span className="text-sm font-semibold text-foreground">{comment.display_name}</span>

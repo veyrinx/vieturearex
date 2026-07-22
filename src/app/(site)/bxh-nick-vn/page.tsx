@@ -7,6 +7,7 @@ import { PageHero } from "@/components/common/page-hero";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { ShareButton } from "@/components/common/share-button";
+import { BxhEmbedSnippet } from "@/components/tools/bxh-embed-snippet";
 import { BxhNickTabs, type AutoRow, type CommunityRow } from "./_tabs";
 
 export const metadata: Metadata = {
@@ -80,6 +81,8 @@ export default async function BxhNickVnPage() {
       </div>
 
       <BxhNickTabs auto={auto} community={community} />
+
+      <BxhEmbedSnippet baseUrl={siteConfig.url} />
     </main>
   );
 }

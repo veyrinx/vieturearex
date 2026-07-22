@@ -43,9 +43,11 @@ export async function performCheckin(
       .rpc("increment_user_points", { uid: userId, amount: 2 });
   } catch { /* non-critical */ }
 
-  void import("@/lib/server/award-achievement").then(({ checkLoginStreakAchievements }) =>
-    checkLoginStreakAchievements(userId, newStreak).catch(() => null),
-  );
+  void import("@/lib/server/award-achievement").then(({ checkLoginStreakAchievements, evaluateAutoAchievements }) => {
+    void checkLoginStreakAchievements(userId, newStreak).catch(() => null);
+    // Huy hiệu custom tự động (điểm / chuỗi) — điểm danh vừa cập nhật cả 2.
+    void evaluateAutoAchievements(userId).catch(() => null);
+  });
 
   return { streak: newStreak, alreadyCheckedIn: false };
 }

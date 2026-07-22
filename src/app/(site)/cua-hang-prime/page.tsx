@@ -4,6 +4,8 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getPrimeItems } from "@/lib/server/store";
 import { PrimeStore } from "@/components/tools/prime-store";
+import { getPrimeStoreLive } from "@/lib/server/prime-store-live";
+import { PrimeStoreLivePanel } from "@/components/tools/prime-store-live";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CuaHangPrimePage() {
-  const items = (await getPrimeItems()).filter((i) => i.enabled !== false);
+  const [items, live] = await Promise.all([
+    getPrimeItems().then((list) => list.filter((i) => i.enabled !== false)),
+    // Cửa hàng thật trong game — hỏng nguồn thì trang vẫn còn phần gói Prime.
+    getPrimeStoreLive().catch(() => null),
+  ]);
 
   return (
     <main className="container-main my-8 max-w-lg space-y-5">
@@ -37,6 +43,12 @@ export default async function CuaHangPrimePage() {
         }}
       >
         <PrimeStore items={items} />
+
+        {live && (
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <PrimeStoreLivePanel initial={live} />
+          </div>
+        )}
       </div>
 
       <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground/70">

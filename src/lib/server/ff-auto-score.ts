@@ -1,6 +1,11 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import type { FfResponse } from "@/lib/server/ff-api";
+import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { siteConfig } from "@/lib/constants/site";
+
+/** Chỉ báo khi lọt vào top này của BXH nick khủng VN. */
+const RANKUP_TOP_N = 10;
 
 /**
  * BXH nick khủng tự động — chỉ tài khoản VN.
@@ -51,11 +56,13 @@ export async function recordVnAccount(ffId: string, res: FfResponse | null): Pro
       brRankPoint: a.BrRankPoint,
     });
 
-    // Tăng lookups bằng cách đọc giá trị hiện tại (best-effort).
+    // Đọc giá trị hiện tại để tăng lookups + biết điểm cũ (best-effort).
     const { data: existing } = (await untypedFrom(db, "ff_auto_scores")
-      .select("lookups")
+      .select("lookups, score")
       .eq("ff_id", ffId)
-      .maybeSingle()) as { data: { lookups: number | null } | null };
+      .maybeSingle()) as { data: { lookups: number | null; score: number | null } | null };
+
+    const prevScore = existing?.score ?? null;
 
     await untypedFrom(db, "ff_auto_scores").upsert(
       {
@@ -72,7 +79,52 @@ export async function recordVnAccount(ffId: string, res: FfResponse | null): Pro
       } as never,
       { onConflict: "ff_id" },
     );
+
+    // Điểm chỉ đổi khi chỉ số thật của nick tăng → không spam mỗi lần tra lại.
+    if (prevScore === null || score > prevScore) {
+      void notifyRankUp(ffId, (a.AccountName as string) ?? null, score, prevScore).catch(() => null);
+    }
   } catch {
     // im lặng — không chặn tra cứu
   }
+}
+
+/**
+ * Bắn thông báo Telegram khi 1 nick vừa lọt / leo vào Top N BXH nick khủng VN.
+ * Best-effort, tự nuốt lỗi — không ảnh hưởng luồng tra cứu.
+ */
+async function notifyRankUp(
+  ffId: string,
+  nickname: string | null,
+  score: number,
+  prevScore: number | null,
+): Promise<void> {
+  const db = createAdminSupabaseClient();
+  if (!db) return;
+
+  // Hạng mới = số nick VN điểm cao hơn + 1 (không tính chính nó).
+  const { count } = (await untypedFrom(db, "ff_auto_scores")
+    .select("ff_id", { count: "exact", head: true })
+    .eq("region", "VN")
+    .gt("score", score)) as { count: number | null };
+
+  const rank = (count ?? 0) + 1;
+  if (rank > RANKUP_TOP_N) return;
+
+  await sendTelegramNotification({
+    title: "🚀 LÊN HẠNG BXH NICK KHỦNG VN",
+    subtitle: vnNow(),
+    sections: [{
+      icon: "🏆",
+      heading: `Top ${rank}`,
+      rows: [
+        { label: "Nick", value: nickname || `FF ${ffId}`, bold: true },
+        { label: "UID", value: ffId, mono: true },
+        { label: "Điểm", value: score.toLocaleString("vi-VN"), status: "ok" },
+        ...(prevScore !== null ? [{ label: "Trước đó", value: prevScore.toLocaleString("vi-VN") }] : []),
+      ],
+    }],
+    actions: [{ label: "Xem BXH", url: `${siteConfig.url}/bxh-nick-vn` }],
+    footer: "🏅 BXH nick khủng — Arex",
+  });
 }

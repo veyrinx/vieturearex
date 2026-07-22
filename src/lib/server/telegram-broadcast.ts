@@ -101,6 +101,50 @@ export async function isSubscribed(telegramUserId: number): Promise<boolean> {
 
 // ── Broadcast ─────────────────────────────────────────────────────────────────
 
+// Telegram giới hạn ~30 tin/giây tới các user khác nhau. Gửi theo lô để
+// không dính 429, và tôn trọng retry_after khi bị chặn tốc độ.
+const BROADCAST_BATCH = 25;
+const BATCH_PAUSE_MS = 1_100;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function sendOne(
+  token: string,
+  chatId: number,
+  html: string,
+): Promise<"ok" | "blocked" | "error"> {
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: html,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    }),
+  }).catch(() => null);
+
+  if (!res) return "error";
+  if (res.ok) return "ok";
+
+  const err = (await res.json().catch(() => ({}))) as {
+    error_code?: number;
+    parameters?: { retry_after?: number };
+  };
+  // 429 = quá tốc độ → nghỉ theo retry_after rồi thử lại đúng 1 lần.
+  if (err.error_code === 429) {
+    await sleep((err.parameters?.retry_after ?? 1) * 1000 + 200);
+    const retry = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: "HTML", disable_web_page_preview: true }),
+    }).catch(() => null);
+    return retry?.ok ? "ok" : "error";
+  }
+  // 403 = user chặn bot; 400 "chat not found" = tài khoản không còn hợp lệ.
+  if (err.error_code === 403 || err.error_code === 400) return "blocked";
+  return "error";
+}
+
 export async function broadcastToSubscribers(html: string): Promise<void> {
   const db = createAdminSupabaseClient();
   if (!db) return;
@@ -116,33 +160,20 @@ export async function broadcastToSubscribers(html: string): Promise<void> {
 
   const toDeactivate: number[] = [];
 
-  for (const sub of subs) {
-    const res = await fetch(
-      `https://api.telegram.org/bot${token}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: sub.telegram_user_id,
-          text: html,
-          parse_mode: "HTML",
-          disable_web_page_preview: true,
-        }),
-      },
-    ).catch(() => null);
-
-    if (res && !res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { error_code?: number };
-      // 403 = user blocked bot → mark inactive
-      if (err.error_code === 403) toDeactivate.push(sub.telegram_user_id);
-    }
+  for (let i = 0; i < subs.length; i += BROADCAST_BATCH) {
+    const batch = subs.slice(i, i + BROADCAST_BATCH);
+    const results = await Promise.all(
+      batch.map((sub) => sendOne(token, sub.telegram_user_id, html)),
+    );
+    results.forEach((r, idx) => {
+      if (r === "blocked") toDeactivate.push(batch[idx].telegram_user_id);
+    });
+    if (i + BROADCAST_BATCH < subs.length) await sleep(BATCH_PAUSE_MS);
   }
 
   if (toDeactivate.length) {
-    for (const uid of toDeactivate) {
-      await untypedFrom(db, "telegram_subscribers")
-        .update({ active: false })
-        .eq("telegram_user_id", uid);
-    }
+    await untypedFrom(db, "telegram_subscribers")
+      .update({ active: false })
+      .in("telegram_user_id", toDeactivate);
   }
 }

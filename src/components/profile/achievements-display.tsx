@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import {
-  ACHIEVEMENT_DEFS, ACHIEVEMENTS_BY_ID, RARITY_META,
+  ACHIEVEMENT_DEFS, RARITY_META,
   ACHIEVEMENT_CATEGORIES,
-  type AchievementRarity, type AchievementCategory,
+  type AchievementRarity, type AchievementCategory, type AchievementDef,
 } from "@/lib/constants/achievements";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -19,19 +19,24 @@ type EarnedAchievement = {
 type Props = {
   earned: EarnedAchievement[];
   showLocked?: boolean;
+  /** Huy hiệu tuỳ chỉnh admin tạo (gộp thêm vào danh mục mặc định). */
+  customDefs?: AchievementDef[];
 };
 
 const RARITY_FILTER_ORDER: ("all" | AchievementRarity)[] = [
   "all", "legendary", "epic", "rare", "uncommon", "common",
 ];
 
-export function AchievementsDisplay({ earned, showLocked = true }: Props) {
+export function AchievementsDisplay({ earned, showLocked = true, customDefs = [] }: Props) {
   const [activeCategory, setActiveCategory] = useState<AchievementCategory | "all">("all");
   const [activeRarity, setActiveRarity] = useState<AchievementRarity | "all">("all");
 
+  const allDefs = customDefs.length ? [...ACHIEVEMENT_DEFS, ...customDefs] : ACHIEVEMENT_DEFS;
+  const allById = new Map(allDefs.map((d) => [d.id, d]));
+
   const earnedMap = new Map(earned.map((e) => [e.achievement, e.earned_at]));
 
-  const visibleDefs = ACHIEVEMENT_DEFS.filter((a) => {
+  const visibleDefs = allDefs.filter((a) => {
     if (a.hidden && !earnedMap.has(a.id)) return false;
     if (!showLocked && !earnedMap.has(a.id)) return false;
     if (activeCategory !== "all" && a.category !== activeCategory) return false;
@@ -39,8 +44,8 @@ export function AchievementsDisplay({ earned, showLocked = true }: Props) {
     return true;
   });
 
-  const earnedCount = earned.filter((e) => ACHIEVEMENTS_BY_ID[e.achievement]).length;
-  const totalVisible = ACHIEVEMENT_DEFS.filter((a) => !a.hidden).length;
+  const earnedCount = earned.filter((e) => allById.has(e.achievement)).length;
+  const totalVisible = allDefs.filter((a) => !a.hidden).length;
 
   const categories = (["all", ...Object.keys(ACHIEVEMENT_CATEGORIES)] as ("all" | AchievementCategory)[]);
 

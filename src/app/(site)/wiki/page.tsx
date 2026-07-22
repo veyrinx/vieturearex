@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { BookOpenText, PenLine, Users2, Layers } from "lucide-react";
 import { WikiSearch } from "@/components/wiki/wiki-search";
+import { ArticleAd } from "@/components/common/article-ad";
 
 export const revalidate = 30;
 
@@ -85,6 +86,9 @@ export default async function WikiPage() {
           ))}
         </div>
       </div>
+
+      {/* Banner quảng cáo (chỉ hiện khi đã cấu hình slot) */}
+      <ArticleAd slotKey="ads.slot_wiki_top" />
 
       {articles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/30 py-20 text-center">

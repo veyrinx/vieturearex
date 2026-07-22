@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     tgEndpoint = `https://api.telegram.org/bot${token}/setWebhook`;
     tgBody = {
       url: webhookUrl,
-      allowed_updates: ["message"],
+      allowed_updates: ["message", "callback_query", "my_chat_member"],
       drop_pending_updates: true,
       ...(secret ? { secret_token: secret } : {}),
     };
@@ -64,12 +64,16 @@ export async function POST(request: NextRequest) {
       api("setMyCommands", {
         commands: [
           { command: "start", description: "Mở Arex Mini App" },
+          { command: "lienket", description: "Liên kết tài khoản Arex" },
+          { command: "hoso", description: "Hồ sơ, điểm & chuỗi điểm danh" },
           { command: "diemdanh", description: "Điểm danh nhận điểm" },
+          { command: "nap", description: "Cửa hàng Prime trong game" },
           { command: "news", description: "Tin tức mới nhất" },
           { command: "events", description: "Sự kiện đang diễn ra" },
           { command: "giaidau", description: "Giải đấu & bracket" },
           { command: "bxh", description: "Bảng xếp hạng" },
           { command: "quiz", description: "Quiz đố vui" },
+          { command: "vukhi", description: "Wiki vũ khí" },
           { command: "help", description: "Danh sách lệnh" },
         ],
       }),

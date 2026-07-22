@@ -20,7 +20,8 @@ import type { GameProfile } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { AchievementsDisplay } from "@/components/profile/achievements-display";
+import { AchievementBadges } from "@/components/profile/achievement-badges";
+import { getMergedAchievementsById, resolveEarned } from "@/lib/server/achievements";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -88,11 +89,14 @@ async function getPublicAchievements(userId: string) {
 
 export default async function PublicProfilePage({ params }: Props) {
   const { id } = await params;
-  const [profile, achievements] = await Promise.all([
+  const [profile, achievements, achievementsById] = await Promise.all([
     getUserPublicProfile(id),
     getPublicAchievements(id),
+    getMergedAchievementsById(),
   ]);
   if (!profile) notFound();
+
+  const earnedBadges = resolveEarned(achievements, achievementsById);
 
   const name = profile.display_name || "Ẩn danh";
   const meta = getRoleMeta(profile.role);
@@ -293,13 +297,13 @@ export default async function PublicProfilePage({ params }: Props) {
             </div>
           )}
 
-          {/* Achievements */}
-          {show("achievements") && achievements.length > 0 && (
+          {/* Achievements — dải huy hiệu icon, bấm để xem tên */}
+          {show("achievements") && earnedBadges.length > 0 && (
             <div className="mt-5">
               <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                <Trophy className="size-3" /> Thành tích ({achievements.length})
+                <Trophy className="size-3" /> Thành tích ({earnedBadges.length})
               </p>
-              <AchievementsDisplay earned={achievements} />
+              <AchievementBadges items={earnedBadges} />
             </div>
           )}
         </div>

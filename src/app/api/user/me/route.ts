@@ -26,6 +26,11 @@ async function maybeAwardDailyLogin(userId: string) {
     await (admin as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
       .rpc("increment_user_points", { uid: userId, amount: POINTS.DAILY_LOGIN });
 
+    // Huy hiệu custom tự động theo điểm/streak — reconcile mỗi ngày đăng nhập.
+    void import("@/lib/server/award-achievement").then(({ evaluateAutoAchievements }) =>
+      evaluateAutoAchievements(userId).catch(() => null),
+    );
+
     map[userId] = today;
     // Trim map to last 1000 entries to avoid unbounded growth
     const entries = Object.entries(map);

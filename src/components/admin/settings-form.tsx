@@ -927,9 +927,29 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             <Input value={v("ads.slot_sidebar")} onChange={(e) => set("ads.slot_sidebar", e.target.value)} placeholder="1234567890" className="font-mono" />
             <SensitiveHint hint={sensitiveHint("ads.slot_sidebar")} />
           </Field>
-          <Field label="Slot In-Article" hint="Quảng cáo trong bài viết" icon={Newspaper}>
+          <Field label="Slot In-Article" hint="Trong bài tin tức /news/[slug]" icon={Newspaper}>
             <Input value={v("ads.slot_article")} onChange={(e) => set("ads.slot_article", e.target.value)} placeholder="1234567890" className="font-mono" />
             <SensitiveHint hint={sensitiveHint("ads.slot_article")} />
+          </Field>
+
+          <div className="py-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vị trí riêng — Tin tức &amp; Wiki</p>
+          </div>
+          <Field label="Slot Tin tức — Banner đầu" hint="Đầu trang danh sách /news" icon={Newspaper}>
+            <Input value={v("ads.slot_news_top")} onChange={(e) => set("ads.slot_news_top", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_news_top")} />
+          </Field>
+          <Field label="Slot Tin tức — Trong danh sách" hint="Cuối danh sách bài /news" icon={Newspaper}>
+            <Input value={v("ads.slot_news_inline")} onChange={(e) => set("ads.slot_news_inline", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_news_inline")} />
+          </Field>
+          <Field label="Slot Wiki — Banner đầu" hint="Đầu trang danh sách /wiki" icon={LayoutGrid}>
+            <Input value={v("ads.slot_wiki_top")} onChange={(e) => set("ads.slot_wiki_top", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_wiki_top")} />
+          </Field>
+          <Field label="Slot Wiki — Trong bài" hint="Cuối bài wiki /wiki/[slug]" icon={LayoutGrid}>
+            <Input value={v("ads.slot_wiki_article")} onChange={(e) => set("ads.slot_wiki_article", e.target.value)} placeholder="1234567890" className="font-mono" />
+            <SensitiveHint hint={sensitiveHint("ads.slot_wiki_article")} />
           </Field>
 
           <div className="py-3">
@@ -938,7 +958,11 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               {[
                 { label: "Header Banner", icon: MonitorPlay, size: "970×90",    key: "ads.slot_header" },
                 { label: "Sidebar Box",   icon: LayoutGrid,  size: "300×250",   key: "ads.slot_sidebar" },
-                { label: "In-Article",    icon: Newspaper,   size: "Responsive", key: "ads.slot_article" },
+                { label: "Tin — In-Article", icon: Newspaper, size: "Responsive", key: "ads.slot_article" },
+                { label: "Tin — Banner đầu", icon: Newspaper, size: "Responsive", key: "ads.slot_news_top" },
+                { label: "Tin — Trong list", icon: Newspaper, size: "Responsive", key: "ads.slot_news_inline" },
+                { label: "Wiki — Banner đầu", icon: LayoutGrid, size: "Responsive", key: "ads.slot_wiki_top" },
+                { label: "Wiki — Trong bài",  icon: LayoutGrid, size: "Responsive", key: "ads.slot_wiki_article" },
               ].map(({ label, icon: Icon, size, key }) => {
                 const slot = v(key);
                 return (

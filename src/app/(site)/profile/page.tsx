@@ -13,6 +13,7 @@ import { getRoleMeta } from "@/lib/constants/roles";
 import { RoleBadge, UserBadgeList, VerifiedBadge } from "@/components/common/user-badges";
 import { PRIVACY_SECTIONS, type PrivacyMap, isSectionVisible } from "@/lib/constants/profile-privacy";
 import { AchievementsDisplay } from "@/components/profile/achievements-display";
+import type { AchievementDef } from "@/lib/constants/achievements";
 import { CosmeticsSelector } from "@/components/profile/cosmetics-selector";
 import { DailyCheckin } from "@/components/common/daily-checkin";
 import { FfPlayerLookup } from "@/components/tools/ff-player-lookup";
@@ -113,6 +114,7 @@ export default function ProfilePage() {
   const [bookmarks, setBookmarks] = useState<FavoriteItem[]>([]);
   const [follows, setFollows] = useState<string[]>([]);
   const [achievements, setAchievements] = useState<{ achievement: string; earned_at: string }[]>([]);
+  const [customAchievements, setCustomAchievements] = useState<AchievementDef[]>([]);
   const [myPosts, setMyPosts] = useState<Array<{ id: string; title: string; category: string; view_count: number; reply_count: number; status: string; created_at: string }>>([]);
   const [myWiki, setMyWiki] = useState<Array<{ id: string; slug: string; title: string; category: string; status: string; view_count: number; created_at: string }>>([]);
 
@@ -157,6 +159,7 @@ export default function ProfilePage() {
           fetch("/api/user/favorites").then((r) => r.json()).then((d: FavoriteItem[]) => setBookmarks(d ?? [])).catch(() => null),
           fetch("/api/user/follows").then((r) => r.json()).then((d: { follows?: string[] }) => setFollows(d.follows ?? [])).catch(() => null),
           fetch("/api/user/achievements").then((r) => r.json()).then((d: { achievement: string; earned_at: string }[]) => setAchievements(d ?? [])).catch(() => null),
+          fetch("/api/achievements").then((r) => r.json()).then((d: { items: AchievementDef[] }) => setCustomAchievements(d.items ?? [])).catch(() => null),
           fetch("/api/user/posts").then((r) => r.json()).then((d: { posts: Array<{ id: string; title: string; category: string; view_count: number; reply_count: number; status: string; created_at: string }> }) => setMyPosts(d.posts ?? [])).catch(() => null),
           fetch("/api/user/wiki").then((r) => r.json()).then((d: { articles: Array<{ id: string; slug: string; title: string; category: string; status: string; view_count: number; created_at: string }> }) => setMyWiki(d.articles ?? [])).catch(() => null),
         ]).then(() => setStatsLoaded(true));
@@ -1117,7 +1120,7 @@ export default function ProfilePage() {
                 <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{achievements.length} đã mở khóa</span>
               )}
             </div>
-            <AchievementsDisplay earned={achievements} showLocked />
+            <AchievementsDisplay earned={achievements} showLocked customDefs={customAchievements} />
           </div>
         )}
 

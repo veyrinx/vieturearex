@@ -10,6 +10,7 @@ import { ShareButtons } from "@/components/news/share-buttons";
 import { BookmarkButton } from "@/components/news/bookmark-button";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { WikiViewTracker } from "@/components/wiki/wiki-view-tracker";
+import { ArticleAd } from "@/components/common/article-ad";
 import { siteConfig } from "@/lib/constants/site";
 import { sanitizeRichText } from "@/lib/server/sanitize";
 
@@ -211,6 +212,9 @@ export default async function WikiArticlePage(
           </div>
         </div>
       </article>
+
+      {/* Quảng cáo trong bài (chỉ hiện khi đã cấu hình slot) */}
+      <ArticleAd slotKey="ads.slot_wiki_article" />
 
       {/* Author card */}
       <div className="rounded-2xl border border-border bg-card p-5 flex items-center gap-4">

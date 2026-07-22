@@ -11,8 +11,10 @@ import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import {
-  ACHIEVEMENT_DEFS, ACHIEVEMENTS_BY_ID, RARITY_META, ACHIEVEMENT_CATEGORIES,
+  ACHIEVEMENT_DEFS, RARITY_META, ACHIEVEMENT_CATEGORIES,
+  mergeAchievementsById, type AchievementDef,
 } from "@/lib/constants/achievements";
+import { CustomAchievementManager } from "@/components/admin/custom-achievement-manager";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -30,6 +32,13 @@ async function fetchAchievements(userId?: string): Promise<AchievementRow[]> {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed");
   const data = await res.json() as { items: AchievementRow[] };
+  return data.items ?? [];
+}
+
+async function fetchCustomDefs(): Promise<AchievementDef[]> {
+  const res = await fetch("/api/admin/achievements/defs", { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json() as { items: AchievementDef[] };
   return data.items ?? [];
 }
 
@@ -53,7 +62,17 @@ export function AchievementsAdminPanel() {
     queryFn: () => fetchAchievements(userIdFilter || undefined),
   });
 
+  const { data: customDefs = [] } = useQuery({
+    queryKey: ["admin-ach-defs"],
+    queryFn: fetchCustomDefs,
+  });
+
+  // Gộp code + custom cho dropdown cấp + tra tên trong bảng.
+  const allDefs = [...ACHIEVEMENT_DEFS, ...customDefs];
+  const defsById = mergeAchievementsById(customDefs);
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-achievements"] });
+  const invalidateDefs = () => queryClient.invalidateQueries({ queryKey: ["admin-ach-defs"] });
 
   const handleGrant = async () => {
     if (!grantUserId.trim() || !grantAchievement) {
@@ -90,7 +109,7 @@ export function AchievementsAdminPanel() {
 
   const filtered = items.filter((item) => {
     if (!search) return true;
-    const def = ACHIEVEMENTS_BY_ID[item.achievement];
+    const def = defsById[item.achievement];
     const name = (item.users.display_name ?? item.users.email).toLowerCase();
     return (
       name.includes(search.toLowerCase()) ||
@@ -132,7 +151,7 @@ export function AchievementsAdminPanel() {
                   <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     {meta.icon} {meta.label}
                   </div>
-                  {ACHIEVEMENT_DEFS.filter((d) => d.category === cat).map((def) => (
+                  {allDefs.filter((d) => d.category === cat).map((def) => (
                     <SelectItem key={def.id} value={def.id}>
                       <span className="flex items-center gap-2">
                         <span>{def.icon}</span>
@@ -140,6 +159,7 @@ export function AchievementsAdminPanel() {
                         <span className={cn("text-[9px] font-bold", RARITY_META[def.rarity].color)}>
                           {RARITY_META[def.rarity].label}
                         </span>
+                        {def.custom && <span className="text-[8px] font-bold uppercase text-violet-500">tuỳ chỉnh</span>}
                       </span>
                     </SelectItem>
                   ))}
@@ -211,7 +231,7 @@ export function AchievementsAdminPanel() {
             </thead>
             <tbody>
               {filtered.map((item) => {
-                const def = ACHIEVEMENTS_BY_ID[item.achievement];
+                const def = defsById[item.achievement];
                 const rarityMeta = def ? RARITY_META[def.rarity] : null;
                 return (
                   <tr key={item.id} className="border-b border-border/60 hover:bg-muted/20 transition-colors">
@@ -270,12 +290,15 @@ export function AchievementsAdminPanel() {
         </div>
       )}
 
-      {/* Achievement catalog */}
+      {/* Tạo / quản lý loại huy hiệu tuỳ chỉnh */}
+      <CustomAchievementManager defs={customDefs} onChange={invalidateDefs} />
+
+      {/* Achievement catalog (code-defined) */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Shield className="size-4 text-muted-foreground" />
           <h2 className="font-heading text-xs font-black uppercase tracking-wide text-muted-foreground">
-            Danh Mục Thành Tựu ({ACHIEVEMENT_DEFS.length} loại)
+            Danh Mục Thành Tựu Mặc Định ({ACHIEVEMENT_DEFS.length} loại)
           </h2>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">

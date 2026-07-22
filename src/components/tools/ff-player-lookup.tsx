@@ -3,9 +3,34 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Search, Loader2, User, Trophy, Heart, Shield, Calendar, Star,
-  PawPrint, Globe, AlertCircle,
+  PawPrint, Globe, AlertCircle, Share2, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ── Lịch sử tra cứu (localStorage, tối đa 10 nick gần nhất) ──────────────────
+const HISTORY_KEY = "ff:lookup-history";
+const HISTORY_MAX = 10;
+
+type HistoryItem = { uid: string; name: string; level: number | null; region: string; ts: number };
+
+function loadHistory(): HistoryItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(arr) ? (arr as HistoryItem[]).filter((h) => h && typeof h.uid === "string").slice(0, HISTORY_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items: HistoryItem[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_MAX)));
+  } catch {
+    /* localStorage đầy / bị chặn — bỏ qua */
+  }
+}
 
 /** Cấu trúc con (chỉ field dùng tới) từ /api/ff/player/[uid]. */
 type FfResult = {
@@ -131,7 +156,50 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<FfResult | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [resultUid, setResultUid] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [sharing, setSharing] = useState(false);
   const autoDone = useRef(false);
+
+  useEffect(() => { setHistory(loadHistory()); }, []);
+
+  function pushHistory(item: HistoryItem) {
+    setHistory((prev) => {
+      const next = [item, ...prev.filter((h) => h.uid !== item.uid)].slice(0, HISTORY_MAX);
+      saveHistory(next);
+      return next;
+    });
+  }
+
+  function clearHistory() {
+    setHistory([]);
+    saveHistory([]);
+  }
+
+  async function shareCard() {
+    if (!resultUid) return;
+    const url = `${window.location.origin}/api/ff/player/${resultUid}/card`;
+    setSharing(true);
+    try {
+      // Ưu tiên chia sẻ kèm ảnh (điện thoại); không hỗ trợ thì mở ảnh ở tab mới.
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (typeof nav.share === "function") {
+        try {
+          const blob = await (await fetch(url)).blob();
+          const file = new File([blob], `nick-${resultUid}.png`, { type: "image/png" });
+          if (nav.canShare?.({ files: [file] })) {
+            await nav.share({ files: [file], title: "Kết quả tra cứu nick Free Fire" });
+            return;
+          }
+        } catch { /* rơi xuống mở tab */ }
+        await nav.share({ title: "Kết quả tra cứu nick Free Fire", url }).catch(() => window.open(url, "_blank"));
+        return;
+      }
+      window.open(url, "_blank");
+    } finally {
+      setSharing(false);
+    }
+  }
 
   async function lookup(targetUid?: string) {
     const q = (targetUid ?? uid).trim();
@@ -153,12 +221,23 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
         const info = json.result?.AccountInfo;
         if (!info) {
           setError("Không tìm thấy tài khoản với UID này.");
-        } else if (onData) {
-          onData({
+          setResultUid(null);
+        } else {
+          setResultUid(q);
+          pushHistory({
+            uid: q,
+            name: info.AccountName ?? "Ẩn danh",
             level: num(info.AccountLevel),
-            brRankPoint: num(info.BrRankPoint),
-            nickname: info.AccountName ?? null,
+            region: info.AccountRegion ?? "?",
+            ts: Date.now(),
           });
+          if (onData) {
+            onData({
+              level: num(info.AccountLevel),
+              brRankPoint: num(info.BrRankPoint),
+              nickname: info.AccountName ?? null,
+            });
+          }
         }
       }
     } catch {
@@ -212,6 +291,40 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
         <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-500">
           <AlertCircle className="size-4 shrink-0" />
           {error}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-0.5">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              <History className="size-3.5" /> Đã tra gần đây
+            </span>
+            <button
+              type="button"
+              onClick={clearHistory}
+              className="text-[11px] font-semibold text-muted-foreground transition-colors hover:text-red-500"
+            >
+              Xóa
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {history.map((h) => (
+              <button
+                key={h.uid}
+                type="button"
+                onClick={() => { setUid(h.uid); void lookup(h.uid); }}
+                disabled={loading}
+                title={`UID ${h.uid}`}
+                className="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/50 disabled:opacity-50"
+              >
+                <span className="truncate">{h.name}</span>
+                {h.level != null && (
+                  <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-bold text-primary tabular-nums">Lv{h.level}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -301,6 +414,16 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
               <Calendar className="size-3" /> Đăng nhập gần nhất: {fmtDate(a.AccountLastLogin)}
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={() => void shareCard()}
+            disabled={sharing}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/15 disabled:opacity-50 dark:text-amber-400"
+          >
+            {sharing ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />}
+            Tạo ảnh chia sẻ
+          </button>
 
           {remaining != null && (
             <p className="text-right text-[10px] text-muted-foreground/70">

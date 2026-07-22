@@ -13,6 +13,7 @@ import {
   Search,
   Swords,
   Trophy,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -62,6 +63,16 @@ export const TOOLS: Tool[] = [
     gradient: "from-rose-500 to-red-500",
     featured: true,
     shortDesc: "So kè 2 nick FF xem ai trâu hơn.",
+    badge: "MỚI",
+  },
+  {
+    href: "/tra-cuu-guild",
+    title: "Tra Cứu Guild",
+    desc: "Nhập UID thành viên để xem chi tiết guild Free Fire: tên, cấp độ, sĩ số, sức chứa và chủ guild.",
+    icon: Users,
+    accent: "text-teal-500 bg-teal-500/10",
+    gradient: "from-teal-500 to-cyan-500",
+    shortDesc: "Nhập UID → xem chi tiết guild FF.",
     badge: "MỚI",
   },
   {

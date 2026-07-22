@@ -84,6 +84,17 @@ const nextConfig = {
       "https://www.googletagmanager.com",
       "https://www.google-analytics.com",
       "https://va.vercel-scripts.com",
+      // Google Dịch (widget nhúng element.js)
+      "https://translate.google.com",
+      "https://translate.googleapis.com",
+      "https://www.gstatic.com",
+      // Google AdSense (loader + script phụ trợ)
+      "https://pagead2.googlesyndication.com",
+      "https://*.googlesyndication.com",
+      "https://partner.googleadservices.com",
+      "https://www.googletagservices.com",
+      "https://adservice.google.com",
+      "https://tpc.googlesyndication.com",
       ...(isDevelopment ? ["'unsafe-eval'"] : []),
     ].join(" ");
 
@@ -100,6 +111,17 @@ const nextConfig = {
       "https://va.vercel-scripts.com",
       "wss://*.twitch.tv",
       "https://*.twitch.tv",
+      // Google Dịch gọi API dịch từ trình duyệt
+      "https://translate.googleapis.com",
+      "https://translate.google.com",
+      // Google AdSense (beacon / đo lường chất lượng quảng cáo)
+      "https://pagead2.googlesyndication.com",
+      "https://*.googlesyndication.com",
+      "https://googleads.g.doubleclick.net",
+      "https://*.g.doubleclick.net",
+      "https://*.adtrafficquality.google",
+      "https://adservice.google.com",
+      "https://www.google.com",
     ].join(" ");
 
     const contentSecurityPolicy = [
@@ -113,10 +135,16 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       `script-src ${scriptSrc}`,
       `connect-src ${connectSrc}`,
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://www.twitch.tv https://www.facebook.com https://web.facebook.com https://www.tiktok.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://www.twitch.tv https://www.facebook.com https://web.facebook.com https://www.tiktok.com https://translate.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.adtrafficquality.google",
       "form-action 'self' https://mail.google.com https://accounts.google.com",
       "upgrade-insecure-requests",
     ].join("; ");
+
+    // CSP for /embed paths: cho phép BẤT KỲ site nào nhúng iframe (widget công khai).
+    const embedContentSecurityPolicy = contentSecurityPolicy.replace(
+      "frame-ancestors 'self'",
+      "frame-ancestors *",
+    );
 
     // CSP for /tg paths: allow Telegram to embed in iframe and load SDK
     const tgScriptSrc = [scriptSrc, "https://telegram.org"].join(" ");
@@ -242,6 +270,15 @@ const nextConfig = {
             key: "X-DNS-Prefetch-Control",
             value: "on",
           },
+        ],
+      },
+      // Embed widgets: cho phép nhúng iframe từ mọi nơi (override /:path* ở trên).
+      {
+        source: "/embed/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: embedContentSecurityPolicy },
+          { key: "X-Frame-Options", value: "ALLOWALL" },
+          { key: "X-Robots-Tag", value: "noindex" },
         ],
       },
       // Telegram Mini App: allow framing from Telegram domains
