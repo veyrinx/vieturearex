@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Mail, Shield, FileText, Send } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { PageContentOverride } from "@/components/common/page-content-override";
+import { ContactInfo } from "@/components/common/contact-info";
 
 export const metadata: Metadata = {
   title: "Về Chúng Tôi — Arex Network",
@@ -262,6 +263,14 @@ export default function AboutPage() {
       </div>
 
       </PageContentOverride>
+
+      {/* Kết nối mạng xã hội — luôn hiển thị, đọc từ cài đặt */}
+      <section className="space-y-4">
+        <h2 className="font-heading text-lg font-black uppercase tracking-[0.06em] text-foreground">
+          Kết nối với chúng tôi
+        </h2>
+        <ContactInfo />
+      </section>
 
       {/* Footer note */}
       <p className="text-center text-xs text-muted-foreground/50 pb-4">

@@ -8,6 +8,7 @@ import {
 } from "@/components/common/brand-icons";
 import { Mail } from "lucide-react";
 import { ContactForm } from "@/components/contact/contact-form";
+import { ContactInfo } from "@/components/common/contact-info";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap, resolveSocialLinks } from "@/lib/utils/site-settings";
 
@@ -115,6 +116,17 @@ export default async function ContactPage() {
 
         <ContactForm />
       </div>
+
+      {/* Tất cả kênh liên hệ — tự đọc từ cài đặt Mạng Xã Hội */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h3 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400">
+            Tất cả kênh liên hệ
+          </h3>
+        </div>
+        <ContactInfo />
+      </section>
     </div>
   );
 }

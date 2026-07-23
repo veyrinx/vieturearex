@@ -8,7 +8,7 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
-  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2, Phone,
 } from "lucide-react";
 import { ImageUploadButton } from "@/components/common/image-upload-button";
 import type { SiteSetting } from "@/lib/types/content";
@@ -799,6 +799,18 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
           <Field label="Email liên hệ" icon={Mail}>
             <Input type="email" value={v("social.email")} onChange={(e) => set("social.email", e.target.value)} placeholder="admin@arex.tech" />
+          </Field>
+          <Field label="Số điện thoại" icon={Phone}>
+            <Input value={v("social.phone")} onChange={(e) => set("social.phone", e.target.value)} placeholder="0900 000 000" />
+          </Field>
+          <Field label="Zalo (link nhóm/OA)" icon={MessageSquare}>
+            <Input value={v("social.zalo_url")} onChange={(e) => set("social.zalo_url", e.target.value)} placeholder="https://zalo.me/g/..." />
+          </Field>
+          <Field label="Telegram" icon={Send}>
+            <Input value={v("social.telegram_url")} onChange={(e) => set("social.telegram_url", e.target.value)} placeholder="https://t.me/..." />
+          </Field>
+          <Field label="Discord" icon={MessageSquare}>
+            <Input value={v("social.discord_url")} onChange={(e) => set("social.discord_url", e.target.value)} placeholder="https://discord.gg/..." />
           </Field>
         </Card>
       </div>
