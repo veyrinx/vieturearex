@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MailTestButton } from "@/components/admin/mail-test-button";
+import { ManualMailSender } from "@/components/admin/manual-mail-sender";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { defaultSiteSettingValues, defaultIscSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS, SITE_SPECIFIC_SETTING_KEYS } from "@/lib/utils/site-settings";
@@ -2139,6 +2140,15 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </div>
           <div className="px-1 pb-2">
             <MailTestButton />
+          </div>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={SendHorizonal} title="Gửi email thủ công" desc="Soạn & gửi email tuỳ ý tới người nhận bất kỳ, ngoài các loại tự động" />
+          </div>
+          <div className="px-1 pb-2">
+            <ManualMailSender />
           </div>
         </Card>
 
