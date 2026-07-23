@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Gem, Target, RotateCw, Wallet, Sparkles, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function num(v: string) {
   const n = parseInt(v.replace(/[^0-9]/g, ""), 10);
@@ -25,6 +26,8 @@ export function TopupCalculator() {
   // Vòng quay
   const [spinCost, setSpinCost] = useState("");
   const [spins, setSpins] = useState("");
+  // Tab công cụ đang xem (kiểu giao diện tab)
+  const [tab, setTab] = useState<"item" | "spin">("item");
 
   const r = useMemo(() => {
     const need = Math.max(0, num(cost) - num(have));
@@ -92,7 +95,27 @@ export function TopupCalculator() {
         </div>
       </section>
 
-      {/* ── Mua vật phẩm ── */}
+      {/* Thanh tab chuyển công cụ */}
+      <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card p-1.5">
+        {([["item", "Mua vật phẩm", Target], ["spin", "Chi phí vòng quay", RotateCw]] as const).map(([id, label, Icon]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wider transition",
+              tab === id
+                ? "bg-primary text-primary-foreground shadow dark:bg-amber-400 dark:text-slate-900"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+          >
+            <Icon className="size-4" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "item" && (
+      /* ── Mua vật phẩm ── */
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/8 to-transparent px-4 py-3 dark:from-amber-400/8">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary dark:bg-amber-400/12 dark:text-amber-400">
@@ -167,8 +190,10 @@ export function TopupCalculator() {
           )}
         </div>
       </section>
+      )}
 
-      {/* ── Chi phí vòng quay ── */}
+      {tab === "spin" && (
+      /* ── Chi phí vòng quay ── */
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/8 to-transparent px-4 py-3 dark:from-amber-400/8">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary dark:bg-amber-400/12 dark:text-amber-400">
@@ -235,6 +260,7 @@ export function TopupCalculator() {
           )}
         </div>
       </section>
+      )}
 
       {/* Ghi chú */}
       <div className="flex items-start gap-2.5 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
