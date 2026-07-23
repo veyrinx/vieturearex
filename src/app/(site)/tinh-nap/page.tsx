@@ -4,6 +4,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { TopupCalculator } from "@/components/tools/topup-calculator";
+import { SpinWheel } from "@/components/tools/spin-wheel";
 
 export const metadata: Metadata = {
   title: "Máy tính nạp & chi phí Free Fire — Kim cương / vòng quay | Arex",
@@ -23,6 +24,8 @@ export default function TinhNapPage() {
         title="Máy tính nạp & vòng quay"
         subtitle="Tính kim cương + tiền cần cho vật phẩm/vòng quay — để chi tiêu hợp lý."
       />
+
+      <SpinWheel />
 
       <TopupCalculator />
     </main>
