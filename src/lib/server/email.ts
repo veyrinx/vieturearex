@@ -80,11 +80,16 @@ export async function sendMail(input: SendMailInput): Promise<SendMailResult> {
   }
   try {
     const nodemailer = await import("nodemailer");
+    const isSecure = config.port === 465;
     const transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
-      secure: config.port === 465,
+      secure: isSecure, // 465 = SSL ngầm; 587/25 = STARTTLS
       auth: { user: config.user, pass: config.pass },
+      // Máy chủ mail riêng (vd mail.arexnetwork.site) hay dùng STARTTLS trên 587 và
+      // có chứng chỉ self-signed / không khớp tên miền → nới lỏng xác thực để gửi được.
+      requireTLS: !isSecure,
+      tls: { servername: config.host, rejectUnauthorized: false },
     });
     await transporter.sendMail({
       from: `"${config.fromName}" <${config.fromEmail}>`,
