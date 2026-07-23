@@ -4,6 +4,7 @@ import { getFeatureLocks } from "@/lib/server/feature-locks";
 import { findFeatureLock } from "@/lib/constants/feature-locks";
 import { TOOLS } from "@/lib/constants/tools";
 import { adminNavFlat } from "@/lib/constants/admin-nav";
+import { SITE_ROUTES } from "@/lib/constants/site-routes";
 import {
   parseProjects,
   resolveProject,
@@ -44,6 +45,7 @@ function buildKnownRoutes(): Set<string> {
   for (const t of TOOLS) set.add(t.href);
   for (const item of adminNavFlat) set.add(item.href);
   for (const r of CORE_ROUTES) set.add(r);
+  for (const r of SITE_ROUTES) set.add(r);
   return set;
 }
 

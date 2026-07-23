@@ -12,18 +12,11 @@ import {
   type ProjectPriority,
 } from "@/lib/constants/projects";
 import { TOOLS } from "@/lib/constants/tools";
+import { SITE_ROUTES } from "@/lib/constants/site-routes";
 
 const ROUTE_SUGGESTIONS = Array.from(
-  new Set([
-    ...TOOLS.map((t) => t.href),
-    "/bxh-nick-vn",
-    "/bxh-quiz",
-    "/tra-cuu-nick",
-    "/so-sanh-nick",
-    "/quiz",
-    "/sap-ra-mat",
-  ]),
-);
+  new Set([...TOOLS.map((t) => t.href), ...SITE_ROUTES]),
+).sort();
 const CATEGORIES = ["Công cụ", "Cộng đồng", "Nội dung", "Esports", "Hệ thống", "Khác"];
 
 type Row = ResolvedProject & { _id: string };
