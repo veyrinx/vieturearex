@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, ZoomIn, ArrowRight, Images } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { X, ZoomIn, ArrowRight, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeading } from "@/components/common/section-heading";
@@ -13,7 +13,38 @@ type GalleryPreviewProps = {
   gallery: GalleryItem[];
 };
 
-function Lightbox({ item, onClose }: { item: GalleryItem; onClose: () => void }) {
+function Lightbox({
+  items,
+  index,
+  onIndex,
+  onClose,
+}: {
+  items: GalleryItem[];
+  index: number;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const item = items[index];
+  const many = items.length > 1;
+
+  const go = useCallback(
+    (dir: number) => onIndex((index + dir + items.length) % items.length),
+    [index, items.length, onIndex],
+  );
+
+  // Điều hướng bằng phím ←/→ và đóng bằng Esc.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight") go(1);
+      else if (e.key === "ArrowLeft") go(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, onClose]);
+
+  if (!item) return null;
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/92 backdrop-blur-md p-4"
@@ -21,12 +52,34 @@ function Lightbox({ item, onClose }: { item: GalleryItem; onClose: () => void })
     >
       <button
         type="button"
-        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-all hover:scale-110"
+        className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-all hover:scale-110"
         onClick={onClose}
         aria-label="Đóng"
       >
         <X className="size-5" />
       </button>
+
+      {many && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); go(-1); }}
+            aria-label="Ảnh trước"
+            className="absolute left-3 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/25 hover:scale-110 md:left-6"
+          >
+            <ChevronLeft className="size-6" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); go(1); }}
+            aria-label="Ảnh tiếp theo"
+            className="absolute right-3 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/25 hover:scale-110 md:right-6"
+          >
+            <ChevronRight className="size-6" />
+          </button>
+        </>
+      )}
+
       <div
         className="relative max-h-[90dvh] max-w-5xl overflow-hidden rounded-2xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -34,15 +87,21 @@ function Lightbox({ item, onClose }: { item: GalleryItem; onClose: () => void })
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
+          key={item.image_url}
           src={item.image_url}
           alt={item.tag}
-          className="max-h-[85dvh] w-auto max-w-full object-contain"
+          className="max-h-[85dvh] w-auto max-w-full object-contain animate-in fade-in duration-300"
         />
-        {item.tag && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-6 pb-5 pt-14">
+        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-6 pb-5 pt-14">
+          {item.tag && (
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-white">{item.tag}</p>
-          </div>
-        )}
+          )}
+          {many && (
+            <span className="ml-auto shrink-0 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold tabular-nums text-white backdrop-blur-sm">
+              {index + 1} / {items.length}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -69,7 +128,7 @@ const ASPECT_MAP = [
 
 export function GalleryPreview({ gallery }: GalleryPreviewProps) {
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-  const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
 
   const items = gallery.slice(0, 6);
@@ -124,7 +183,7 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
                   }`}
                   onMouseEnter={() => setHovered(item.id)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={() => !isFailed && setLightbox(item)}
+                  onClick={() => !isFailed && setLightboxIndex(index)}
                 >
                   <div className={`relative overflow-hidden bg-muted ${!isFeatured ? aspectClass : "h-full"}`}>
                     {isFailed ? (
@@ -181,7 +240,14 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
         </div>
       )}
 
-      {lightbox && <Lightbox item={lightbox} onClose={() => setLightbox(null)} />}
+      {lightboxIndex !== null && (
+        <Lightbox
+          items={items}
+          index={lightboxIndex}
+          onIndex={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2, UploadCloud } from "lucide-react";
+import { Trash2, UploadCloud, RefreshCw, Loader2 } from "lucide-react";
 import { useGalleryQuery, useInvalidateGallery } from "@/hooks/use-gallery-query";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,35 @@ export function GalleryManager() {
   const [tag, setTag] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const refresh = async () => {
     await invalidate();
+  };
+
+  // Đồng bộ từ kho lưu trữ: thêm ảnh chưa có, bỏ qua ảnh đã tồn tại.
+  const onSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/admin/gallery/sync", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as {
+        added?: number; skipped?: number; total?: number; error?: string;
+      };
+      if (!res.ok) {
+        toast.error(data.error ?? "ĐỒNG BỘ THẤT BẠI.");
+        return;
+      }
+      toast.success(
+        data.added
+          ? `ĐÃ THÊM ${data.added} ẢNH MỚI · BỎ QUA ${data.skipped ?? 0} ẢNH ĐÃ CÓ.`
+          : `KHÔNG CÓ ẢNH MỚI · TẤT CẢ ${data.skipped ?? 0} ẢNH ĐÃ CÓ TRONG THƯ VIỆN.`,
+      );
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng khi đồng bộ.");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const onUploadFile = async (file: File) => {
@@ -43,6 +69,11 @@ export function GalleryManager() {
   const onCreate = async () => {
     if (!tag || !imageUrl) {
       toast.error("VUI LÒNG NHẬP ĐỦ THẺ TAG VÀ ĐƯỜNG DẪN ẢNH.");
+      return;
+    }
+    // Bỏ qua nếu ảnh đã có trong thư viện (tránh trùng lặp).
+    if (gallery.some((g) => g.image_url === imageUrl)) {
+      toast.error("ẢNH NÀY ĐÃ CÓ TRONG THƯ VIỆN — BỎ QUA.");
       return;
     }
     setIsSaving(true);
@@ -82,9 +113,23 @@ export function GalleryManager() {
   return (
     <section className="space-y-5">
       <div className="rounded-2xl border border-border bg-card p-4">
-        <h3 className="font-heading text-lg font-semibold uppercase tracking-[0.08em] text-foreground">
-          Thêm ảnh mới
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-heading text-lg font-semibold uppercase tracking-[0.08em] text-foreground">
+            Thêm ảnh mới
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onSync}
+            disabled={isSyncing}
+            className="gap-1.5 rounded-xl text-xs"
+            title="Quét kho lưu trữ, thêm ảnh chưa có, bỏ qua ảnh đã có"
+          >
+            {isSyncing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+            {isSyncing ? "ĐANG ĐỒNG BỘ..." : "ĐỒNG BỘ TỪ KHO"}
+          </Button>
+        </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <Input
             value={tag}

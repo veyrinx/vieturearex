@@ -10,7 +10,7 @@ type StatItem = {
   label: string;
 };
 
-function CountUp({ target, duration = 1400 }: { target: number; duration?: number }) {
+export function CountUp({ target, duration = 1400 }: { target: number; duration?: number }) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const started = useRef(false);

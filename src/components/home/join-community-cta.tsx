@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { CountUp } from "@/components/home/stats-bar";
 
 type JoinCommunityCtaProps = {
   facebook?: string;
@@ -125,7 +126,7 @@ export function JoinCommunityCta(props: JoinCommunityCtaProps) {
           {daysActive !== null && daysActive !== undefined && (
             <div className="shrink-0 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-4 text-center dark:border-amber-400/20 dark:bg-amber-400/5">
               <p className="font-heading text-4xl font-black tabular-nums text-primary dark:text-amber-400">
-                {Number(daysActive ?? 0).toLocaleString("vi-VN")}
+                <CountUp target={Number(daysActive ?? 0)} />
               </p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 ngày hoạt động
