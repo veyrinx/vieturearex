@@ -136,6 +136,7 @@ export const settingsFormFieldOrder = [
   "mail.smtp_pass",
   "mail.from_name",
   "mail.from_email",
+  "mail.header_image",
   "content.comments_enabled",
   "content.comments_require_login",
   "content.comments_auto_approve",
