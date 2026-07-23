@@ -9,6 +9,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { VerifiedBadge } from "@/components/common/user-badges";
+import { CountNumber } from "@/components/common/count-number";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -177,7 +178,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 </div>
                 <p className="text-[9px] uppercase tracking-widest text-muted-foreground leading-tight">{label}</p>
                 <p className="text-base font-black tabular-nums leading-none">
-                  {typeof stats[key] === "number" ? stats[key].toLocaleString("vi-VN") : stats[key]}
+                  <CountNumber value={stats[key]} decimals={key === "kdRatio" ? 2 : 0} />
                 </p>
               </div>
             ))}
