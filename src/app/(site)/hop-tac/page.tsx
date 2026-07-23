@@ -5,6 +5,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { PageContentOverride } from "@/components/common/page-content-override";
+import { ContactInfo } from "@/components/common/contact-info";
 import { getPartners } from "@/lib/server/partners";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 import { PARTNER_TIERS, TIER_LABEL, isPartnerLive, type Partner } from "@/lib/constants/partners";
@@ -163,6 +164,14 @@ export default async function HopTacPage() {
         </Link>
       </section>
       </PageContentOverride>
+
+      {/* Thông tin liên hệ trực tiếp — luôn hiển thị trên trang, ngoài phần override */}
+      <section className="space-y-3">
+        <h2 className="text-center font-heading text-sm font-black uppercase tracking-widest text-muted-foreground">
+          Liên hệ trực tiếp
+        </h2>
+        <ContactInfo />
+      </section>
     </main>
   );
 }
