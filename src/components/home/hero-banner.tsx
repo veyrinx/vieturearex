@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Icon } from "@/components/common/icon";
 import { Button } from "@/components/ui/button";
 import type { HeroSliderEffect } from "@/lib/utils/site-settings";
@@ -95,6 +96,38 @@ export function HeroBanner({
   const countdown = useCountdown(nextEventDate);
   const reduceMotion = useReducedMotion();
 
+  // Parallax theo con trỏ — ảnh nền dịch nhẹ ngược hướng chuột tạo chiều sâu.
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 45, damping: 22 });
+  const springY = useSpring(mouseY, { stiffness: 45, damping: 22 });
+  const parallaxX = useTransform(springX, [-0.5, 0.5], [22, -22]);
+  const parallaxY = useTransform(springY, [-0.5, 0.5], [16, -16]);
+
+  const handleParallax = useCallback(
+    (e: ReactMouseEvent<HTMLElement>) => {
+      if (reduceMotion) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+      mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+    },
+    [reduceMotion, mouseX, mouseY],
+  );
+
+  // Tàn lửa bay lên — vị trí/nhịp cố định theo index để tránh lệch hydrate.
+  const embers = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, i) => ({
+        left: (i * 47 + 7) % 100,
+        size: 2 + (i % 3),
+        duration: 6 + (i % 6),
+        delay: (i % 8) * 0.7,
+        drift: ((i % 5) - 2) * 24,
+        rise: 360 + (i % 4) * 90,
+      })),
+    [],
+  );
+
   const goTo = useCallback(
     (i: number) => setIndex(((i % allImages.length) + allImages.length) % allImages.length),
     [allImages.length],
@@ -129,7 +162,8 @@ export function HeroBanner({
     <section
       className="-mx-4 -mt-6 md:-mx-6 relative flex min-h-[78vh] md:min-h-[84vh] items-end overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseLeave={() => { setIsPaused(false); mouseX.set(0); mouseY.set(0); }}
+      onMouseMove={handleParallax}
     >
       {/* ── Background layer ── */}
       <div className="absolute inset-0 bg-slate-950">
@@ -137,34 +171,39 @@ export function HeroBanner({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(0,82,255,0.22),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(247,147,26,0.20),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(77,124,255,0.18),transparent)] dark:bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(255,178,30,0.12),transparent)]" />
 
-        {/* Slider images */}
-        <AnimatePresence mode="sync" initial={false}>
-          {currentImage && (
-            <motion.div
-              key={currentImage}
-              initial={variants.initial}
-              animate={variants.animate}
-              exit={variants.exit}
-              transition={{ duration: transitionSecs, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0"
-            >
-              {/* Real <img> (not a CSS background) so it's a proper, high-priority LCP
-                  element that pairs with the <link rel="preload"> on the homepage.
-                  Raw img (not next/image) because hero URLs are admin-set and may point
-                  to hosts outside next.config's allowlist. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentImage}
-                alt=""
-                aria-hidden
-                fetchPriority="high"
-                decoding="async"
-                referrerPolicy="no-referrer"
-                className="absolute inset-0 size-full object-cover"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Slider images — lớp bọc parallax dịch nhẹ theo chuột, scale để không hở mép */}
+        <motion.div
+          className="absolute inset-0"
+          style={{ x: parallaxX, y: parallaxY, scale: reduceMotion ? 1 : 1.08 }}
+        >
+          <AnimatePresence mode="sync" initial={false}>
+            {currentImage && (
+              <motion.div
+                key={currentImage}
+                initial={variants.initial}
+                animate={variants.animate}
+                exit={variants.exit}
+                transition={{ duration: transitionSecs, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0"
+              >
+                {/* Real <img> (not a CSS background) so it's a proper, high-priority LCP
+                    element that pairs with the <link rel="preload"> on the homepage.
+                    Raw img (not next/image) because hero URLs are admin-set and may point
+                    to hosts outside next.config's allowlist. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentImage}
+                  alt=""
+                  aria-hidden
+                  fetchPriority="high"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 size-full object-cover"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Gradient overlays — lighter than before */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/30 to-black/10" />
@@ -206,6 +245,29 @@ export function HeroBanner({
 
         {/* Top vignette edge */}
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent" />
+
+        {/* Tàn lửa bay lên — thắp không khí Free Fire */}
+        {!reduceMotion && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {embers.map((p, i) => (
+              <motion.span
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  left: `${p.left}%`,
+                  bottom: -12,
+                  width: p.size,
+                  height: p.size,
+                  background: "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)",
+                  boxShadow: "0 0 6px hsl(var(--primary)/0.85)",
+                }}
+                initial={{ y: 0, x: 0, opacity: 0 }}
+                animate={{ y: [-10, -p.rise], x: [0, p.drift, 0], opacity: [0, 0.9, 0] }}
+                transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "easeOut" }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Content ── */}
