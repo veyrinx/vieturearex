@@ -2098,8 +2098,37 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
                 className="mt-1 size-4 cursor-pointer accent-primary"
               />
             </label>
+
+            {/* Chi tiết theo loại thông báo — chỉ hiệu lực khi công tắc email thông báo ở trên bật */}
+            <div className={cn("space-y-1 rounded-xl border border-dashed border-border p-3", v("mail.send_notifications") !== "true" && "opacity-50")}>
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                Bật/tắt riêng từng loại thông báo
+              </p>
+              {[
+                ["mail.notify.user_follow", "Có người theo dõi bạn"],
+                ["mail.notify.comment_reply", "Trả lời bình luận của bạn"],
+                ["mail.notify.comment_approved", "Bình luận của bạn được duyệt"],
+                ["mail.notify.forum_reply", "Trả lời bài diễn đàn của bạn"],
+                ["mail.notify.rating_reply", "Phản hồi đánh giá của bạn"],
+                ["mail.notify.achievement", "Nhận huy hiệu / thành tích"],
+                ["mail.notify.wiki_approved", "Bài wiki của bạn được duyệt"],
+                ["mail.notify.registration_approved", "Đăng ký giải đấu được duyệt"],
+              ].map(([key, label]) => (
+                <label key={key} className="flex items-center justify-between gap-3 rounded-lg px-1 py-1">
+                  <span className="text-xs text-foreground">{label}</span>
+                  <input
+                    type="checkbox"
+                    disabled={v("mail.send_notifications") !== "true"}
+                    checked={v(key) !== "false"}
+                    onChange={(e) => set(key, e.target.checked ? "true" : "false")}
+                    className="size-4 cursor-pointer accent-primary disabled:cursor-not-allowed"
+                  />
+                </label>
+              ))}
+            </div>
+
             <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-              Email quên mật khẩu &amp; mời admin luôn bật (chạy khi có yêu cầu). Thêm loại mới: viết hàm trong <code className="font-mono">lib/server/email.ts</code>.
+              Công tắc tổng phải bật thì các loại con mới gửi. Email quên mật khẩu &amp; mời admin luôn bật. Thêm loại mới: viết hàm trong <code className="font-mono">lib/server/email.ts</code>.
             </p>
           </div>
         </Card>

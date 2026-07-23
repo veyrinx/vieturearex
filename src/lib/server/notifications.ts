@@ -44,11 +44,16 @@ export async function createNotification(input: CreateNotificationInput): Promis
   }
 }
 
-/** Gương thông báo qua email — chỉ chạy khi toggle mail.send_notifications bật. */
+/**
+ * Gương thông báo qua email. Cần công tắc tổng `mail.send_notifications` bật
+ * (mặc định tắt), sau đó từng loại có thể bật/tắt riêng qua `mail.notify.<type>`
+ * (mặc định bật khi công tắc tổng đã bật).
+ */
 async function maybeEmailNotification(input: CreateNotificationInput): Promise<void> {
   try {
     const { isMailTypeEnabled, sendNotificationEmail } = await import("@/lib/server/email");
     if (!(await isMailTypeEnabled("mail.send_notifications", false))) return;
+    if (!(await isMailTypeEnabled(`mail.notify.${input.type}`, true))) return;
     const db = getDb();
     const { data } = (await untypedFrom(db, "users")
       .select("email")
