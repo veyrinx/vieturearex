@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { CalendarDays, ArrowRight, ExternalLink, Pencil, Trash2, Plus, User } from "lucide-react";
@@ -23,13 +24,12 @@ type FeaturedEventsProps = {
   events: EventItem[];
 };
 
-type FilterTab = "all" | "active" | "upcoming" | "expired";
+type FilterTab = "all" | "active" | "upcoming";
 
 const TABS: { value: FilterTab; label: string }[] = [
   { value: "all", label: "Tất cả" },
   { value: "active", label: "Đang diễn ra" },
   { value: "upcoming", label: "Sắp mở" },
-  { value: "expired", label: "Đã kết thúc" },
 ];
 
 const statusBorderMap: Record<string, string> = {
@@ -60,7 +60,9 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
   const [localEvents, setLocalEvents] = useState<EventItem[]>(events);
   const { canEdit } = useAdminRole();
 
-  const filtered = activeTab === "all" ? localEvents : localEvents.filter((e) => e.status === activeTab);
+  // Sự kiện hết hạn (end_date đã qua → status "expired") tự động ẩn khỏi trang chủ.
+  const liveEvents = localEvents.filter((e) => e.status !== "expired");
+  const filtered = activeTab === "all" ? liveEvents : liveEvents.filter((e) => e.status === activeTab);
   const visible = filtered.slice(0, 6);
 
   const handleDelete = async (event: EventItem) => {
@@ -89,7 +91,21 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="relative space-y-6">
+      {/* Aurora nền động — dải màu xoay chậm phía sau khu sự kiện */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -top-20 left-1/2 -z-10 h-72 w-[85%] -translate-x-1/2 rounded-full blur-[120px]"
+        style={{
+          background:
+            "conic-gradient(from 0deg, rgba(255,152,0,0.16), rgba(76,175,80,0.13), rgba(77,124,255,0.16), rgba(168,85,247,0.13), rgba(255,152,0,0.16))",
+        }}
+        animate={{ rotate: 360, opacity: [0.45, 0.8, 0.45] }}
+        transition={{
+          rotate: { duration: 44, repeat: Infinity, ease: "linear" },
+          opacity: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+        }}
+      />
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <SectionHeading
           eyebrow="Sự kiện"
@@ -120,7 +136,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
       {/* Filter tabs */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none md:mx-0 md:px-0">
         {TABS.map((tab) => {
-          const count = tab.value === "all" ? localEvents.length : localEvents.filter((e) => e.status === tab.value).length;
+          const count = tab.value === "all" ? liveEvents.length : liveEvents.filter((e) => e.status === tab.value).length;
           return (
             <button
               key={tab.value}
@@ -176,10 +192,19 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
             const progress = event.status === "active" ? getEventProgress(event.start_date, event.end_date) : 0;
 
             return (
-              <Reveal key={event.id} delay={index * 0.07}>
+              <Reveal key={event.id} delay={index * 0.07} className="relative">
+                {/* Glow nhấp nháy cho sự kiện đang diễn ra */}
+                {event.status === "active" && (
+                  <motion.div
+                    aria-hidden
+                    className="pointer-events-none absolute -inset-1 -z-10 rounded-[18px] bg-[#ff9800]/25 blur-lg"
+                    animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.99, 1.01, 0.99] }}
+                    transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                )}
                 <article
                   className={cn(
-                    "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card transition-all duration-300 hover:shadow-lg",
+                    "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
                     statusBorderMap[event.status] ?? "border-border",
                     selectedEvent && selectedEvent.id !== event.id && "opacity-50 scale-[0.98]",
                   )}
