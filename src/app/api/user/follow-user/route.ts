@@ -90,7 +90,8 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .maybeSingle() as { data: { display_name: string | null } | null };
     const followerName = profile?.display_name ?? user.email?.split("@")[0] ?? "Ai đó";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    // Đường dẫn TƯƠNG ĐỐI — tránh phụ thuộc NEXT_PUBLIC_SITE_URL (có thể sai định
+    // dạng gây URL hỏng/404). Email tự ghép domain qua siteConfig.url.
     void import("@/lib/server/notifications").then(({ createNotification }) =>
       createNotification({
         user_id: parsed.data.user_id,
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
         body: "Xem hồ sơ và follow lại",
         entity_type: "user",
         entity_id: user.id,
-        entity_url: `${siteUrl}/u/${user.id}`,
+        entity_url: `/u/${user.id}`,
       }),
     );
   }

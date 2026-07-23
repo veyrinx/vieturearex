@@ -122,15 +122,27 @@ export async function PATCH(request: NextRequest) {
 
   // In-app notification for approved user comments
   if (raw.status === "approved" && updated?.length) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
-    void Promise.allSettled(
-      updated
-        .filter((c) => c.user_id)
-        .map((c) => {
-          const entityUrl = c.news_id
-            ? `${siteUrl}/news/${c.news_id}`
+    void (async () => {
+      const rows = updated.filter((c) => c.user_id);
+
+      // Trang /news/[slug] tra theo SLUG (không phải id) → lấy map news_id → slug.
+      const newsIds = Array.from(new Set(rows.map((c) => c.news_id).filter(Boolean))) as string[];
+      const slugById = new Map<string, string>();
+      if (newsIds.length) {
+        const { data: newsRows } = (await (admin.from("news") as ReturnType<typeof admin.from>)
+          .select("id, slug")
+          .in("id", newsIds)) as { data: Array<{ id: string; slug: string }> | null };
+        for (const r of newsRows ?? []) slugById.set(r.id, r.slug);
+      }
+
+      await Promise.allSettled(
+        rows.map((c) => {
+          const slug = c.news_id ? slugById.get(c.news_id) : undefined;
+          // Đường dẫn tương đối — an toàn cho cả in-app lẫn email.
+          const entityUrl = slug
+            ? `/news/${slug}#comments`
             : c.event_id
-            ? `${siteUrl}/events/${c.event_id}`
+            ? `/events/${c.event_id}#comments`
             : null;
           return createNotification({
             user_id: c.user_id!,
@@ -141,8 +153,9 @@ export async function PATCH(request: NextRequest) {
             entity_id: c.news_id ?? c.event_id ?? undefined,
             entity_url: entityUrl ?? undefined,
           });
-        })
-    );
+        }),
+      );
+    })();
   }
 
   // Revalidate public pages so approved comments appear immediately
