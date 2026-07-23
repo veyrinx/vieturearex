@@ -109,16 +109,48 @@ function e(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/** Ảnh banner + tên hiển thị ở đầu email — cấu hình ở Admin → Cài đặt → Email. */
+export async function getEmailBranding(): Promise<{ headerImage: string; brandName: string }> {
+  try {
+    const settings = await getSettings();
+    const get = (key: string) => settings.find((s) => s.key === key)?.value?.trim() ?? "";
+    return {
+      headerImage: get("mail.header_image"),
+      brandName: get("mail.from_name") || siteConfig.name,
+    };
+  } catch {
+    return { headerImage: "", brandName: siteConfig.name };
+  }
+}
+
 /**
  * Khung email thương hiệu Arex dùng chung. Thêm 1 loại email mới = gọi hàm này
  * với title + bodyHtml (+ nút CTA tuỳ chọn), rồi truyền vào sendMail.
+ *
+ * headerImage: ảnh banner đầu email (admin tải lên). Nếu trống → dùng dải
+ * gradient thương hiệu + logo favicon. brandName: tên hiển thị dưới logo.
  */
 export function buildEmailHtml(opts: {
   title: string;
   bodyHtml: string;
   cta?: { label: string; url: string };
   footnote?: string;
+  headerImage?: string;
+  brandName?: string;
 }): string {
+  const brand = opts.brandName?.trim() || siteConfig.name;
+
+  // Đầu trang email: ưu tiên ảnh banner do admin tải lên; nếu không thì dải
+  // gradient + logo. Dùng <img>/inline-style để tương thích tối đa client mail.
+  const header = opts.headerImage
+    ? `<a href="${siteConfig.url}" target="_blank" style="display:block;text-decoration:none;line-height:0;">
+         <img src="${opts.headerImage}" alt="${e(brand)}" width="520" style="width:100%;max-width:520px;height:auto;display:block;border:0;" />
+       </a>`
+    : `<div style="background:linear-gradient(135deg,#0052ff 0%,#4d7cff 100%);padding:38px 32px 34px;text-align:center;">
+         <img src="${siteConfig.favicon}" alt="${e(brand)}" width="58" height="58" style="width:58px;height:58px;display:inline-block;border-radius:16px;background:#ffffff;padding:7px;box-shadow:0 8px 20px rgba(0,0,0,0.18);" />
+         <div style="color:#ffffff;font-size:17px;font-weight:800;letter-spacing:0.4px;margin-top:12px;text-shadow:0 1px 2px rgba(0,0,0,0.15);">${e(brand)}</div>
+       </div>`;
+
   const cta = opts.cta
     ? `<div style="margin:8px 0 32px;text-align:center;"><a href="${opts.cta.url}" style="display:inline-block;background:linear-gradient(135deg,#0052ff 0%,#4d7cff 100%);color:#fff;font-size:15px;font-weight:700;text-decoration:none;padding:15px 38px;border-radius:12px;box-shadow:0 8px 16px rgba(0,82,255,0.25);letter-spacing:0.3px;">${e(opts.cta.label)}</a></div>`
     : "";
@@ -127,14 +159,16 @@ export function buildEmailHtml(opts: {
     : "";
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${e(opts.title)}</title></head>
 <body style="margin:0;padding:24px;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-<div style="max-width:520px;margin:0 auto;background:#fff;padding:44px 32px;border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,0.04);text-align:center;border:1px solid #e2e8f0;">
-  <img src="${siteConfig.favicon}" alt="Arex" style="width:64px;height:64px;margin:0 auto 24px;display:block;">
-  <h1 style="color:#0f172a;font-size:24px;font-weight:800;margin:0 0 16px;letter-spacing:-0.02em;">${e(opts.title)}</h1>
-  <div style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 28px;text-align:left;">${opts.bodyHtml}</div>
-  ${cta}
-  ${footnote}
-  <div style="border-top:1px solid #e2e8f0;padding-top:20px;">
-    <p style="color:#94a3b8;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${e(siteConfig.name)}. Mọi quyền được bảo lưu.</p>
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,0.08);border:1px solid #e2e8f0;overflow:hidden;">
+  ${header}
+  <div style="padding:40px 32px 32px;text-align:center;">
+    <h1 style="color:#0f172a;font-size:24px;font-weight:800;margin:0 0 16px;letter-spacing:-0.02em;">${e(opts.title)}</h1>
+    <div style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 28px;text-align:left;">${opts.bodyHtml}</div>
+    ${cta}
+    ${footnote}
+    <div style="border-top:1px solid #e2e8f0;padding-top:20px;">
+      <p style="color:#94a3b8;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${e(brand)}. Mọi quyền được bảo lưu.</p>
+    </div>
   </div>
 </div>
 </body></html>`;
@@ -148,7 +182,9 @@ export async function sendWelcomeEmail(input: { to: string; name?: string | null
     return { sent: false, configured: true, error: "disabled" };
   }
   const name = input.name?.trim() || "bạn";
+  const branding = await getEmailBranding();
   const html = buildEmailHtml({
+    ...branding,
     title: "Đăng ký thành công 🎉",
     bodyHtml:
       `Xin chào <strong>${e(name)}</strong>,<br><br>` +
@@ -173,7 +209,9 @@ export async function sendNotificationEmail(input: {
   const fullUrl = input.url
     ? input.url.startsWith("http") ? input.url : `${siteConfig.url}${input.url}`
     : siteConfig.url;
+  const branding = await getEmailBranding();
   const html = buildEmailHtml({
+    ...branding,
     title: input.title,
     bodyHtml,
     cta: { label: "Xem chi tiết", url: fullUrl },

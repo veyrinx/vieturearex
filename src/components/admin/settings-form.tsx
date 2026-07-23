@@ -8,8 +8,9 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
-  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2,
 } from "lucide-react";
+import { ImageUploadButton } from "@/components/common/image-upload-button";
 import type { SiteSetting } from "@/lib/types/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -2011,6 +2012,60 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <Field label="Email người gửi" hint="Phải khớp với SMTP Username" icon={Mail}>
             <Input type="email" value={v("mail.from_email")} onChange={(e) => set("mail.from_email", e.target.value)} placeholder="no-reply@arex.tech" className="font-mono text-sm" />
             <SensitiveHint hint={sensitiveHint("mail.from_email")} />
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={ImageIcon} title="Banner đầu email" desc="Ảnh hiển thị ở đầu mọi email hệ thống (đăng ký, quên mật khẩu, thông báo…). Để trống = dùng logo + dải màu thương hiệu." />
+          </div>
+          <Field label="Ảnh banner" hint="Nên dùng ảnh ngang, rộng ~1040px (tỉ lệ 3:1). PNG/JPG." icon={ImageIcon}>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <ImageUploadButton
+                  endpoint="/api/admin/upload"
+                  bucket="logos"
+                  label="Tải ảnh banner"
+                  onUploaded={(url) => set("mail.header_image", url)}
+                />
+                {v("mail.header_image") && (
+                  <Button type="button" variant="outline" size="sm" onClick={() => set("mail.header_image", "")} className="gap-1.5">
+                    <Trash2 className="size-3.5" /> Gỡ ảnh
+                  </Button>
+                )}
+              </div>
+              <Input
+                value={v("mail.header_image")}
+                onChange={(e) => set("mail.header_image", e.target.value)}
+                placeholder="https://… (hoặc tải ảnh lên ở trên)"
+                className="font-mono text-xs"
+              />
+              {v("mail.header_image") && (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <div className="border-b border-border bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Xem trước đầu email
+                  </div>
+                  <div className="bg-[#f1f5f9] p-4">
+                    <div className="mx-auto max-w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                      <Image
+                        src={v("mail.header_image")}
+                        alt="Banner email"
+                        width={520}
+                        height={180}
+                        unoptimized
+                        className="h-auto w-full object-cover"
+                      />
+                      <div className="px-5 py-4">
+                        <div className="h-3 w-2/3 rounded bg-slate-200" />
+                        <div className="mt-2.5 h-2 w-full rounded bg-slate-100" />
+                        <div className="mt-1.5 h-2 w-5/6 rounded bg-slate-100" />
+                        <div className="mt-4 h-7 w-28 rounded-lg bg-[#0052ff]/90" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </Field>
         </Card>
 
