@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Search, Loader2, User, Trophy, Heart, Shield, Calendar, Star,
-  PawPrint, Globe, AlertCircle, Share2, History,
+  PawPrint, Globe, AlertCircle, Share2, History, Download, Link2, Check, ImageIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 // ── Lịch sử tra cứu (localStorage, tối đa 10 nick gần nhất) ──────────────────
@@ -159,7 +160,12 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
   const [resultUid, setResultUid] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [sharing, setSharing] = useState(false);
+  const [showCard, setShowCard] = useState(false);
+  const [cardLoading, setCardLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
   const autoDone = useRef(false);
+
+  const cardPath = resultUid ? `/api/ff/player/${resultUid}/card` : "";
 
   useEffect(() => { setHistory(loadHistory()); }, []);
 
@@ -178,26 +184,56 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
 
   async function shareCard() {
     if (!resultUid) return;
-    const url = `${window.location.origin}/api/ff/player/${resultUid}/card`;
+    const url = `${window.location.origin}${cardPath}`;
     setSharing(true);
     try {
       // Ưu tiên chia sẻ kèm ảnh (điện thoại); không hỗ trợ thì mở ảnh ở tab mới.
       const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
       if (typeof nav.share === "function") {
         try {
-          const blob = await (await fetch(url)).blob();
+          const blob = await (await fetch(cardPath)).blob();
           const file = new File([blob], `nick-${resultUid}.png`, { type: "image/png" });
           if (nav.canShare?.({ files: [file] })) {
             await nav.share({ files: [file], title: "Kết quả tra cứu nick Free Fire" });
             return;
           }
-        } catch { /* rơi xuống mở tab */ }
+        } catch { /* rơi xuống chia sẻ link */ }
         await nav.share({ title: "Kết quả tra cứu nick Free Fire", url }).catch(() => window.open(url, "_blank"));
         return;
       }
       window.open(url, "_blank");
     } finally {
       setSharing(false);
+    }
+  }
+
+  async function downloadCard() {
+    if (!cardPath) return;
+    try {
+      const blob = await (await fetch(cardPath)).blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `nick-${resultUid}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      toast.success("Đã tải ảnh về máy.");
+    } catch {
+      toast.error("Không tải được ảnh, thử lại.");
+    }
+  }
+
+  async function copyCardLink() {
+    if (!cardPath) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${cardPath}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Đã sao chép liên kết ảnh.");
+    } catch {
+      toast.error("Không sao chép được.");
     }
   }
 
@@ -209,6 +245,7 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
     }
     setLoading(true);
     setError(null);
+    setShowCard(false);
     try {
       const res = await fetch(`/api/ff/player/${q}`);
       const json = (await res.json().catch(() => ({}))) as FfResponse;
@@ -415,15 +452,64 @@ export function FfPlayerLookup({ initialUid = "", autoLookup = false, onData, cl
             </p>
           )}
 
-          <button
-            type="button"
-            onClick={() => void shareCard()}
-            disabled={sharing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/15 disabled:opacity-50 dark:text-amber-400"
-          >
-            {sharing ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />}
-            Tạo ảnh chia sẻ
-          </button>
+          {!showCard ? (
+            <button
+              type="button"
+              onClick={() => { setShowCard(true); setCardLoading(true); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/15 dark:text-amber-400"
+            >
+              <ImageIcon className="size-4" />
+              Tạo ảnh chia sẻ kết quả
+            </button>
+          ) : (
+            <div className="space-y-2.5">
+              {/* Xem trước ảnh chia sẻ */}
+              <div className="relative overflow-hidden rounded-xl border border-border bg-muted/30">
+                {cardLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Đang tạo ảnh…
+                  </div>
+                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cardPath}
+                  alt="Ảnh kết quả tra cứu nick"
+                  onLoad={() => setCardLoading(false)}
+                  onError={() => setCardLoading(false)}
+                  className={cn("w-full transition-opacity", cardLoading ? "opacity-0" : "opacity-100")}
+                />
+              </div>
+              {/* Hành động */}
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => void shareCard()}
+                  disabled={sharing || cardLoading}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {sharing ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />}
+                  Chia sẻ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void downloadCard()}
+                  disabled={cardLoading}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-bold text-foreground transition hover:border-primary/40 disabled:opacity-50"
+                >
+                  <Download className="size-4" /> Tải ảnh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void copyCardLink()}
+                  disabled={cardLoading}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-bold text-foreground transition hover:border-primary/40 disabled:opacity-50"
+                >
+                  {copied ? <Check className="size-4 text-emerald-500" /> : <Link2 className="size-4" />}
+                  {copied ? "Đã chép" : "Chép link"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {remaining != null && (
             <p className="text-right text-[10px] text-muted-foreground/70">
