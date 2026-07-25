@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Image as IKImage } from "@imagekit/react";
 import { cn } from "@/lib/utils";
+
+// Ảnh tải lên ImageKit có thể lưu dạng path tương đối ("/abc.jpg") → ghép endpoint.
+const IK_ENDPOINT = "https://ik.imagekit.io/oyvgbkwyt";
 
 type MediaFrameProps = {
   src?: string | null;
@@ -23,9 +25,10 @@ export function MediaFrame({
   const [imageError, setImageError] = useState(false);
   const normalizedSrc = src?.trim() || "";
 
-  const isImageKitSource =
-    normalizedSrc.startsWith("https://ik.imagekit.io/oyvgbkwyt") ||
-    normalizedSrc.startsWith("/");
+  // Path tương đối "/..." = ảnh trên ImageKit → ghép endpoint thành URL đầy đủ.
+  const resolvedSrc = normalizedSrc.startsWith("/")
+    ? `${IK_ENDPOINT}${normalizedSrc}`
+    : normalizedSrc;
 
   const showFallback = !normalizedSrc || imageError;
 
@@ -44,19 +47,13 @@ export function MediaFrame({
             ĐANG CẬP NHẬT
           </span>
         </div>
-      ) : isImageKitSource ? (
-        <IKImage
-          src={normalizedSrc}
-          alt={alt}
-          responsive={false}
-          className={cn("absolute inset-0 h-full w-full object-cover transition-opacity duration-300", imageClassName)}
-          onError={() => setImageError(true)}
-        />
       ) : (
+        // Ảnh thường + no-referrer để CDN (Free Fire, imgur…) không chặn hotlink.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={normalizedSrc}
+          src={resolvedSrc}
           alt={alt}
+          referrerPolicy="no-referrer"
           className={cn("absolute inset-0 h-full w-full object-cover transition-opacity duration-300", imageClassName)}
           onError={() => setImageError(true)}
           loading="lazy"

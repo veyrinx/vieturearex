@@ -90,6 +90,7 @@ function Lightbox({
           key={item.image_url}
           src={item.image_url}
           alt={item.tag}
+          referrerPolicy="no-referrer"
           className="max-h-[85dvh] w-auto max-w-full object-contain animate-in fade-in duration-300"
         />
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-6 pb-5 pt-14">
@@ -196,6 +197,7 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
                         <img
                           src={item.image_url}
                           alt={item.tag ?? ""}
+                          referrerPolicy="no-referrer"
                           className={`h-full w-full object-cover transition-all duration-700 ${isHot ? "scale-110 brightness-90" : "scale-100"} ${!isFeatured ? aspectClass : ""}`}
                           loading="lazy"
                           decoding="async"
