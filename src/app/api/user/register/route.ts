@@ -71,11 +71,11 @@ export async function POST(request: NextRequest) {
 
   // ── Thông tin đầy đủ cho bot admin (chỉ gửi kênh nội bộ) ──────────────────
   const net = clientNetInfo(request);
-  const memberNo = await adminClient
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .then((r) => r.count ?? null)
-    .catch(() => null);
+  let memberNo: number | null = null;
+  try {
+    const { count } = await adminClient.from("users").select("id", { count: "exact", head: true });
+    memberNo = count ?? null;
+  } catch { memberNo = null; }
 
   void sendTelegramNotification({
     title: "👤 THÀNH VIÊN MỚI ĐĂNG KÝ",
