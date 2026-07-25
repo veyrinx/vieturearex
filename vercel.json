@@ -57,7 +57,7 @@
     "src/app/api/cron/digest/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/hide-expired/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/purge-expired/route.ts": { "maxDuration": 30 },
-    "src/app/api/cron/checkin-reminder/route.ts": { "maxDuration": 30 }
+    "src/app/api/cron/checkin-reminder/route.ts": { "maxDuration": 60 }
   },
   "headers": [
     {

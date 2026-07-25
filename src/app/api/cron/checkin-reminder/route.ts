@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
+import { runBxhRankNotify } from "@/lib/server/bxh-rank-notify";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const TOKEN_KEY = "integrations.telegram_bot_token";
 
@@ -15,6 +16,7 @@ function todayInVN(): string {
 }
 
 // Nhắc điểm danh: DM người đã LIÊN KẾT + BẬT thông báo + hôm nay CHƯA điểm danh.
+// Chạy ké luôn nhịp BXH buổi tối vì plan Hobby chỉ cho mỗi cron 1 lần/ngày.
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization") ?? "";
   const expected = process.env.CRON_SECRET;
@@ -22,12 +24,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const bxh = await runBxhRankNotify().catch(() => null);
+
   const db = createAdminSupabaseClient();
-  if (!db) return NextResponse.json({ sent: 0, reason: "no_db" });
+  if (!db) return NextResponse.json({ sent: 0, reason: "no_db", bxh });
 
   const settings = await getSettings();
   const token = settings.find((s) => s.key === TOKEN_KEY)?.value ?? "";
-  if (!token) return NextResponse.json({ sent: 0, reason: "not_configured" });
+  if (!token) return NextResponse.json({ sent: 0, reason: "not_configured", bxh });
 
   const [{ data: links }, { data: subs }] = await Promise.all([
     untypedFrom(db, "telegram_account_links").select("telegram_user_id, users(last_login_date)") as unknown as Promise<{
@@ -68,5 +72,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ sent });
+  return NextResponse.json({ sent, bxh });
 }
