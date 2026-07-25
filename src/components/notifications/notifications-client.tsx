@@ -38,6 +38,7 @@ const TYPE_META: Record<string, { icon: React.ElementType; color: string; label:
   forum_locked:          { icon: Lock,               color: "text-muted-foreground", label: "Diễn đàn" },
   account_warning:       { icon: ShieldAlert,        color: "text-rose-500",    label: "Tài khoản" },
   user_follow:           { icon: UserPlus,           color: "text-pink-500",    label: "Follow" },
+  bxh_rank_up:           { icon: Trophy,             color: "text-amber-500",   label: "BXH" },
 };
 
 const TYPE_FILTERS = [
