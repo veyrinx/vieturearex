@@ -120,6 +120,9 @@ export default async function RootLayout({
 }>) {
   const activeSite = await getSiteConfig();
   const country = (await headers()).get("x-vercel-ip-country");
+  // Publisher ID lấy từ Cài đặt → Quảng cáo (fallback về id mặc định của site).
+  const adsenseId =
+    buildSettingsMap(await getSettings())["ads.google_adsense_id"]?.trim() || "ca-pub-6400047965945515";
 
   return (
     <html lang="vi" suppressHydrationWarning>
@@ -152,10 +155,10 @@ gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personali
 try{if(localStorage.getItem('arex-cookie-consent')==='accepted'){gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});}}catch(e){}
 gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         </Script>
-        {/* Google AdSense — meta xác minh + loader */}
-        <meta name="google-adsense-account" content="ca-pub-6400047965945515" />
+        {/* Google AdSense — meta xác minh + loader (Publisher ID từ settings) */}
+        <meta name="google-adsense-account" content={adsenseId} />
         <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6400047965945515"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
           strategy="afterInteractive"
           crossOrigin="anonymous"
         />

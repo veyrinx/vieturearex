@@ -17,13 +17,14 @@ export async function ArticleAd({
   const settings = await getSettings();
   const slot = settings.find((s) => s.key === slotKey)?.value?.trim() || null;
   if (!slot) return null;
+  const client = settings.find((s) => s.key === "ads.google_adsense_id")?.value?.trim() || undefined;
 
   return (
     <div className={cn("overflow-hidden rounded-2xl border border-dashed border-border/60 bg-card/40 p-2", className)}>
       <p className="mb-1 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
         Quảng cáo
       </p>
-      <AdSense slot={slot} />
+      <AdSense slot={slot} client={client} />
     </div>
   );
 }

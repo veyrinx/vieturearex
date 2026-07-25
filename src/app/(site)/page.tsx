@@ -12,6 +12,7 @@ import { StatsBar } from "@/components/home/stats-bar";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
 import { CommunityHighlights } from "@/components/common/community-highlights";
 import { ToolsShowcase } from "@/components/common/tools-showcase";
+import { ArticleAd } from "@/components/common/article-ad";
 import { TOOLS } from "@/lib/constants/tools";
 import {
   getEvents,
@@ -140,6 +141,9 @@ export default async function HomePage() {
       </div>
 
       <div className="space-y-12 overflow-x-clip md:space-y-20 lg:space-y-24">
+        {/* Quảng cáo banner đầu khu nội dung (Google AdSense — slot Header) */}
+        <ArticleAd slotKey="ads.slot_header" className="mx-auto w-full max-w-4xl" />
+
         <div className="relative isolate">
           {(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
             <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
@@ -181,6 +185,10 @@ export default async function HomePage() {
           <LivestreamPreview streams={liveAndUpcomingStreams} />
         )}
         <LatestNews news={newsForDisplay.slice(0, 6)} />
+
+        {/* Quảng cáo box giữa nội dung (Google AdSense — slot Sidebar) */}
+        <ArticleAd slotKey="ads.slot_sidebar" className="mx-auto w-full max-w-sm" />
+
         <GalleryPreview gallery={gallery.slice(0, 6)} />
 
         {/* Công cụ (cuộn ngang) */}
