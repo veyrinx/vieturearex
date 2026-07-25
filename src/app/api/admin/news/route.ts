@@ -47,27 +47,34 @@ function buildContent(title: string, content?: string) {
 }
 
 function notifyNewsChange(
-  article: { title: string; slug: string; category?: string | null; excerpt?: string | null },
+  article: { title: string; slug: string; category?: string | null; excerpt?: string | null; image_url?: string | null; cover?: string | null },
   action: "created" | "updated",
   adminName: string,
 ) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
   const articleUrl = `${siteUrl}/news/${article.slug}`;
+  const image = article.image_url || article.cover || undefined;
+  const excerpt = (article.excerpt ?? "").replace(/\s+/g, " ").trim();
 
   const payload = {
     title: action === "created" ? "📰 Bài viết mới được đăng" : "✏️ Bài viết đã được cập nhật",
     subtitle: vnNow(),
+    ...(image ? { imageUrl: image } : {}),
     sections: [
       {
         icon: action === "created" ? "🆕" : "🔄",
         heading: article.title,
         rows: [
-          ...(article.category ? [{ label: "Danh mục", value: article.category }] : []),
+          ...(article.category ? [{ label: "🏷 Danh mục", value: article.category }] : []),
+          ...(excerpt ? [{ label: "💬 Tóm tắt", value: excerpt.slice(0, 160) + (excerpt.length > 160 ? "…" : "") }] : []),
           { label: action === "created" ? "Đăng bởi" : "Cập nhật bởi", value: adminName },
         ],
       },
     ],
-    actions: [{ label: "Xem bài viết", url: articleUrl }],
+    actions: [
+      { label: "🔎 Xem bài viết", url: articleUrl },
+      { label: "🎮 Mini App", url: `${siteUrl}/tg` },
+    ],
     footer: "✨ Arex Admin",
   };
 

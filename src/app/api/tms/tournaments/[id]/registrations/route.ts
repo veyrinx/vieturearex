@@ -68,9 +68,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
   const { data: teamRow } = await untypedFrom(db, "tms_teams")
-    .select("captain_id, name, tag")
+    .select("captain_id, name, tag, logo_url")
     .eq("id", team_id)
-    .single() as { data: { captain_id: string; name: string; tag: string } | null };
+    .single() as { data: { captain_id: string; name: string; tag: string; logo_url?: string | null } | null };
   if (!teamRow || teamRow.captain_id !== auth.userId)
     return NextResponse.json({ error: "Chỉ captain mới được đăng ký." }, { status: 403 });
 
@@ -97,11 +97,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     void sendTelegramNotification({
       title: "📋 ĐĂNG KÝ GIẢI MỚI",
       subtitle: `Lúc ${vnNow()} (ICT)`,
+      ...(teamRow.logo_url ? { imageUrl: teamRow.logo_url } : {}),
       sections: [{
         rows: [
           { label: "🏆 Giải đấu", value: tournamentRow.name, bold: true },
           { label: "🏅 Team", value: `[${teamRow.tag}] ${teamRow.name}` },
-          { label: "Trạng thái", value: "⏳ Chờ duyệt" },
+          { label: "👤 Captain", value: captainUser?.email ?? "—" },
+          { label: "Trạng thái", value: tournamentRow.auto_approve_registrations ? "✅ Tự động duyệt" : "⏳ Chờ duyệt" },
         ],
       }],
       actions: [{ label: "👉 Quản lý đăng ký", url: `${siteConfig.url}/tournaments/${tournamentRow.slug}` }],

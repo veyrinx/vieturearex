@@ -7,6 +7,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { awardAchievement } from "@/lib/server/award-achievement";
 import { sendWelcomeEmail } from "@/lib/server/email";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { clientNetInfo } from "@/lib/server/client-net";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ."),
@@ -68,16 +69,39 @@ export async function POST(request: NextRequest) {
   // Email chào mừng cho người dùng (tôn trọng toggle mail.send_welcome).
   void sendWelcomeEmail({ to: email, name: displayName }).catch(() => null);
 
+  // ── Thông tin đầy đủ cho bot admin (chỉ gửi kênh nội bộ) ──────────────────
+  const net = clientNetInfo(request);
+  const memberNo = await adminClient
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .then((r) => r.count ?? null)
+    .catch(() => null);
+
   void sendTelegramNotification({
     title: "👤 THÀNH VIÊN MỚI ĐĂNG KÝ",
     subtitle: vnNow(),
-    sections: [{
-      rows: [
-        { label: "Email", value: email },
-        { label: "Tên hiển thị", value: displayName ?? "Chưa đặt" },
-        { label: "ID", value: authUser.id },
-      ],
-    }],
+    sections: [
+      {
+        icon: "🆕",
+        heading: displayName || email.split("@")[0],
+        rows: [
+          { label: "📧 Email", value: email, mono: true },
+          { label: "🏷 Tên hiển thị", value: displayName ?? "Chưa đặt" },
+          ...(memberNo != null ? [{ label: "👥 Thành viên", value: `#${memberNo.toLocaleString("vi-VN")}` }] : []),
+          { label: "🎫 Hình thức", value: "Đăng ký công khai" },
+          { label: "🆔 ID", value: authUser.id, mono: true },
+        ],
+      },
+      {
+        icon: "🌐",
+        heading: "Thiết bị & mạng",
+        rows: [
+          { label: "🌍 IP", value: net.ip, mono: true },
+          { label: "📱 Thiết bị", value: net.device },
+          { label: "🧭 Trình duyệt", value: net.browser },
+        ],
+      },
+    ],
     footer: "✨ Arex Register",
   }).catch(() => null);
 

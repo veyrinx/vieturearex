@@ -13,6 +13,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { sendWelcomeEmail } from "@/lib/server/email";
+import { clientNetInfo } from "@/lib/server/client-net";
 
 const schema = z.object({
   email: z.string().email().refine((val) => val.endsWith(`@${ADMIN_EMAIL_DOMAIN}`), {
@@ -76,15 +77,24 @@ export async function POST(request: NextRequest) {
   void sendWelcomeEmail({ to: email, name: user.display_name }).catch(() => null);
 
   // Notify admin channels
+  const net = clientNetInfo(request);
   void Promise.allSettled([
     sendTelegramNotification({
       title: "👤 Tài khoản admin mới được tạo",
       subtitle: vnNow(),
-      sections: [{ icon: "✅", heading: "Thông tin tài khoản", rows: [
-        { label: "Email", value: email, mono: true },
-        { label: "Tên", value: user.display_name || "Chưa đặt" },
-        { label: "Vai trò", value: user.role },
-      ]}],
+      sections: [
+        { icon: "✅", heading: "Thông tin tài khoản", rows: [
+          { label: "📧 Email", value: email, mono: true },
+          { label: "🏷 Tên", value: user.display_name || "Chưa đặt" },
+          { label: "🛡 Vai trò", value: user.role },
+          { label: "🎫 Hình thức", value: "Qua thư mời admin" },
+        ]},
+        { icon: "🌐", heading: "Thiết bị & mạng", rows: [
+          { label: "🌍 IP", value: net.ip, mono: true },
+          { label: "📱 Thiết bị", value: net.device },
+          { label: "🧭 Trình duyệt", value: net.browser },
+        ]},
+      ],
       footer: "✨ Arex Admin",
     }),
     sendDiscordInternalNotification({

@@ -13,6 +13,8 @@ interface EventInfo {
   status: string;
   link?: string | null;
   server_region?: string | null;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,6 +31,7 @@ export function notifyUserNewEvent(event: EventInfo, siteUrl: string) {
   const payload = {
     title: "🎮 SỰ KIỆN MỚI!",
     subtitle: `Đăng lúc ${vnNow()} (ICT)`,
+    ...(event.image_url || event.thumbnail_url ? { imageUrl: event.image_url || event.thumbnail_url || undefined } : {}),
     sections: [
       {
         rows: [
@@ -57,12 +60,15 @@ interface ArticleInfo {
   title: string;
   excerpt?: string | null;
   category?: string | null;
+  cover?: string | null;
+  image_url?: string | null;
 }
 
 export function notifyUserNewArticle(article: ArticleInfo, siteUrl: string) {
   const payload = {
     title: "📰 BÀI VIẾT MỚI!",
     subtitle: `Đăng lúc ${vnNow()} (ICT)`,
+    ...(article.cover || article.image_url ? { imageUrl: article.cover || article.image_url || undefined } : {}),
     sections: [
       {
         rows: [

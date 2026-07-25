@@ -32,13 +32,25 @@ function normalizeUrlField(raw: unknown): string {
 }
 
 function notifyEventChange(
-  event: { title: string; start_date: string; end_date: string; server_region?: string | null; link?: string | null; id: string },
+  event: {
+    title: string; start_date: string; end_date: string;
+    server_region?: string | null; link?: string | null; id: string;
+    description?: string | null; image_url?: string | null; thumbnail_url?: string | null;
+  },
   action: "created" | "updated" | "deleted",
   adminName: string,
 ) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-  const eventUrl = event.link || `${siteUrl}/events/${event.id}`;
+  const fmtDateTime = (d: string) => {
+    const t = new Date(d);
+    return Number.isNaN(t.getTime()) ? "—" : t.toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).replace(",", " ·");
+  };
+  const eventUrl = `${siteUrl}/events/${event.id}`;
+  const image = event.image_url || event.thumbnail_url || undefined;
+  const desc = (event.description ?? "").replace(/\s+/g, " ").trim();
 
   const titles: Record<typeof action, string> = {
     created: "🗓️ Sự kiện mới được đăng",
@@ -51,21 +63,29 @@ function notifyEventChange(
   const payload = {
     title: titles[action],
     subtitle: vnNow(),
+    ...(action !== "deleted" && image ? { imageUrl: image } : {}),
     sections: [
       {
         icon: icons[action],
         heading: event.title,
         rows: [
           ...(action !== "deleted" ? [
-            { label: "Bắt đầu", value: fmtDate(event.start_date) },
-            { label: "Kết thúc", value: fmtDate(event.end_date) },
+            { label: "🕐 Bắt đầu", value: fmtDateTime(event.start_date) },
+            { label: "🏁 Kết thúc", value: fmtDateTime(event.end_date) },
           ] : []),
-          ...(event.server_region ? [{ label: "Khu vực", value: event.server_region }] : []),
+          ...(event.server_region ? [{ label: "🌐 Khu vực", value: event.server_region }] : []),
+          ...(action !== "deleted" && desc ? [{ label: "📝 Mô tả", value: desc.slice(0, 160) + (desc.length > 160 ? "…" : "") }] : []),
           { label: actionLabel[action], value: adminName },
         ],
       },
     ],
-    actions: action !== "deleted" ? [{ label: "Xem sự kiện", url: eventUrl }] : [],
+    actions: action !== "deleted"
+      ? [
+          { label: "🔎 Xem sự kiện", url: eventUrl },
+          ...(event.link ? [{ label: "🔗 Link ngoài", url: event.link }] : []),
+          { label: "🎮 Mini App", url: `${siteUrl}/tg` },
+        ]
+      : [],
     footer: "✨ Arex Admin",
   };
 
