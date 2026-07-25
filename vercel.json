@@ -40,7 +40,7 @@
     },
     {
       "path": "/api/cron/bxh-rank-notify",
-      "schedule": "0 1,13 * * *"
+      "schedule": "0 1 * * *"
     }
   ],
   "functions": {
