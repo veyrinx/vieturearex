@@ -58,13 +58,14 @@ export async function POST(request: NextRequest) {
     footnote: "Email này được gửi thủ công từ ban quản trị.",
   });
 
-  let sent = 0;
-  const errors: string[] = [];
-  for (const to of recipients) {
-    const r = await sendMail({ to, subject: parsed.data.subject, html });
-    if (r.sent) sent++;
-    else errors.push(`${to}: ${r.error ?? "lỗi"}`);
-  }
+  // Gửi 1 lần qua BCC (1 kết nối SMTP) — tránh mở 50 kết nối tuần tự gây
+  // timeout/bị chặn. Người nhận ẩn nhau. "to" đặt là chính người gửi.
+  const result =
+    recipients.length === 1
+      ? await sendMail({ to: recipients[0], subject: parsed.data.subject, html })
+      : await sendMail({ to: config.fromEmail, bcc: recipients, subject: parsed.data.subject, html });
+
+  const sent = result.sent ? recipients.length : 0;
 
   await logAdminActivity({
     action: "MAIL_MANUAL_SENT",
@@ -74,9 +75,9 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({
-    ok: sent > 0,
+    ok: result.sent,
     sent,
     total: recipients.length,
-    ...(errors.length ? { errors: errors.slice(0, 5) } : {}),
+    ...(result.error ? { error: result.error } : {}),
   });
 }

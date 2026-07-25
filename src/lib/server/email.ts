@@ -70,7 +70,7 @@ export async function isMailTypeEnabled(key: string, defaultOn = true): Promise<
   }
 }
 
-export type SendMailInput = { to: string; subject: string; html: string; replyTo?: string };
+export type SendMailInput = { to: string; subject: string; html: string; replyTo?: string; bcc?: string | string[] };
 export type SendMailResult = { sent: boolean; configured: boolean; error?: string };
 
 export async function sendMail(input: SendMailInput): Promise<SendMailResult> {
@@ -97,6 +97,7 @@ export async function sendMail(input: SendMailInput): Promise<SendMailResult> {
       subject: input.subject,
       html: input.html,
       ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+      ...(input.bcc ? { bcc: input.bcc } : {}),
     });
     return { sent: true, configured: true };
   } catch (err) {
