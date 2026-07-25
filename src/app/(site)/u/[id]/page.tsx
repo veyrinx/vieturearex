@@ -89,12 +89,13 @@ async function getPublicAchievements(userId: string) {
 
 export default async function PublicProfilePage({ params }: Props) {
   const { id } = await params;
-  const [profile, achievements, achievementsById] = await Promise.all([
+  // profile trước (có thể tra bằng handle) → dùng id thật lấy thành tích.
+  const [profile, achievementsById] = await Promise.all([
     getUserPublicProfile(id),
-    getPublicAchievements(id),
     getMergedAchievementsById(),
   ]);
   if (!profile) notFound();
+  const achievements = await getPublicAchievements(profile.id);
 
   const earnedBadges = resolveEarned(achievements, achievementsById);
 
@@ -172,6 +173,9 @@ export default async function PublicProfilePage({ params }: Props) {
               </h1>
               <VerifiedBadge role={profile.role} badges={profile.badges} isVerified={profile.is_verified} size="lg" className="size-6" />
             </div>
+            {profile.handle && (
+              <p className="mt-0.5 font-mono text-sm font-semibold text-primary dark:text-amber-400">@{profile.handle}</p>
+            )}
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <RoleBadge role={profile.role} size="lg" showMember bordered className="tracking-[0.06em]" />
               <UserBadgeList badges={profile.badges} size="lg" bordered className="gap-2" />

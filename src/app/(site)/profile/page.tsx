@@ -47,6 +47,7 @@ type ProfileData = {
   id: string;
   email: string;
   display_name: string | null;
+  handle?: string | null;
   role: string;
   badges?: string[];
   views: number;
@@ -94,6 +95,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
+  const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [ffId, setFfId] = useState("");
@@ -141,6 +143,7 @@ export default function ProfilePage() {
         if (!data.email) { router.replace("/login"); return; }
         setProfile(data);
         setDisplayName(data.display_name ?? "");
+        setHandle(data.handle ?? "");
         setBio(data.bio ?? "");
         setPhone(data.phone ?? "");
         setFfId(data.ff_id ?? "");
@@ -285,6 +288,7 @@ export default function ProfilePage() {
           nickname: g.nickname?.trim() || undefined,
         }))
         .filter((g) => g.game && g.uid);
+      const canHandle = ["super_admin", "admin", "manager", "it"].includes(profile?.role ?? "");
       const payload = {
         display_name: displayName.trim(),
         bio: bio.trim(),
@@ -293,6 +297,7 @@ export default function ProfilePage() {
         contact_email: contactEmail.trim(),
         game_profiles: cleanGames,
         privacy,
+        ...(canHandle ? { handle: handle.trim().toLowerCase() } : {}),
         ...trimmedSocials,
       };
       const res = await fetch("/api/user/profile", {
@@ -428,8 +433,10 @@ export default function ProfilePage() {
   const joinDate = Number.isNaN(_joinDateObj.getTime()) ? "-" : _joinDateObj.toLocaleDateString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
+  const canHandle = ["super_admin", "admin", "manager", "it"].includes(profile.role);
   const isDirty =
     displayName.trim() !== (profile.display_name ?? "") ||
+    (canHandle && handle.trim().toLowerCase() !== (profile.handle ?? "")) ||
     bio.trim() !== (profile.bio ?? "") ||
     phone.trim() !== (profile.phone ?? "") ||
     ffId.trim() !== (profile.ff_id ?? "") ||
@@ -687,6 +694,29 @@ export default function ProfilePage() {
                     placeholder="Nhập tên hiển thị..." maxLength={60} className="h-10" />
                   <p className="text-[11px] text-muted-foreground">Tối đa 60 ký tự.</p>
                 </div>
+
+                {/* Tên định danh (handle) — chỉ quản trị viên */}
+                {canHandle && (
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      <User className="size-3.5" /> Tên định danh (handle)
+                      <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">ADMIN</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono text-muted-foreground">/u/</span>
+                      <Input
+                        value={handle}
+                        onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20))}
+                        placeholder="ten-mong-muon"
+                        maxLength={20}
+                        className="h-10 font-mono"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Link hồ sơ đẹp <b>arexnetwork.site/u/{handle || "handle"}</b>. 3–20 ký tự: a-z, 0-9, _. Để trống = dùng ID mặc định.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">

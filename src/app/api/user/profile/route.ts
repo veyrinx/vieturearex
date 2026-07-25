@@ -26,6 +26,8 @@ const schema = z.object({
   contact_email: z.union([z.string().email().max(120), z.literal("")]).optional(),
   ff_id: z.union([z.string().regex(/^\d{6,12}$/, "FF ID phải là 6–12 chữ số"), z.literal("")]).optional(),
   game_profiles: z.array(gameProfileSchema).max(20).optional(),
+  // Tên định danh (handle) cho URL /u/<handle> — chỉ quản trị viên đặt được.
+  handle: z.union([z.string().regex(/^[a-z0-9_]{3,20}$/, "Handle 3–20 ký tự: a-z, 0-9, _"), z.literal("")]).optional(),
   facebook_url: urlOrEmpty,
   tiktok_url: urlOrEmpty,
   instagram_url: urlOrEmpty,
@@ -103,6 +105,14 @@ export async function GET() {
     .eq("id", user.id)
     .maybeSingle() as { data: { badges?: unknown } | null };
 
+  // Handle — tách riêng vì cột đến từ migration add_user_handle.sql
+  let handle: string | null = null;
+  try {
+    const { data: hRow } = await roleClient
+      .from("users").select("handle").eq("id", user.id).maybeSingle() as { data: { handle?: string | null } | null };
+    handle = hRow?.handle ?? null;
+  } catch { /* cột chưa tồn tại */ }
+
   // Fallback role from app_metadata if DB query was blocked
   const appMetaRole = (user.app_metadata?.role as string | undefined) ?? null;
 
@@ -110,6 +120,7 @@ export async function GET() {
     id: user.id,
     email: user.email,
     display_name: profile?.display_name ?? null,
+    handle,
     role: profile?.role ?? appMetaRole ?? "user",
     badges: normalizeBadges(badgeRow?.badges),
     views: profile?.views ?? 0,
@@ -153,10 +164,36 @@ export async function PATCH(request: NextRequest) {
 
   const payload = await request.json().catch(() => ({}));
   const parsed = schema.safeParse(payload);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? "Invalid payload.";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  // Admin client sớm để kiểm tra quyền + trùng handle.
+  const adminClient = createAdminSupabaseClient();
+  const writeClient = (adminClient ?? supabase) as typeof supabase;
 
   const updates: Record<string, unknown> = {};
   const d = parsed.data;
+
+  // ── Handle (tên định danh) — chỉ quản trị viên ──────────────────────────
+  if (d.handle !== undefined) {
+    const { data: roleRow } = await writeClient.from("users").select("role").eq("id", user.id).maybeSingle();
+    const role = String((roleRow as { role?: string } | null)?.role ?? "");
+    if (!["super_admin", "admin", "manager", "it"].includes(role)) {
+      return NextResponse.json({ error: "Chỉ quản trị viên mới đặt được tên định danh." }, { status: 403 });
+    }
+    const handle = d.handle ? d.handle.toLowerCase() : null;
+    if (handle) {
+      // Kiểm tra trùng (bỏ qua nếu cột chưa migrate — vòng update sẽ tự drop).
+      try {
+        const { data: taken } = await writeClient
+          .from("users").select("id").eq("handle", handle).neq("id", user.id).maybeSingle();
+        if (taken) return NextResponse.json({ error: "Tên định danh đã có người dùng khác." }, { status: 409 });
+      } catch { /* cột chưa tồn tại — bỏ qua */ }
+    }
+    updates.handle = handle;
+  }
 
   if (d.display_name !== undefined) updates.display_name = d.display_name || null;
   if (d.bio !== undefined) updates.bio = d.bio || null;
@@ -190,10 +227,6 @@ export async function PATCH(request: NextRequest) {
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Không có thông tin nào để cập nhật." }, { status: 400 });
   }
-
-  // Use admin client to bypass RLS so users can update their own profile reliably
-  const adminClient = createAdminSupabaseClient();
-  const writeClient = (adminClient ?? supabase) as typeof supabase;
 
   // Retry-without-unknown-columns: when migration hasn't been run on Supabase
   // some optional columns (game_profiles, contact_email, *_url) won't exist

@@ -906,13 +906,20 @@ export async function getUserPublicProfile(id: string): Promise<PublicUserProfil
   const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
   const client = supabase as ReturnType<typeof getSupabaseReadClientOrThrow>;
 
+  // Cho phép /u/<handle> — nếu id không phải UUID thì tra theo cột handle.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const col = isUuid ? "id" : "handle";
+  const val = isUuid ? id : id.toLowerCase();
+
   let result = await client
     .from("users")
-    .select("id, display_name, avatar_url, banner_url, role, badges, is_verified, created_at, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, last_seen_at, points, rank, views, privacy")
-    .eq("id", id)
+    .select("id, handle, display_name, avatar_url, banner_url, role, badges, is_verified, created_at, bio, phone, contact_email, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, discord_url, twitch_url, twitter_url, telegram_url, zalo_url, threads_url, github_url, game_profiles, last_seen_at, points, rank, views, privacy")
+    .eq(col, val)
     .maybeSingle() as { data: PublicUserProfile | null; error: { message?: string } | null };
 
   if (result.error) {
+    // Fallback: cột handle/mới chưa migrate → chỉ tra được theo UUID.
+    if (!isUuid) return null;
     result = await client
       .from("users")
       .select("id, display_name, avatar_url, role, is_verified, created_at, bio, phone, facebook_url, tiktok_url, instagram_url, youtube_url, website_url")
