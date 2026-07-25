@@ -34,9 +34,22 @@ const CHAT_KEY       = "integrations.telegram_chat_id";
 const USER_TOKEN_KEY = "integrations.telegram_user_bot_token";
 const USER_CHAT_KEY  = "integrations.telegram_user_chat_id";
 
-const STATUS_ICON: Record<string, string> = {
-  ok: "✅", err: "❌", warn: "⚠️", info: "ℹ️",
+// Dấu trạng thái tối giản (glyph đơn sắc, không phải emoji màu mè).
+const STATUS_MARK: Record<string, string> = {
+  ok: "[OK]", err: "[LỖI]", warn: "[!]", info: "[i]",
 };
+
+// Đường kẻ khung — dùng box-drawing, hiển thị ổn định trên mọi thiết bị.
+const RULE = "━━━━━━━━━━━━━━━━━━━━━";
+
+// Xoá emoji/pictograph để thông báo gọn, "sang" hơn. Giữ nguyên tiếng Việt,
+// ký tự kẻ khung (┏┗├─│…) và chữ số. Áp dụng tập trung nên không cần sửa từng caller.
+const EMOJI_RE =
+  /[™ℹ⌚⌛←-⇿⌀-➿⬀-⯿️‍]|[\u{1F000}-\u{1FAFF}]/gu;
+
+function stripIcon(s: string): string {
+  return s.replace(EMOJI_RE, "").replace(/\s{2,}/g, " ").trim();
+}
 
 function e(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -44,33 +57,41 @@ function e(s: string) {
 
 function buildText(p: NotifyPayload): string {
   const lines: string[] = [];
-  lines.push(`<b>${e(p.title)}</b>`);
-  if (p.subtitle) lines.push(`<i>${e(p.subtitle)}</i>`);
+  const title = stripIcon(p.title);
+  if (title) lines.push(`<b>${e(title.toUpperCase())}</b>`);
+  if (p.subtitle) {
+    const sub = stripIcon(p.subtitle);
+    if (sub) lines.push(`<i>${e(sub)}</i>`);
+  }
+  lines.push(RULE);
 
   for (const sec of p.sections) {
     lines.push("");
     if (sec.heading) {
-      const icon = sec.icon ? `${sec.icon} ` : "";
-      lines.push(`<b>${icon}${e(sec.heading)}</b>`);
+      const heading = stripIcon(sec.heading);
+      if (heading) lines.push(`<b>${e(heading)}</b>`);
     }
     sec.rows.forEach((row, i) => {
       const last = i === sec.rows.length - 1;
-      const prefix = row.status ? `${STATUS_ICON[row.status]} ` : "";
+      const branch = last ? "┗" : "┣";
+      const mark = row.status ? `${STATUS_MARK[row.status]} ` : "";
+      const label = e(stripIcon(row.label));
+      const raw = row.value || "—";
       const val = row.mono
-        ? `<code>${e(row.value || "—")}</code>`
+        ? `<code>${e(raw)}</code>`
         : row.bold
-          ? `<b>${e(row.value || "—")}</b>`
-          : e(row.value || "—");
-      lines.push(`${last ? "┗" : "┣"} ${e(row.label)}: ${prefix}${val}`);
+          ? `<b>${e(stripIcon(raw) || "—")}</b>`
+          : e(stripIcon(raw) || "—");
+      lines.push(`${branch} ${label}: ${mark}${val}`);
     });
   }
 
   // Các nút (actions) render bằng inline keyboard bên dưới — không nhét vào text nữa.
 
   if (p.footer) {
-    lines.push("");
-    lines.push("━━━━━━━━━━━━━━━");
-    lines.push(`<i>${e(p.footer)}</i>`);
+    const footer = stripIcon(p.footer);
+    lines.push(RULE);
+    if (footer) lines.push(`<i>${e(footer)}</i>`);
   }
 
   return lines.join("\n");
@@ -87,7 +108,7 @@ function safeHttpUrl(url?: string): string | null {
 
 function buildKeyboard(p: NotifyPayload) {
   const buttons = (p.actions ?? [])
-    .map((a) => ({ text: a.label, url: safeHttpUrl(a.url) }))
+    .map((a) => ({ text: stripIcon(a.label) || a.label, url: safeHttpUrl(a.url) }))
     .filter((b): b is { text: string; url: string } => Boolean(b.url));
   if (!buttons.length) return undefined;
   // Tối đa 2 nút / hàng cho gọn.
