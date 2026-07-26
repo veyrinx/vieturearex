@@ -431,7 +431,9 @@
       "PowerShell(npx next lint --file src/lib/server/auth-stats.ts --file src/lib/server/send-auth-report.ts --file src/lib/server/send-daily-report.ts --file src/lib/server/vn-date.ts --file src/app/api/cron/auth-report/route.ts --file src/app/api/cron/daily-report/route.ts)",
       "Skill(schedule)",
       "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe commit -F D:\\\\tmp\\\\arex-commit-msg.txt)",
-      "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe diff --stat; & D:\\\\Git\\\\cmd\\\\git.exe diff -- \"src/app/\\(site\\)/profile/page.tsx\" \"src/app/\\(site\\)/u/[id]/page.tsx\")"
+      "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe diff --stat; & D:\\\\Git\\\\cmd\\\\git.exe diff -- \"src/app/\\(site\\)/profile/page.tsx\" \"src/app/\\(site\\)/u/[id]/page.tsx\")",
+      "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe status --short; & D:\\\\Git\\\\cmd\\\\git.exe log --oneline -4)",
+      "PowerShell(node scripts/daily-dev-report.mjs --since \"3 days ago\")"
     ]
   }
 }
