@@ -8,28 +8,36 @@ import { SERVER_LABELS } from "@/lib/tms/types";
 import type { TmsServer } from "@/lib/tms/types";
 import { cn } from "@/lib/utils";
 import { getAuthContext } from "@/lib/server/auth";
+import { getSiteConfig } from "@/lib/server/get-site-config";
 import { TournamentListClient } from "@/components/tms/tournament-list-client";
 
-export const metadata: Metadata = {
-  title: "Giải Đấu | Arex",
-  description: "Tất cả giải đấu Free Fire trên hệ thống Arex — đăng ký, thi đấu, bảng xếp hạng.",
-  alternates: { canonical: "https://arexnetwork.site/tournaments" },
-  openGraph: {
-    title: "Giải Đấu Free Fire — Arex",
-    description: "Đăng ký và thi đấu các giải Free Fire. Theo dõi bảng xếp hạng, kết quả và lịch thi đấu.",
-    url: "https://arexnetwork.site/tournaments",
-    type: "website",
-    siteName: "Arex - Trang Tin Tức Cộng Đồng Free Fire",
-    locale: "vi_VN",
-    images: [{ url: "https://arexnetwork.site/og-image.png", width: 1200, height: 630, alt: "Giải Đấu Free Fire — Arex" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Giải Đấu Free Fire — Arex",
-    description: "Đăng ký và thi đấu các giải Free Fire. Bảng xếp hạng và kết quả cập nhật liên tục.",
-    images: ["https://arexnetwork.site/og-image.png"],
-  },
-};
+// Domain và brand lấy theo host đang truy cập để ISC không tự trỏ về Arex.
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteConfig();
+  const url = `${site.url}/tournaments`;
+  const title = `Giải Đấu Free Fire — ${site.shortName}`;
+
+  return {
+    title: `Giải Đấu | ${site.shortName}`,
+    description: `Tất cả giải đấu Free Fire trên hệ thống ${site.shortName} — đăng ký, thi đấu, bảng xếp hạng.`,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description: "Đăng ký và thi đấu các giải Free Fire. Theo dõi bảng xếp hạng, kết quả và lịch thi đấu.",
+      url,
+      type: "website",
+      siteName: site.name,
+      locale: "vi_VN",
+      images: [{ url: site.ogImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: "Đăng ký và thi đấu các giải Free Fire. Bảng xếp hạng và kết quả cập nhật liên tục.",
+      images: [site.ogImage],
+    },
+  };
+}
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

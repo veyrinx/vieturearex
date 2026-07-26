@@ -12,7 +12,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
-import { getSiteConfig } from "@/lib/server/get-site-config";
+import { getSiteConfig, getCurrentUrl } from "@/lib/server/get-site-config";
 
 // GFF Fonts are loaded from fonts.css
 // Heading: --font-heading (GFF Latin ExtraBold)
@@ -28,7 +28,11 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [settings, activeSite] = await Promise.all([getSettings(), getSiteConfig()]);
+  const [settings, activeSite, currentUrl] = await Promise.all([
+    getSettings(),
+    getSiteConfig(),
+    getCurrentUrl(),
+  ]);
   const settingsMap = buildSettingsMap(settings, activeSite.id);
 
   const siteName = settingsMap["branding.site_name"] || activeSite.name;
@@ -45,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: siteDescription,
     alternates: {
-      canonical: activeSite.url,
+      canonical: currentUrl,
     },
     keywords: [
       siteName,
@@ -82,13 +86,14 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: siteTitle,
       description: siteDescription,
-      url: activeSite.url,
+      url: currentUrl,
       siteName: siteName,
       images: [
         {
           url: activeSite.ogImage,
           width: 1200,
           height: 630,
+          type: "image/png",
           alt: siteName,
         },
       ],

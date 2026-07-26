@@ -68,7 +68,9 @@ function applyCors(res: NextResponse): NextResponse {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const siteHostname = request.headers.get("host") ?? "";
-  const siteHeaders = { "x-site-hostname": siteHostname };
+  // x-site-pathname: để generateMetadata dựng canonical / og:url đúng trang đang xem
+  // (trước đây mọi trang đều báo URL trang chủ nên preview link bị sai).
+  const siteHeaders = { "x-site-hostname": siteHostname, "x-site-pathname": pathname };
 
   // ── CORS preflight for the Mini App — answer OPTIONS before any auth work ──
   if (pathname.startsWith("/api/") && request.method === "OPTIONS") {
@@ -291,7 +293,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Exclude static assets and source maps
+    // Exclude static assets and source maps.
+    // Lưu ý: mọi path kết thúc bằng .png đều bỏ qua middleware — kể cả route động
+    // /og-image.png. Đúng ý muốn: crawler share link (Facebook/Zalo/Telegram) không
+    // có session và vẫn phải lấy được ảnh khi site đang bảo trì.
     "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff2?|ttf|eot)$).*)",
   ],
 };
