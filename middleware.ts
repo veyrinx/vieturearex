@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   "/auth/update-password",
   "/auth/verify-otp",
   "/auth/callback",
+  "/auth/oauth-callback",
   "/auth/register",
   "/api/",          // All /api/* routes enforce their own auth
   "/team-join",     // Public token-based team registration

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { siteConfig } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,10 @@ export default function UserLoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("error") === "banned") setBanned(true);
+    const error = params.get("error");
+    if (error === "banned") setBanned(true);
+    if (error === "oauth_failed") toast.error("Đăng nhập bằng mạng xã hội thất bại. Vui lòng thử lại.");
+    if (error === "missing_user") toast.error("Không lấy được email từ tài khoản mạng xã hội. Vui lòng dùng cách khác.");
   }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -239,6 +243,8 @@ export default function UserLoginPage() {
                 </Link>
               </div>
             </form>
+
+            <SocialAuthButtons className="mt-6" />
 
             <div className="mt-5 text-center text-sm text-muted-foreground">
               Chưa có tài khoản?{" "}

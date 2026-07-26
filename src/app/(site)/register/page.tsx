@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { siteConfig } from "@/lib/constants/site";
 import { createClient } from "@/lib/supabase/client";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -470,6 +471,8 @@ export default function UserRegisterPage() {
                 {loading ? "ĐANG TẠO TÀI KHOẢN..." : "TẠO TÀI KHOẢN MIỄN PHÍ"}
               </Button>
             </form>
+
+            <SocialAuthButtons className="mt-6" />
 
             <div className="mt-5 text-center text-sm text-muted-foreground">
               Đã có tài khoản?{" "}
