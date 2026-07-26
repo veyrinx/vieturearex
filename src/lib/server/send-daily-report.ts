@@ -4,28 +4,21 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification } from "@/lib/server/discord-notify";
 import { sendLarkNotification } from "@/lib/server/lark-notify";
+import { vnDateKey, vnHourNow, vnWeekdayNow } from "@/lib/server/vn-date";
+import { getAuthStats, hasAuthActivity, type AuthStats } from "@/lib/server/auth-stats";
+
+export { vnDateKey };
 
 const DAILY_KEY             = "analytics.daily_views";
 const SCHEDULE_HOUR_KEY     = "integrations.report_schedule_hour";
 const SCHEDULE_INTERVAL_KEY = "integrations.report_schedule_interval";
 const SCHEDULE_DAYS_KEY     = "integrations.report_schedule_days";
+const SKIP_EMPTY_KEY        = "integrations.report_skip_when_idle";
 const TG_HOUR_KEY           = "integrations.telegram_report_hour";
 const DISCORD_HOUR_KEY      = "integrations.discord_report_hour";
 const LARK_HOUR_KEY         = "integrations.lark_report_hour";
 
 type Setting = { key: string; value: string };
-
-function vnHourNow(): number {
-  const s = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Ho_Chi_Minh", hour: "numeric", hour12: false,
-  }).format(new Date());
-  const n = parseInt(s);
-  return n === 24 ? 0 : n;
-}
-
-function vnWeekdayNow(): number {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })).getDay();
-}
 
 function isDayAllowed(settings: Setting[]): boolean {
   const daysRaw = settings.find((s) => s.key === SCHEDULE_DAYS_KEY)?.value ?? "";
@@ -45,13 +38,6 @@ function shouldChannelSend(settings: Setting[], channelHourKey: string, force: b
   if (interval <= 1) return true;
   if (interval >= 24) return current === hour;
   return current % interval === hour % interval;
-}
-
-export function vnDateKey(daysAgo = 0) {
-  const d = new Date();
-  d.setUTCHours(d.getUTCHours() + 7);
-  d.setUTCDate(d.getUTCDate() - daysAgo);
-  return d.toISOString().slice(0, 10);
 }
 
 async function getTodayStats() {
@@ -90,16 +76,26 @@ export type DailyReportResult = {
   hour?: number;
 };
 
+/** Nhãn hiển thị cho từng phương thức đăng nhập. */
+const METHOD_LABELS: Array<[keyof AuthStats["today"]["byMethod"], string]> = [
+  ["password", "Mật khẩu"],
+  ["google", "Google"],
+  ["facebook", "Facebook"],
+  ["other", "Khác"],
+];
+
 export async function runDailyReport(force = false): Promise<DailyReportResult> {
   let stats: Awaited<ReturnType<typeof getDashboardStats>>;
   let settings: Awaited<ReturnType<typeof getSettings>>;
   let todayStats: Awaited<ReturnType<typeof getTodayStats>>;
+  let authStats: AuthStats;
 
   try {
-    [stats, settings, todayStats] = await Promise.all([
+    [stats, settings, todayStats, authStats] = await Promise.all([
       getDashboardStats(),
       getSettings(),
       getTodayStats(),
+      getAuthStats(),
     ]);
   } catch (err) {
     console.error("[daily-report] fetch data failed:", err);
@@ -130,6 +126,20 @@ export async function runDailyReport(force = false): Promise<DailyReportResult> 
   const diff      = today - yesterday;
   const trend     = diff > 0 ? `📈 +${diff.toLocaleString("vi-VN")}` : diff < 0 ? `📉 ${diff.toLocaleString("vi-VN")}` : "➖ Không đổi";
 
+  // Ngày không có gì xảy ra thì không gửi (bật/tắt bằng integrations.report_skip_when_idle,
+  // mặc định BẬT). force=1 vẫn gửi để admin bấm test được.
+  const skipWhenIdle = sm[SKIP_EMPTY_KEY] !== "false";
+  const idle =
+    today === 0 &&
+    todayStats.newUsers === 0 &&
+    todayStats.newNews === 0 &&
+    todayStats.newEvents === 0 &&
+    todayStats.pendingComments === 0 &&
+    !hasAuthActivity(authStats);
+  if (!force && skipWhenIdle && idle) {
+    return { ok: true, sent: false, telegram: false, discord: false, lark: false, reason: "no_activity", hour: vnHourNow() };
+  }
+
   const payload = {
     title: `📊 BÁO CÁO NGÀY — ${vnDateKey(0)}`,
     subtitle: `Tổng hợp tự động lúc ${vnNow()} (ICT)`,
@@ -153,6 +163,26 @@ export async function runDailyReport(force = false): Promise<DailyReportResult> 
           { label: "Sự kiện mới",        value: todayStats.newEvents.toLocaleString("vi-VN"),       bold: todayStats.newEvents > 0 },
           ...(todayStats.pendingComments > 0
             ? [{ label: "Bình luận chờ duyệt", value: todayStats.pendingComments.toLocaleString("vi-VN"), status: "warn" as const }]
+            : []),
+        ],
+      },
+      {
+        icon: "🔐",
+        heading: "Đăng nhập hôm nay",
+        rows: [
+          {
+            label: "Tổng lượt",
+            value: `${authStats.today.total.toLocaleString("vi-VN")} (${authStats.today.uniqueUsers.toLocaleString("vi-VN")} tài khoản)`,
+            bold: authStats.today.total > 0,
+          },
+          ...METHOD_LABELS
+            .filter(([key]) => authStats.today.byMethod[key] > 0)
+            .map(([key, label]) => ({
+              label,
+              value: authStats.today.byMethod[key].toLocaleString("vi-VN"),
+            })),
+          ...(authStats.blockedIpsToday > 0
+            ? [{ label: "IP bị chặn", value: authStats.blockedIpsToday.toLocaleString("vi-VN"), status: "warn" as const }]
             : []),
         ],
       },

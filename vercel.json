@@ -46,7 +46,8 @@
   "functions": {
     "src/app/api/admin/sql/route.ts": { "maxDuration": 30 },
     "src/app/api/admin/settings/migrate-encrypt/route.ts": { "maxDuration": 30 },
-    "src/app/api/cron/daily-report/route.ts": { "maxDuration": 30 },
+    "src/app/api/cron/daily-report/route.ts": { "maxDuration": 60 },
+    "src/app/api/cron/auth-report/route.ts": { "maxDuration": 30 },
     "src/app/api/cron/event-reminders/route.ts": { "maxDuration": 30 },
     "src/app/api/streams/sync/route.ts": { "maxDuration": 30 },
     "src/app/api/tms/tournaments/[id]/generate-matches/route.ts": { "maxDuration": 30 },

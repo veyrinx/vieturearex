@@ -1656,6 +1656,40 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
             </div>
           </Field>
 
+          <Field label="Nội dung báo cáo" hint="Bỏ qua ngày không có hoạt động và gửi kèm báo cáo đăng nhập" icon={SendHorizonal}>
+            <div className="space-y-2.5">
+              {[
+                {
+                  key: "integrations.report_skip_when_idle",
+                  label: "Bỏ qua ngày không có hoạt động",
+                  desc: "Không lượt xem, không user/bài/sự kiện mới, không đăng nhập → không gửi.",
+                },
+                {
+                  key: "integrations.auth_daily_report",
+                  label: "Gửi kèm báo cáo đăng nhập",
+                  desc: "Chi tiết đăng nhập theo mật khẩu / Google / Facebook, đăng ký mới, IP bị chặn.",
+                },
+              ].map(({ key, label, desc }) => {
+                const on = v(key) !== "false";
+                return (
+                  <div key={key} className="flex items-start gap-3">
+                    <Toggle
+                      checked={on}
+                      onChange={(val) => set(key, val ? "true" : "false")}
+                      label={label}
+                    />
+                    <div>
+                      <span className={cn("text-sm font-semibold", on ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                        {label}
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">{desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Field>
+
           <Field label="Ngày trong tuần" hint="Chỉ gửi vào các ngày được chọn — bỏ chọn hết = gửi mọi ngày" icon={Calendar}>
             {(() => {
               const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
