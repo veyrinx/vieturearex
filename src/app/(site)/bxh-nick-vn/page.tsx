@@ -11,10 +11,17 @@ import { BxhEmbedSnippet } from "@/components/tools/bxh-embed-snippet";
 import { BxhNickTabs, type AutoRow, type CommunityRow } from "./_tabs";
 
 export const metadata: Metadata = {
-  title: "BXH nick khủng Free Fire Việt Nam | Arex",
+  title: "BXH nick khủng Free Fire Việt Nam",
   description:
     "Bảng xếp hạng nick Free Fire khủng nhất khu vực Việt Nam — tự động chấm điểm từ dữ liệu thật (cấp độ, lượt thích, EXP, rank) mỗi khi có người tra cứu, kèm bảng điểm cộng đồng tự khai.",
   alternates: { canonical: `${siteConfig.url}/bxh-nick-vn` },
+  openGraph: {
+    title: "BXH nick khủng Free Fire Việt Nam | Arex",
+    description: "Bảng xếp hạng nick Free Fire khủng nhất khu vực Việt Nam — tự động chấm điểm từ dữ liệu thật (cấp độ, lượt thích, EXP, rank) mỗi khi có người tra cứu, kèm bảng điểm cộng đồng tự khai.",
+    url: `${siteConfig.url}/bxh-nick-vn`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export const revalidate = 30;

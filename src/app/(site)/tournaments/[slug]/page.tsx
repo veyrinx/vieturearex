@@ -12,6 +12,7 @@ import { TournamentBracket } from "@/components/tms/bracket";
 import { StreamEmbed } from "@/components/tms/stream-embed";
 import { TmsServerBadge } from "@/components/tms/server-badge";
 import { TeamLogo, TournamentBanner } from "@/components/common/safe-image";
+import { siteConfig } from "@/lib/constants/site";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -19,7 +20,18 @@ export const revalidate = 0;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const t = await getTmsTournament(slug).catch(() => null);
-  return { title: t ? `${t.name} | Arex TMS` : "Giải Đấu" };
+  const title = t ? `${t.name} — Giải đấu` : "Giải Đấu";
+  const description = t
+    ? `Thông tin giải đấu Free Fire ${t.name}: thể thức, lịch thi đấu, danh sách đội và bảng xếp hạng.`
+    : undefined;
+  const url = `${siteConfig.url}/tournaments/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "website", siteName: siteConfig.name },
+  };
 }
 
 const statusColor: Record<string, string> = {

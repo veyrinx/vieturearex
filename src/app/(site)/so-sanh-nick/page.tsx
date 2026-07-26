@@ -8,7 +8,7 @@ import { FfCompare } from "@/components/tools/ff-compare";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
-  title: "So sánh 2 nick Free Fire | Arex",
+  title: "So sánh 2 nick Free Fire",
   description:
     "Nhập 2 UID để so sánh trực tiếp: cấp độ, lượt thích, rank BR/CS, EXP, pet, điểm tín nhiệm — xem nick nào 'trâu' hơn.",
   alternates: { canonical: `${siteConfig.url}/so-sanh-nick` },

@@ -9,10 +9,17 @@ import { CountdownList } from "@/components/tools/countdown-list";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Đếm ngược sự kiện Free Fire — Cập nhật, reset rank, sự kiện | Arex",
+  title: "Đếm ngược sự kiện Free Fire — Cập nhật, reset rank, sự kiện",
   description:
     "Đồng hồ đếm ngược tới bản cập nhật OB mới, reset rank cuối mùa và các sự kiện Free Fire sắp diễn ra.",
   alternates: { canonical: `${siteConfig.url}/dem-nguoc` },
+  openGraph: {
+    title: "Đếm ngược sự kiện Free Fire — Cập nhật, reset rank, sự kiện | Arex",
+    description: "Đồng hồ đếm ngược tới bản cập nhật OB mới, reset rank cuối mùa và các sự kiện Free Fire sắp diễn ra.",
+    url: `${siteConfig.url}/dem-nguoc`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function DemNguocPage() {

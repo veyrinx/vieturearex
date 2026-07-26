@@ -7,7 +7,7 @@ import { getFeatureLocks } from "@/lib/server/feature-locks";
 import { TOOLS } from "@/lib/constants/tools";
 
 export const metadata: Metadata = {
-  title: "Công Cụ Free Fire — Arex",
+  title: "Công Cụ Free Fire",
   description:
     "Bộ công cụ Free Fire cho người chơi: chỉnh độ nhạy theo máy, tier list nhân vật, ghép combo kỹ năng, thư viện icon. Miễn phí trên Arex Network.",
   alternates: { canonical: `${siteConfig.url}/cong-cu` },

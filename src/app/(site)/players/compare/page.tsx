@@ -7,6 +7,7 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { getTmsPlayerCareer } from "@/lib/tms/data";
 import { cn } from "@/lib/utils";
 import { PlayerSearchForm } from "@/components/tms/player-search-form";
+import { siteConfig } from "@/lib/constants/site";
 
 type PlayerStats = {
   totalPoints: number; totalKills: number; totalAssists: number;
@@ -14,7 +15,18 @@ type PlayerStats = {
   kdRatio: number; winRate: number;
 };
 
-export const metadata: Metadata = { title: "So Sánh Tuyển Thủ | Arex TMS" };
+// Trang chạy theo query param (?a=&b=) nên canonical trỏ về bản gốc không tham số
+// để Google không index vô số biến thể.
+export const metadata: Metadata = {
+  title: "So Sánh Tuyển Thủ",
+  alternates: { canonical: `${siteConfig.url}/players/compare` },
+  openGraph: {
+    title: "So Sánh Tuyển Thủ",
+    url: `${siteConfig.url}/players/compare`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
+};
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

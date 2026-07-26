@@ -7,9 +7,17 @@ import { PageContentOverride } from "@/components/common/page-content-override";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Chính Sách Cookie | Arex",
+  title: "Chính Sách Cookie",
   description:
     "Chính sách Cookie của Arex — thông tin về cách chúng tôi sử dụng cookie, các loại cookie và quyền kiểm soát của bạn.",
+  alternates: { canonical: `${siteConfig.url}/cookie-policy` },
+  openGraph: {
+    title: "Chính Sách Cookie",
+    description: "Chính sách Cookie của Arex — thông tin về cách chúng tôi sử dụng cookie, các loại cookie và quyền kiểm soát của bạn.",
+    url: `${siteConfig.url}/cookie-policy`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 const sections = [

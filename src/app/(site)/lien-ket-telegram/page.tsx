@@ -6,9 +6,16 @@ import { PageHero } from "@/components/common/page-hero";
 import { TelegramLinkClient } from "@/components/telegram/telegram-link-client";
 
 export const metadata: Metadata = {
-  title: "Liên kết Telegram | Arex",
+  title: "Liên kết Telegram",
   description: "Liên kết tài khoản Arex với Telegram Mini App để đồng bộ chuỗi điểm danh, điểm và hồ sơ.",
   alternates: { canonical: `${siteConfig.url}/lien-ket-telegram` },
+  openGraph: {
+    title: "Liên kết Telegram | Arex",
+    description: "Liên kết tài khoản Arex với Telegram Mini App để đồng bộ chuỗi điểm danh, điểm và hồ sơ.",
+    url: `${siteConfig.url}/lien-ket-telegram`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
   robots: { index: false },
 };
 

@@ -7,10 +7,17 @@ import { getAllCharacters } from "@/lib/data/ff-characters";
 import { CharacterCompare } from "@/components/ff-items/character-compare";
 
 export const metadata: Metadata = {
-  title: "So sánh nhân vật Free Fire — Đối chiếu tier & kỹ năng | Arex",
+  title: "So sánh nhân vật Free Fire — Đối chiếu tier & kỹ năng",
   description:
     "Chọn 2 nhân vật Free Fire để so sánh trực tiếp tier, vai trò, loại kỹ năng và mô tả kỹ năng.",
   alternates: { canonical: `${siteConfig.url}/nhan-vat/so-sanh` },
+  openGraph: {
+    title: "So sánh nhân vật Free Fire — Đối chiếu tier & kỹ năng | Arex",
+    description: "Chọn 2 nhân vật Free Fire để so sánh trực tiếp tier, vai trò, loại kỹ năng và mô tả kỹ năng.",
+    url: `${siteConfig.url}/nhan-vat/so-sanh`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function CharacterComparePage() {

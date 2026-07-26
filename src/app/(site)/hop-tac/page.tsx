@@ -14,10 +14,17 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Hợp tác & Đối tác | Arex",
+  title: "Hợp tác & Đối tác",
   description:
     "Nhà tài trợ, đối tác truyền thông và cộng đồng đồng hành cùng Arex. Liên hệ để hợp tác quảng bá, tài trợ giải đấu Free Fire.",
   alternates: { canonical: `${siteConfig.url}/hop-tac` },
+  openGraph: {
+    title: "Hợp tác & Đối tác | Arex",
+    description: "Nhà tài trợ, đối tác truyền thông và cộng đồng đồng hành cùng Arex. Liên hệ để hợp tác quảng bá, tài trợ giải đấu Free Fire.",
+    url: `${siteConfig.url}/hop-tac`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 function PartnerLogo({ src, alt }: { src?: string; alt: string }) {

@@ -4,7 +4,7 @@ import { getEvents } from "@/lib/data/content-service";
 import { FavoritesClient } from "@/components/events/favorites-client";
 
 export const metadata: Metadata = {
-  title: "Sự Kiện Đã Lưu — Arex",
+  title: "Sự Kiện Đã Lưu",
   description: "Tổng hợp các sự kiện bạn đã yêu thích và đang theo dõi.",
 };
 export const revalidate = 60;

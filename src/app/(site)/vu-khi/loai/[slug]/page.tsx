@@ -19,13 +19,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const label = weaponTypeLabel(slug);
   if (!label) return { title: "Không tìm thấy" };
 
-  const title = `Vũ khí ${label} Free Fire — Danh sách & Chỉ số | Arex`;
+  const title = `Vũ khí ${label} Free Fire — Danh sách & Chỉ số`;
   const description = `Tất cả vũ khí loại ${label} trong Free Fire kèm chỉ số sát thương, tầm bắn, tốc độ bắn và tier meta cộng đồng.`;
+  const url = `${siteConfig.url}/vu-khi/loai/${slug}`;
 
   return {
     title,
     description,
-    alternates: { canonical: `${siteConfig.url}/vu-khi/loai/${slug}` },
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "website", siteName: siteConfig.name },
   };
 }
 

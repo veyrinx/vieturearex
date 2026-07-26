@@ -10,10 +10,17 @@ import { PrimeStoreLivePanel } from "@/components/tools/prime-store-live";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Cửa hàng Prime — Ưu đãi thành viên | Arex",
+  title: "Cửa hàng Prime — Ưu đãi thành viên",
   description:
     "Cửa hàng Prime của Arex: gói thành viên Prime, ưu đãi kim cương và quyền lợi độc quyền cho cộng đồng Free Fire.",
   alternates: { canonical: `${siteConfig.url}/cua-hang-prime` },
+  openGraph: {
+    title: "Cửa hàng Prime — Ưu đãi thành viên | Arex",
+    description: "Cửa hàng Prime của Arex: gói thành viên Prime, ưu đãi kim cương và quyền lợi độc quyền cho cộng đồng Free Fire.",
+    url: `${siteConfig.url}/cua-hang-prime`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function CuaHangPrimePage() {

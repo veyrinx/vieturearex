@@ -11,7 +11,7 @@ import { Trophy, Users, CalendarDays, Swords, Plus, ChevronRight, ExternalLink }
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Giải Đấu Cộng Đồng — Arex",
+  title: "Giải Đấu Cộng Đồng",
   description: "Tham gia giải đấu Free Fire cộng đồng. Đăng ký team, thi đấu và đề xuất tổ chức giải đấu của riêng bạn.",
   alternates: { canonical: `${siteConfig.url}/giai-dau-cong-dong` },
   openGraph: {

@@ -2,10 +2,19 @@ import type { Metadata } from "next";
 import { Users } from "lucide-react";
 import { getAdminProfiles } from "@/lib/data/content-service";
 import { TeamGrid } from "@/components/team/team-grid";
+import { siteConfig } from "@/lib/constants/site";
 
 export const metadata: Metadata = {
-  title: "Đội Ngũ — Arex",
+  title: "Đội Ngũ",
   description: "Gặp gỡ đội ngũ quản trị và vận hành của Arex Network — những người xây dựng và phát triển cộng đồng Free Fire.",
+  alternates: { canonical: `${siteConfig.url}/team` },
+  openGraph: {
+    title: "Đội Ngũ",
+    description: "Gặp gỡ đội ngũ quản trị và vận hành của Arex Network — những người xây dựng và phát triển cộng đồng Free Fire.",
+    url: `${siteConfig.url}/team`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export const revalidate = 120;

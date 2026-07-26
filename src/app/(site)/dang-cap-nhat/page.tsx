@@ -7,7 +7,7 @@ import { getFeatureLocks } from "@/lib/server/feature-locks";
 import { LockCountdown } from "@/components/common/lock-countdown";
 
 export const metadata: Metadata = {
-  title: "Đang cập nhật | Arex",
+  title: "Đang cập nhật",
   robots: { index: false, follow: false },
 };
 

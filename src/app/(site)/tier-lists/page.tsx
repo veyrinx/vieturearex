@@ -6,10 +6,17 @@ import { TierListView } from "@/components/ff-items/tier-list-view";
 import { getPublicTierLists } from "@/lib/data/tier-lists";
 
 export const metadata: Metadata = {
-  title: "Tier List Free Fire — Nhân vật & Vũ khí | Arex",
+  title: "Tier List Free Fire — Nhân vật & Vũ khí",
   description:
     "Bảng xếp hạng (tier list) nhân vật và vũ khí Free Fire theo meta cộng đồng: S/A/B/C/D, lọc theo loại và phiên bản OB.",
   alternates: { canonical: `${siteConfig.url}/tier-lists` },
+  openGraph: {
+    title: "Tier List Free Fire — Nhân vật & Vũ khí | Arex",
+    description: "Bảng xếp hạng (tier list) nhân vật và vũ khí Free Fire theo meta cộng đồng: S/A/B/C/D, lọc theo loại và phiên bản OB.",
+    url: `${siteConfig.url}/tier-lists`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function TierListsPage() {

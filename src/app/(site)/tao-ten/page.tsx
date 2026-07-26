@@ -6,10 +6,17 @@ import { PageHero } from "@/components/common/page-hero";
 import { NameGenerator } from "@/components/tools/name-generator";
 
 export const metadata: Metadata = {
-  title: "Tạo tên kí tự đặc biệt Free Fire — Nickname phong cách | Arex",
+  title: "Tạo tên kí tự đặc biệt Free Fire — Nickname phong cách",
   description:
     "Tạo tên Free Fire kí tự đặc biệt, chữ kiểu đẹp + khung trang trí (꧁༒꧂, súng, kiếm...). Nhập tên, bấm copy dán vào game.",
   alternates: { canonical: `${siteConfig.url}/tao-ten` },
+  openGraph: {
+    title: "Tạo tên kí tự đặc biệt Free Fire — Nickname phong cách | Arex",
+    description: "Tạo tên Free Fire kí tự đặc biệt, chữ kiểu đẹp + khung trang trí (꧁༒꧂, súng, kiếm...). Nhập tên, bấm copy dán vào game.",
+    url: `${siteConfig.url}/tao-ten`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function TaoTenPage() {

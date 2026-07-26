@@ -8,7 +8,7 @@ import { WeeklyVoteSection } from "@/components/community/weekly-vote-section";
 import { MessageSquare, Users, TrendingUp, Trophy } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Cộng Đồng — Diễn Đàn Free Fire | Arex",
+  title: "Cộng Đồng — Diễn Đàn Free Fire",
   description: "Diễn đàn cộng đồng Free Fire Việt Nam. Thảo luận, chia sẻ hướng dẫn, tìm clan và cập nhật sự kiện cùng hàng nghìn người chơi.",
   alternates: { canonical: `${siteConfig.url}/cong-dong` },
   openGraph: {

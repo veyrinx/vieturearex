@@ -8,7 +8,7 @@ import { FfGuildLookup } from "@/components/tools/ff-guild-lookup";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
-  title: "Tra cứu Guild Free Fire chi tiết | Arex",
+  title: "Tra cứu Guild Free Fire chi tiết",
   description:
     "Nhập UID thành viên để xem chi tiết guild Free Fire: tên guild, cấp độ, sĩ số, sức chứa và tài khoản chủ. Dữ liệu trực tiếp từ máy chủ.",
   alternates: { canonical: `${siteConfig.url}/tra-cuu-guild` },

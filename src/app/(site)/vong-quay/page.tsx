@@ -6,10 +6,17 @@ import { PageHero } from "@/components/common/page-hero";
 import { LuckRoyaleWheel } from "@/components/tools/luck-royale-wheel";
 
 export const metadata: Metadata = {
-  title: "Vòng Quay May Mắn Free Fire — Giả lập Luck Royale | Arex",
+  title: "Vòng Quay May Mắn Free Fire — Giả lập Luck Royale",
   description:
     "Quay thử vòng quay Luck Royale / Faded Wheel Free Fire để xem tốn bao nhiêu kim cương mới trúng đại thưởng. Giả lập cho vui, chơi có trách nhiệm.",
   alternates: { canonical: `${siteConfig.url}/vong-quay` },
+  openGraph: {
+    title: "Vòng Quay May Mắn Free Fire — Giả lập Luck Royale | Arex",
+    description: "Quay thử vòng quay Luck Royale / Faded Wheel Free Fire để xem tốn bao nhiêu kim cương mới trúng đại thưởng. Giả lập cho vui, chơi có trách nhiệm.",
+    url: `${siteConfig.url}/vong-quay`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function VongQuayPage() {

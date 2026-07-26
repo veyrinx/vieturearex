@@ -9,10 +9,17 @@ import { SocialVideoGrid } from "@/components/tools/social-video-grid";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "TikTok cộng đồng — Video Free Fire | Arex",
+  title: "TikTok cộng đồng — Video Free Fire",
   description:
     "Tuyển tập video TikTok Free Fire nổi bật từ cộng đồng Arex: khoảnh khắc highlight, mẹo chơi, sự kiện.",
   alternates: { canonical: `${siteConfig.url}/tiktok` },
+  openGraph: {
+    title: "TikTok cộng đồng — Video Free Fire | Arex",
+    description: "Tuyển tập video TikTok Free Fire nổi bật từ cộng đồng Arex: khoảnh khắc highlight, mẹo chơi, sự kiện.",
+    url: `${siteConfig.url}/tiktok`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function TiktokPage() {

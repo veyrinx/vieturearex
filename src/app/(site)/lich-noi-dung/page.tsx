@@ -7,10 +7,17 @@ import { FF_ROADMAP } from "@/lib/data/ff-roadmap";
 import { RoadmapList } from "@/components/tools/roadmap-list";
 
 export const metadata: Metadata = {
-  title: "Lịch nội dung Free Fire sắp ra — Roadmap | Arex",
+  title: "Lịch nội dung Free Fire sắp ra — Roadmap",
   description:
     "Lịch nội dung Free Fire sắp ra mắt: nhân vật mới, skin, chế độ chơi, sự kiện và bản cập nhật OB.",
   alternates: { canonical: `${siteConfig.url}/lich-noi-dung` },
+  openGraph: {
+    title: "Lịch nội dung Free Fire sắp ra — Roadmap | Arex",
+    description: "Lịch nội dung Free Fire sắp ra mắt: nhân vật mới, skin, chế độ chơi, sự kiện và bản cập nhật OB.",
+    url: `${siteConfig.url}/lich-noi-dung`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function LichNoiDungPage() {

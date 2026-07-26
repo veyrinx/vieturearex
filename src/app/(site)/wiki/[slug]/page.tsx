@@ -43,7 +43,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params;
   const db = createAdminSupabaseClient();
-  if (!db) return { title: "Wiki | Arex" };
+  if (!db) return { title: "Wiki" };
 
   const { data } = await untypedFrom(db, "wiki_articles")
     .select("title, excerpt")
@@ -51,11 +51,17 @@ export async function generateMetadata(
     .eq("status", "published")
     .maybeSingle() as { data: { title: string; excerpt: string | null } | null };
 
-  if (!data) return { title: "Wiki | Arex" };
+  if (!data) return { title: "Wiki" };
+
+  const title = `${data.title} — Wiki`;
+  const description = data.excerpt ?? undefined;
+  const url = `${siteConfig.url}/wiki/${slug}`;
 
   return {
-    title: `${data.title} — Wiki | Arex`,
-    description: data.excerpt ?? undefined,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "article", siteName: siteConfig.name },
   };
 }
 

@@ -4,14 +4,23 @@ import Link from "next/link";
 import { CopyableLegalLink } from "../../../components/CopyableLegalLink";
 import { Reveal } from "@/components/common/reveal";
 import { PageContentOverride } from "@/components/common/page-content-override";
+import { siteConfig } from "@/lib/constants/site";
 
 // Admin có thể thay nội dung ở /admin/noi-dung-trang.
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Điều Khoản Sử Dụng | Arex",
+  title: "Điều Khoản Sử Dụng",
   description:
     "Điều khoản sử dụng của Arex — quyền và nghĩa vụ người dùng, bản quyền nội dung, xử lý vi phạm theo Luật Sở hữu trí tuệ và pháp luật Việt Nam.",
+  alternates: { canonical: `${siteConfig.url}/terms-of-use` },
+  openGraph: {
+    title: "Điều Khoản Sử Dụng",
+    description: "Điều khoản sử dụng của Arex — quyền và nghĩa vụ người dùng, bản quyền nội dung, xử lý vi phạm theo Luật Sở hữu trí tuệ và pháp luật Việt Nam.",
+    url: `${siteConfig.url}/terms-of-use`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────

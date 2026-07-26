@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   title: "Bảng Xếp Hạng Toàn Cầu | Arex TMS",
   description: "Xếp hạng tuyển thủ và đội thi đấu Free Fire toàn thời gian trên hệ thống giải đấu Arex.",
   alternates: { canonical: `${siteConfig.url}/leaderboard` },
+  openGraph: {
+    title: "Bảng Xếp Hạng Toàn Cầu | Arex TMS",
+    description: "Xếp hạng tuyển thủ và đội thi đấu Free Fire toàn thời gian trên hệ thống giải đấu Arex.",
+    url: `${siteConfig.url}/leaderboard`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function LeaderboardPage() {

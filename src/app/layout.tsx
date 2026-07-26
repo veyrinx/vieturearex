@@ -48,9 +48,9 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${siteName}`,
     },
     description: siteDescription,
-    alternates: {
-      canonical: currentUrl,
-    },
+    // Chỉ khai canonical khi biết chắc URL của trang đang xem. Thiếu thì bỏ hẳn
+    // để Google tự canonical về đúng URL nó đang crawl — an toàn hơn là trỏ sai.
+    ...(currentUrl ? { alternates: { canonical: currentUrl } } : {}),
     keywords: [
       siteName,
       "Free Fire",
@@ -86,7 +86,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: siteTitle,
       description: siteDescription,
-      url: currentUrl,
+      ...(currentUrl ? { url: currentUrl } : {}),
       siteName: siteName,
       images: [
         {

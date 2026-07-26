@@ -6,10 +6,17 @@ import { PageHero } from "@/components/common/page-hero";
 import { TopupCalculator } from "@/components/tools/topup-calculator";
 
 export const metadata: Metadata = {
-  title: "Máy tính nạp & chi phí Free Fire — Kim cương / vòng quay | Arex",
+  title: "Máy tính nạp & chi phí Free Fire — Kim cương / vòng quay",
   description:
     "Tính số kim cương và tiền cần để mua vật phẩm hoặc quay vòng quay Free Fire. Minh bạch chi phí, chơi có trách nhiệm.",
   alternates: { canonical: `${siteConfig.url}/tinh-nap` },
+  openGraph: {
+    title: "Máy tính nạp & chi phí Free Fire — Kim cương / vòng quay | Arex",
+    description: "Tính số kim cương và tiền cần để mua vật phẩm hoặc quay vòng quay Free Fire. Minh bạch chi phí, chơi có trách nhiệm.",
+    url: `${siteConfig.url}/tinh-nap`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function TinhNapPage() {

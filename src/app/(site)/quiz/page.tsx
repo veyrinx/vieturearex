@@ -8,7 +8,7 @@ import { QuizGame } from "@/components/tools/quiz-game";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
-  title: "Quiz Free Fire — Đố vui kiến thức | Arex",
+  title: "Quiz Free Fire — Đố vui kiến thức",
   description: "Trắc nghiệm kiến thức Free Fire: nhân vật, vũ khí, chế độ chơi, rank… Kiểm tra xem bạn hiểu game đến đâu.",
   alternates: { canonical: `${siteConfig.url}/quiz` },
   openGraph: {

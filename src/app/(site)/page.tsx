@@ -22,6 +22,7 @@ import {
 } from "@/lib/data/content-service";
 import { getStreams } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
+import { getSiteConfig } from "@/lib/server/get-site-config";
 import { SideAds } from "@/components/home/side-ads";
 import {
   buildSettingsMap,
@@ -32,10 +33,17 @@ import {
   resolveSocialLinks,
 } from "@/lib/utils/site-settings";
 
-export const metadata: Metadata = {
-  title: "Trang Chủ",
-  description: "Arex NetWork – Trang chủ cộng đồng Free Fire. Xem sự kiện mới nhất, tin tức Esports và nội dung cộng đồng được cập nhật hàng ngày.",
-};
+// Layout gốc không còn tự khai canonical/og:url (xem getCurrentUrl), nên trang chủ
+// tự khai — lấy domain theo host để ISC không trỏ về Arex.
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteConfig();
+  return {
+    title: "Trang Chủ",
+    description: `${site.shortName} – Trang chủ cộng đồng Free Fire. Xem sự kiện mới nhất, tin tức Esports và nội dung cộng đồng được cập nhật hàng ngày.`,
+    alternates: { canonical: site.url },
+    openGraph: { url: site.url, type: "website", siteName: site.name },
+  };
+}
 
 export const revalidate = 60;
 

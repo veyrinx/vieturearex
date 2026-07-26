@@ -22,11 +22,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `Vũ khí ${weapon.name} - Chỉ số & Thông tin chi tiết`;
   const description = `Thông tin chi tiết về chỉ số (sát thương, tầm bắn, tốc độ bắn...) và vị trí trong meta của vũ khí ${weapon.name} trong Free Fire.`;
+  const url = `${siteConfig.url}/vu-khi/${slug}`;
 
   return {
     title,
     description,
-    openGraph: { title, description, images: [weapon.image_url] },
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "article", siteName: siteConfig.name, images: [weapon.image_url] },
   };
 }
 

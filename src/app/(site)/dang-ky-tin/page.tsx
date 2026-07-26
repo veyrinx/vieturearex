@@ -10,10 +10,17 @@ import { PageContentOverride } from "@/components/common/page-content-override";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Đăng ký nhận tin Free Fire qua email | Arex",
+  title: "Đăng ký nhận tin Free Fire qua email",
   description:
     "Đăng ký email để nhận tin tức, sự kiện và cập nhật Free Fire mới nhất từ Arex — miễn phí, huỷ bất cứ lúc nào.",
   alternates: { canonical: `${siteConfig.url}/dang-ky-tin` },
+  openGraph: {
+    title: "Đăng ký nhận tin Free Fire qua email | Arex",
+    description: "Đăng ký email để nhận tin tức, sự kiện và cập nhật Free Fire mới nhất từ Arex — miễn phí, huỷ bất cứ lúc nào.",
+    url: `${siteConfig.url}/dang-ky-tin`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 const PERKS = [

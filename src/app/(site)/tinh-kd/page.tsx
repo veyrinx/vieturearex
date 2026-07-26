@@ -6,10 +6,17 @@ import { PageHero } from "@/components/common/page-hero";
 import { KdCalculator } from "@/components/tools/kd-calculator";
 
 export const metadata: Metadata = {
-  title: "Máy tính K/D & tỉ lệ thắng Free Fire | Arex",
+  title: "Máy tính K/D & tỉ lệ thắng Free Fire",
   description:
     "Tính K/D, tỉ lệ thắng (booyah), hạ gục trung bình mỗi trận và tỉ lệ headshot Free Fire từ chỉ số của bạn.",
   alternates: { canonical: `${siteConfig.url}/tinh-kd` },
+  openGraph: {
+    title: "Máy tính K/D & tỉ lệ thắng Free Fire | Arex",
+    description: "Tính K/D, tỉ lệ thắng (booyah), hạ gục trung bình mỗi trận và tỉ lệ headshot Free Fire từ chỉ số của bạn.",
+    url: `${siteConfig.url}/tinh-kd`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function TinhKdPage() {

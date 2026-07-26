@@ -10,9 +10,16 @@ import { ArticleAd } from "@/components/common/article-ad";
 export const revalidate = 30;
 
 export const metadata: Metadata = {
-  title: "Wiki Cộng Đồng | Arex",
+  title: "Wiki Cộng Đồng",
   description: "Kho kiến thức Free Fire do cộng đồng Arex đóng góp và duy trì.",
   alternates: { canonical: `${siteConfig.url}/wiki` },
+  openGraph: {
+    title: "Wiki Cộng Đồng | Arex",
+    description: "Kho kiến thức Free Fire do cộng đồng Arex đóng góp và duy trì.",
+    url: `${siteConfig.url}/wiki`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 type WikiArticle = {

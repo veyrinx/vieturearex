@@ -4,7 +4,7 @@ import { SubmissionForm } from "@/components/submissions/submission-form";
 import { FileText, Eye, CheckCircle2, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Gửi Bài Viết — Arex Network",
+  title: "Gửi Bài Viết",
   description:
     "Chia sẻ bài viết, hướng dẫn hoặc tin tức Free Fire của bạn lên Arex Network. Ban biên tập sẽ xem xét và xuất bản nếu phù hợp.",
   alternates: { canonical: `${siteConfig.url}/gui-bai-viet` },

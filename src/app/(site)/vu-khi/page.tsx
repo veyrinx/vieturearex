@@ -9,10 +9,17 @@ import { WeaponsBrowser } from "@/components/ff-items/weapons-browser";
 import { WeaponsMetaHighlight } from "@/components/ff-items/weapons-meta-highlight";
 
 export const metadata: Metadata = {
-  title: "Vũ khí Free Fire — Chỉ số & Thông tin chi tiết | Arex",
+  title: "Vũ khí Free Fire — Chỉ số & Thông tin chi tiết",
   description:
     "Danh sách vũ khí Free Fire kèm chỉ số sát thương, tầm bắn, tốc độ bắn và vị trí trong meta cộng đồng.",
   alternates: { canonical: `${siteConfig.url}/vu-khi` },
+  openGraph: {
+    title: "Vũ khí Free Fire — Chỉ số & Thông tin chi tiết | Arex",
+    description: "Danh sách vũ khí Free Fire kèm chỉ số sát thương, tầm bắn, tốc độ bắn và vị trí trong meta cộng đồng.",
+    url: `${siteConfig.url}/vu-khi`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function WeaponsPage() {

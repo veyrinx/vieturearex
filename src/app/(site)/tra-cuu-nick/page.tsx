@@ -8,7 +8,7 @@ import { FfPlayerLookup } from "@/components/tools/ff-player-lookup";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
-  title: "Tra cứu thông tin nick Free Fire | Arex",
+  title: "Tra cứu thông tin nick Free Fire",
   description:
     "Nhập UID để tra cứu thông tin tài khoản Free Fire: tên, cấp độ, rank BR/CS, lượt thích, guild, pet, chữ ký... dữ liệu trực tiếp từ máy chủ.",
   alternates: { canonical: `${siteConfig.url}/tra-cuu-nick` },

@@ -8,10 +8,17 @@ import { NickValuatorSection } from "@/components/tools/nick-valuator-section";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
-  title: "Ước tính độ khủng tài khoản Free Fire | Arex",
+  title: "Ước tính độ khủng tài khoản Free Fire",
   description:
     "Tính điểm độ khủng tài khoản Free Fire từ rank, level, số skin, trang phục hiếm và vật phẩm giới hạn. Chỉ để tham khảo cho vui.",
   alternates: { canonical: `${siteConfig.url}/dinh-gia-nick` },
+  openGraph: {
+    title: "Ước tính độ khủng tài khoản Free Fire | Arex",
+    description: "Tính điểm độ khủng tài khoản Free Fire từ rank, level, số skin, trang phục hiếm và vật phẩm giới hạn. Chỉ để tham khảo cho vui.",
+    url: `${siteConfig.url}/dinh-gia-nick`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function DinhGiaNickPage() {

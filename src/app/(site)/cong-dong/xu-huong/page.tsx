@@ -9,9 +9,16 @@ import { TrendingUp, MessageSquare, FileText, UserPlus, Eye, Reply, ThumbsUp } f
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Xu Hướng Cộng Đồng | Arex",
+  title: "Xu Hướng Cộng Đồng",
   description: "Hot posts, top contributor và chủ đề được quan tâm trong cộng đồng Arex.",
   alternates: { canonical: `${siteConfig.url}/cong-dong/xu-huong` },
+  openGraph: {
+    title: "Xu Hướng Cộng Đồng | Arex",
+    description: "Hot posts, top contributor và chủ đề được quan tâm trong cộng đồng Arex.",
+    url: `${siteConfig.url}/cong-dong/xu-huong`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 type HotPost = {

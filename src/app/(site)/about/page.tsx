@@ -6,7 +6,7 @@ import { PageContentOverride } from "@/components/common/page-content-override";
 import { ContactInfo } from "@/components/common/contact-info";
 
 export const metadata: Metadata = {
-  title: "Về Chúng Tôi — Arex Network",
+  title: "Về Chúng Tôi",
   description:
     "Arex là cổng thông tin cộng đồng Free Fire độc lập hàng đầu tại Việt Nam. Cung cấp tin tức, lịch sự kiện, Esports và nội dung cộng đồng được cập nhật hàng ngày bởi người chơi, dành cho người chơi.",
   alternates: { canonical: `${siteConfig.url}/about` },

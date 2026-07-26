@@ -4,7 +4,7 @@ import { CharacterVoteSection } from "@/components/votes/character-vote-section"
 import { Trophy, Zap, RefreshCw } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Bình Chọn Nhân Vật Mạnh Nhất — Arex",
+  title: "Bình Chọn Nhân Vật Mạnh Nhất",
   description: "Bình chọn nhân vật Free Fire mạnh nhất theo đánh giá của cộng đồng Arex. Alok, Chrono, K, Skyler và nhiều nhân vật khác.",
   alternates: { canonical: `${siteConfig.url}/binh-chon` },
   openGraph: {

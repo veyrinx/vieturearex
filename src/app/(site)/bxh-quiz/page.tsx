@@ -10,9 +10,16 @@ import { cn } from "@/lib/utils";
 import { ShareButton } from "@/components/common/share-button";
 
 export const metadata: Metadata = {
-  title: "BXH Quiz Free Fire | Arex",
+  title: "BXH Quiz Free Fire",
   description: "Bảng xếp hạng điểm Quiz Free Fire — ai hiểu game nhất cộng đồng Arex.",
   alternates: { canonical: `${siteConfig.url}/bxh-quiz` },
+  openGraph: {
+    title: "BXH Quiz Free Fire | Arex",
+    description: "Bảng xếp hạng điểm Quiz Free Fire — ai hiểu game nhất cộng đồng Arex.",
+    url: `${siteConfig.url}/bxh-quiz`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export const revalidate = 60;

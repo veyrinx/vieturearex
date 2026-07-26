@@ -6,10 +6,17 @@ import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { CHANGELOG, CHANGE_META } from "@/lib/data/changelog";
 
 export const metadata: Metadata = {
-  title: "Cập nhật & Phiên bản — Arex Network",
+  title: "Cập nhật & Phiên bản",
   description:
     "Lịch sử cập nhật cổng cộng đồng Free Fire Arex: tính năng mới, cải tiến và sửa lỗi qua từng phiên bản.",
   alternates: { canonical: `${siteConfig.url}/cap-nhat` },
+  openGraph: {
+    title: "Cập nhật & Phiên bản — Arex Network",
+    description: "Lịch sử cập nhật cổng cộng đồng Free Fire Arex: tính năng mới, cải tiến và sửa lỗi qua từng phiên bản.",
+    url: `${siteConfig.url}/cap-nhat`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function ChangelogPublicPage() {

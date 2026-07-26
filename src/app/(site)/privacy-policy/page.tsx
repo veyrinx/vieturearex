@@ -4,14 +4,23 @@ import Link from "next/link";
 import { CopyableLegalLink } from "../../../components/CopyableLegalLink";
 import { Reveal } from "@/components/common/reveal";
 import { PageContentOverride } from "@/components/common/page-content-override";
+import { siteConfig } from "@/lib/constants/site";
 
 // Admin có thể thay nội dung ở /admin/noi-dung-trang.
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Chính Sách Bảo Mật | Arex",
+  title: "Chính Sách Bảo Mật",
   description:
     "Chính sách bảo mật của Arex — tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân và Luật An toàn thông tin mạng 2015.",
+  alternates: { canonical: `${siteConfig.url}/privacy-policy` },
+  openGraph: {
+    title: "Chính Sách Bảo Mật",
+    description: "Chính sách bảo mật của Arex — tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân và Luật An toàn thông tin mạng 2015.",
+    url: `${siteConfig.url}/privacy-policy`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────

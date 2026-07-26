@@ -9,10 +9,17 @@ import { FREE_METHODS, FREE_FRIENDLY } from "@/lib/data/ff-free-unlock";
 import { charSlug, getCharacterBySlug } from "@/lib/data/ff-characters";
 
 export const metadata: Metadata = {
-  title: "Cách nhận nhân vật Free Fire miễn phí | Arex",
+  title: "Cách nhận nhân vật Free Fire miễn phí",
   description:
     "Tổng hợp cách sở hữu nhân vật Free Fire miễn phí: đăng nhập, nhiệm vụ, token, vòng quay free — và danh sách nhân vật dễ mở khoá.",
   alternates: { canonical: `${siteConfig.url}/nhan-vat-mien-phi` },
+  openGraph: {
+    title: "Cách nhận nhân vật Free Fire miễn phí | Arex",
+    description: "Tổng hợp cách sở hữu nhân vật Free Fire miễn phí: đăng nhập, nhiệm vụ, token, vòng quay free — và danh sách nhân vật dễ mở khoá.",
+    url: `${siteConfig.url}/nhan-vat-mien-phi`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function NhanVatMienPhiPage() {

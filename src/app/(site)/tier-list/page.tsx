@@ -13,7 +13,7 @@ const CHARACTERS = FF_CHARACTERS.map((c) => ({
 }));
 
 export const metadata: Metadata = {
-  title: "Tier List Nhân Vật Free Fire — Arex",
+  title: "Tier List Nhân Vật Free Fire",
   description:
     "Bảng xếp hạng (tier list) nhân vật Free Fire mới nhất theo đánh giá cộng đồng: S/A/B/C/D, lọc theo vai trò áp sát, hỗ trợ, hồi máu, cơ động, phòng thủ, trinh sát.",
   alternates: { canonical: `${siteConfig.url}/tier-list` },

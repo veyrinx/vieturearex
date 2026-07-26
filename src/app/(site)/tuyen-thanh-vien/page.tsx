@@ -7,7 +7,7 @@ import type { TmsServer } from "@/lib/tms/types";
 import { Users, Shield, Globe, Plus, ExternalLink, Search } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Tuyển Thành Viên Clan & Team — Arex",
+  title: "Tuyển Thành Viên Clan & Team",
   description: "Tìm clan và đội nhóm Free Fire đang tuyển thành viên. Lọc theo server, phong cách chơi và gia nhập ngay.",
   alternates: { canonical: `${siteConfig.url}/tuyen-thanh-vien` },
   openGraph: {

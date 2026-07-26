@@ -11,10 +11,17 @@ import { getAllCharacters } from "@/lib/data/ff-characters";
 import { weaponTypeLabel } from "@/lib/constants/weapon-types";
 
 export const metadata: Metadata = {
-  title: "Đang hot — Tin, sự kiện & meta Free Fire | Arex",
+  title: "Đang hot — Tin, sự kiện & meta Free Fire",
   description:
     "Tổng hợp đang hot Free Fire: tin mới nhất, sự kiện đang diễn ra, vũ khí và nhân vật mạnh nhất (tier S) trong meta.",
   alternates: { canonical: `${siteConfig.url}/dang-hot` },
+  openGraph: {
+    title: "Đang hot — Tin, sự kiện & meta Free Fire | Arex",
+    description: "Tổng hợp đang hot Free Fire: tin mới nhất, sự kiện đang diễn ra, vũ khí và nhân vật mạnh nhất (tier S) trong meta.",
+    url: `${siteConfig.url}/dang-hot`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export const revalidate = 600;

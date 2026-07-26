@@ -3,7 +3,7 @@ import { Bell } from "lucide-react";
 import { NotificationsClient } from "@/components/notifications/notifications-client";
 
 export const metadata: Metadata = {
-  title: "Thông Báo — Arex",
+  title: "Thông Báo",
   description: "Xem tất cả thông báo của bạn.",
 };
 

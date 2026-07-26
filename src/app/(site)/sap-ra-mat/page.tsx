@@ -9,9 +9,16 @@ import { PROJECT_STATUS_META, type ResolvedProject } from "@/lib/constants/proje
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Sắp ra mắt — Tiến độ tính năng | Arex",
+  title: "Sắp ra mắt — Tiến độ tính năng",
   description: "Các tính năng, công cụ Arex đang phát triển và sắp ra mắt, kèm tiến độ hoàn thiện.",
   alternates: { canonical: `${siteConfig.url}/sap-ra-mat` },
+  openGraph: {
+    title: "Sắp ra mắt — Tiến độ tính năng | Arex",
+    description: "Các tính năng, công cụ Arex đang phát triển và sắp ra mắt, kèm tiến độ hoàn thiện.",
+    url: `${siteConfig.url}/sap-ra-mat`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 // Ưu tiên hiển thị: đang làm dở lên trước, đã ra mắt xuống cuối.

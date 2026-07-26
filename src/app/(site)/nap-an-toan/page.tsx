@@ -9,10 +9,17 @@ import { PageContentOverride } from "@/components/common/page-content-override";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Nạp Free Fire an toàn — Tránh lừa đảo | Arex",
+  title: "Nạp Free Fire an toàn — Tránh lừa đảo",
   description:
     "Hướng dẫn nạp kim cương Free Fire an toàn qua kênh chính thức, dấu hiệu nhận biết lừa đảo và mẹo bảo vệ tài khoản.",
   alternates: { canonical: `${siteConfig.url}/nap-an-toan` },
+  openGraph: {
+    title: "Nạp Free Fire an toàn — Tránh lừa đảo | Arex",
+    description: "Hướng dẫn nạp kim cương Free Fire an toàn qua kênh chính thức, dấu hiệu nhận biết lừa đảo và mẹo bảo vệ tài khoản.",
+    url: `${siteConfig.url}/nap-an-toan`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 const OFFICIAL = [

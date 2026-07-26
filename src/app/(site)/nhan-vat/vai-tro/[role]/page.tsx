@@ -21,11 +21,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { role } = await params;
   if (!isRole(role)) return { title: "Không tìm thấy" };
   const label = ROLE_META[role].label;
+  const title = `Nhân vật ${label} Free Fire — Danh sách & Kỹ năng`;
+  const description = `Tất cả nhân vật vai trò ${label} trong Free Fire kèm kỹ năng và vị trí tier meta cộng đồng.`;
+  const url = `${siteConfig.url}/nhan-vat/vai-tro/${role}`;
 
   return {
-    title: `Nhân vật ${label} Free Fire — Danh sách & Kỹ năng | Arex`,
-    description: `Tất cả nhân vật vai trò ${label} trong Free Fire kèm kỹ năng và vị trí tier meta cộng đồng.`,
-    alternates: { canonical: `${siteConfig.url}/nhan-vat/vai-tro/${role}` },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "website", siteName: siteConfig.name },
   };
 }
 

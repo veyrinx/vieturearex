@@ -11,6 +11,7 @@ import { ContactForm } from "@/components/contact/contact-form";
 import { ContactInfo } from "@/components/common/contact-info";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap, resolveSocialLinks } from "@/lib/utils/site-settings";
+import { siteConfig } from "@/lib/constants/site";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,6 +19,14 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: "Liên Hệ",
   description: "Liên hệ với đội ngũ Arex qua email, Facebook, TikTok hoặc YouTube. Gửi góp ý, báo lỗi hoặc đề xuất hợp tác với cộng đồng Free Fire.",
+  alternates: { canonical: `${siteConfig.url}/contact` },
+  openGraph: {
+    title: "Liên Hệ",
+    description: "Liên hệ với đội ngũ Arex qua email, Facebook, TikTok hoặc YouTube. Gửi góp ý, báo lỗi hoặc đề xuất hợp tác với cộng đồng Free Fire.",
+    url: `${siteConfig.url}/contact`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function ContactPage() {

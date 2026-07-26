@@ -9,10 +9,17 @@ import { CharactersBrowser } from "@/components/ff-items/characters-browser";
 import { CharactersMetaHighlight } from "@/components/ff-items/characters-meta-highlight";
 
 export const metadata: Metadata = {
-  title: "Nhân vật Free Fire — Kỹ năng & Tier meta | Arex",
+  title: "Nhân vật Free Fire — Kỹ năng & Tier meta",
   description:
     "Danh sách nhân vật Free Fire kèm kỹ năng (chủ động/bị động), vai trò và vị trí tier trong meta cộng đồng chế độ Sinh Tồn.",
   alternates: { canonical: `${siteConfig.url}/nhan-vat` },
+  openGraph: {
+    title: "Nhân vật Free Fire — Kỹ năng & Tier meta | Arex",
+    description: "Danh sách nhân vật Free Fire kèm kỹ năng (chủ động/bị động), vai trò và vị trí tier trong meta cộng đồng chế độ Sinh Tồn.",
+    url: `${siteConfig.url}/nhan-vat`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function CharactersPage() {

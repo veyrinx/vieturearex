@@ -7,9 +7,16 @@ import { VodGrid } from "./_vod-grid";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Thư viện VOD — Arex",
+  title: "Thư viện VOD",
   description: "Xem lại các buổi livestream và video từ cộng đồng Arex.",
   alternates: { canonical: `${siteConfig.url}/esports/vod` },
+  openGraph: {
+    title: "Thư viện VOD — Arex",
+    description: "Xem lại các buổi livestream và video từ cộng đồng Arex.",
+    url: `${siteConfig.url}/esports/vod`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default async function VodPage() {

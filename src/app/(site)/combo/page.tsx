@@ -12,7 +12,7 @@ const CHARACTERS = FF_CHARACTERS.map((c) => ({
 }));
 
 export const metadata: Metadata = {
-  title: "Combo Kỹ Năng Nhân Vật Free Fire — Arex",
+  title: "Combo Kỹ Năng Nhân Vật Free Fire",
   description:
     "Ghép combo kỹ năng Free Fire: 1 kỹ năng chủ động + 3 bị động. Xây dựng đội hình kỹ năng theo lối chơi rush, bắn tỉa, hỗ trợ, thủ — có combo gợi ý, lưu & copy.",
   alternates: { canonical: `${siteConfig.url}/combo` },

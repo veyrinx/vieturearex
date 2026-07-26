@@ -4,7 +4,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { SensitivityTool } from "@/components/tools/sensitivity-tool";
 
 export const metadata: Metadata = {
-  title: "Công Cụ Chỉnh Độ Nhạy Free Fire — Arex",
+  title: "Công Cụ Chỉnh Độ Nhạy Free Fire",
   description:
     "Công cụ gợi ý thông số độ nhạy Free Fire theo phong cách chơi, số ngón và cấu hình máy. Tính nhanh độ nhạy chung, điểm đỏ, 2x, 4x, bắn tỉa và DPI đề xuất.",
   alternates: { canonical: `${siteConfig.url}/do-nhay` },

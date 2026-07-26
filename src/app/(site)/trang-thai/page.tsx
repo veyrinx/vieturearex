@@ -7,10 +7,17 @@ import { SERVER_STATUS } from "@/lib/data/ff-server-status";
 import { ServerStatus } from "@/components/tools/server-status";
 
 export const metadata: Metadata = {
-  title: "Trạng thái máy chủ Free Fire — Bảo trì & sự cố | Arex",
+  title: "Trạng thái máy chủ Free Fire — Bảo trì & sự cố",
   description:
     "Kiểm tra Free Fire có đang bảo trì / gặp sự cố không, xem lịch bảo trì sắp tới và thời gian dự kiến hoạt động lại.",
   alternates: { canonical: `${siteConfig.url}/trang-thai` },
+  openGraph: {
+    title: "Trạng thái máy chủ Free Fire — Bảo trì & sự cố | Arex",
+    description: "Kiểm tra Free Fire có đang bảo trì / gặp sự cố không, xem lịch bảo trì sắp tới và thời gian dự kiến hoạt động lại.",
+    url: `${siteConfig.url}/trang-thai`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function TrangThaiPage() {
