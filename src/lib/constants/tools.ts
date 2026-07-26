@@ -14,7 +14,6 @@ import {
   Swords,
   Trophy,
   Users,
-  RotateCw,
   type LucideIcon,
 } from "lucide-react";
 
@@ -181,17 +180,6 @@ export const TOOLS: Tool[] = [
     gradient: "from-pink-500 to-rose-500",
     featured: true,
     shortDesc: "Trắc nghiệm kiến thức FF, đọ điểm cộng đồng.",
-    badge: "MỚI",
-  },
-  {
-    href: "/vong-quay",
-    title: "Vòng Quay May Mắn",
-    desc: "Quay thử Luck Royale / Faded Wheel — xem tốn bao nhiêu kim cương mới trúng đại thưởng. Giả lập cho vui.",
-    icon: RotateCw,
-    accent: "text-orange-500 bg-orange-500/10",
-    gradient: "from-orange-500 to-amber-500",
-    featured: true,
-    shortDesc: "Quay Luck Royale giả lập, đếm kim cương đã đốt.",
     badge: "MỚI",
   },
   {
