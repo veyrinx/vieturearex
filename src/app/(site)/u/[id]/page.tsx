@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const name = profile.display_name ?? "Ẩn danh";
   const rank = profile.rank ?? getRank(profile.points ?? 0).rank;
-  const url = `${siteConfig.url}/u/${id}`;
+  const url = `${siteConfig.url}/u/${profile.handle || profile.id}`;
   const description = profile.bio
     ? `${profile.bio} — Hạng ${rank} · ${(profile.points ?? 0).toLocaleString("vi-VN")} điểm`
     : `Hồ sơ của ${name} trên Arex. Hạng: ${rank}.`;
@@ -95,6 +95,10 @@ export default async function PublicProfilePage({ params }: Props) {
     getMergedAchievementsById(),
   ]);
   if (!profile) notFound();
+  // Handle do quản trị viên đặt là URL chính thức → mọi link /u/<uuid> nhảy về /u/<handle>.
+  if (profile.handle && id.toLowerCase() !== profile.handle.toLowerCase()) {
+    permanentRedirect(`/u/${profile.handle}`);
+  }
   const achievements = await getPublicAchievements(profile.id);
 
   const earnedBadges = resolveEarned(achievements, achievementsById);
@@ -102,7 +106,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const name = profile.display_name || "Ẩn danh";
   const meta = getRoleMeta(profile.role);
   const joinDate = format(new Date(profile.created_at), "dd 'tháng' MM, yyyy", { locale: vi });
-  const profileUrl = `${siteConfig.url}/u/${profile.id}`;
+  const profileUrl = `${siteConfig.url}/u/${profile.handle || profile.id}`;
   const points = Number(profile.points ?? 0);
   const rankMeta = getRank(points);
   const subRank = getSubRank(points);

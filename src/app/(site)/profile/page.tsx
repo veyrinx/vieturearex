@@ -571,7 +571,7 @@ export default function ProfilePage() {
 
           {/* Public profile link + rank */}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
-            <Link href={`/u/${profile.id}`}
+            <Link href={`/u/${profile.handle || profile.id}`}
               className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline dark:text-amber-400">
               <ExternalLink className="size-3" /> Xem hồ sơ công khai
             </Link>
