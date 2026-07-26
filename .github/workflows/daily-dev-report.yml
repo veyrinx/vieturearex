@@ -1,0 +1,62 @@
+name: Báo cáo dev hằng ngày
+
+# 01:00 UTC = 08:00 giờ VN. Không có commit nào trong 24h thì không tạo issue.
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Khoảng thời gian git log (mặc định 24 hours ago)"
+        required: false
+        default: "24 hours ago"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Dựng báo cáo
+        id: build
+        env:
+          SINCE: ${{ inputs.since || '24 hours ago' }}
+        run: |
+          node scripts/daily-dev-report.mjs --since "$SINCE" > report.md
+          if [ ! -s report.md ]; then
+            echo "Không có commit trong 24h qua — bỏ qua."
+            echo "has_report=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_report=true" >> "$GITHUB_OUTPUT"
+            echo "title=Báo cáo dev — $(TZ=Asia/Ho_Chi_Minh date +%F)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Đảm bảo có nhãn daily-report
+        if: steps.build.outputs.has_report == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create daily-report \
+            --color 0E8A16 \
+            --description "Báo cáo công việc dev tự động" \
+            || true
+
+      - name: Tạo issue
+        if: steps.build.outputs.has_report == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "${{ steps.build.outputs.title }}" \
+            --body-file report.md \
+            --label daily-report
