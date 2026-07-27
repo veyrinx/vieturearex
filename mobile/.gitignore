@@ -1,0 +1,38 @@
+# Capacitor / mobile
+node_modules/
+icons/
+
+# Khoá ký — KHÔNG BAO GIỜ commit
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+android/keystore.properties
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+
+# Android build
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.idea/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+*.apk
+*.aab
+
+# iOS build
+ios/App/build/
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/DerivedData/
+*.ipa
+*.dSYM.zip
+xcuserdata/

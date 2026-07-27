@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <title>Mất kết nối — Arex Network</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0a;
+        --fg: #fafafa;
+        --muted: #a1a1aa;
+        --accent: #f43f5e;
+        --card: #141414;
+        --border: #262626;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(24px + env(safe-area-inset-top)) 24px
+          calc(24px + env(safe-area-inset-bottom));
+        text-align: center;
+      }
+      .card {
+        width: 100%;
+        max-width: 360px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px 24px;
+      }
+      .icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(244, 63, 94, 0.12);
+        color: var(--accent);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0 0 24px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      button {
+        width: 100%;
+        border: 0;
+        border-radius: 12px;
+        padding: 14px 20px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+        background: var(--accent);
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      button:active { opacity: 0.75; }
+      .status {
+        margin-top: 16px;
+        font-size: 12px;
+        color: var(--muted);
+        min-height: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="icon" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m2 2 20 20" />
+          <path d="M8.5 16.5a5 5 0 0 1 7 0" />
+          <path d="M2 8.82a15 15 0 0 1 4.17-2.65" />
+          <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76" />
+          <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68" />
+          <path d="M5 13a10 10 0 0 1 5.24-2.76" />
+          <line x1="12" y1="20" x2="12.01" y2="20" />
+        </svg>
+      </div>
+      <h1>Không có kết nối mạng</h1>
+      <p>
+        Arex Network cần Internet để tải nội dung mới nhất. Hãy kiểm tra Wi-Fi
+        hoặc dữ liệu di động rồi thử lại.
+      </p>
+      <button type="button" id="retry">Thử lại</button>
+      <div class="status" id="status"></div>
+    </main>
+
+    <script>
+      var SITE = "https://arexnetwork.site";
+      var btn = document.getElementById("retry");
+      var status = document.getElementById("status");
+
+      function retry() {
+        status.textContent = "Đang kết nối lại…";
+        if (navigator.onLine === false) {
+          status.textContent = "Vẫn chưa có mạng. Thử lại sau giây lát.";
+          return;
+        }
+        window.location.replace(SITE);
+      }
+
+      btn.addEventListener("click", retry);
+      window.addEventListener("online", retry);
+    </script>
+  </body>
+</html>

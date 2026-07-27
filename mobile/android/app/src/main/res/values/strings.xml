@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Arex Network</string>
+    <string name="title_activity_main">Arex Network</string>
+    <string name="package_name">site.arexnetwork.app</string>
+    <string name="custom_url_scheme">site.arexnetwork.app</string>
+</resources>

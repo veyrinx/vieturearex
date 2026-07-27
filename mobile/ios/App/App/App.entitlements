@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Thông báo đẩy (APNs). Dùng "production" khi phát hành lên App Store. -->
+	<key>aps-environment</key>
+	<string>development</string>
+	<!-- Universal Links: mở link arexnetwork.site thẳng trong app.
+	     Cần file /.well-known/apple-app-site-association trên site (đã có route
+	     trong Next.js) khai đúng TEAM_ID.site.arexnetwork.app -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:arexnetwork.site</string>
+		<string>applinks:www.arexnetwork.site</string>
+	</array>
+</dict>
+</plist>
