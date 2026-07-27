@@ -63,13 +63,31 @@ jobs:
           echo "$PROFILE_BASE64" | base64 -d \
             > "$HOME/Library/MobileDevice/Provisioning Profiles/arex.mobileprovision"
 
-      - name: Build kiểm tra (không ký)
+      # Không có chứng chỉ → vẫn dựng được .ipa, chỉ là chưa ký. File này KHÔNG
+      # cài thẳng lên iPhone được; phải qua Sideloadly/AltStore để ký lại bằng
+      # Apple ID (app sống 7 ngày) hoặc thiết bị đã jailbreak.
+      - name: Build + đóng gói IPA chưa ký
         if: steps.signing.outputs.enabled != 'true'
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
             -scheme App -configuration Release -sdk iphoneos \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             clean build
+
+          APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/App.app"
+          if [ ! -d "$APP" ]; then
+            echo "::error::Không tìm thấy App.app sau khi build"
+            find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 3 -name "*.app" || true
+            exit 1
+          fi
+
+          mkdir -p "$RUNNER_TEMP/export/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/export/Payload/"
+          cd "$RUNNER_TEMP/export"
+          zip -qry Arex-unsigned.ipa Payload
+          rm -rf Payload
+          ls -lh Arex-unsigned.ipa
 
       - name: Đóng gói IPA
         if: steps.signing.outputs.enabled == 'true'
@@ -103,9 +121,8 @@ jobs:
             -exportPath "$RUNNER_TEMP/export"
 
       - uses: actions/upload-artifact@v4
-        if: steps.signing.outputs.enabled == 'true'
         with:
-          name: arex-ios
+          name: ${{ steps.signing.outputs.enabled == 'true' && 'arex-ios' || 'arex-ios-unsigned' }}
           retention-days: 14
           if-no-files-found: error
           path: ${{ runner.temp }}/export/*.ipa
