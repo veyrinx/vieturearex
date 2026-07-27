@@ -100,13 +100,15 @@ export function StreamModal({ stream, open, onOpenChange }: StreamModalProps) {
                 <StreamPlayer embedUrl={embedUrl} title={stream.title} isLive={isLive} />
               ) : (
                 <div className="relative aspect-video w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={stream.thumbnail_url}
-                    alt={stream.title}
-                    className="h-full w-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
+                  {stream.thumbnail_url && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={stream.thumbnail_url}
+                      alt={stream.title}
+                      className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <span className="rounded-xl bg-black/60 px-4 py-2 text-sm font-bold uppercase tracking-widest text-white">
                       SẮP PHÁT TRỰC TIẾP

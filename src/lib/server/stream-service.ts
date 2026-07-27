@@ -1,9 +1,11 @@
 import "server-only";
 import { getSettings, updateSetting } from "@/lib/data/content-service";
 import type { StreamItem, StreamStatus } from "@/lib/types/content";
-import { extractYouTubeId, buildThumbnailUrl, buildWatchUrl, buildEmbedUrl } from "@/lib/utils/stream-utils";
+import {
+  extractYouTubeId, buildThumbnailUrl, buildWatchUrl, buildEmbedUrl, sanitizeThumbnailUrl,
+} from "@/lib/utils/stream-utils";
 
-export { extractYouTubeId, buildThumbnailUrl, buildWatchUrl, buildEmbedUrl };
+export { extractYouTubeId, buildThumbnailUrl, buildWatchUrl, buildEmbedUrl, sanitizeThumbnailUrl };
 
 const STREAMS_KEY = "esports.streams";
 const STREAM_CATEGORIES_KEY = "esports.categories";
@@ -14,7 +16,9 @@ function parseStreams(raw?: string | null): StreamItem[] {
   try {
     const parsed = JSON.parse(raw) as StreamItem[];
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((s) => s?.id && s?.youtube_url);
+    return parsed
+      .filter((s) => s?.id && s?.youtube_url)
+      .map((s) => ({ ...s, thumbnail_url: sanitizeThumbnailUrl(s.thumbnail_url, s.youtube_url) }));
   } catch {
     return [];
   }

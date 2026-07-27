@@ -47,15 +47,17 @@ export function LivestreamPreview({ streams }: LivestreamPreviewProps) {
             className="group relative flex flex-col overflow-hidden rounded-[16px] border border-border bg-card transition-all hover:border-[#FF0000]/50 hover:shadow-[0_0_32px_rgba(255,0,0,0.12)] dark:hover:shadow-[0_0_32px_rgba(255,0,0,0.18)]"
           >
             <div className="relative aspect-video w-full overflow-hidden bg-black">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={featured.thumbnail_url}
-                alt={featured.title}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+              {featured.thumbnail_url && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={featured.thumbnail_url}
+                  alt={featured.title}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
               {featured.status === "live" && (
@@ -106,15 +108,17 @@ export function LivestreamPreview({ streams }: LivestreamPreviewProps) {
                   )}
                 >
                   <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[8px] bg-black">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={stream.thumbnail_url}
-                      alt={stream.title}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
+                    {stream.thumbnail_url && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={stream.thumbnail_url}
+                        alt={stream.title}
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    )}
                     {stream.status === "live" && (
                       <div className="absolute left-1 top-1 flex items-center gap-1 rounded-md bg-[#FF0000] px-1.5 py-0.5 shadow-[0_0_8px_rgba(255,0,0,0.5)]">
                         <Radio className="size-2.5 animate-pulse text-white" />

@@ -77,6 +77,60 @@ const nextConfig = {
     minimumCacheTTL: 31536000,
     formats: ['image/avif', 'image/webp'],
   },
+  // Slug tiếng Việt cũ → slug tiếng Anh. Next khớp theo thứ tự nên luật con
+  // (loai, so-sanh, vai-tro…) phải đứng trước luật cha :path*.
+  async redirects() {
+    const move = (source, destination) => ({ source, destination, permanent: true });
+    return [
+      move("/vu-khi/loai/:path*", "/weapons/types/:path*"),
+      move("/vu-khi/so-sanh", "/weapons/compare"),
+      move("/vu-khi/:path*", "/weapons/:path*"),
+      move("/vu-khi", "/weapons"),
+      move("/nhan-vat-mien-phi", "/free-characters"),
+      move("/nhan-vat/so-sanh", "/characters/compare"),
+      move("/nhan-vat/vai-tro/:path*", "/characters/roles/:path*"),
+      move("/nhan-vat/:path*", "/characters/:path*"),
+      move("/nhan-vat", "/characters"),
+      move("/cong-dong/xu-huong", "/community/trending"),
+      move("/cong-dong/:path*", "/community/:path*"),
+      move("/cong-dong", "/community"),
+      move("/wiki/tao-bai", "/wiki/create"),
+      move("/wiki/:slug/chinh-sua", "/wiki/:slug/edit"),
+      move("/binh-chon", "/character-poll"),
+      move("/bxh-nick-vn", "/top-players-vn"),
+      move("/bxh-quiz", "/quiz-leaderboard"),
+      move("/cap-nhat", "/changelog"),
+      move("/cong-cu", "/tools"),
+      move("/cua-hang-prime", "/prime-store"),
+      move("/dang-cap-nhat", "/updating"),
+      move("/dang-hot", "/trending"),
+      move("/dang-ky-tin", "/newsletter"),
+      move("/dem-nguoc", "/countdown"),
+      move("/dinh-gia-nick", "/account-value"),
+      move("/do-nhay", "/sensitivity"),
+      move("/giai-dau-cong-dong", "/community-tournaments"),
+      move("/gui-bai-viet", "/submit-article"),
+      move("/hop-tac", "/partnership"),
+      move("/lich-noi-dung", "/content-roadmap"),
+      move("/lien-ket-telegram", "/telegram-link"),
+      move("/nap-an-toan", "/safe-topup"),
+      move("/sap-ra-mat", "/coming-soon"),
+      move("/so-sanh-nick", "/player-compare"),
+      move("/tao-ten", "/name-generator"),
+      move("/tinh-kd", "/kd-calculator"),
+      move("/tinh-nap", "/topup-calculator"),
+      move("/tra-cuu-guild", "/guild-lookup"),
+      move("/tra-cuu-nick", "/player-lookup"),
+      move("/trang-thai", "/server-status"),
+      move("/tuyen-thanh-vien", "/recruitment"),
+      move("/yeu-thich", "/favorites"),
+      move("/embed/bxh-nick-vn", "/embed/top-players-vn"),
+      // Telegram Mini App
+      move("/tg/giai-dau", "/tg/tournaments"),
+      move("/tg/su-kien", "/tg/events"),
+      move("/tg/tin-tuc", "/tg/news"),
+    ];
+  },
   async headers() {
     const scriptSrc = [
       "'self'",
@@ -87,6 +141,8 @@ const nextConfig = {
       // Google Dịch (widget nhúng element.js)
       "https://translate.google.com",
       "https://translate.googleapis.com",
+      // el_main tải thêm JSONP danh sách ngôn ngữ từ translate-pa (trong iframe srcdoc)
+      "https://translate-pa.googleapis.com",
       "https://www.gstatic.com",
       // Google AdSense (loader + script phụ trợ)
       "https://pagead2.googlesyndication.com",
@@ -113,7 +169,9 @@ const nextConfig = {
       "https://*.twitch.tv",
       // Google Dịch gọi API dịch từ trình duyệt
       "https://translate.googleapis.com",
+      "https://translate-pa.googleapis.com",
       "https://translate.google.com",
+      "https://www.gstatic.com",
       // Google AdSense (beacon / đo lường chất lượng quảng cáo)
       "https://pagead2.googlesyndication.com",
       "https://*.googlesyndication.com",
@@ -124,6 +182,43 @@ const nextConfig = {
       "https://www.google.com",
     ].join(" ");
 
+    // Google Dịch nạp CSS/font của widget từ gstatic + translate.googleapis.com.
+    const styleSrc = [
+      "'self'",
+      "'unsafe-inline'",
+      "https://fonts.googleapis.com",
+      "https://www.gstatic.com",
+      "https://translate.googleapis.com",
+    ].join(" ");
+
+    const fontSrc = [
+      "'self'",
+      "data:",
+      "https://fonts.gstatic.com",
+      "https://www.gstatic.com",
+    ].join(" ");
+
+    const frameSrc = [
+      "'self'",
+      // AdSense/SafeFrame dựng iframe cục bộ từ blob:
+      "blob:",
+      "https://www.youtube.com",
+      "https://www.youtube-nocookie.com",
+      "https://player.twitch.tv",
+      "https://www.twitch.tv",
+      "https://www.facebook.com",
+      "https://web.facebook.com",
+      "https://www.tiktok.com",
+      "https://translate.google.com",
+      "https://googleads.g.doubleclick.net",
+      "https://pagead2.googlesyndication.com",
+      "https://tpc.googlesyndication.com",
+      "https://*.googlesyndication.com",
+      "https://*.doubleclick.net",
+      "https://www.google.com",
+      "https://*.adtrafficquality.google",
+    ].join(" ");
+
     const contentSecurityPolicy = [
       "default-src 'self'",
       "base-uri 'self'",
@@ -131,11 +226,11 @@ const nextConfig = {
       "object-src 'none'",
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob: https:",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      `font-src ${fontSrc}`,
+      `style-src ${styleSrc}`,
       `script-src ${scriptSrc}`,
       `connect-src ${connectSrc}`,
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://www.twitch.tv https://www.facebook.com https://web.facebook.com https://www.tiktok.com https://translate.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.adtrafficquality.google",
+      `frame-src ${frameSrc}`,
       "form-action 'self' https://mail.google.com https://accounts.google.com",
       "upgrade-insecure-requests",
     ].join("; ");
@@ -156,8 +251,8 @@ const nextConfig = {
       "object-src 'none'",
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob: https:",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      `font-src ${fontSrc}`,
+      `style-src ${styleSrc}`,
       `script-src ${tgScriptSrc}`,
       `connect-src ${tgConnectSrc}`,
       "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
@@ -203,7 +298,7 @@ const nextConfig = {
       },
       // Thin content / utility pages: noindex to improve AdSense content quality score
       {
-        source: "/(login|register|setup|join|profile|yeu-thich|search|maintenance)",
+        source: "/(login|register|setup|join|profile|favorites|search|maintenance)",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {

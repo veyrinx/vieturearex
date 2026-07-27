@@ -149,9 +149,11 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
             >
               <div className="relative overflow-hidden rounded-[8px]">
                 <div className="aspect-video w-full overflow-hidden rounded-[8px] bg-black">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={stream.thumbnail_url} alt={stream.title} className="h-full w-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  {stream.thumbnail_url && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={stream.thumbnail_url} alt={stream.title} className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  )}
                 </div>
                 {/* Status badge */}
                 <Badge variant="outline" className={cn(

@@ -1,8 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect } from "react";
-import { includedLanguages, SOURCE_LANG } from "@/lib/utils/translate-lang";
+import { useEffect, useState } from "react";
+import { includedLanguages, readCurrentLang, SOURCE_LANG } from "@/lib/utils/translate-lang";
 
 // Widget Google Dịch nhúng trong trang. Dịch tại chỗ theo cookie `googtrans`,
 // giữ nguyên 1 URL của site. Kết hợp <TranslateGuard/> để điều hướng Next không
@@ -30,7 +30,13 @@ declare global {
 }
 
 export function GoogleTranslate() {
+  // Chỉ nạp element.js khi người dùng thật sự chọn ngôn ngữ khác tiếng Việt.
+  // Nạp sẵn cho mọi khách sẽ khiến Google viết lại text node ngay lúc React
+  // hydrate (lỗi React #418) và kéo theo loạt cảnh báo CSP không cần thiết.
+  const [enabled, setEnabled] = useState(false);
+
   useEffect(() => {
+    if (readCurrentLang() === SOURCE_LANG) return;
     window.googleTranslateElementInit = () => {
       const T = window.google?.translate?.TranslateElement;
       if (!T) return;
@@ -44,16 +50,20 @@ export function GoogleTranslate() {
         "google_translate_element",
       );
     };
+    setEnabled(true);
   }, []);
 
   return (
     <>
       {/* Chỗ neo bắt buộc của widget — ẩn đi, ta dùng nút chọn ngôn ngữ riêng. */}
       <div id="google_translate_element" aria-hidden className="sr-only" />
-      <Script
-        src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-        strategy="afterInteractive"
-      />
+      {enabled && (
+        <Script
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          // lazyOnload = chạy sau khi React hydrate xong, tránh lệch DOM.
+          strategy="lazyOnload"
+        />
+      )}
       {/* Ẩn thanh/khung mặc định của Google + không đẩy body xuống. */}
       <style>{`
         .goog-te-banner-frame, .goog-te-balloon-frame, #goog-gt-tt, .goog-tooltip { display: none !important; }

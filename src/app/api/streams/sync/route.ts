@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
         await Promise.all(
           streamsToCheck.map(async (stream) => {
             const videoId = extractYouTubeId(stream.youtube_url);
+            if (!videoId) return; // stream tự host (mp4) — YouTube API không biết
             const item = itemMap.get(videoId);
 
             let detected: StreamStatus | null = null;
