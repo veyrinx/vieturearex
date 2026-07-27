@@ -103,6 +103,17 @@ const LEVEL_TONE = [
  */
 const BAR_FULL = 0.35;
 
+/** Khung chờ — thay vì làm mờ hàng của server cũ, dễ tưởng là hàng server mới. */
+function CardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+      <div className="mx-auto size-16 rounded-lg bg-white/10" />
+      <div className="mx-auto mt-2 h-3 w-4/5 rounded bg-white/10" />
+      <div className="mx-auto mt-1.5 h-3 w-1/2 rounded bg-white/10" />
+    </div>
+  );
+}
+
 /** Thẻ dự đoán: mờ tịt cho tới khi người chơi bấm để lật. */
 function PredictionCard({ item }: { item: PrimePrediction }) {
   const [revealed, setRevealed] = useState(false);
@@ -263,12 +274,18 @@ export function PrimeStoreLivePanel({ initial }: { initial: PrimeStoreLive }) {
       )}
 
       {/* Hàng đang bán */}
-      {data.items.length === 0 && !loading ? (
+      {loading ? (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {Array.from({ length: Math.max(4, data.items.length) }, (_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+      ) : data.items.length === 0 ? (
         <p className="rounded-xl border border-dashed border-white/15 px-3 py-8 text-center text-xs text-white/50">
           Server này chưa mở cửa hàng Prime.
         </p>
       ) : (
-        <div className={cn("grid grid-cols-3 gap-2 sm:grid-cols-4", loading && "opacity-50")}>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {data.items.map((item) => (
             <LiveCard key={item.itemId} item={item} />
           ))}
@@ -295,10 +312,10 @@ export function PrimeStoreLivePanel({ initial }: { initial: PrimeStoreLive }) {
             </div>
           </div>
 
-          <div className={cn("grid grid-cols-3 gap-2 sm:grid-cols-4", loading && "opacity-50")}>
-            {data.predictions.map((item) => (
-              <PredictionCard key={item.itemId} item={item} />
-            ))}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {loading
+              ? Array.from({ length: data.predictions.length }, (_, i) => <CardSkeleton key={i} />)
+              : data.predictions.map((item) => <PredictionCard key={item.itemId} item={item} />)}
           </div>
 
           <p className="flex items-center justify-center gap-1 text-center text-[10px] text-white/40">

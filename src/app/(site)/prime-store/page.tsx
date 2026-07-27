@@ -89,7 +89,8 @@ export default async function CuaHangPrimePage({
         <div className="grid gap-5 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:items-start">
           {/* Cột trái — khung cửa hàng gói Prime */}
           <div className="mx-auto w-full max-w-lg space-y-3 lg:mx-0">
-            <PrimeStore items={items} />
+            {/* Đợt cửa hàng lấy từ API game — hỏng nguồn thì khung ẩn đồng hồ. */}
+            <PrimeStore items={items} endAt={live?.window?.endAt} />
 
             <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-white/50">
               <ShieldCheck className="size-3.5" /> Nạp qua kênh chính thức — Arex không bán kim cương lậu.
@@ -109,7 +110,7 @@ export default async function CuaHangPrimePage({
             <Stat
               icon={Gem}
               label="Giá từ"
-              value={minPrice != null ? `${minPrice.toLocaleString("vi-VN")} 💎` : "—"}
+              value={minPrice != null ? minPrice.toLocaleString("vi-VN") : "—"}
               accent="text-cyan-500"
             />
           </div>

@@ -15,25 +15,36 @@ const TABS: { key: Tab; label: string }[] = [
 
 const rarityOf = (i: PrimeItem): PrimeRarity => i.rarity ?? (i.featured ? "ARTIFACT" : "COMMON");
 
-/** Đếm ngược tới đợt reset Prime kế tiếp (đầu tháng), khớp định dạng "Xd Yh Zm". */
-function useResetCountdown() {
+/**
+ * Đếm ngược tới lúc đợt cửa hàng hiện tại đóng, khớp định dạng "Xd Yh Zm".
+ * Không biết đợt kết thúc lúc nào thì trả null — thà không hiện còn hơn hiện
+ * một con số bịa.
+ */
+function useResetCountdown(endAt?: number) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
-  if (now === null) return null;
-  const d = new Date(now);
-  const diff = Math.max(0, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() - now);
+  if (now === null || !endAt) return null;
+  const diff = endAt - now;
+  if (diff <= 0) return null;
   return `${Math.floor(diff / 86_400_000)}d ${Math.floor((diff % 86_400_000) / 3_600_000)}h ${Math.floor((diff % 3_600_000) / 60_000)}m`;
 }
 
-export function PrimeStore({ items }: { items: PrimeItem[] }) {
+export function PrimeStore({ items, endAt }: { items: PrimeItem[]; endAt?: number }) {
   const [tab, setTab] = useState<Tab>("all");
   const [active, setActive] = useState<PrimeItem | null>(null);
   const visible = useMemo(() => (tab === "all" ? items : items.filter((i) => i.type === tab)), [items, tab]);
-  const countdown = useResetCountdown();
+  const countdown = useResetCountdown(endAt);
+
+  // Chỉ hiện tab có hàng. Còn đúng một loại thì "Tất cả" và loại đó ra cùng một
+  // danh sách — lọc kiểu gì cũng thế, nên giấu luôn cả hàng nút.
+  const tabs = useMemo(() => {
+    const withItems = TABS.filter((t) => t.key !== "all" && items.some((i) => i.type === t.key));
+    return withItems.length > 1 ? [TABS[0], ...withItems] : [];
+  }, [items]);
 
   // Đóng modal bằng phím Esc + khóa cuộn nền khi modal mở.
   useEffect(() => {
@@ -64,14 +75,19 @@ export function PrimeStore({ items }: { items: PrimeItem[] }) {
         >
           Prime Store
         </h2>
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-[20px] border border-amber-400/30 bg-black/60 px-3 py-1 text-sm font-bold text-[#FFD700]">
-          <Clock className="size-4" /> {countdown ?? "--"}
-        </span>
+        {countdown && (
+          <span
+            title="Thời gian còn lại của đợt cửa hàng Prime hiện tại trong game"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[20px] border border-amber-400/30 bg-black/60 px-3 py-1 text-sm font-bold text-[#FFD700]"
+          >
+            <Clock className="size-4" /> {countdown}
+          </span>
+        )}
       </div>
 
       {/* Lọc theo loại */}
-      <div className="flex flex-wrap gap-1.5 px-1">
-        {TABS.map((t) => (
+      <div className={cn("flex flex-wrap gap-1.5 px-1", tabs.length === 0 && "hidden")}>
+        {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}

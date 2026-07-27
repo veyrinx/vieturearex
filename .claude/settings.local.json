@@ -450,7 +450,10 @@
       "Bash(\"D:/Git/cmd/git.exe\" -C D:/vieture-arex diff --stat -- src/components/tools/prime-store-live.tsx)",
       "Bash(\"D:/Git/cmd/git.exe\" -C D:/vieture-arex diff -- \"src/app/\\(site\\)/prime-store/page.tsx\")",
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' status --porcelain | Measure-Object -Line; & 'D:\\\\Git\\\\cmd\\\\git.exe' status --porcelain -- next.config.mjs src/lib/utils/stream-utils.ts src/lib/server/stream-service.ts src/components/common/google-translate.tsx src/components/home/livestream-preview.tsx src/components/esports/streams-grid.tsx src/components/esports/stream-modal.tsx 'src/app/api/streams/sync/route.ts')",
-      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' show --stat --oneline HEAD; & 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main)"
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' show --stat --oneline HEAD; & 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main)",
+      "Bash(command -v vercel npx)",
+      "Bash(D:/Git/cmd/git.exe rev-parse *)",
+      "Bash(D:/Git/cmd/git.exe show *)"
     ]
   }
 }
