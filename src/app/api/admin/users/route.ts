@@ -75,19 +75,54 @@ export async function PATCH(request: NextRequest) {
   // Handle update user info (super_admin only)
   const infoParsed = updateInfoSchema.safeParse(payload);
   if (infoParsed.success) {
-    const denied = await enforceAdminApiAuth({ minimumRole: "super_admin", capability: "users.edit" });
+    // Sửa tên/bio/điện thoại: từ cấp admin trở lên (khớp với giao diện — hộp
+    // thoại sửa user vẫn cho admin gõ mấy ô này, trước đây API chặn ở
+    // super_admin nên bấm lưu là ăn 403).
+    const denied = await enforceAdminApiAuth({ minimumRole: "admin", capability: "users.edit" });
     if (denied) return denied;
 
     if (!infoParsed.data.display_name && !infoParsed.data.email && infoParsed.data.bio === undefined && infoParsed.data.phone === undefined) {
       return NextResponse.json({ error: "Không có thông tin nào để cập nhật." }, { status: 400 });
     }
 
-    const user = await updateUserInfo(infoParsed.data.id, {
-      display_name: infoParsed.data.display_name,
-      email: infoParsed.data.email,
-      bio: infoParsed.data.bio,
-      phone: infoParsed.data.phone,
-    });
+    const callerRole = await getCallerRole();
+
+    // Đổi email = đổi tài khoản đăng nhập → vẫn giữ ở super_admin / IT.
+    if (infoParsed.data.email !== undefined && callerRole !== "super_admin" && callerRole !== "it") {
+      return NextResponse.json(
+        { error: "Chỉ super_admin hoặc IT mới đổi được email tài khoản." },
+        { status: 403 },
+      );
+    }
+
+    // Không cho sửa thông tin của người bằng hoặc cao cấp hơn mình.
+    if (callerRole !== "super_admin") {
+      const allUsers = await getUsers();
+      const target = allUsers.find((u) => u.id === infoParsed.data.id);
+      if (!target) return NextResponse.json({ error: "User not found." }, { status: 404 });
+      const callerLevel = ROLE_HIERARCHY[callerRole ?? ""] ?? 0;
+      if ((ROLE_HIERARCHY[target.role] ?? 0) >= callerLevel) {
+        return NextResponse.json(
+          { error: "Không thể sửa thông tin của người có quyền bằng hoặc cao hơn bạn." },
+          { status: 403 },
+        );
+      }
+    }
+
+    let user;
+    try {
+      user = await updateUserInfo(infoParsed.data.id, {
+        display_name: infoParsed.data.display_name,
+        email: infoParsed.data.email,
+        bio: infoParsed.data.bio,
+        phone: infoParsed.data.phone,
+      });
+    } catch (error) {
+      // Trước đây lỗi này ném thẳng ra ngoài → 500 trắng, giao diện chỉ hiện
+      // "Không thể cập nhật." mà không nói vì sao.
+      const msg = error instanceof Error ? error.message : "Không thể cập nhật thông tin.";
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
     await logAdminActivity({
       action: "USER_INFO_UPDATED",
       targetType: "USER",

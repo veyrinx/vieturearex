@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { signInErrorMessage } from "@/lib/auth/sign-in-error";
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { siteConfig } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ export default function UserLoginPage() {
 
     if (error) {
       setLoading(false);
-      toast.error("Email hoặc mật khẩu không chính xác.");
+      toast.error(signInErrorMessage(error));
       fetch("/api/auth/track-failure", { method: "POST" }).catch(() => {});
       return;
     }
