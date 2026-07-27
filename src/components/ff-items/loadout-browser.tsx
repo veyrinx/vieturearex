@@ -23,7 +23,7 @@ function WeaponSlot({ weapon }: { weapon: LoadoutWeaponRef }) {
   }
   return (
     <Link
-      href={`/vu-khi/${weapon.slug}`}
+      href={`/weapons/${weapon.slug}`}
       className="group flex flex-1 flex-col items-center gap-1 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:border-primary/50"
     >
       <div className="flex size-12 items-center justify-center rounded-lg bg-muted/40">
@@ -74,7 +74,7 @@ export function LoadoutBrowser({ loadouts }: { loadouts: Loadout[] }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Link
-                    href={`/vu-khi/loadout/${l.slug}`}
+                    href={`/weapons/loadout/${l.slug}`}
                     className="font-heading text-lg font-bold uppercase tracking-wide text-foreground transition-colors hover:text-primary"
                   >
                     {l.name}

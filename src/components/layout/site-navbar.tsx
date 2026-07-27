@@ -34,20 +34,20 @@ const ABOUT_ITEMS = [
 ];
 
 const COMMUNITY_ITEMS = [
-  { title: "Cửa Hàng Prime", href: "/cua-hang-prime",        icon: Crown,         desc: "Gói thành viên & ưu đãi độc quyền" },
-  { title: "Công Cụ FF",     href: "/cong-cu",               icon: Wrench,        desc: "Độ nhạy · Tier list · Combo · Icon" },
-  { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
+  { title: "Cửa Hàng Prime", href: "/prime-store",        icon: Crown,         desc: "Gói thành viên & ưu đãi độc quyền" },
+  { title: "Công Cụ FF",     href: "/tools",               icon: Wrench,        desc: "Độ nhạy · Tier list · Combo · Icon" },
+  { title: "Diễn Đàn",       href: "/community",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
   { title: "Feed",            href: "/feed",                  icon: Rss,           desc: "Hoạt động từ người bạn theo dõi" },
   { title: "Wiki CĐ",        href: "/wiki",                  icon: BookOpenText,  desc: "Kiến thức do cộng đồng đóng góp" },
   { title: "Thư Viện Icon",  href: "/items",                 icon: ImageIcon,     desc: "Icon Free Fire (vũ khí, nhân vật, skin...)" },
-  { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    desc: "Hot posts & top contributors" },
-  { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
+  { title: "Xu Hướng",       href: "/community/trending",    icon: TrendingUp,    desc: "Hot posts & top contributors" },
+  { title: "Bình Chọn",      href: "/character-poll",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
   { title: "Quiz FF",        href: "/quiz",                  icon: Brain,         desc: "Đố vui kiến thức Free Fire" },
-  { title: "BXH Nick VN",    href: "/bxh-nick-vn",           icon: Crown,         desc: "Top nick FF khủng nhất VN (tự động)" },
-  { title: "BXH Quiz",       href: "/bxh-quiz",              icon: Brain,         desc: "Ai hiểu game nhất cộng đồng" },
+  { title: "BXH Nick VN",    href: "/top-players-vn",           icon: Crown,         desc: "Top nick FF khủng nhất VN (tự động)" },
+  { title: "BXH Quiz",       href: "/quiz-leaderboard",              icon: Brain,         desc: "Ai hiểu game nhất cộng đồng" },
   { title: "TikTok",         href: "/tiktok",                icon: Music2,        desc: "Video Free Fire cộng đồng" },
-  { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         desc: "Tìm clan & guild" },
-  { title: "Trang Cá Nhân",  href: "/cong-dong/cosmetics",   icon: Palette,       desc: "Khung & Danh Hiệu" },
+  { title: "Tuyển TV",       href: "/recruitment",      icon: Users,         desc: "Tìm clan & guild" },
+  { title: "Trang Cá Nhân",  href: "/community/cosmetics",   icon: Palette,       desc: "Khung & Danh Hiệu" },
 ];
 
 // ── Mobile sheet nav — gom thành nhóm gọn ───────────────────────────────────
@@ -68,7 +68,7 @@ const MOBILE_NAV_SECTIONS: {
       { title: "Lịch",     href: "/calendar", icon: CalendarDays },
       { title: "Sự Kiện",  href: "/events",   icon: Flame },
       { title: "Trực Tiếp", href: "/esports", icon: MonitorPlay },
-      { title: "Sắp Ra Mắt", href: "/sap-ra-mat", icon: Rocket },
+      { title: "Sắp Ra Mắt", href: "/coming-soon", icon: Rocket },
     ],
   },
   {

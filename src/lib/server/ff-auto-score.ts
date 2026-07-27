@@ -124,7 +124,7 @@ async function notifyRankUp(
         ...(prevScore !== null ? [{ label: "Trước đó", value: prevScore.toLocaleString("vi-VN") }] : []),
       ],
     }],
-    actions: [{ label: "Xem BXH", url: `${siteConfig.url}/bxh-nick-vn` }],
+    actions: [{ label: "Xem BXH", url: `${siteConfig.url}/top-players-vn` }],
     footer: "🏅 BXH nick khủng — Arex",
   });
 }

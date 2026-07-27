@@ -10,7 +10,7 @@ const TIER_BG: Record<string, string> = {
 };
 
 /**
- * Khối "Meta hiện tại" ở đầu trang /vu-khi: nổi bật vũ khí tier S và vài combo đề xuất.
+ * Khối "Meta hiện tại" ở đầu trang /weapons: nổi bật vũ khí tier S và vài combo đề xuất.
  * Server component — chỉ hiển thị khi có dữ liệu tier S.
  */
 export function WeaponsMetaHighlight({
@@ -41,7 +41,7 @@ export function WeaponsMetaHighlight({
             {topWeapons.map((w) => (
               <Link
                 key={w.id}
-                href={`/vu-khi/${w.slug}`}
+                href={`/weapons/${w.slug}`}
                 className="group flex flex-col items-center gap-1 rounded-2xl border border-border bg-card p-2 transition-colors hover:border-primary/50"
               >
                 <div className="relative flex size-16 items-center justify-center rounded-xl bg-muted/40">
@@ -67,7 +67,7 @@ export function WeaponsMetaHighlight({
             {topLoadouts.map((l) => (
               <Link
                 key={l.id}
-                href={`/vu-khi/loadout/${l.slug}`}
+                href={`/weapons/loadout/${l.slug}`}
                 className="flex items-center gap-3 rounded-2xl border border-border bg-card p-2.5 transition-colors hover:border-primary/50"
               >
                 <div className="flex -space-x-2">

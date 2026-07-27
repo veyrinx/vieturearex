@@ -82,7 +82,7 @@ export function CharactersBrowser({ characters }: { characters: CharacterListIte
             return (
               <Link
                 key={c.slug}
-                href={`/nhan-vat/${c.slug}`}
+                href={`/characters/${c.slug}`}
                 className="group flex gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/50"
               >
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted/40">

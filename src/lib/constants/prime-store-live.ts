@@ -32,9 +32,7 @@ export type PrimeLiveItem = {
   sort: number;
   /** Số lượng nhận. */
   amount: number;
-  /** Có thể tặng (nằm trong mục quà tặng). */
-  giftable?: boolean;
-  /** Được game gắn nhãn "đề xuất". */
+  /** Được game gắn nhãn "đề xuất" — xem ghi chú khử nhiễu ở `parsePrimeStorePayload`. */
   recommended?: boolean;
   /** Nhãn từ kho vật phẩm nội bộ, nếu có. */
   label?: string | null;
@@ -45,16 +43,35 @@ export type PrimeStoreWindow = {
   /** Mốc thời gian (ms) — đã đổi từ giây của API. */
   startAt: number;
   endAt: number;
-  /** Cấp tối thiểu để tặng / nhận quà. */
-  giverLevel: number;
-  receiverLevel: number;
 };
 
 /** Vật phẩm đang bán ở server khác nhưng chưa về server đang xem. */
 export type PrimePrediction = PrimeLiveItem & {
   /** Các server đã có vật phẩm này. */
   servers: PrimeServer[];
+  /** Số server có dữ liệu để đối chiếu (mẫu) — server đóng cửa hàng không tính. */
+  sampleSize: number;
+  /** Các server đã sang đợt mới mà có món này — tín hiệu mạnh nhất. */
+  aheadServers: PrimeServer[];
+  /** Độ tin cậy 0..1, xem `PREDICTION_LEVELS` để đổi ra nhãn. */
+  confidence: number;
 };
+
+/**
+ * Ngưỡng → nhãn *độ mạnh tín hiệu* (giảm dần, lấy ngưỡng khớp đầu tiên).
+ *
+ * Cố tình không gọi là "xác suất": cửa hàng các khu vực lệch nhau khá nhiều nên
+ * điểm cao nhất trong thực tế chỉ quanh 0.3 — hứa "70% chắc về" là nói điêu.
+ * Ngưỡng dưới đây hiệu chỉnh theo phân bố thật để việc xếp hạng có ý nghĩa.
+ */
+export const PREDICTION_LEVELS = [
+  { min: 0.28, label: "Tín hiệu mạnh" },
+  { min: 0.15, label: "Tín hiệu vừa" },
+  { min: 0, label: "Tín hiệu yếu" },
+] as const;
+
+export const predictionLevel = (confidence: number) =>
+  PREDICTION_LEVELS.find((l) => confidence >= l.min) ?? PREDICTION_LEVELS[PREDICTION_LEVELS.length - 1];
 
 export type PrimeStoreLive = {
   server: PrimeServer;
@@ -77,19 +94,24 @@ const num = (v: unknown): number => {
 /** API trả timestamp dạng chuỗi giây. */
 const toMs = (v: unknown): number => num(v) * 1000;
 
-function parseItem(raw: unknown, giftable: boolean): PrimeLiveItem | null {
+/** ID vật phẩm cũng là tên file icon — chỉ nhận số, chặn luôn path lạ. */
+const asItemId = (v: unknown): string | null => {
+  const id = String(v ?? "");
+  return /^\d{1,20}$/.test(id) ? id : null;
+};
+
+function parseItem(raw: unknown): (PrimeLiveItem & { tagKey: string }) | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as RawRecord;
-  const itemId = String(o.itemId ?? "");
-  // Chỉ nhận ID số — cũng chính là tên file icon, chặn luôn path lạ.
-  if (!/^\d{1,20}$/.test(itemId)) return null;
+  const itemId = asItemId(o.itemId);
+  if (!itemId) return null;
+
   return {
     itemId,
     gems: num(o.gemsPrice),
     sort: num(o.sortId),
     amount: Math.max(1, num(o.awardNum)),
-    ...(giftable ? { giftable: true } : {}),
-    ...(typeof o.tagKey === "string" && o.tagKey ? { recommended: true } : {}),
+    tagKey: typeof o.tagKey === "string" ? o.tagKey : "",
   };
 }
 
@@ -106,17 +128,18 @@ export function parsePrimeStorePayload(raw: unknown): {
         storeId: num(desc.storeId),
         startAt: toMs(desc.startTimestamp),
         endAt: toMs(desc.endTimestamp),
-        giverLevel: num(desc.giverLevel),
-        receiverLevel: num(desc.receiverLevel),
       }
     : null;
 
-  // Gộp hàng thường + hàng tặng, khử trùng theo itemId (giữ giá thấp hơn).
-  const byId = new Map<string, PrimeLiveItem>();
-  const push = (list: unknown, giftable: boolean) => {
+  // Gộp hàng thường + mục quà tặng rồi khử trùng theo itemId (giữ giá thấp hơn).
+  // Vẫn đọc cả hai danh sách vì có server bày món chỉ nằm ở mục quà tặng — trang
+  // không hiện chuyện tặng nữa, nhưng bỏ nguồn này thì thiếu hàng.
+  type Parsed = PrimeLiveItem & { tagKey: string };
+  const byId = new Map<string, Parsed>();
+  const push = (list: unknown) => {
     if (!Array.isArray(list)) return;
     for (const entry of list) {
-      const item = parseItem(entry, giftable);
+      const item = parseItem(entry);
       if (!item) continue;
       const prev = byId.get(item.itemId);
       if (!prev) {
@@ -126,15 +149,24 @@ export function parsePrimeStorePayload(raw: unknown): {
       byId.set(item.itemId, {
         ...prev,
         gems: Math.min(prev.gems || item.gems, item.gems || prev.gems),
-        giftable: prev.giftable || item.giftable,
-        recommended: prev.recommended || item.recommended,
+        tagKey: prev.tagKey || item.tagKey,
       });
     }
   };
-  push(o.primeStoreItems, false);
-  push(o.primeGiftStoreItems, true);
+  push(o.primeStoreItems);
+  push(o.primeGiftStoreItems);
 
-  const items = [...byId.values()].sort((a, b) => a.sort - b.sort);
+  const parsed = [...byId.values()].sort((a, b) => a.sort - b.sort);
+
+  // Game gắn cùng một `tagKey` cho *mọi* món trong đợt, nên gắn nhãn "đề xuất"
+  // cho tất cả thì chẳng đề xuất gì cả — chỉ giữ khi nó tách được một nhóm nhỏ.
+  const tagged = parsed.filter((i) => i.tagKey).length;
+  const meaningful = tagged > 0 && tagged < parsed.length;
+
+  const items = parsed.map(({ tagKey, ...item }) => ({
+    ...item,
+    ...(meaningful && tagKey ? { recommended: true } : {}),
+  }));
   return { window, items };
 }
 

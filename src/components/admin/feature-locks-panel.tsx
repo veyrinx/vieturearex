@@ -12,9 +12,9 @@ import {
 
 // Gợi ý route hay khóa (hiện trong datalist)
 const ROUTE_SUGGESTIONS = [
-  "/dinh-gia-nick", "/tinh-nap", "/tinh-kd", "/do-nhay", "/combo", "/tier-list",
-  "/items", "/tao-ten", "/dem-nguoc", "/trang-thai", "/bxh-nick-vn", "/cong-cu",
-  "/vu-khi", "/nhan-vat", "/tournaments",
+  "/account-value", "/topup-calculator", "/kd-calculator", "/sensitivity", "/combo", "/tier-list",
+  "/items", "/name-generator", "/countdown", "/server-status", "/top-players-vn", "/tools",
+  "/weapons", "/characters", "/tournaments",
 ];
 
 type Row = FeatureLock & { _id: string };
@@ -78,7 +78,7 @@ export function FeatureLocksPanel() {
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Khóa hoặc đánh dấu “đang cập nhật” cho từng route. Người dùng thường sẽ thấy trang
-            <b> /dang-cap-nhat</b>; <b>admin vẫn vào xem được</b>. Không ảnh hưởng phần còn lại của web.
+            <b> /updating</b>; <b>admin vẫn vào xem được</b>. Không ảnh hưởng phần còn lại của web.
           </p>
         </div>
         <button
@@ -114,7 +114,7 @@ export function FeatureLocksPanel() {
                     list="route-suggestions"
                     value={r.path}
                     onChange={(e) => update(r._id, { path: e.target.value })}
-                    placeholder="/dinh-gia-nick"
+                    placeholder="/account-value"
                     className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary"
                   />
                 </div>

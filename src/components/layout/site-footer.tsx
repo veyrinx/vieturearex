@@ -20,12 +20,12 @@ const footerNav = [
   { label: "Sự Kiện", href: "/events" },
   { label: "Phát Trực Tiếp", href: "/esports" },
   { label: "Tin Tức", href: "/news" },
-  { label: "Đang Hot", href: "/dang-hot" },
-  { label: "Đăng Ký Nhận Tin", href: "/dang-ky-tin" },
-  { label: "Nạp An Toàn", href: "/nap-an-toan" },
-  { label: "Cập Nhật", href: "/cap-nhat" },
+  { label: "Đang Hot", href: "/trending" },
+  { label: "Đăng Ký Nhận Tin", href: "/newsletter" },
+  { label: "Nạp An Toàn", href: "/safe-topup" },
+  { label: "Cập Nhật", href: "/changelog" },
   { label: "Về Chúng Tôi", href: "/about" },
-  { label: "Hợp Tác", href: "/hop-tac" },
+  { label: "Hợp Tác", href: "/partnership" },
   { label: "Liên Hệ", href: "/contact" },
 ];
 

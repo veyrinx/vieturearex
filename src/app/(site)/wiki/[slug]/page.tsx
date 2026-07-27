@@ -209,7 +209,7 @@ export default async function WikiArticlePage(
                 : "Chưa có chỉnh sửa nào"}
             </div>
             <Link
-              href={`/wiki/${article.slug}/chinh-sua`}
+              href={`/wiki/${article.slug}/edit`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/8 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
               <PenLine className="size-3.5" />

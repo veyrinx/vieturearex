@@ -14,7 +14,7 @@ export default function robots(): MetadataRoute.Robots {
           "/esports", "/calendar", "/lich", "/gallery",
           "/wiki", "/wiki/",
           "/contact", "/lien-he",
-          "/about", "/gui-bai-viet",
+          "/about", "/submit-article",
           "/privacy-policy", "/terms-of-use", "/cookie-policy",
           "/tournaments/",
         ],
@@ -41,7 +41,7 @@ export default function robots(): MetadataRoute.Robots {
       // ── Bingbot — limited ────────────────────────────────────────────────
       {
         userAgent: "Bingbot",
-        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact", "/about", "/gui-bai-viet", "/privacy-policy", "/terms-of-use"],
+        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/contact", "/about", "/submit-article", "/privacy-policy", "/terms-of-use"],
         disallow: ["/admin", "/api/", "/auth/", "/login", "/register", "/*.map"],
         crawlDelay: 5,
       },
@@ -56,7 +56,7 @@ export default function robots(): MetadataRoute.Robots {
       // ── All others: public pages only, no crawl of admin/api/source ──────
       {
         userAgent: "*",
-        allow: ["/", "/news/", "/tin-tuc/", "/events", "/esports", "/calendar", "/wiki", "/wiki/", "/contact", "/about", "/gui-bai-viet", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
+        allow: ["/", "/news/", "/tin-tuc/", "/events", "/esports", "/calendar", "/wiki", "/wiki/", "/contact", "/about", "/submit-article", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
         disallow: [
           "/admin", "/admin/",
           "/api/", "/api/admin/", "/api/auth/",

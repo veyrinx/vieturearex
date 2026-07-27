@@ -115,7 +115,7 @@ ${form.contact ? `<p><strong>Liên hệ:</strong> ${form.contact}</p>` : ""}
             <p className="mt-1 text-sm text-muted-foreground">Bài đề xuất đã được đăng lên diễn đàn. Ban tổ chức sẽ xem xét sớm nhất có thể.</p>
           </div>
           <div className="flex justify-center gap-3">
-            <Link href="/cong-dong?category=Sự kiện & Giải đấu"
+            <Link href="/community?category=Sự kiện & Giải đấu"
               className="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">
               Xem trên diễn đàn
             </Link>

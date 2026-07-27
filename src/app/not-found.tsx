@@ -4,7 +4,7 @@ import { Home, Newspaper, MessageSquare, Trophy, Search } from "lucide-react";
 const NAV_LINKS = [
   { href: "/",          icon: Home,          label: "Trang chủ" },
   { href: "/news",      icon: Newspaper,     label: "Tin tức" },
-  { href: "/cong-dong", icon: MessageSquare, label: "Diễn đàn" },
+  { href: "/community", icon: MessageSquare, label: "Diễn đàn" },
   { href: "/tournaments",icon: Trophy,       label: "Giải đấu" },
   { href: "/search",    icon: Search,        label: "Tìm kiếm" },
 ];

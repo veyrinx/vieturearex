@@ -62,7 +62,7 @@ function WeaponHead({ weapon }: { weapon: WeaponCompareItem | null }) {
   }
   return (
     <Link
-      href={`/vu-khi/${weapon.slug}`}
+      href={`/weapons/${weapon.slug}`}
       className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 text-center transition-colors hover:border-primary/50"
     >
       <div className="flex size-16 items-center justify-center rounded-2xl bg-muted/40">

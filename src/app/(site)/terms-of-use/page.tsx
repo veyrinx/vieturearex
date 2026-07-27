@@ -6,7 +6,7 @@ import { Reveal } from "@/components/common/reveal";
 import { PageContentOverride } from "@/components/common/page-content-override";
 import { siteConfig } from "@/lib/constants/site";
 
-// Admin có thể thay nội dung ở /admin/noi-dung-trang.
+// Admin có thể thay nội dung ở /admin/page-content.
 export const revalidate = 300;
 
 export const metadata: Metadata = {

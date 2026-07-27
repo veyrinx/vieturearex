@@ -118,7 +118,7 @@ export function ServerStatus({ data }: { data: StatusData }) {
 
       <p className="text-center text-[11px] text-muted-foreground/70">
         Trang tham khảo của cộng đồng (không phải trạng thái chính thức từ Garena). Xem thêm{" "}
-        <Link href="/dem-nguoc" className="text-primary hover:underline">đếm ngược sự kiện</Link>.
+        <Link href="/countdown" className="text-primary hover:underline">đếm ngược sự kiện</Link>.
       </p>
     </div>
   );

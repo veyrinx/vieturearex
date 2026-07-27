@@ -1,5 +1,5 @@
 // Đếm ngược sự kiện Free Fire — dữ liệu lưu trong settings key `site.countdowns` (JSON).
-// Quản lý ở /admin/dem-nguoc, hiển thị ở /dem-nguoc. Hàm thuần (client + server).
+// Quản lý ở /admin/countdowns, hiển thị ở /countdown. Hàm thuần (client + server).
 
 export const SETTINGS_KEY_COUNTDOWNS = "site.countdowns";
 

@@ -133,7 +133,7 @@ export default function FeedPage() {
             <p className="font-bold text-foreground">Bạn chưa follow ai</p>
             <p className="mt-1 text-sm text-muted-foreground">Khám phá và follow để xem hoạt động của họ ở đây</p>
           </div>
-          <Link href="/cong-dong/xu-huong"
+          <Link href="/community/trending"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
             <Users className="size-4" /> Khám phá cộng đồng
           </Link>

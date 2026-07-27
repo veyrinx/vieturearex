@@ -57,7 +57,7 @@ export async function CommunityHighlights() {
   const latestEvent = events.find((e) => e.status === "active" || e.status === "upcoming") ?? events[0];
 
   const activities: Activity[] = [];
-  if (poll) activities.push({ text: `Bình chọn: ${poll.question}`, icon: Star, tone: "blue", href: "/cong-dong" });
+  if (poll) activities.push({ text: `Bình chọn: ${poll.question}`, icon: Star, tone: "blue", href: "/community" });
   if (latestNews) activities.push({ text: latestNews.title, icon: Newspaper, tone: "amber", href: `/news/${latestNews.slug}` });
   if (latestEvent) activities.push({ text: latestEvent.title, icon: CalendarDays, tone: "red", href: `/events/${latestEvent.id}` });
 
@@ -71,7 +71,7 @@ export async function CommunityHighlights() {
           description="Bảng xếp hạng tuyển thủ và hoạt động nổi bật"
         />
         <Button asChild size="sm" variant="outline" className="shrink-0 rounded-xl">
-          <Link href="/cong-dong">
+          <Link href="/community">
             Xem tất cả
             <ArrowRight className="ml-1.5 size-3.5" />
           </Link>

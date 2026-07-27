@@ -21,14 +21,14 @@ const EXPLORE_ITEMS = [
 
 // ── Section: Cộng đồng ─────────────────────────────────────────────────────
 const COMMUNITY_ITEMS = [
-  { title: "Diễn Đàn",       href: "/cong-dong",             icon: MessageSquare, color: "blue"    },
+  { title: "Diễn Đàn",       href: "/community",             icon: MessageSquare, color: "blue"    },
   { title: "Feed",            href: "/feed",                  icon: Rss,           color: "orange"  },
   { title: "Wiki",            href: "/wiki",                  icon: BookOpen,      color: "emerald" },
   { title: "Icon FF",         href: "/items",                 icon: ImageIcon,     color: "yellow"  },
-  { title: "Xu Hướng",       href: "/cong-dong/xu-huong",    icon: TrendingUp,    color: "orange"  },
-  { title: "Bình Chọn",      href: "/binh-chon",             icon: Trophy,        color: "yellow"  },
-  { title: "Tuyển TV",       href: "/tuyen-thanh-vien",      icon: Users,         color: "violet"  },
-  { title: "Trang Cá Nhân",  href: "/cong-dong/cosmetics",   icon: Palette,       color: "pink"    },
+  { title: "Xu Hướng",       href: "/community/trending",    icon: TrendingUp,    color: "orange"  },
+  { title: "Bình Chọn",      href: "/character-poll",             icon: Trophy,        color: "yellow"  },
+  { title: "Tuyển TV",       href: "/recruitment",      icon: Users,         color: "violet"  },
+  { title: "Trang Cá Nhân",  href: "/community/cosmetics",   icon: Palette,       color: "pink"    },
 ];
 
 type ColorKey = "sky" | "orange" | "blue" | "red" | "emerald" | "yellow" | "violet" | "pink";

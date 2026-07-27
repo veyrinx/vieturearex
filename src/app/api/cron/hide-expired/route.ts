@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
   if (result.events > 0) revalidatePath("/", "layout");
   if (result.events > 0) { revalidatePath("/events", "layout"); revalidatePath("/calendar", "layout"); }
   if (result.news > 0) revalidatePath("/news", "layout");
-  if (result.forum > 0) revalidatePath("/cong-dong", "layout");
+  if (result.forum > 0) revalidatePath("/community", "layout");
 
   return NextResponse.json({ ok: true, hidden: result, newsDays, forumDays });
 }

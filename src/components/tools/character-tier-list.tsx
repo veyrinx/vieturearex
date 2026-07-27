@@ -245,7 +245,7 @@ function CharDetail({ char, onClose }: { char: FFCharacter; onClose: () => void 
             Đánh giá: {char.tier} · {tier.label}
           </p>
           <Link
-            href={`/nhan-vat/${charSlug(char.name)}`}
+            href={`/characters/${charSlug(char.name)}`}
             className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90"
           >
             Xem trang chi tiết <ArrowRight className="size-3.5" />

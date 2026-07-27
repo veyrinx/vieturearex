@@ -60,7 +60,7 @@ function Head({ char }: { char: CharacterListItem | null }) {
   }
   return (
     <Link
-      href={`/nhan-vat/${char.slug}`}
+      href={`/characters/${char.slug}`}
       className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 text-center transition-colors hover:border-primary/50"
     >
       <div className="relative size-16 overflow-hidden rounded-2xl bg-muted/40">

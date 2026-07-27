@@ -123,7 +123,7 @@ async function promptLink(ctx: ActionCtx, lead: string) {
     ctx.token,
     ctx.chatId,
     `${lead}\n\nCách liên kết:\n1️⃣ Đăng nhập <a href="${siteConfig.url}">web Arex</a> → trang <b>Liên kết Telegram</b> để lấy mã.\n2️⃣ Gõ <code>/lienket MÃ</code> ngay tại đây, hoặc mở Hồ sơ trong Mini App để nhập mã.`,
-    { inline_keyboard: [[appBtn("🔗 Mở Hồ sơ để liên kết", "/profile", `${siteConfig.url}/lien-ket-telegram`, ctx.chatType)]] },
+    { inline_keyboard: [[appBtn("🔗 Mở Hồ sơ để liên kết", "/profile", `${siteConfig.url}/telegram-link`, ctx.chatType)]] },
   );
 }
 
@@ -160,7 +160,7 @@ async function actStart(ctx: ActionCtx): Promise<void> {
       inline_keyboard: [
         [appBtn("🎮 Mở Arex Mini App", "", siteConfig.url, ctx.chatType)],
         [
-          appBtn("🏆 Giải đấu", "/giai-dau", `${siteConfig.url}/tournaments`, ctx.chatType),
+          appBtn("🏆 Giải đấu", "/tournaments", `${siteConfig.url}/tournaments`, ctx.chatType),
           appBtn("🏅 BXH", "/leaderboard", `${siteConfig.url}/bxh`, ctx.chatType),
           appBtn("🧠 Quiz", "/quiz", `${siteConfig.url}/quiz`, ctx.chatType),
         ],
@@ -207,7 +207,7 @@ async function actGiaidau(ctx: ActionCtx): Promise<void> {
     `🏆 <b>Giải đấu Free Fire</b>\n\nTheo dõi bracket, lịch thi đấu &amp; kết quả:`,
     {
       inline_keyboard: [
-        [appBtn("🏆 Mở giải đấu", "/giai-dau", `${siteConfig.url}/tournaments`, ctx.chatType)],
+        [appBtn("🏆 Mở giải đấu", "/tournaments", `${siteConfig.url}/tournaments`, ctx.chatType)],
         [{ text: "🌐 Xem trên web", url: `${siteConfig.url}/tournaments` }],
       ],
     },
@@ -223,9 +223,9 @@ async function actNews(ctx: ActionCtx): Promise<void> {
   }
   const lines = ["📰 <b>Tin tức mới nhất</b>\n"];
   latest.forEach((item, i) => {
-    lines.push(`${i + 1}. <a href="${siteConfig.url}/tin-tuc/${item.slug}">${e(item.title)}</a>`);
+    lines.push(`${i + 1}. <a href="${siteConfig.url}/news/${item.slug}">${e(item.title)}</a>`);
   });
-  lines.push(`\n<a href="${siteConfig.url}/tin-tuc">→ Xem tất cả</a>`);
+  lines.push(`\n<a href="${siteConfig.url}/news">→ Xem tất cả</a>`);
   await sendTelegramMessage(ctx.token, ctx.chatId, lines.join("\n"));
 }
 
@@ -239,9 +239,9 @@ async function actEvents(ctx: ActionCtx): Promise<void> {
   const lines = ["📅 <b>Sự kiện Free Fire</b>\n"];
   active.forEach((ev, i) => {
     const badge = ev.status === "active" ? "🟢" : "🔵";
-    lines.push(`${i + 1}. ${badge} <a href="${siteConfig.url}/su-kien/${ev.id}">${e(ev.title)}</a>`);
+    lines.push(`${i + 1}. ${badge} <a href="${siteConfig.url}/events/${ev.id}">${e(ev.title)}</a>`);
   });
-  lines.push(`\n<a href="${siteConfig.url}/su-kien">→ Xem tất cả</a>`);
+  lines.push(`\n<a href="${siteConfig.url}/events">→ Xem tất cả</a>`);
   await sendTelegramMessage(ctx.token, ctx.chatId, lines.join("\n"));
 }
 
@@ -299,7 +299,7 @@ async function actNap(ctx: ActionCtx): Promise<void> {
   }
   await sendTelegramMessageWithKeyboard(
     ctx.token, ctx.chatId, lines.join("\n"),
-    { inline_keyboard: [[{ text: "💎 Mở cửa hàng Prime", url: `${siteConfig.url}/cua-hang-prime` }]] },
+    { inline_keyboard: [[{ text: "💎 Mở cửa hàng Prime", url: `${siteConfig.url}/prime-store` }]] },
   );
 }
 
@@ -307,7 +307,7 @@ async function actVukhi(ctx: ActionCtx): Promise<void> {
   await sendTelegramMessageWithKeyboard(
     ctx.token, ctx.chatId,
     `🔫 <b>Wiki vũ khí Free Fire</b>\n\nThông số, sát thương &amp; so sánh chi tiết từng khẩu:`,
-    { inline_keyboard: [[{ text: "🔫 Mở Wiki vũ khí", url: `${siteConfig.url}/vu-khi` }]] },
+    { inline_keyboard: [[{ text: "🔫 Mở Wiki vũ khí", url: `${siteConfig.url}/weapons` }]] },
   );
 }
 

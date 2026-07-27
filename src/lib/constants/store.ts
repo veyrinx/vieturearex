@@ -1,5 +1,5 @@
 // Cửa hàng Prime — dữ liệu lưu trong settings key `store.prime` (JSON).
-// Quản lý ở /admin/prime, hiển thị ở /cua-hang-prime. Hàm thuần (client + server).
+// Quản lý ở /admin/prime, hiển thị ở /prime-store. Hàm thuần (client + server).
 
 export const SETTINGS_KEY_PRIME = "store.prime";
 

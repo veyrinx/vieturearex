@@ -15,9 +15,9 @@ type TgUser = {
 };
 
 const LINKS = [
-  { href: "/tg/tin-tuc",    icon: "newspaper",             label: "Tin tức",   desc: "Mới nhất",   color: "#3b82f6" },
-  { href: "/tg/su-kien",    icon: "calendar_month",        label: "Sự kiện",   desc: "In-game",    color: "#10b981" },
-  { href: "/tg/giai-dau",   icon: "emoji_events",          label: "Giải đấu",  desc: "Bracket",    color: "#f59e0b" },
+  { href: "/tg/news",    icon: "newspaper",             label: "Tin tức",   desc: "Mới nhất",   color: "#3b82f6" },
+  { href: "/tg/events",    icon: "calendar_month",        label: "Sự kiện",   desc: "In-game",    color: "#10b981" },
+  { href: "/tg/tournaments",   icon: "emoji_events",          label: "Giải đấu",  desc: "Bracket",    color: "#f59e0b" },
   { href: "/tg/leaderboard",icon: "military_tech",         label: "BXH",       desc: "Xếp hạng",   color: "#eab308" },
   { href: "/tg/stream",     icon: "live_tv",               label: "Stream",    desc: "Live & VOD", color: "#ef4444" },
   { href: "/tg/poll",       icon: "how_to_vote",           label: "Bình chọn", desc: "Poll",       color: "#8b5cf6" },

@@ -7,7 +7,7 @@ import { useAdminRole } from "@/hooks/use-admin-role";
 import { findFeatureLock, LOCK_LABELS, type FeatureLock } from "@/lib/constants/feature-locks";
 
 // Banner chỉ hiện khi: (1) trang hiện tại đang bị khóa, VÀ (2) người xem là admin.
-// User thường không bao giờ tới được đây (middleware đã chuyển sang /dang-cap-nhat).
+// User thường không bao giờ tới được đây (middleware đã chuyển sang /updating).
 export function AdminLockBanner() {
   const pathname = usePathname();
   const { isAdmin, loading } = useAdminRole();

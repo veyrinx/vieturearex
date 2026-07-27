@@ -76,7 +76,7 @@ export async function runBxhRankNotify(): Promise<BxhRankNotifyResult> {
           body: `Chúc mừng! Nick của bạn đang xếp hạng #${best.rank} khu vực Việt Nam.`,
           entity_type: "leaderboard",
           entity_id: best.uid,
-          entity_url: "/bxh-nick-vn",
+          entity_url: "/top-players-vn",
         });
         notified++;
       }

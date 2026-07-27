@@ -57,7 +57,7 @@ export function PrimePanel({ initialItems, canEdit }: { initialItems: PrimeItem[
             <p className="text-xs text-muted-foreground">Quản lý gói thành viên & gói thời hạn. {canEdit ? "Sửa rồi bấm Lưu." : "Bạn chỉ có quyền xem."}</p>
           </div>
         </div>
-        <Link href="/cua-hang-prime" target="_blank" className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
+        <Link href="/prime-store" target="_blank" className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
           <ExternalLink className="size-3.5" /> Xem trang
         </Link>
       </div>

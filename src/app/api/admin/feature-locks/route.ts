@@ -52,8 +52,8 @@ export async function PUT(request: NextRequest) {
   }).catch(() => {});
 
   // Xóa cache các trang liên quan
-  revalidatePath("/cong-cu");
-  revalidatePath("/dang-cap-nhat");
+  revalidatePath("/tools");
+  revalidatePath("/updating");
 
   return NextResponse.json({ locks: cleaned });
 }

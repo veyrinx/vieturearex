@@ -3,7 +3,7 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/constants/site";
 import { PageContentOverride } from "@/components/common/page-content-override";
 
-// Admin có thể thay nội dung ở /admin/noi-dung-trang.
+// Admin có thể thay nội dung ở /admin/page-content.
 export const revalidate = 300;
 
 export const metadata: Metadata = {

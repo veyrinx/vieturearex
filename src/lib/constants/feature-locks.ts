@@ -5,7 +5,7 @@
 export type FeatureLockStatus = "maintenance" | "locked" | "coming-soon";
 
 export type FeatureLock = {
-  path: string; // route cần khóa, vd "/dinh-gia-nick" (áp cho cả route con)
+  path: string; // route cần khóa, vd "/account-value" (áp cho cả route con)
   status?: FeatureLockStatus; // mặc định "maintenance"
   title?: string;
   message?: string;

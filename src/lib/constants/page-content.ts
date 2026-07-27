@@ -1,5 +1,5 @@
 // Nội dung trang tĩnh do admin sửa — lưu trong settings key `site.pages` (JSON).
-// Quản lý ở /admin/noi-dung-trang. Hàm thuần (client + server).
+// Quản lý ở /admin/page-content. Hàm thuần (client + server).
 //
 // Cơ chế ĐÈ: để trống thì trang vẫn dùng nội dung mặc định viết sẵn trong code.
 // Nhờ vậy không phải chuyển ~1400 dòng văn bản pháp lý vào DB, và nếu admin xoá
@@ -10,14 +10,14 @@ export const SETTINGS_KEY_PAGES = "site.pages";
 export type EditablePage = { key: string; slug: string; label: string; note?: string };
 
 // Chỉ gồm trang nội dung THUẦN TĨNH. Cố ý KHÔNG đưa vào đây:
-//   /tuyen-thanh-vien, /giai-dau-cong-dong — đọc dữ liệu động (đội, giải đấu),
+//   /recruitment, /community-tournaments — đọc dữ liệu động (đội, giải đấu),
 //     đã có admin riêng;
 //   /join — luồng tham gia giải đấu, đè lên sẽ hỏng chức năng.
 export const EDITABLE_PAGES: EditablePage[] = [
   { key: "about",          slug: "/about",          label: "Về chúng tôi" },
-  { key: "nap-an-toan",    slug: "/nap-an-toan",    label: "Nạp an toàn" },
-  { key: "dang-ky-tin",    slug: "/dang-ky-tin",    label: "Đăng ký nhận tin" },
-  { key: "hop-tac",        slug: "/hop-tac",        label: "Hợp tác & Đối tác", note: "Chỉ phần lời mời hợp tác — danh sách đối tác quản lý ở /admin/hop-tac" },
+  { key: "nap-an-toan",    slug: "/safe-topup",    label: "Nạp an toàn" },
+  { key: "dang-ky-tin",    slug: "/newsletter",    label: "Đăng ký nhận tin" },
+  { key: "hop-tac",        slug: "/partnership",        label: "Hợp tác & Đối tác", note: "Chỉ phần lời mời hợp tác — danh sách đối tác quản lý ở /admin/partners" },
   { key: "privacy-policy", slug: "/privacy-policy", label: "Chính sách bảo mật", note: "Văn bản pháp lý" },
   { key: "terms-of-use",   slug: "/terms-of-use",   label: "Điều khoản sử dụng", note: "Văn bản pháp lý" },
   { key: "cookie-policy",  slug: "/cookie-policy",  label: "Chính sách cookie",  note: "Văn bản pháp lý" },

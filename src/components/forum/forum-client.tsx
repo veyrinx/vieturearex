@@ -148,7 +148,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
           return (
             <Link
               key={p.id}
-              href={`/cong-dong/${p.id}`}
+              href={`/community/${p.id}`}
               className={`group flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 dark:hover:shadow-amber-400/10 border-l-4 ${catMeta.border} md:gap-4`}
             >
               <UserAvatar name={p.display_name} url={p.avatar_url} cssRing={p.css_ring} size={9} />
@@ -239,7 +239,7 @@ export function ForumPostForm({ onCreated }: { onCreated?: (id: string) => void 
     if (res.status === 401) { setStatus("error"); setErrMsg("Phiên đăng nhập đã hết. Vui lòng đăng nhập lại."); return; }
     if (!res.ok) { setStatus("error"); setErrMsg(data.error ?? "Lỗi không xác định."); return; }
     if (onCreated && data.id) { onCreated(data.id); return; }
-    router.push(`/cong-dong/${data.id}`);
+    router.push(`/community/${data.id}`);
   };
 
   const inputCls = "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none dark:focus:border-amber-400";
@@ -637,7 +637,7 @@ export function CreatePostButton() {
                   Bạn cần tham gia cộng đồng để tạo bài viết, thảo luận và tích điểm.
                 </p>
                 <Link
-                  href={`/login?next=${encodeURIComponent("/cong-dong")}`}
+                  href={`/login?next=${encodeURIComponent("/community")}`}
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-90"
                 >
                   Tham Gia Ngay

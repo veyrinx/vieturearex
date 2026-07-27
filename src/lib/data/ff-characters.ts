@@ -98,7 +98,7 @@ export const FF_CHARACTERS: FFCharacter[] = [
   { name: "Antonio",tier: "D", role: "defense",  skill: "Gangster's Spirit — tăng HP khởi đầu mỗi trận." },
 ];
 
-// ── Helpers cho trang nhân vật (/nhan-vat) ──────────────────
+// ── Helpers cho trang nhân vật (/characters) ──────────────────
 export const CHARACTER_IMG_BASE = supabaseUrl
   ? `${supabaseUrl}/storage/v1/object/public/ff-items/characters/`
   : "";

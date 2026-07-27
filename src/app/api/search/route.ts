@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         title: f.title,
         description: `${f.display_name} · ${f.reply_count} trả lời · ${f.view_count} lượt xem`,
         date: f.created_at,
-        href: `/cong-dong/${f.id}`,
+        href: `/community/${f.id}`,
         category: f.category,
       });
     }
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
         title: w.name,
         description: w.description?.slice(0, 150) ?? "",
         date: w.created_at,
-        href: `/vu-khi/${w.slug}`,
+        href: `/weapons/${w.slug}`,
         category: w.weapon_type ?? undefined,
         slug: w.slug,
       });
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
         title: l.name,
         description: l.description?.slice(0, 150) ?? "",
         date: l.updated_at,
-        href: `/vu-khi/loadout/${l.slug}`,
+        href: `/weapons/loadout/${l.slug}`,
         category: l.playstyle ?? undefined,
         slug: l.slug,
       });
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
         title: c.name,
         description: skill.desc || skill.name,
         date: new Date().toISOString(),
-        href: `/nhan-vat/${c.slug}`,
+        href: `/characters/${c.slug}`,
         category: ROLE_META[c.role].label,
         slug: c.slug,
       });

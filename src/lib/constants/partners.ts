@@ -1,5 +1,5 @@
 // Đối tác / hợp tác — dữ liệu lưu trong settings key `site.partners` (JSON).
-// Quản lý ở /admin/hop-tac, hiển thị ở /hop-tac. Hàm thuần (client + server).
+// Quản lý ở /admin/partners, hiển thị ở /partnership. Hàm thuần (client + server).
 
 import { SOCIAL_DEFS, type SocialKey } from "@/lib/constants/social-links";
 

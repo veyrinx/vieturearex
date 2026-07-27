@@ -433,7 +433,24 @@
       "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe commit -F D:\\\\tmp\\\\arex-commit-msg.txt)",
       "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe diff --stat; & D:\\\\Git\\\\cmd\\\\git.exe diff -- \"src/app/\\(site\\)/profile/page.tsx\" \"src/app/\\(site\\)/u/[id]/page.tsx\")",
       "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe status --short; & D:\\\\Git\\\\cmd\\\\git.exe log --oneline -4)",
-      "PowerShell(node scripts/daily-dev-report.mjs --since \"3 days ago\")"
+      "PowerShell(node scripts/daily-dev-report.mjs --since \"3 days ago\")",
+      "PowerShell($g = Get-Command gh -ErrorAction SilentlyContinue; if \\($g\\) { $g.Source; gh auth status } else { \"gh khong co tren PATH\" })",
+      "PowerShell($p = @\\(\"$env:ProgramFiles\\\\GitHub CLI\\\\gh.exe\", \"${env:ProgramFiles\\(x86\\)}\\\\GitHub CLI\\\\gh.exe\", \"$env:LOCALAPPDATA\\\\GitHubCLI\\\\gh.exe\", \"D:\\\\Git\\\\cmd\\\\gh.exe\"\\); foreach \\($x in $p\\) { if \\(Test-Path $x\\) { $x } }; \"--- winget/scoop ---\"; if \\(Test-Path \"$env:USERPROFILE\\\\scoop\\\\shims\\\\gh.exe\"\\) { \"scoop: co\" })",
+      "PowerShell($u = \\(Select-String -Path D:\\\\vieture-arex\\\\.env.local -Pattern '^NEXT_PUBLIC_SUPABASE_URL=' | Select-Object -First 1\\).Line -replace '^NEXT_PUBLIC_SUPABASE_URL=','' -replace '\"','' ; $u = $u.Trim\\(\\); \"URL: $u\"; foreach \\($p in @\\('google','facebook'\\)\\) { $target = \"$u/auth/v1/authorize?provider=$p&redirect_to=http://localhost:3000/auth/oauth-callback\"; try { $r = Invoke-WebRequest -Uri $target -MaximumRedirection 0 -ErrorAction Stop; \"$p -> HTTP $\\($r.StatusCode\\)\" } catch { $resp = $_.Exception.Response; if \\($resp\\) { $code = [int]$resp.StatusCode; $loc = $resp.Headers['Location']; \"$p -> HTTP $code\"; \"     Location: $loc\" } else { \"$p -> LOI: $\\($_.Exception.Message\\)\" } } })",
+      "PowerShell($u = 'https://kjqqukageltvdohkakxb.supabase.co'; foreach \\($p in @\\('google','facebook'\\)\\) { $target = \"$u/auth/v1/authorize?provider=$p&redirect_to=http://localhost:3000/auth/oauth-callback\"; try { Invoke-WebRequest -Uri $target -MaximumRedirection 0 -ErrorAction Stop | Out-Null } catch { $r = $_.Exception.Response; $sr = New-Object System.IO.StreamReader\\($r.GetResponseStream\\(\\)\\); \"=== $p ===\"; $sr.ReadToEnd\\(\\); $sr.Close\\(\\) } })",
+      "PowerShell($u = 'https://kjqqukageltvdohkakxb.supabase.co'; foreach \\($p in @\\('google','facebook'\\)\\) { \"=== $p ===\"; & curl.exe -s -i -o - --max-time 20 \"$u/auth/v1/authorize?provider=$p&redirect_to=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Foauth-callback\" | Select-Object -First 12 })",
+      "PowerShell($u = 'https://kjqqukageltvdohkakxb.supabase.co'; foreach \\($p in @\\('google','facebook','apple'\\)\\) { \"=== $p ===\"; & curl.exe -s --max-time 20 \"$u/auth/v1/authorize?provider=$p&redirect_to=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Foauth-callback\" })",
+      "PowerShell(npx next lint --file src/components/tools/tools-explorer.tsx --file \"src/app/\\(site\\)/cong-cu/page.tsx\" --file src/lib/constants/tools.ts)",
+      "PowerShell(Set-Content *)",
+      "PowerShell($env:NODE_OPTIONS=\"--max-old-space-size=4096\"; npx next build 2>&1 | Select-Object -Last 40)",
+      "PowerShell(& D:\\\\Git\\\\cmd\\\\git.exe status --short | Select-Object -First 60; \"--- tong so file thay doi ---\"; \\(& D:\\\\Git\\\\cmd\\\\git.exe status --short | Measure-Object -Line\\).Lines)",
+      "PowerShell($env:NODE_OPTIONS=\"--max-old-space-size=4096\"; npx next build 2>&1 | Select-Object -Last 25)",
+      "PowerShell(npx next lint --file src/components/tools/prime-store-live.tsx --file src/lib/server/prime-store-live.ts --file src/lib/constants/prime-store-live.ts)",
+      "Bash(curl *)",
+      "Bash(\"D:/Git/cmd/git.exe\" -C D:/vieture-arex diff --stat -- src/components/tools/prime-store-live.tsx)",
+      "Bash(\"D:/Git/cmd/git.exe\" -C D:/vieture-arex diff -- \"src/app/\\(site\\)/prime-store/page.tsx\")",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' status --porcelain | Measure-Object -Line; & 'D:\\\\Git\\\\cmd\\\\git.exe' status --porcelain -- next.config.mjs src/lib/utils/stream-utils.ts src/lib/server/stream-service.ts src/components/common/google-translate.tsx src/components/home/livestream-preview.tsx src/components/esports/streams-grid.tsx src/components/esports/stream-modal.tsx 'src/app/api/streams/sync/route.ts')",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' show --stat --oneline HEAD; & 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main)"
     ]
   }
 }

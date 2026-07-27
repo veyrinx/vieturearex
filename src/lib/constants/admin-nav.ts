@@ -28,7 +28,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: Rocket,
     items: [
       { title: "Quản lý dự án", href: "/admin/projects", icon: Rocket },
-      { title: "Xem Roadmap",   href: "/sap-ra-mat",     icon: Eye },
+      { title: "Xem Roadmap",   href: "/coming-soon",     icon: Eye },
     ],
   },
   {
@@ -47,8 +47,8 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Pop-up",    href: "/admin/popup",    icon: Bell },
       { title: "Quiz",      href: "/admin/quiz",     icon: Brain },
       { title: "Mạng xã hội", href: "/admin/social", icon: Share2 },
-      { title: "Đếm ngược",  href: "/admin/dem-nguoc", icon: CalendarClock },
-      { title: "Nội dung trang", href: "/admin/noi-dung-trang", icon: FileText },
+      { title: "Đếm ngược",  href: "/admin/countdowns", icon: CalendarClock },
+      { title: "Nội dung trang", href: "/admin/page-content", icon: FileText },
     ],
   },
   {
@@ -78,10 +78,10 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Người dùng",   href: "/admin/users",        icon: Users },
       { title: "Đội ngũ",      href: "/admin/team",         icon: Users2 },
       { title: "Thành tựu",    href: "/admin/achievements", icon: Medal },
-      { title: "Danh hiệu",    href: "/admin/danh-hieu",    icon: Award },
+      { title: "Danh hiệu",    href: "/admin/titles",    icon: Award },
       { title: "Cosmetics",    href: "/admin/cosmetics",    icon: Palette },
       { title: "Contributors", href: "/admin/contributors", icon: HandHeart },
-      { title: "Hợp tác",      href: "/admin/hop-tac",      icon: Handshake },
+      { title: "Hợp tác",      href: "/admin/partners",      icon: Handshake },
       { title: "Phân quyền",   href: "/admin/permissions",  icon: ShieldCheck },
     ],
   },

@@ -986,12 +986,12 @@ export default function ProfilePage() {
                 <div className="flex flex-col items-center gap-2 py-6 text-center">
                   <MessageSquare className="size-8 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground">Chưa có bài viết nào.</p>
-                  <Link href="/cong-dong" className="text-xs text-primary hover:underline dark:text-amber-400">Đến diễn đàn →</Link>
+                  <Link href="/community" className="text-xs text-primary hover:underline dark:text-amber-400">Đến diễn đàn →</Link>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {myPosts.map((post) => (
-                    <Link key={post.id} href={`/cong-dong/${post.id}`}
+                    <Link key={post.id} href={`/community/${post.id}`}
                       className="group flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 transition hover:border-primary/30 hover:bg-muted/40">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
@@ -1011,7 +1011,7 @@ export default function ProfilePage() {
                     </Link>
                   ))}
                   {myPosts.length >= 50 && (
-                    <Link href="/cong-dong" className="block text-center text-xs text-primary hover:underline dark:text-amber-400 py-1">
+                    <Link href="/community" className="block text-center text-xs text-primary hover:underline dark:text-amber-400 py-1">
                       Xem tất cả →
                     </Link>
                   )}
@@ -1034,7 +1034,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col items-center gap-2 py-6 text-center">
                   <BookOpen className="size-8 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground">Chưa đóng góp bài wiki nào.</p>
-                  <Link href="/wiki/tao-bai" className="text-xs text-emerald-600 hover:underline dark:text-emerald-400">Viết bài wiki đầu tiên →</Link>
+                  <Link href="/wiki/create" className="text-xs text-emerald-600 hover:underline dark:text-emerald-400">Viết bài wiki đầu tiên →</Link>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1090,7 +1090,7 @@ export default function ProfilePage() {
                         <Link href={
                           b.item_type === "news"  ? `/news/${b.item_id}` :
                           b.item_type === "wiki"  ? `/wiki/${b.item_id}` :
-                          b.item_type === "forum" ? `/cong-dong/${b.item_id}` :
+                          b.item_type === "forum" ? `/community/${b.item_id}` :
                           `/esports/events/${b.item_id}`
                         }
                           className="text-sm font-semibold text-foreground hover:text-primary line-clamp-1">

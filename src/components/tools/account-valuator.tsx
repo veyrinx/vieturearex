@@ -209,7 +209,7 @@ export function AccountValuator({ prefill }: { prefill?: Prefill } = {}) {
           <div className="mt-5 border-t border-border pt-4">
             {posted ? (
               <p className="text-sm font-semibold text-emerald-500">
-                Đã đăng! Xem <Link href="/bxh-nick-vn#cong-dong" className="underline">bảng xếp hạng nick</Link>.
+                Đã đăng! Xem <Link href="/top-players-vn#cong-dong" className="underline">bảng xếp hạng nick</Link>.
               </p>
             ) : loggedIn ? (
               <button
@@ -221,7 +221,7 @@ export function AccountValuator({ prefill }: { prefill?: Prefill } = {}) {
               </button>
             ) : (
               <Link
-                href="/login?next=/dinh-gia-nick"
+                href="/login?next=/account-value"
                 className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
               >
                 <LogIn className="size-4" /> Đăng nhập để đăng lên BXH

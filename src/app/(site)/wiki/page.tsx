@@ -70,7 +70,7 @@ export default async function WikiPage() {
             </p>
           </div>
           <Link
-            href="/wiki/tao-bai"
+            href="/wiki/create"
             className="inline-flex items-center gap-2 self-start rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 md:self-auto"
           >
             <PenLine className="size-4" />
@@ -103,7 +103,7 @@ export default async function WikiPage() {
           <p className="text-base font-semibold text-muted-foreground">Wiki chưa có bài viết nào</p>
           <p className="mt-1 text-sm text-muted-foreground/70">Hãy là người đầu tiên đóng góp kiến thức!</p>
           <Link
-            href="/wiki/tao-bai"
+            href="/wiki/create"
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
           >
             <PenLine className="size-4" />

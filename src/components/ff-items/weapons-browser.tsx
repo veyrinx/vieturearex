@@ -135,7 +135,7 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
           {filtered.map((w) => (
             <Link
               key={w.id}
-              href={`/vu-khi/${w.slug}`}
+              href={`/weapons/${w.slug}`}
               className="group flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
             >
               <div className="relative mx-auto flex size-24 items-center justify-center rounded-2xl bg-muted/40">

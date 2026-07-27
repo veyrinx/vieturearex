@@ -209,7 +209,7 @@ export function notifyUserNewForumPost(post: ForumPostInfo, siteUrl: string) {
         { label: "👤 Tác giả", value: post.display_name },
       ],
     }],
-    actions: [{ label: "👉 Xem bài viết", url: `${siteUrl}/cong-dong/${post.id}` }],
+    actions: [{ label: "👉 Xem bài viết", url: `${siteUrl}/community/${post.id}` }],
     footer: `✨ ${new URL(siteUrl).hostname}`,
   };
   return sendUserTelegramNotification(payload).catch(() => null);

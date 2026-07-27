@@ -44,7 +44,7 @@ type Channel = {
 
 /**
  * Khối thông tin liên hệ — đọc từ settings (Email, MXH) + siteConfig (Zalo),
- * hiển thị các kênh liên hệ ngay trên trang. Dùng cho /hop-tac, /lien-he…
+ * hiển thị các kênh liên hệ ngay trên trang. Dùng cho /partnership, /lien-he…
  */
 export async function ContactInfo({ className }: { className?: string }) {
   const settings = await getSettings().catch(() => []);

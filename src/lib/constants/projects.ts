@@ -14,7 +14,7 @@ export type Project = {
   id: string;
   name: string;
   description?: string;
-  /** Route đích, vd "/so-sanh-nick" — dùng để tự tính tiến độ. */
+  /** Route đích, vd "/player-compare" — dùng để tự tính tiến độ. */
   path?: string;
   /** Nhóm hiển thị, vd "Công cụ", "Cộng đồng". */
   category?: string;

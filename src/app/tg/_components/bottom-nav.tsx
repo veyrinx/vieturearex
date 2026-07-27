@@ -7,8 +7,8 @@ import { selectionHaptic } from "../_lib/tg";
 
 const NAV_ITEMS = [
   { href: "/tg", label: "Trang chủ", icon: "home", exact: true },
-  { href: "/tg/tin-tuc", label: "Tin tức", icon: "newspaper" },
-  { href: "/tg/su-kien", label: "Sự kiện", icon: "calendar_month" },
+  { href: "/tg/news", label: "Tin tức", icon: "newspaper" },
+  { href: "/tg/events", label: "Sự kiện", icon: "calendar_month" },
   { href: "/tg/leaderboard", label: "BXH", icon: "military_tech" },
   { href: "/tg/profile", label: "Tôi", icon: "person" },
 ];

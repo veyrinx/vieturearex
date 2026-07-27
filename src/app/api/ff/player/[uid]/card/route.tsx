@@ -25,7 +25,7 @@ function errorImage(message: string) {
         <div style={{ display: "flex", fontSize: 72 }}>🔍</div>
         <div style={{ display: "flex", fontSize: 40, fontWeight: 800 }}>{message}</div>
         <div style={{ display: "flex", fontSize: 26, color: "#f59e0b" }}>
-          {siteConfig.url.replace(/^https?:\/\//, "")}/tra-cuu-nick
+          {siteConfig.url.replace(/^https?:\/\//, "")}/player-lookup
         </div>
       </div>
     ),
@@ -119,7 +119,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
             {g?.GuildName ? `🛡️ ${String(g.GuildName)} · Lv ${num(g.GuildLevel)}` : "Chưa có guild"}
           </div>
           <div style={{ display: "flex", color: "#f59e0b" }}>
-            {siteConfig.url.replace(/^https?:\/\//, "")}/tra-cuu-nick
+            {siteConfig.url.replace(/^https?:\/\//, "")}/player-lookup
           </div>
         </div>
       </div>

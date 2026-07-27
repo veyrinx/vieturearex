@@ -60,7 +60,7 @@ export const navItems = [
   { title: "SỰ KIỆN", href: "/events" },
   { title: "PHÁT TRỰC TIẾP", href: "/esports" },
   { title: "TIN TỨC", href: "/news" },
-  { title: "SẮP RA MẮT", href: "/sap-ra-mat" },
+  { title: "SẮP RA MẮT", href: "/coming-soon" },
 ] as const;
 
 export const adminNavItems = [
@@ -71,7 +71,7 @@ export const adminNavItems = [
   { title: "THƯ VIỆN", href: "/admin/gallery" },
   { title: "NGƯỜI DÙNG", href: "/admin/users" },
   { title: "THÀNH TỰU", href: "/admin/achievements" },
-  { title: "DANH HIỆU", href: "/admin/danh-hieu" },
+  { title: "DANH HIỆU", href: "/admin/titles" },
   { title: "COSMETICS", href: "/admin/cosmetics" },
   { title: "WIKI", href: "/admin/wiki" },
   { title: "FF ITEMS", href: "/admin/ff-items" },

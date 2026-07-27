@@ -100,7 +100,7 @@ export function ToolsShowcase() {
             </button>
           </div>
           <Link
-            href="/cong-cu"
+            href="/tools"
             className="group inline-flex shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary dark:hover:text-amber-400"
           >
             Tất cả

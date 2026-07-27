@@ -94,7 +94,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         body: parsed.data.content.slice(0, 120),
         entity_type: "forum_post",
         entity_id: postId,
-        entity_url: `${siteUrl}/cong-dong/${postId}`,
+        entity_url: `${siteUrl}/community/${postId}`,
       })
     );
   }

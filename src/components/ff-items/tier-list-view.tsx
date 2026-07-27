@@ -58,7 +58,7 @@ function TierListCard({ list }: { list: PublicTierList }) {
               ) : (
                 items.map((item) =>
                   item.slug ? (
-                    <Link key={item.id} href={`/vu-khi/${item.slug}`} className="group relative" title={item.name}>
+                    <Link key={item.id} href={`/weapons/${item.slug}`} className="group relative" title={item.name}>
                       <Image
                         src={item.image_url}
                         alt={item.name}

@@ -1,18 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Eye, Gem, Gift, HelpCircle, Loader2, RefreshCw, Sparkles, Timer } from "lucide-react";
+import { ArrowUpRight, Eye, Gem, HelpCircle, Loader2, RefreshCw, Sparkles, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_PRIME_SERVER,
   PRIME_SERVERS,
+  PREDICTION_LEVELS,
   SERVER_LABEL,
+  predictionLevel,
   primeItemIcon,
   type PrimeLiveItem,
   type PrimePrediction,
   type PrimeServer,
   type PrimeStoreLive,
 } from "@/lib/constants/prime-store-live";
+
+/** Giờ cập nhật — chỉ tính sau khi mount để server và client không lệch chuỗi. */
+function useClock(ts: number | undefined) {
+  const [label, setLabel] = useState<string | null>(null);
+  useEffect(() => {
+    setLabel(
+      ts
+        ? new Date(ts).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+        : null,
+    );
+  }, [ts]);
+  return label;
+}
 
 function useCountdown(target: number | undefined) {
   const [now, setNow] = useState<number | null>(null);
@@ -59,11 +74,13 @@ function LiveCard({ item }: { item: PrimeLiveItem }) {
           Đề xuất
         </span>
       )}
-      {item.giftable && (
-        <Gift className="absolute right-1.5 top-1.5 size-3.5 text-pink-300" aria-label="Có thể tặng" />
-      )}
-      <div className="mx-auto size-16">
+      <div className="relative mx-auto size-16">
         <ItemIcon itemId={item.itemId} alt={item.label ?? `Vật phẩm ${item.itemId}`} />
+        {item.amount > 1 && (
+          <span className="absolute -bottom-0.5 -right-1 rounded-md bg-black/75 px-1 text-[9px] font-black tabular-nums text-white">
+            ×{item.amount.toLocaleString("vi-VN")}
+          </span>
+        )}
       </div>
       <p className="mt-1.5 line-clamp-2 min-h-[2rem] text-[11px] font-semibold leading-tight text-white/85">
         {item.label ?? `#${item.itemId}`}
@@ -73,24 +90,58 @@ function LiveCard({ item }: { item: PrimeLiveItem }) {
   );
 }
 
+/** Màu theo bậc tín hiệu — cùng thứ tự với `PREDICTION_LEVELS`. */
+const LEVEL_TONE = [
+  { chip: "bg-emerald-400/90 text-black", bar: "bg-emerald-400" },
+  { chip: "bg-amber-300/90 text-black", bar: "bg-amber-300" },
+  { chip: "bg-white/15 text-white/70", bar: "bg-white/30" },
+];
+
+/**
+ * Điểm thực tế chỉ chạy trong khoảng ~0.05–0.35, nên thanh dưới thẻ được kéo dãn
+ * theo `BAR_FULL` — vẽ đúng 33% thì thẻ nào cũng gần rỗng, nhìn không ra hơn kém.
+ */
+const BAR_FULL = 0.35;
+
 /** Thẻ dự đoán: mờ tịt cho tới khi người chơi bấm để lật. */
 function PredictionCard({ item }: { item: PrimePrediction }) {
   const [revealed, setRevealed] = useState(false);
+  const percent = Math.round(item.confidence * 100);
+  const level = predictionLevel(item.confidence);
+  const tone = LEVEL_TONE[PREDICTION_LEVELS.indexOf(level)] ?? LEVEL_TONE[LEVEL_TONE.length - 1];
+  const barWidth = Math.min(100, Math.round((item.confidence / BAR_FULL) * 100));
+  const ahead = item.aheadServers.length;
 
   return (
     <button
       type="button"
       onClick={() => setRevealed((v) => !v)}
       aria-label={revealed ? "Ẩn lại vật phẩm" : "Lật để xem vật phẩm dự đoán"}
+      title={[
+        `${level.label} — ${percent} điểm`,
+        `Đang bán ở ${item.servers.length}/${item.sampleSize} server có dữ liệu`,
+        ahead > 0 ? `${ahead} server đã sang đợt mới` : null,
+        item.servers.map((s) => SERVER_LABEL[s]).join(", "),
+      ]
+        .filter(Boolean)
+        .join("\n")}
       className={cn(
-        "group relative w-full overflow-hidden rounded-xl border p-2.5 text-center transition",
+        "group relative w-full overflow-hidden rounded-xl border p-2.5 pb-3 text-center transition",
         revealed
           ? "border-emerald-400/40 bg-emerald-400/[0.06]"
           : "border-white/10 bg-white/[0.04] hover:border-amber-300/40",
       )}
     >
-      <span className="absolute left-1.5 top-1.5 rounded-md bg-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase text-white/70">
-        {item.servers.length} server
+      <span
+        className={cn(
+          "absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[8px] font-black tabular-nums",
+          tone.chip,
+        )}
+      >
+        {percent}
+      </span>
+      <span className="absolute right-1.5 top-1.5 text-[8px] font-bold tabular-nums text-white/40">
+        {item.servers.length}/{item.sampleSize}
       </span>
 
       <div className="mx-auto size-16">
@@ -118,6 +169,17 @@ function PredictionCard({ item }: { item: PrimePrediction }) {
           <Eye className="size-3" /> Bấm để lật
         </span>
       )}
+
+      {ahead > 0 && (
+        <span className="mt-1 flex items-center justify-center gap-0.5 text-[9px] font-bold text-emerald-300/90">
+          <ArrowUpRight className="size-2.5" /> {ahead} server đã sang đợt mới
+        </span>
+      )}
+
+      {/* Thanh tín hiệu */}
+      <span className="absolute inset-x-0 bottom-0 block h-1 bg-white/[0.06]">
+        <span className={cn("block h-full", tone.bar)} style={{ width: `${barWidth}%` }} />
+      </span>
     </button>
   );
 }
@@ -144,10 +206,15 @@ export function PrimeStoreLivePanel({ initial }: { initial: PrimeStoreLive }) {
 
   const changeServer = (next: PrimeServer) => {
     setServer(next);
+    // Giữ lựa chọn trong URL để chia sẻ / F5 vẫn đúng server, không cần điều hướng lại.
+    const url = new URL(window.location.href);
+    url.searchParams.set("server", next);
+    window.history.replaceState(null, "", url);
     void load(next);
   };
 
   const remaining = useCountdown(data.window?.endAt);
+  const updatedAt = useClock(data.fetchedAt);
 
   return (
     <div className="space-y-3">
@@ -160,6 +227,7 @@ export function PrimeStoreLivePanel({ initial }: { initial: PrimeStoreLive }) {
           <p className="text-[11px] text-white/50">
             {remaining ? `Còn ${remaining}` : "Đang cập nhật…"}
             {data.window?.storeId ? ` · Đợt #${data.window.storeId}` : ""}
+            {updatedAt ? ` · Lấy lúc ${updatedAt}` : ""}
           </p>
         </div>
 
@@ -217,8 +285,12 @@ export function PrimeStoreLivePanel({ initial }: { initial: PrimeStoreLive }) {
                 Dự đoán hàng sắp về
               </h3>
               <p className="text-[10px] leading-relaxed text-white/50">
-                Vật phẩm đang bán ở server khác mà {SERVER_LABEL[server]} chưa có — càng nhiều server
-                đã bán thì khả năng về càng cao. Bấm vào thẻ để lật xem bạn đoán đúng không.
+                Vật phẩm đang bán ở server khác mà {SERVER_LABEL[server]} chưa có. Số ở góc thẻ là
+                <b className="text-white/70"> điểm tín hiệu</b> (không phải xác suất), tính từ hai
+                thứ: server nào đã sang đợt mới mà bán món đó — nặng ký nhất — và tỉ lệ server có dữ
+                liệu đang bày món đó. Điểm chỉ dùng để so hơn kém giữa các thẻ. Danh sách cắt theo
+                cỡ một đợt hàng — đoán dài ra cho dễ trúng thì trúng cũng vô nghĩa. Bấm vào thẻ để
+                lật xem bạn đoán đúng không.
               </p>
             </div>
           </div>

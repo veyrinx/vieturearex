@@ -8,7 +8,7 @@ export function BxhEmbedSnippet({ baseUrl }: { baseUrl: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const code = `<iframe src="${baseUrl}/embed/bxh-nick-vn?limit=10" width="360" height="480" style="border:0;border-radius:16px;overflow:hidden" loading="lazy" title="BXH nick khủng VN"></iframe>`;
+  const code = `<iframe src="${baseUrl}/embed/top-players-vn?limit=10" width="360" height="480" style="border:0;border-radius:16px;overflow:hidden" loading="lazy" title="BXH nick khủng VN"></iframe>`;
 
   const copy = () => {
     void navigator.clipboard.writeText(code).then(() => {

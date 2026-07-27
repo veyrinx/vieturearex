@@ -77,7 +77,7 @@ export function ConsoleBanner() {
     );
     c.log(`%c${rule}`, s.rule);
 
-    c.log("%c💼 Thích Arex Network? Gia nhập team → %chttps://arexnetwork.site/tuyen-thanh-vien", s.foot, s.link);
+    c.log("%c💼 Thích Arex Network? Gia nhập team → %chttps://arexnetwork.site/recruitment", s.foot, s.link);
     c.log("%c© 2026 Arex Network · Made with ⚡ in Vietnam", s.foot);
   }, []);
 

@@ -200,7 +200,7 @@ export function UserNavButton({ className }: Props) {
             Khám phá
           </DropdownMenuLabel>
           <DropdownMenuItem className="cursor-pointer rounded-xl p-0">
-            <Link href="/yeu-thich" className="flex w-full items-center gap-2.5 px-2.5 py-2">
+            <Link href="/favorites" className="flex w-full items-center gap-2.5 px-2.5 py-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-rose-500/10">
                 <Bookmark className="size-3.5 text-rose-500" />
               </span>

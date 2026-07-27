@@ -107,7 +107,7 @@ const CONTACT_INFO = [
     icon: Send,
     label: "Gửi bài viết",
     value: "Khu vực gửi bài",
-    href: "/gui-bai-viet",
+    href: "/submit-article",
     desc: "Đóng góp nội dung cho cộng đồng",
   },
   {
@@ -130,7 +130,7 @@ const LINKS = [
   { label: "Tin Tức", href: "/news", desc: "Cập nhật mới nhất về Free Fire" },
   { label: "Sự Kiện", href: "/events", desc: "Tất cả sự kiện in-game" },
   { label: "Esports", href: "/esports", desc: "Stream & giải đấu trực tiếp" },
-  { label: "Gửi Bài Viết", href: "/gui-bai-viet", desc: "Đóng góp nội dung cộng đồng" },
+  { label: "Gửi Bài Viết", href: "/submit-article", desc: "Đóng góp nội dung cộng đồng" },
   { label: "Chính Sách Bảo Mật", href: "/privacy-policy", desc: "Bảo vệ dữ liệu của bạn" },
   { label: "Điều Khoản Sử Dụng", href: "/terms-of-use", desc: "Quy tắc sử dụng nền tảng" },
 ];

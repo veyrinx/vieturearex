@@ -217,7 +217,7 @@ export function ForumAdminPanel() {
 
                 <div className="flex flex-wrap items-center gap-1">
                   <a
-                    href={`${siteUrl}/cong-dong/${post.id}`}
+                    href={`${siteUrl}/community/${post.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex size-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted"
@@ -302,7 +302,7 @@ export function ForumAdminPanel() {
                     {" · "}{timeAgo(reply.created_at)}
                     {" · "}
                     <a
-                      href={`${siteUrl}/cong-dong/${reply.post_id}`}
+                      href={`${siteUrl}/community/${reply.post_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline-offset-2 hover:underline"

@@ -79,7 +79,7 @@ export function CountdownsPanel({ initialItems, canEdit }: { initialItems: FFCou
             </p>
           </div>
         </div>
-        <Link href="/dem-nguoc" target="_blank" className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
+        <Link href="/countdown" target="_blank" className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground">
           <ExternalLink className="size-3.5" /> Xem trang
         </Link>
       </div>

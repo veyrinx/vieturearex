@@ -333,7 +333,7 @@ export default function TgProfilePage() {
                 </button>
               </div>
               <a
-                href={`${siteUrl}/lien-ket-telegram`}
+                href={`${siteUrl}/telegram-link`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-semibold"
@@ -357,7 +357,7 @@ export default function TgProfilePage() {
         {[
           { label: "Xem profile trên web", href: `${siteUrl}/profile` },
           { label: "Bảng xếp hạng giải đấu", href: `${siteUrl}/leaderboard` },
-          { label: "Tất cả sự kiện", href: `${siteUrl}/su-kien` },
+          { label: "Tất cả sự kiện", href: `${siteUrl}/events` },
         ].map(({ label, href }) => (
           <a
             key={href}

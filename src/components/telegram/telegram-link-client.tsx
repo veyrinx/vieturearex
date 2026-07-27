@@ -49,7 +49,7 @@ export function TelegramLinkClient() {
       <div className="rounded-2xl border border-border bg-card p-6 text-center">
         <p className="text-sm text-muted-foreground">Bạn cần đăng nhập để tạo mã liên kết.</p>
         <Link
-          href="/login?next=/lien-ket-telegram"
+          href="/login?next=/telegram-link"
           className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
         >
           <LogIn className="size-4" /> Đăng nhập

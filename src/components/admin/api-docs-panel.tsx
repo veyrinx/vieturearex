@@ -345,14 +345,14 @@ const SECTIONS: Section[] = [
       {
         method: "GET",
         path: "/api/countdowns",
-        desc: "Các mốc đếm ngược đang bật (admin sửa ở /admin/dem-nguoc).",
+        desc: "Các mốc đếm ngược đang bật (admin sửa ở /admin/countdowns).",
         rateLimit: "100 req/phút",
         response: JSON.stringify({ items: [{ id: "reset", title: "Reset mùa", targetAt: "2025-01-01T00:00:00Z", tag: "Rank", enabled: true }] }, null, 2),
       },
       {
         method: "GET",
         path: "/api/partners",
-        desc: "Đối tác đang hiển thị (đã bật + chưa hết hạn hợp tác). Admin sửa ở /admin/hop-tac.",
+        desc: "Đối tác đang hiển thị (đã bật + chưa hết hạn hợp tác). Admin sửa ở /admin/partners.",
         rateLimit: "100 req/phút",
         response: JSON.stringify({ items: [{ id: "uuid", name: "Đối tác", logos: [], socials: {} }] }, null, 2),
       },
@@ -388,7 +388,7 @@ const SECTIONS: Section[] = [
       {
         method: "GET",
         path: "/api/page-content",
-        desc: "Nội dung trang do admin đặt (admin sửa ở /admin/noi-dung-trang).",
+        desc: "Nội dung trang do admin đặt (admin sửa ở /admin/page-content).",
         params: [{ name: "key", type: "string", desc: "Trả body của 1 trang; bỏ trống → tất cả trang đang bật" }],
         rateLimit: "100 req/phút",
         response: JSON.stringify({ items: [{ key: "gioi-thieu", body: "<p>Nội dung…</p>" }] }, null, 2),

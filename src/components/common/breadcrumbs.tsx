@@ -7,7 +7,7 @@ export type Crumb = { name: string; href: string };
 
 /**
  * Breadcrumb điều hướng + BreadcrumbList JSON-LD (Google hiển thị trong kết quả).
- * `items` là các href tương đối (vd "/vu-khi"); tự động thêm "Trang chủ" ở đầu.
+ * `items` là các href tương đối (vd "/weapons"); tự động thêm "Trang chủ" ở đầu.
  */
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   const all: Crumb[] = [{ name: "Trang chủ", href: "/" }, ...items];

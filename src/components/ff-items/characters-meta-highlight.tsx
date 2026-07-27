@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { ROLE_META, splitSkill, type CharacterListItem } from "@/lib/data/ff-characters";
 
 /**
- * Khối "Meta hiện tại" đầu trang /nhan-vat: nổi bật nhân vật tier S.
+ * Khối "Meta hiện tại" đầu trang /characters: nổi bật nhân vật tier S.
  * Server component — chỉ hiển thị khi có nhân vật tier S.
  */
 export function CharactersMetaHighlight({ characters }: { characters: CharacterListItem[] }) {
@@ -26,7 +26,7 @@ export function CharactersMetaHighlight({ characters }: { characters: CharacterL
           return (
             <Link
               key={c.slug}
-              href={`/nhan-vat/${c.slug}`}
+              href={`/characters/${c.slug}`}
               className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3 text-center transition-colors hover:border-primary/50"
             >
               <div className="size-16 overflow-hidden rounded-xl bg-muted/40">

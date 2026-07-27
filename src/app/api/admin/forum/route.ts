@@ -114,8 +114,8 @@ export async function PATCH(req: NextRequest) {
     footer: "💬 Arex Admin",
   }).catch(() => null);
 
-  revalidatePath("/cong-dong", "page");
-  revalidatePath(`/cong-dong/${body.id}`, "page");
+  revalidatePath("/community", "page");
+  revalidatePath(`/community/${body.id}`, "page");
 
   return NextResponse.json({ ok: true });
 }
@@ -154,7 +154,7 @@ export async function DELETE(req: NextRequest) {
     footer: "💬 Arex Admin",
   }).catch(() => null);
 
-  revalidatePath("/cong-dong", "page");
+  revalidatePath("/community", "page");
 
   return NextResponse.json({ ok: true });
 }

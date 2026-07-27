@@ -68,7 +68,7 @@ export async function GET() {
       id: p.id,
       title: p.title,
       category: p.category,
-      url: `/cong-dong/${p.id}`,
+      url: `/community/${p.id}`,
       user_id: p.user_id,
       display_name: u?.display_name ?? null,
       avatar_url: u?.avatar_url ?? null,
