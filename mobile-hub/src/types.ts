@@ -156,3 +156,14 @@ export type AppRelease = {
   sizeBytes: number;
   updatedAt: string | null;
 };
+
+/** Thông báo cá nhân của tài khoản đang đăng nhập (GET /api/notifications). */
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  entity_url: string | null;
+  read_at: string | null;
+  created_at: string;
+};

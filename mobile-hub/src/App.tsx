@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { BrandMark } from "@/components/brand-mark";
 import { Button, Spinner } from "@/components/ui";
 import { useAuth } from "@/auth/auth-context";
 import { bootNativeChrome, registerPush, watchNetwork } from "@/lib/native";
+import { startNotificationPolling } from "@/lib/notify";
 import { ROLE_LABEL } from "@/types";
 import { LoginScreen } from "@/screens/login";
 import { DashboardScreen } from "@/screens/dashboard";
@@ -21,6 +22,7 @@ import { LogsScreen } from "@/screens/system-logs";
 export function App() {
   const { loading, session, profile, forbidden, signOut } = useAuth();
   const [online, setOnline] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     void bootNativeChrome();
@@ -31,6 +33,16 @@ export function App() {
   useEffect(() => {
     if (session && profile && !forbidden) void registerPush();
   }, [session, profile, forbidden]);
+
+  // Chưa có FCM nên thông báo chạy bằng cách tự hỏi server theo chu kỳ.
+  useEffect(() => {
+    if (!session || !profile || forbidden) return;
+    return startNotificationPolling((url) => {
+      // entity_url là đường dẫn của website; Hub có bộ route riêng nên chỉ
+      // nhận những đường trong app, còn lại đưa về màn hình chính.
+      navigate(url.startsWith("/") ? url : "/");
+    });
+  }, [session, profile, forbidden, navigate]);
 
   if (loading) {
     return (
