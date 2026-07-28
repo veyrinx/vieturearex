@@ -72,7 +72,7 @@ export async function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-16 border-t border-border bg-card">
+    <footer className="site-footer relative mt-16 border-t border-border bg-card">
       {/* Top accent line with a slow traveling glint */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden bg-gradient-to-r from-transparent via-primary/45 to-transparent dark:via-amber-400/45">
         <div

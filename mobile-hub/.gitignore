@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+
+# Capacitor sinh lại được bằng `npx cap sync`
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/App/public/
+android/app/src/main/assets/public/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/release/
+android/capacitor-cordova-android-plugins/
+
+.DS_Store
+Thumbs.db

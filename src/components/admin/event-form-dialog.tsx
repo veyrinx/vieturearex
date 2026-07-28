@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 import { UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/common/date-picker-input";
+import { ImageUploadButton } from "@/components/common/image-upload-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -34,6 +36,8 @@ type EventFormDialogProps = {
   triggerLabel: string;
   showTrigger?: boolean;
   onSaved: () => Promise<void>;
+  /** "duplicate" prefills from initialData but creates a brand new event. */
+  mode?: "edit" | "duplicate";
 };
 
 const eventFormSchema = z.object({
@@ -62,12 +66,17 @@ export function EventFormDialog({
   triggerLabel,
   showTrigger = true,
   onSaved,
+  mode = "edit",
 }: EventFormDialogProps) {
+  const isDuplicate = mode === "duplicate";
+  const isEditing = Boolean(initialData) && !isDuplicate;
   const {
     control,
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -87,7 +96,7 @@ export function EventFormDialog({
 
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const eventServers = useEventServers();
-  const initialEventId = initialData?.id;
+  const imageUrl = (watch("image_url") ?? "").trim();
 
   useEffect(() => {
     const supabase = createClient();
@@ -105,8 +114,8 @@ export function EventFormDialog({
 
     if (initialData) {
       reset({
-        id: initialData.id,
-        title: initialData.title,
+        id: isDuplicate ? undefined : initialData.id,
+        title: isDuplicate ? `${initialData.title} (bản sao)`.slice(0, 120) : initialData.title,
         description: initialData.description ?? "",
         start_date: formatVietnamDateInput(initialData.start_date),
         start_time: formatVietnamTimeInput(initialData.start_date),
@@ -132,7 +141,7 @@ export function EventFormDialog({
       link: "",
       server_region: "vn",
     });
-  }, [initialData, open, reset]);
+  }, [initialData, isDuplicate, open, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     const cleanedStartDate = (values.start_date || "").trim();
@@ -144,7 +153,14 @@ export function EventFormDialog({
       return;
     }
 
-    const method = initialData ? "PATCH" : "POST";
+    const startIso = toVietnamIsoFromDateTimeInput(cleanedStartDate, values.start_time || "00:00");
+    const endIso = toVietnamIsoFromDateTimeInput(cleanedEndDate, values.end_time || "23:59");
+    if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
+      toast.error("Thời gian kết thúc phải sau thời gian bắt đầu.");
+      return;
+    }
+
+    const method = isEditing ? "PATCH" : "POST";
     const response = await fetch("/api/admin/events", {
       method,
       headers: {
@@ -152,9 +168,10 @@ export function EventFormDialog({
       },
       body: JSON.stringify({
         ...values,
+        id: isEditing ? values.id : undefined,
         description: values.description?.trim() ?? "",
-        start_date: toVietnamIsoFromDateTimeInput(cleanedStartDate, values.start_time || "00:00"),
-        end_date: toVietnamIsoFromDateTimeInput(cleanedEndDate, values.end_time || "23:59"),
+        start_date: startIso,
+        end_date: endIso,
         thumbnail_url: values.thumbnail_url || values.image_url,
         link: values.link || "",
         server_region: (values.server_region || "").trim() || "vn",
@@ -167,7 +184,7 @@ export function EventFormDialog({
       return;
     }
 
-    toast.success(initialData ? "Đã cập nhật sự kiện." : "Đã tạo sự kiện mới.");
+    toast.success(isEditing ? "Đã cập nhật sự kiện." : "Đã tạo sự kiện mới.");
     onOpenChange(false);
     await onSaved();
   });
@@ -184,7 +201,7 @@ export function EventFormDialog({
         <div className="max-h-[92vh] overflow-y-auto px-6 py-6">
           <DialogHeader className="mb-4">
             <DialogTitle className="font-heading text-xl uppercase text-foreground pr-8">
-              {initialData ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
+              {isEditing ? "Chỉnh sửa sự kiện" : isDuplicate ? "Nhân bản sự kiện" : "Tạo sự kiện mới"}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm">
               Trạng thái sẽ tự động cập nhật theo múi giờ Việt Nam.
@@ -192,7 +209,7 @@ export function EventFormDialog({
             {adminEmail && (
               <div className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">
                 <UserCog className="size-3 shrink-0" />
-                {initialData ? "Cập nhật bởi:" : "Tạo bởi:"} {adminEmail}
+                {isEditing ? "Cập nhật bởi:" : "Tạo bởi:"} {adminEmail}
               </div>
             )}
           </DialogHeader>
@@ -266,11 +283,35 @@ export function EventFormDialog({
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Ảnh sự kiện
-              </label>
-              <Input {...register("image_url")} className="border-border bg-background text-foreground" />
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Ảnh sự kiện
+                </label>
+                <ImageUploadButton
+                  bucket="events"
+                  label="Tải ảnh lên"
+                  onUploaded={(url) => {
+                    setValue("image_url", url, { shouldValidate: true });
+                    toast.success("Đã tải ảnh lên.");
+                  }}
+                />
+              </div>
+              <Input
+                {...register("image_url")}
+                placeholder="https://..."
+                className="border-border bg-background text-foreground"
+              />
               {errors.image_url ? <p className="text-xs text-rose-500">{errors.image_url.message}</p> : null}
+              {imageUrl && !errors.image_url ? (
+                <Image
+                  src={imageUrl}
+                  alt="Xem trước ảnh sự kiện"
+                  width={640}
+                  height={240}
+                  unoptimized
+                  className="h-36 w-full rounded-xl border border-border object-cover"
+                />
+              ) : null}
             </div>
 
             <div className="space-y-2">

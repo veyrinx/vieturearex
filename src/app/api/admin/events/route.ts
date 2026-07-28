@@ -307,29 +307,40 @@ export async function DELETE(request: NextRequest) {
     return denied;
   }
 
-  const payload = (await request.json()) as { id?: string };
-  if (!payload.id) {
+  const payload = (await request.json()) as { id?: string; ids?: string[] };
+  const ids = Array.isArray(payload.ids)
+    ? payload.ids.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    : payload.id
+      ? [payload.id]
+      : [];
+
+  if (ids.length === 0) {
     return NextResponse.json({ error: "Missing event id." }, { status: 400 });
+  }
+  if (ids.length > 50) {
+    return NextResponse.json({ error: "Tối đa 50 sự kiện mỗi lần xóa." }, { status: 400 });
   }
 
   try {
     const adminName = await getAdminName();
-    await deleteEvent(payload.id);
-    await logAdminActivity({
-      action: "EVENT_DELETED",
-      targetType: "EVENT",
-      targetId: payload.id,
-      summary: "Xóa sự kiện",
-    });
-    notifyEventChange(
-      { id: payload.id, title: `ID: ${payload.id}`, start_date: "", end_date: "" },
-      "deleted",
-      adminName,
-    );
+    for (const id of ids) {
+      await deleteEvent(id);
+      await logAdminActivity({
+        action: "EVENT_DELETED",
+        targetType: "EVENT",
+        targetId: id,
+        summary: "Xóa sự kiện",
+      });
+      notifyEventChange(
+        { id, title: `ID: ${id}`, start_date: "", end_date: "" },
+        "deleted",
+        adminName,
+      );
+    }
     revalidatePath("/events", "layout");
     revalidatePath("/calendar", "layout");
     revalidatePath("/", "layout");
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, deleted: ids.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to delete event.";
     notifyEventError("DELETE /api/admin/events (xóa sự kiện)", message);

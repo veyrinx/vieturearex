@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { isNativeApp, openExternal } from "@/lib/native/bridge";
 
 type Provider = "google" | "facebook";
 
@@ -51,18 +52,36 @@ export function SocialAuthButtons({ className }: { className?: string }) {
     setPending(provider);
     const next = new URLSearchParams(window.location.search).get("next") ?? "/";
     const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
-    const redirectTo = `${window.location.origin}/auth/oauth-callback?next=${encodeURIComponent(safeNext)}`;
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    // App native: Google chặn OAuth trong WebView → mở bằng trình duyệt hệ
+    // thống rồi quay lại app qua /auth/native-bridge → arex://auth/callback.
+    const native = isNativeApp();
+    const callbackPath = native ? "/auth/native-bridge" : "/auth/oauth-callback";
+    const redirectTo = `${window.location.origin}${callbackPath}?next=${encodeURIComponent(safeNext)}`;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo },
+      options: { redirectTo, skipBrowserRedirect: native },
     });
 
     if (error) {
       setPending(null);
       toast.error(`Không thể đăng nhập bằng ${LABELS[provider]}. Vui lòng thử lại.`);
+      return;
     }
-    // Thành công: trình duyệt chuyển sang trang provider, giữ nguyên trạng thái loading.
+
+    if (native) {
+      if (!data?.url) {
+        setPending(null);
+        toast.error("Không mở được trang đăng nhập. Vui lòng thử lại.");
+        return;
+      }
+      await openExternal(data.url);
+      // Người dùng có thể huỷ và quay lại app → mở khoá nút sau ít giây.
+      setTimeout(() => setPending(null), 3000);
+      return;
+    }
+    // Web: trình duyệt chuyển sang trang provider, giữ nguyên trạng thái loading.
   };
 
   return (

@@ -5,6 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/constants/site";
 import { AppProviders } from "@/components/providers/app-providers";
+import { NativeAppShell } from "@/components/providers/native-app-shell";
 import { PageViewTracker } from "@/components/common/page-view-tracker";
 import { ConsoleBanner } from "@/components/common/console-banner";
 import { CookieConsent } from "@/components/common/cookie-consent";
@@ -25,6 +26,9 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  // Cho phép nội dung tràn ra sau tai thỏ / thanh hệ thống trong app native;
+  // trình duyệt thường không bị ảnh hưởng.
+  viewportFit: "cover",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -124,7 +128,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const activeSite = await getSiteConfig();
-  const country = (await headers()).get("x-vercel-ip-country");
+  const requestHeaders = await headers();
+  const country = requestHeaders.get("x-vercel-ip-country");
+  // App native (vỏ Capacitor) gắn "ArexApp/" vào User-Agent. Chính sách AdSense
+  // cấm hiển thị quảng cáo trong WebView của app → không nạp loader luôn.
+  const isNativeApp = /ArexApp\//.test(requestHeaders.get("user-agent") ?? "");
   // Publisher ID lấy từ Cài đặt → Quảng cáo (fallback về id mặc định của site).
   const adsenseId =
     buildSettingsMap(await getSettings())["ads.google_adsense_id"]?.trim() || "ca-pub-6400047965945515";
@@ -132,6 +140,14 @@ export default async function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
+        {/* App native (vỏ Capacitor): đánh dấu <html> TRƯỚC khi vẽ để CSS
+            safe-area và các rule ẩn quảng cáo áp dụng ngay, không nháy. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var c=window.Capacitor,u=navigator.userAgent;if((c&&c.isNativePlatform&&c.isNativePlatform())||/ArexApp\\//.test(u)){var d=document.documentElement;d.dataset.native='true';d.dataset.nativePlatform=(c&&c.getPlatform&&c.getPlatform())||(/ArexIOS/.test(u)?'ios':'android');}}catch(e){}",
+          }}
+        />
         <link rel="preconnect" href="https://www.youtube-nocookie.com" />
         <link rel="preconnect" href="https://www.youtube.com" />
         <link rel="preconnect" href="https://i.ytimg.com" />
@@ -160,13 +176,18 @@ gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personali
 try{if(localStorage.getItem('arex-cookie-consent')==='accepted'){gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});}}catch(e){}
 gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         </Script>
-        {/* Google AdSense — meta xác minh + loader (Publisher ID từ settings) */}
-        <meta name="google-adsense-account" content={adsenseId} />
-        <Script
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-        />
+        {/* Google AdSense — meta xác minh + loader (Publisher ID từ settings).
+            Bỏ hẳn trong app native: AdSense không cho chạy trong WebView app. */}
+        {!isNativeApp && (
+          <>
+            <meta name="google-adsense-account" content={adsenseId} />
+            <Script
+              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
+              strategy="afterInteractive"
+              crossOrigin="anonymous"
+            />
+          </>
+        )}
         {/* JSON-LD structured data for SEO */}
         <script
           type="application/ld+json"
@@ -220,7 +241,10 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         />
       </head>
       <body className={cn("font-body min-h-screen bg-background text-foreground antialiased")}>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          {children}
+          <NativeAppShell />
+        </AppProviders>
         <ConsoleBanner />
         <CookieConsent country={country} />
         <PageViewTracker />

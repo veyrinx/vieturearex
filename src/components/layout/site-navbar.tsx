@@ -240,7 +240,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
     <header
       style={{ top: 0 }}
       className={cn(
-        "z-50 backdrop-blur-xl",
+        "site-navbar z-50 backdrop-blur-xl",
         isHomePage
           ? "fixed inset-x-0 bg-white/72 shadow-[0_8px_24px_rgba(15,23,42,0.07)] dark:bg-slate-950/42 dark:shadow-none"
           : "sticky border-b border-border bg-background/90",

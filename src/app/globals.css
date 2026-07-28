@@ -598,3 +598,62 @@ body, .font-body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   App native (iOS/Android — vỏ Capacitor ở thư mục `mobile/`)
+   `data-native="true"` được gắn lên <html> bởi script inline trong layout.
+   Mục tiêu: giữ nguyên giao diện web, chỉ chừa safe-area và bỏ phần chỉ hợp
+   với trình duyệt (quảng cáo, widget dịch, banner cài PWA…).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+html[data-native="true"] {
+  /* Gộp env() của iOS và biến do Capacitor tiêm trên Android. */
+  --app-inset-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --app-inset-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+
+  -webkit-tap-highlight-color: transparent;
+  /* Chặn pull-to-refresh / hiệu ứng nảy của WebView cho giống app thật. */
+  overscroll-behavior-y: none;
+}
+
+html[data-native="true"] body {
+  overscroll-behavior-y: none;
+  -webkit-touch-callout: none;
+}
+
+/* Vẫn cho chọn/copy trong ô nhập liệu và nội dung bài viết. */
+html[data-native="true"] input,
+html[data-native="true"] textarea,
+html[data-native="true"] [contenteditable="true"],
+html[data-native="true"] article,
+html[data-native="true"] .prose {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Thanh điều hướng trên cùng chừa chỗ cho status bar (edge-to-edge). */
+html[data-native="true"] .site-navbar {
+  padding-top: var(--app-inset-top);
+}
+
+/* Chân trang / nút nổi chừa chỗ cho vạch home iOS + thanh cử chỉ Android. */
+html[data-native="true"] .site-footer {
+  padding-bottom: calc(var(--app-inset-bottom) + 12px);
+}
+
+/* Những thứ chỉ dành cho trình duyệt — ẩn trong app. */
+html[data-native="true"] .adsbygoogle,
+html[data-native="true"] ins.adsbygoogle,
+html[data-native="true"] [data-ad-slot],
+html[data-native="true"] #google_translate_element,
+html[data-native="true"] .goog-te-banner-frame,
+html[data-native="true"] .skiptranslate,
+html[data-native="true"] [data-native-hidden] {
+  display: none !important;
+}
+
+/* Google Dịch đôi khi đẩy body xuống 40px — huỷ trong app. */
+html[data-native="true"] body {
+  top: 0 !important;
+}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { isNativeApp } from "@/lib/native/bridge";
 
 // Publisher id from the AdSense loader script in the root layout.
 const DEFAULT_CLIENT = "ca-pub-6400047965945515";
@@ -37,16 +38,22 @@ export function AdSense({
   style,
 }: AdSenseProps) {
   const pushed = useRef(false);
+  // Chính sách AdSense cấm quảng cáo trong WebView của app native → không render.
+  const [native, setNative] = useState(false);
 
   useEffect(() => {
-    if (!slot || pushed.current) return;
+    setNative(isNativeApp());
+  }, []);
+
+  useEffect(() => {
+    if (!slot || pushed.current || native) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
       pushed.current = true;
     } catch { /* AdSense not ready / blocked — ignore */ }
-  }, [slot]);
+  }, [slot, native]);
 
-  if (!slot) return null;
+  if (!slot || native) return null;
 
   return (
     <ins
