@@ -5,7 +5,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getClientIp } from "@/lib/server/get-client-ip";
 
-const ALLOWED_BUCKETS = ["logos"] as const;
+const ALLOWED_BUCKETS = ["logos", "forum"] as const;
 
 export async function POST(request: NextRequest) {
   const key = `user-upload:${getClientIp(request)}`;

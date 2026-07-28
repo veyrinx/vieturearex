@@ -12,18 +12,25 @@ const SANITIZE_OPTIONS: any = {
     "h2", "h3", "h4",
     "ul", "ol", "li",
     "blockquote", "code", "pre",
-    "a", "hr",
+    "a", "hr", "img", "figure", "figcaption",
   ],
   allowedAttributes: {
     a: ["href", "target", "rel"],
     code: ["class"],
     pre:  ["class"],
+    img:  ["src", "alt", "title", "width", "height", "loading"],
   },
+  // Images are uploaded to our own storage, so no data: URIs are ever needed.
   allowedSchemes: ["https", "http"],
+  allowedSchemesByTag: { img: ["https", "http"] },
   transformTags: {
     a: (_tag: string, attribs: Record<string, string>) => ({
       tagName: "a",
       attribs: { ...attribs, target: "_blank", rel: "noopener noreferrer nofollow" },
+    }),
+    img: (_tag: string, attribs: Record<string, string>) => ({
+      tagName: "img",
+      attribs: { ...attribs, loading: "lazy" },
     }),
   },
 };
@@ -52,6 +59,7 @@ export function ForumContent({ content, className }: Props) {
         "prose-p:text-foreground/90 prose-a:text-primary prose-strong:text-foreground",
         "prose-blockquote:border-primary/30 prose-blockquote:text-muted-foreground",
         "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-foreground/90",
+        "prose-img:rounded-xl prose-img:border prose-img:border-border prose-img:max-h-[70vh] prose-img:w-auto",
         className ?? "",
       ].join(" ")}
       dangerouslySetInnerHTML={{ __html: sanitized ?? "" }}

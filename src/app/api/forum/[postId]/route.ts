@@ -4,10 +4,12 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { hasImage, plainTextOf } from "@/lib/utils/forum-content";
 
+// Cap the HTML payload; the readable minimum is measured on the visible text.
 const editPostSchema = z.object({
   title:   z.string().min(5).max(200),
-  content: z.string().min(20).max(20000),
+  content: z.string().min(1).max(200_000),
 });
 
 type Ctx = { params: Promise<{ postId: string }> };
@@ -50,6 +52,10 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   const body = await req.json().catch(() => null);
   const parsed = editPostSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
+
+  if (plainTextOf(parsed.data.content).length < 20 && !hasImage(parsed.data.content)) {
+    return NextResponse.json({ error: "Nội dung cần ít nhất 20 ký tự." }, { status: 400 });
+  }
 
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });

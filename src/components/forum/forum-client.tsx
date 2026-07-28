@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   MessageSquare, Eye, Pin, Lock, Plus, ChevronRight,
   Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2, ThumbsUp, Pencil, X,
@@ -25,6 +25,7 @@ const CATEGORY_META: Record<string, { color: string; border: string; bg: string;
 import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
 import { ForumEditor } from "@/components/forum/forum-editor";
 import { ForumContent } from "@/components/forum/forum-content";
+import { hasImage, plainTextOf, validateReplyContent } from "@/lib/utils/forum-content";
 
 type Post = {
   id: string; title: string; category: string;
@@ -224,9 +225,11 @@ export function ForumPostForm({ onCreated }: { onCreated?: (id: string) => void 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Client-side validation so users get a clear message instead of a generic API error
-    const plain = content.replace(/<[^>]*>/g, "").trim();
+    const plain = plainTextOf(content);
     if (title.trim().length < 5) { setStatus("error"); setErrMsg("Tiêu đề cần ít nhất 5 ký tự."); return; }
-    if (plain.length < 20) { setStatus("error"); setErrMsg("Nội dung cần ít nhất 20 ký tự."); return; }
+    if (plain.length < 20 && !hasImage(content)) {
+      setStatus("error"); setErrMsg("Nội dung cần ít nhất 20 ký tự."); return;
+    }
 
     setStatus("loading"); setErrMsg("");
     const res = await fetch("/api/forum", {
@@ -237,6 +240,7 @@ export function ForumPostForm({ onCreated }: { onCreated?: (id: string) => void 
     if (!res) { setStatus("error"); setErrMsg("Lỗi kết nối. Vui lòng thử lại."); return; }
     const data = await res.json().catch(() => ({})) as { id?: string; error?: string };
     if (res.status === 401) { setStatus("error"); setErrMsg("Phiên đăng nhập đã hết. Vui lòng đăng nhập lại."); return; }
+    if (res.status === 429) { setStatus("error"); setErrMsg("Bạn đăng quá nhanh, vui lòng đợi một lát."); return; }
     if (!res.ok) { setStatus("error"); setErrMsg(data.error ?? "Lỗi không xác định."); return; }
     if (onCreated && data.id) { onCreated(data.id); return; }
     router.push(`/community/${data.id}`);
@@ -262,9 +266,9 @@ export function ForumPostForm({ onCreated }: { onCreated?: (id: string) => void 
         <ForumEditor
           value={content}
           onChange={setContent}
-          placeholder="Viết nội dung bài đăng... (hỗ trợ in đậm, danh sách, trích dẫn...)"
+          placeholder="Viết nội dung bài đăng... (in đậm, danh sách, trích dẫn, chèn ảnh)"
         />
-        <p className="mt-1 text-[11px] text-muted-foreground/60">{content.replace(/<[^>]*>/g, "").length}/20000 ký tự</p>
+        <p className="mt-1 text-[11px] text-muted-foreground/60">{plainTextOf(content).length}/20000 ký tự</p>
       </div>
       {status === "error" && (
         <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-2.5 text-sm text-destructive">
@@ -287,10 +291,16 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    fetch("/api/user/profile").then((r) => r.json()).then((d: { id?: string }) => setCurrentUserId(d.id ?? null)).catch(() => null);
+    fetch("/api/user/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { id?: string } | null) => setCurrentUserId(d?.id ?? null))
+      .catch(() => null)
+      .finally(() => setAuthChecked(true));
   }, []);
 
   const load = useCallback(async () => {
@@ -306,17 +316,39 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true); setErrMsg("");
-    const res = await fetch(`/api/forum/${postId}/replies`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, parent_id: replyTo }),
-    });
-    const data = await res.json() as { error?: string };
-    if (!res.ok) { setErrMsg(data.error ?? "Lỗi"); setSubmitting(false); return; }
-    setContent(""); setReplyTo(null);
-    await load();
-    setSubmitting(false);
+    if (submitting) return;
+
+    // Validate locally so an empty editor never produces a confusing API error.
+    const invalid = validateReplyContent(content);
+    if (invalid) { setErrMsg(invalid); setNeedsLogin(false); return; }
+
+    setSubmitting(true); setErrMsg(""); setNeedsLogin(false);
+    try {
+      const res = await fetch(`/api/forum/${postId}/replies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, parent_id: replyTo }),
+      });
+      // A 429/500 can come back as HTML, so never let res.json() throw.
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (res.status === 401) {
+        setNeedsLogin(true);
+        setErrMsg("Bạn cần đăng nhập để bình luận.");
+        return;
+      }
+      if (res.status === 429) {
+        setErrMsg("Bạn gửi quá nhanh, vui lòng đợi một lát rồi thử lại.");
+        return;
+      }
+      if (!res.ok) { setErrMsg(data.error ?? "Không gửi được, vui lòng thử lại."); return; }
+      setContent(""); setReplyTo(null);
+      await load();
+    } catch {
+      setErrMsg("Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.");
+    } finally {
+      // Always released — previously a thrown fetch/json left the button spinning.
+      setSubmitting(false);
+    }
   };
 
   const topLevel = replies.filter((r) => !r.parent_id);
@@ -350,7 +382,7 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
               ))}
               {replyTo === r.id && (
                 <div className="ml-8 border-l-2 border-primary/30 pl-4">
-                  <ReplyForm content={content} setContent={setContent} onSubmit={submit} submitting={submitting} errMsg={errMsg} onCancel={() => setReplyTo(null)} />
+                  <ReplyForm content={content} setContent={setContent} onSubmit={submit} submitting={submitting} errMsg={errMsg} needsLogin={needsLogin} onCancel={() => setReplyTo(null)} />
                 </div>
               )}
             </div>
@@ -358,10 +390,25 @@ export function ForumReplies({ postId, isLocked }: { postId: string; isLocked: b
         </div>
       )}
 
-      {!isLocked && !replyTo && (
+      {!isLocked && !replyTo && authChecked && !currentUserId && (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card p-6 text-center">
+          <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 dark:bg-amber-400/10">
+            <MessageSquare className="size-5 text-primary dark:text-amber-400" />
+          </span>
+          <p className="text-sm text-muted-foreground">Đăng nhập để tham gia bình luận và đính kèm ảnh.</p>
+          <Link
+            href={`/login?next=${encodeURIComponent(`/community/${postId}`)}`}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:opacity-90"
+          >
+            Đăng nhập
+          </Link>
+        </div>
+      )}
+
+      {!isLocked && !replyTo && (!authChecked || currentUserId) && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Viết trả lời</p>
-          <ReplyForm content={content} setContent={setContent} onSubmit={submit} submitting={submitting} errMsg={errMsg} />
+          <ReplyForm content={content} setContent={setContent} onSubmit={submit} submitting={submitting} errMsg={errMsg} needsLogin={needsLogin} />
         </div>
       )}
       {isLocked && (
@@ -382,26 +429,38 @@ function ReplyCard({ r, postId, currentUserId, onReply, onDeleted, onEdited }: {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(r.content);
   const [saving, setSaving] = useState(false);
+  const [editErr, setEditErr] = useState("");
   const isOwn = currentUserId && r.user_id === currentUserId;
 
   const handleDelete = async () => {
     if (!confirm("Xóa trả lời này?")) return;
     setDeleting(true);
-    const res = await fetch(`/api/forum/${postId}/replies/${r.id}`, { method: "DELETE" });
-    if (res.ok) onDeleted();
+    const res = await fetch(`/api/forum/${postId}/replies/${r.id}`, { method: "DELETE" }).catch(() => null);
+    if (res?.ok) onDeleted();
     else setDeleting(false);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    const res = await fetch(`/api/forum/${postId}/replies/${r.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: editContent }),
-    });
-    if (res.ok) { onEdited(editContent); setEditing(false); }
-    setSaving(false);
+    const invalid = validateReplyContent(editContent);
+    if (invalid) { setEditErr(invalid); return; }
+
+    setSaving(true); setEditErr("");
+    try {
+      const res = await fetch(`/api/forum/${postId}/replies/${r.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editContent }),
+      });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) { setEditErr(data.error ?? "Không lưu được, vui lòng thử lại."); return; }
+      onEdited(editContent);
+      setEditing(false);
+    } catch {
+      setEditErr("Lỗi kết nối. Vui lòng thử lại.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -415,6 +474,7 @@ function ReplyCard({ r, postId, currentUserId, onReply, onDeleted, onEdited }: {
         {editing ? (
           <form onSubmit={handleSaveEdit} className="mt-2 space-y-2">
             <ForumEditor value={editContent} onChange={setEditContent} placeholder="Chỉnh sửa trả lời..." />
+            {editErr && <p className="text-xs text-destructive">{editErr}</p>}
             <div className="flex gap-2">
               <button type="submit" disabled={saving}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50">
@@ -497,18 +557,33 @@ export function ForumHelpfulButton({ postId, initialCount }: { postId: string; i
   );
 }
 
-function ReplyForm({ content, setContent, onSubmit, submitting, errMsg, onCancel }: {
+function ReplyForm({ content, setContent, onSubmit, submitting, errMsg, needsLogin, onCancel }: {
   content: string; setContent: (v: string) => void; onSubmit: (e: React.FormEvent) => void;
-  submitting: boolean; errMsg: string; onCancel?: () => void;
+  submitting: boolean; errMsg: string; needsLogin?: boolean; onCancel?: () => void;
 }) {
+  const pathname = usePathname();
+
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <ForumEditor
         value={content}
         onChange={setContent}
-        placeholder="Viết trả lời của bạn..."
+        placeholder="Viết trả lời của bạn... (có thể dán hoặc kéo thả ảnh vào đây)"
       />
-      {errMsg && <p className="text-xs text-destructive">{errMsg}</p>}
+      {errMsg && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2 text-xs text-destructive">
+          <AlertCircle className="size-3.5 shrink-0" />
+          <span>{errMsg}</span>
+          {needsLogin && (
+            <Link
+              href={`/login?next=${encodeURIComponent(pathname || "/community")}`}
+              className="font-bold underline underline-offset-2"
+            >
+              Đăng nhập ngay
+            </Link>
+          )}
+        </div>
+      )}
       <div className="flex gap-2">
         <button type="submit" disabled={submitting}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50">

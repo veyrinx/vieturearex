@@ -5,10 +5,14 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
+import { hasImage, plainTextOf } from "@/lib/utils/forum-content";
 
+// `content` is editor HTML — markup and image URLs inflate the raw length well
+// past what the author typed, so the cap is on the payload and the readable
+// minimum is checked against the visible text below.
 const createSchema = z.object({
   title:    z.string().min(5).max(200),
-  content:  z.string().min(20).max(20000),
+  content:  z.string().min(1).max(200_000),
   category: z.string().min(1).max(80),
 });
 
@@ -71,6 +75,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
+
+  const text = plainTextOf(parsed.data.content);
+  if (text.length < 20 && !hasImage(parsed.data.content)) {
+    return NextResponse.json({ error: "Nội dung cần ít nhất 20 ký tự." }, { status: 400 });
+  }
 
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
