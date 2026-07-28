@@ -4,6 +4,24 @@ dist/
 .env.local
 *.local
 
+# Khoá ký — KHÔNG BAO GIỜ commit (giống mobile/.gitignore)
+*.jks
+*.keystore
+*.p8
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+android/keystore.properties
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+
+# Sản phẩm build
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
+
 # Capacitor sinh lại được bằng `npx cap sync`
 ios/App/Pods/
 ios/App/Podfile.lock
