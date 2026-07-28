@@ -1,12 +1,26 @@
 import "server-only";
 import type { PushSubscription } from "web-push";
+import { sendNativePush } from "@/lib/server/native-push";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
 type SubRow = { endpoint: string; subscription: PushSubscription };
 
-/** Gửi web push tới toàn bộ subscriber (đọc từ bảng push_subscriptions). */
+/**
+ * Bắn thông báo ra mọi kênh: web push (trình duyệt) và FCM (app native).
+ *
+ * Hai kênh chạy độc lập — thiếu cấu hình VAPID thì native vẫn gửi, và ngược
+ * lại. Dùng allSettled để một bên hỏng không kéo bên kia chết theo.
+ */
 export async function sendPushNotification(title: string, body: string, url = "/") {
+  await Promise.allSettled([
+    sendWebPush(title, body, url),
+    sendNativePush(title, body, url),
+  ]);
+}
+
+/** Gửi web push tới toàn bộ subscriber (đọc từ bảng push_subscriptions). */
+async function sendWebPush(title: string, body: string, url: string) {
   const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
   const vapidSubject = process.env.VAPID_SUBJECT ?? "mailto:admin@arex.tech";
