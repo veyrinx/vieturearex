@@ -1,0 +1,68 @@
+name: Build Arex Hub iOS
+
+# iOS bắt buộc macOS → build trên runner macOS của GitHub.
+#
+# Repo chưa có secret ký (IOS_DIST_CERT_BASE64...) nên workflow này xuất IPA
+# CHƯA KÝ. File đó KHÔNG cài thẳng lên iPhone được — phải ký lại bằng Apple ID
+# qua Sideloadly/AltStore (app sống 7 ngày, hết hạn thì cắm máy ký lại).
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "mobile-hub/**"
+      - ".github/workflows/hub-ios.yml"
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile-hub
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile-hub/package-lock.json
+
+      - name: Cài phụ thuộc
+        run: npm ci
+
+      # Giống bên Android: bundle web phải có trước khi cap sync đổ vào App/public.
+      - name: Dựng bundle web
+        run: npm run build
+
+      - name: Đồng bộ Capacitor
+        run: npx cap sync ios
+
+      - name: Build + đóng gói IPA chưa ký
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App -configuration Release -sdk iphoneos \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            clean build
+
+          APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/App.app"
+          if [ ! -d "$APP" ]; then
+            echo "::error::Không tìm thấy App.app sau khi build"
+            find "$RUNNER_TEMP/dd/Build/Products" -maxdepth 3 -name "*.app" || true
+            exit 1
+          fi
+
+          mkdir -p "$RUNNER_TEMP/export/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/export/Payload/"
+          cd "$RUNNER_TEMP/export"
+          zip -qry ArexHub-unsigned.ipa Payload
+          rm -rf Payload
+          ls -lh ArexHub-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arex-hub-ios-unsigned
+          retention-days: 14
+          if-no-files-found: error
+          path: ${{ runner.temp }}/export/*.ipa

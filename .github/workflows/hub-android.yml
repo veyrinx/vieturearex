@@ -1,0 +1,58 @@
+name: Build Arex Hub Android
+
+# Arex Hub (mobile-hub/) khác mobile/: giao diện là bundle Vite đóng gói sẵn,
+# nên phải `npm run build` TRƯỚC khi `cap sync` — không có bước này thì
+# webDir "dist" rỗng và app mở ra màn hình trắng.
+#
+# Máy dev Windows không có JDK/Android SDK → build trên CI.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "mobile-hub/**"
+      - ".github/workflows/hub-android.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-hub
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile-hub/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Cài phụ thuộc
+        run: npm ci
+
+      # Không cần .env: src/env.ts đã có sẵn giá trị mặc định trỏ production.
+      - name: Dựng bundle web
+        run: npm run build
+
+      - name: Đồng bộ Capacitor
+        run: npx cap sync android
+
+      # Chỉ có APK debug: app/build.gradle chưa khai signingConfig cho release,
+      # build release ra file chưa ký thì cũng không cài được.
+      - name: Build APK debug
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arex-hub-android
+          retention-days: 14
+          if-no-files-found: error
+          path: mobile-hub/android/app/build/outputs/apk/debug/*.apk
