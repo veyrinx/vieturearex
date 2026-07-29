@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BadgeCheck, Ban, ShieldCheck, Undo2, Users } from "lucide-react";
+import { BadgeCheck, Ban, KeyRound, LogOut, ShieldCheck, Undo2, Users } from "lucide-react";
 import {
   Avatar,
   Button,
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 import { SubHeader } from "@/components/sub-header";
 import { errorMessage, useToast } from "@/components/toast";
-import { useUpdateUser, useUsers } from "@/lib/queries";
+import { useForceSignOut, useResetPassword, useUpdateUser, useUsers } from "@/lib/queries";
 import { useAuth } from "@/auth/auth-context";
 import { formatDate } from "@/lib/format";
 import { ROLE_LABEL, ROLE_LEVEL, type UserItem, type UserRole } from "@/types";
@@ -31,6 +31,8 @@ export function UsersScreen() {
   const { profile } = useAuth();
   const users = useUsers();
   const update = useUpdateUser();
+  const resetPassword = useResetPassword();
+  const forceSignOut = useForceSignOut();
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -71,6 +73,24 @@ export function UsersScreen() {
       await update.mutateAsync({ id: user.id, role });
       toast.success(`Đã đổi vai trò thành ${ROLE_LABEL[role]}.`);
       setSelected({ ...user, role });
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
+  async function sendResetLink(user: UserItem) {
+    try {
+      await resetPassword.mutateAsync(user.id);
+      toast.success(`Đã gửi link đặt lại mật khẩu tới ${user.email}.`);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
+  async function kickSessions(user: UserItem) {
+    try {
+      await forceSignOut.mutateAsync(user.id);
+      toast.success("Đã đăng xuất tài khoản khỏi mọi thiết bị.");
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -214,6 +234,26 @@ export function UsersScreen() {
                     }
                   >
                     {selected.is_banned ? "Mở khoá tài khoản" : "Khoá tài khoản"}
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    block
+                    icon={KeyRound}
+                    loading={resetPassword.isPending}
+                    onClick={() => void sendResetLink(selected)}
+                  >
+                    Gửi link đặt lại mật khẩu
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    block
+                    icon={LogOut}
+                    loading={forceSignOut.isPending}
+                    onClick={() => void kickSessions(selected)}
+                  >
+                    Đăng xuất khỏi mọi thiết bị
                   </Button>
                 </div>
 

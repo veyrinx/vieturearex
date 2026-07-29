@@ -61,7 +61,7 @@ trong `.env` (dùng IP LAN, không dùng `localhost` — điện thoại hiểu 
 ```bash
 npm run sync              # build bundle + cap sync (chạy lại sau MỖI lần sửa code)
 
-npm run open:android      # mở Android Studio
+npm run open:android      # mở Android Studio (hướng dẫn đầy đủ: ANDROID-STUDIO.md)
 npm run open:ios          # mở Xcode (chỉ trên macOS)
 
 npm run run:android       # cài thẳng vào máy/emulator đang cắm
@@ -78,6 +78,44 @@ npm run assets            # sinh lại từ resources/ rồi đổ ra iOS + Andr
 Mặc định icon là khối gradient tím → lơ chữ "AX" (cố ý khác icon Arex Network để
 hai app không lẫn nhau trên màn hình chính). Muốn dùng logo riêng: đặt file PNG
 vuông vào `resources/logo-source.png` rồi chạy lại lệnh trên.
+
+---
+
+## Cập nhật nóng (OTA)
+
+Sửa giao diện xong **không phải gỡ app cài lại** — nhất là trên iOS, nơi chứng
+chỉ Apple ID miễn phí chỉ sống 7 ngày và phải cắm máy ký lại bằng Sideloadly.
+
+```bash
+cd mobile-hub && npm run build && cd ..
+node scripts/upload-hub-bundle.mjs --version 1.0.1 --notes "Sửa lỗi đăng nhập"
+```
+
+Người dùng mở app → **Hệ thống → Cập nhật app** → thấy chip “Có bản mới” → bấm
+**Cập nhật ngay**. App tải zip về, thay ruột rồi tự khởi động lại.
+
+| | Cập nhật nóng | Cài lại app |
+|---|---|---|
+| Đổi được | JS / CSS / ảnh trong bundle | mọi thứ |
+| **Không** đổi được | plugin native, quyền, icon, `Info.plist`, `appId` | — |
+| iOS | không cần ký lại | phải ký lại (7 ngày) |
+
+Cách chạy:
+
+- Bundle nằm ở bucket `app-releases`, nhánh `bundle/<version>/bundle.zip` —
+  `listAppReleases()` chỉ quét `android/` + `ios/` nên hai bên không đụng nhau.
+- App hỏi `GET /api/hub/bundle/latest?current=<đang chạy>`; server so phiên bản
+  theo số (`1.2.10 > 1.2.9`, so chuỗi thì sai) rồi trả **signed URL sống 30 phút**
+  — plugin tải bằng HTTP thuần, không gắn được `Authorization`.
+- `src/lib/updater.ts` bọc `@capgo/capacitor-updater`: `download()` rồi `set()`.
+  Sau `set()` WebView khởi động lại ngay, đừng viết logic nào phía sau.
+- `bootNativeChrome()` gọi `notifyAppReady()`. **Đây là lưới an toàn**: bundle mới
+  làm app chết trước khi kịp báo ready thì lần mở sau plugin tự quay về bản cũ.
+- `resetWhenUpdate: true` — cài đè bản native mới thì quay về bundle gốc, tránh
+  bundle OTA cũ đè lên app mới.
+
+> Lần đầu tiên vẫn phải dựng lại và cài lại app một lần, vì bản thân plugin cập
+> nhật là code native. Từ lần đó trở đi mới OTA được.
 
 ---
 
@@ -137,11 +175,13 @@ bản phát hành app, nhật ký hoạt động. Giao diện tự ẩn thao tá
 
 1. **Thông báo đẩy.** Code đã đăng ký token và gửi về `/api/push/native`, nhưng
    cần cấu hình dịch vụ đẩy trước khi có tác dụng:
-   - Android: đặt `google-services.json` vào `android/app/`, thêm plugin
-     `com.google.gms.google-services` vào Gradle.
+   - Android: Gradle đã áp sẵn plugin `com.google.gms.google-services` (plugins
+     DSL), chỉ cần đặt `google-services.json` vào `android/app/`. **Thiếu file
+     này là không build được** — chi tiết ở [ANDROID-STUDIO.md](./ANDROID-STUDIO.md)
+     mục 8. CI lấy file từ secret `GOOGLE_SERVICES_JSON`.
    - iOS: bật capability *Push Notifications* + *Background Modes → Remote
      notifications* trong Xcode, tải APNs key lên Firebase.
-   Chưa cấu hình thì `registerPush()` im lặng bỏ qua, app vẫn chạy bình thường.
+   iOS chưa cấu hình thì `registerPush()` im lặng bỏ qua, app vẫn chạy bình thường.
 2. **Ký ứng dụng.** Android cần keystore release; iOS cần chứng chỉ Apple
    Developer (hoặc sideload bằng Sideloadly/AltStore như bản Arex Network).
 3. **Đổi máy chủ** khi cần: sửa `VITE_API_BASE_URL` trong `.env` rồi `npm run sync`.

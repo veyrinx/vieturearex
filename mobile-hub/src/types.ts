@@ -167,3 +167,10 @@ export type NotificationItem = {
   read_at: string | null;
   created_at: string;
 };
+
+/** Một dòng cài đặt site. Khoá bí mật bị server thay bằng mặt nạ trước khi trả về. */
+export type SiteSetting = {
+  id?: string;
+  key: string;
+  value: string;
+};

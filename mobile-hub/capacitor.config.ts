@@ -34,6 +34,18 @@ const config: CapacitorConfig = {
   },
 
   plugins: {
+    /**
+     * Cập nhật nóng bundle web (xem src/lib/updater.ts).
+     *
+     * `autoUpdate: false` vì app tự hỏi server rồi để người dùng bấm "Cập nhật"
+     * — không dùng dịch vụ đám mây của Capgo, bundle nằm ở Supabase Storage.
+     * `resetWhenUpdate` để khi cài đè bản native mới thì quay về bundle gốc,
+     * tránh bundle OTA cũ đè lên app mới.
+     */
+    CapacitorUpdater: {
+      autoUpdate: false,
+      resetWhenUpdate: true,
+    },
     SplashScreen: {
       launchShowDuration: 0,
       launchAutoHide: false, // React tự ẩn khi khung app đã render (src/lib/native.ts)

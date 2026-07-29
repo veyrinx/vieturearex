@@ -7,6 +7,9 @@ import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Browser } from "@capacitor/browser";
 import { PushNotifications } from "@capacitor/push-notifications";
+// Nhập thẳng plugin (không qua lib/updater) để tránh vòng import: updater cần
+// `isNative` từ chính file này.
+import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import { env } from "@/env";
 import { currentAccessToken } from "@/lib/supabase";
 
@@ -39,6 +42,9 @@ export function hapticResult(kind: "success" | "warning" | "error") {
 
 /** Chạy một lần lúc khung app đã render xong. */
 export async function bootNativeChrome() {
+  // Báo cho plugin cập nhật biết bundle chạy được. Không báo thì lần mở sau nó
+  // tự quay về bản cũ — đó là lưới an toàn cho bundle OTA lỗi (xem lib/updater.ts).
+  await quiet(() => CapacitorUpdater.notifyAppReady());
   await quiet(() => StatusBar.setStyle({ style: Style.Dark }));
   if (platform === "android") {
     await quiet(() => StatusBar.setBackgroundColor({ color: "#070b14" }));

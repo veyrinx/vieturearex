@@ -7,7 +7,8 @@ import { ImagePicker } from "@/components/image-picker";
 import { errorMessage, useToast } from "@/components/toast";
 import { api } from "@/lib/api";
 import { useAddGallery, useSaveEvent, useSaveNews } from "@/lib/queries";
-import { fromLocalInputValue, plainTextToHtml, toLocalInputValue, toSlug } from "@/lib/format";
+import { fromLocalInputValue, toLocalInputValue, toSlug } from "@/lib/format";
+import { RichEditor } from "@/components/rich-editor";
 import type { EventItem, GalleryItem, NewsItem } from "@/types";
 
 export type ComposeTarget =
@@ -82,7 +83,8 @@ function NewsForm({ item }: { item?: NewsItem }) {
   const [category, setCategory] = useState(item?.category ?? categories[0]);
   const [excerpt, setExcerpt] = useState(item?.excerpt ?? "");
   const [cover, setCover] = useState(item?.cover ?? "");
-  const [content, setContent] = useState(item ? stripHtmlToPlain(item.content) : "");
+  // Giữ nguyên HTML, không bóc về chữ thuần nữa — trình soạn thảo tự hiểu.
+  const [content, setContent] = useState(item?.content ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Danh mục về sau khi form đã dựng → chọn giá trị đầu nếu chưa đặt.
@@ -116,7 +118,7 @@ function NewsForm({ item }: { item?: NewsItem }) {
         title: title.trim(),
         slug: autoSlug,
         excerpt: excerpt.trim(),
-        content: plainTextToHtml(content),
+        content,
         cover: cover.trim(),
         category,
         status,
@@ -193,12 +195,11 @@ function NewsForm({ item }: { item?: NewsItem }) {
         />
       </Field>
 
-      <Field label="Nội dung" required error={errors.content} hint="Cách một dòng trống để xuống đoạn mới.">
-        <Textarea
+      <Field label="Nội dung" required error={errors.content}>
+        <RichEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={10}
-          placeholder="Viết nội dung bài…"
+          onChange={setContent}
+          onUploadError={(message) => toast.error(message)}
         />
       </Field>
 
@@ -421,15 +422,3 @@ function Header({ icon: Icon, title }: { icon: typeof Newspaper; title: string }
   );
 }
 
-/** HTML từ API → chữ thuần để sửa lại trong ô nhiều dòng. */
-function stripHtmlToPlain(html: string) {
-  return html
-    .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .trim();
-}

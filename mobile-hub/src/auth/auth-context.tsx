@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session } from "@supabase/supabase-js";
+import type { AuthError, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { ADMIN_ROLES, type UserRole } from "@/types";
 
@@ -35,16 +35,28 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/** Thông báo lỗi Supabase → tiếng Việt. */
-function friendlyAuthError(message: string) {
+/**
+ * Thông báo lỗi Supabase → tiếng Việt.
+ *
+ * Kèm mã lỗi gốc trong ngoặc vì app chạy trên máy người dùng, không mở được
+ * DevTools để xem chi tiết — không có mã thì "đăng nhập không được" là mù tịt,
+ * chẳng phân biệt nổi sai mật khẩu với mất mạng hay tài khoản không có mật khẩu
+ * (đăng ký bằng Google/Discord).
+ */
+function friendlyAuthError(error: AuthError): string {
+  const message = error.message ?? "Đăng nhập thất bại.";
   const lower = message.toLowerCase();
-  if (lower.includes("invalid login credentials")) return "Email hoặc mật khẩu không đúng.";
-  if (lower.includes("email not confirmed")) return "Email chưa được xác nhận.";
+  const code = error.code ?? (error.status ? `http_${error.status}` : null);
+  const suffix = code ? ` (${code})` : "";
+
+  if (lower.includes("invalid login credentials"))
+    return `Email hoặc mật khẩu không đúng. Nếu tài khoản đăng ký bằng Google/Discord thì chưa có mật khẩu — vào web đặt mật khẩu trước.${suffix}`;
+  if (lower.includes("email not confirmed")) return `Email chưa được xác nhận.${suffix}`;
   if (lower.includes("too many requests") || lower.includes("rate limit"))
-    return "Thử quá nhiều lần, đợi một lát rồi đăng nhập lại.";
+    return `Thử quá nhiều lần, đợi một lát rồi đăng nhập lại.${suffix}`;
   if (lower.includes("failed to fetch") || lower.includes("network"))
-    return "Không kết nối được máy chủ — kiểm tra mạng.";
-  return message;
+    return `Không kết nối được máy chủ — kiểm tra mạng.${suffix}`;
+  return `${message}${suffix}`;
 }
 
 async function loadProfile(session: Session): Promise<HubProfile> {
@@ -146,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: email.trim().toLowerCase(),
       password,
     });
-    if (error) throw new Error(friendlyAuthError(error.message));
+    if (error) throw new Error(friendlyAuthError(error));
   }, []);
 
   const signOut = useCallback(async () => {

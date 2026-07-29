@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   CloudOff,
@@ -11,7 +11,9 @@ import {
   SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
-import { Avatar, Button, Chip, Sheet, cx } from "@/components/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { Avatar, Button, Chip, Sheet, Spinner, cx } from "@/components/ui";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { useAuth } from "@/auth/auth-context";
 import { ROLE_LABEL } from "@/types";
 import { bindAndroidBack, haptic, openExternal } from "@/lib/native";
@@ -44,6 +46,7 @@ export function AppShell({ online }: { online: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Nút Back của Android: ở tab gốc thì thoát app, còn lại thì lùi trang.
@@ -97,7 +100,21 @@ export function AppShell({ online }: { online: boolean }) {
       </header>
 
       <main className="mx-auto w-full max-w-2xl px-4 pt-4 pb-28">
-        <Outlet />
+        {/* Màn hình nạp theo nhu cầu (xem App.tsx) — chờ chunk về thì hiện
+            spinner ở đúng vùng nội dung, header và thanh dưới vẫn đứng yên. */}
+        {/* Tải lại đúng những query màn hình hiện tại đang dùng — khỏi phải
+            mỗi màn tự nối cử chỉ kéo của riêng nó. */}
+        <PullToRefresh onRefresh={() => queryClient.refetchQueries({ type: "active" })}>
+          <Suspense
+            fallback={
+              <div className="grid min-h-[40vh] place-items-center">
+                <Spinner />
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
+        </PullToRefresh>
       </main>
 
       <nav className="safe-bottom glass fixed inset-x-0 bottom-0 z-40 border-t border-ink-800">

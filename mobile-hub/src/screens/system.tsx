@@ -1,10 +1,13 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
+  CloudDownload,
   ExternalLink,
   History,
   Lock,
   Megaphone,
+  SlidersHorizontal,
   Smartphone,
   Users,
   type LucideIcon,
@@ -12,6 +15,7 @@ import {
 import { Card, Chip, SectionTitle } from "@/components/ui";
 import { useAuth, useHasRole } from "@/auth/auth-context";
 import { ROLE_LABEL } from "@/types";
+import { useBundleUpdate } from "@/lib/queries";
 import { haptic, openExternal, platform } from "@/lib/native";
 import { env } from "@/env";
 
@@ -19,6 +23,8 @@ export function SystemScreen() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const isAdmin = useHasRole("admin");
+  // Chấm "có bản mới" trên menu; lỗi mạng thì coi như không có bản nào.
+  const hasUpdate = Boolean(useBundleUpdate().data);
 
   return (
     <div className="space-y-6">
@@ -45,6 +51,20 @@ export function SystemScreen() {
             description="File cài đặt Android / iOS"
             locked={!isAdmin}
             onClick={() => navigate("/he-thong/ban-phat-hanh")}
+          />
+          <Row
+            icon={SlidersHorizontal}
+            label="Cài đặt site"
+            description="Tên site, SEO, mạng xã hội, số liệu cộng đồng"
+            locked={!isAdmin}
+            onClick={() => navigate("/he-thong/cai-dat")}
+          />
+          <Row
+            icon={CloudDownload}
+            label="Cập nhật app"
+            description="Tải giao diện mới, không phải cài lại app"
+            badge={hasUpdate ? <Chip tone="info">Có bản mới</Chip> : undefined}
+            onClick={() => navigate("/he-thong/cap-nhat")}
           />
           <Row
             icon={History}
@@ -91,12 +111,14 @@ function Row({
   label,
   description,
   locked,
+  badge,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   description?: string;
   locked?: boolean;
+  badge?: ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -121,6 +143,7 @@ function Row({
               Cần Admin
             </Chip>
           )}
+          {badge}
         </span>
         {description && <span className="block text-[12px] text-mist-500">{description}</span>}
       </span>

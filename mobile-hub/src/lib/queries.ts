@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { checkForBundleUpdate } from "@/lib/updater";
 import type {
   ActivityLog,
   Announcement,
@@ -12,6 +13,7 @@ import type {
   ForumKind,
   GalleryItem,
   NewsItem,
+  SiteSetting,
   StatsResponse,
   UserItem,
   UserRole,
@@ -29,6 +31,8 @@ export const qk = {
   stats: ["stats"] as const,
   announcements: ["announcements"] as const,
   releases: ["releases"] as const,
+  bundleUpdate: ["bundle-update"] as const,
+  settings: ["settings"] as const,
 };
 
 // ── Nội dung ────────────────────────────────────────────────────────────────
@@ -297,5 +301,72 @@ export function useReleases(enabled = true) {
     enabled,
     queryFn: () =>
       api<{ releases: AppRelease[] }>("/api/admin/app-releases").then((r) => r.releases ?? []),
+  });
+}
+
+/**
+ * Gửi mail đặt lại mật khẩu cho một tài khoản.
+ *
+ * Không đổi mật khẩu hộ — chỉ bắn link, chủ tài khoản tự đặt. Quyền admin.
+ */
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      api("/api/admin/users/reset-password", { method: "POST", body: { id } }),
+  });
+}
+
+/**
+ * Đá tài khoản ra khỏi mọi thiết bị (huỷ toàn bộ phiên).
+ *
+ * Dùng khi máy bị mất hoặc nghi lộ mật khẩu. Không đụng tới trạng thái khoá —
+ * người đó đăng nhập lại là vào được, muốn chặn hẳn thì phải khoá tài khoản.
+ */
+export function useForceSignOut() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api("/api/admin/users/signout", { method: "POST", body: { id } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.users }),
+  });
+}
+
+/** Cài đặt site. Khoá bí mật được server thay bằng mặt nạ, không trả giá trị thật. */
+export function useSettings() {
+  return useQuery({
+    queryKey: qk.settings,
+    queryFn: () =>
+      api<{ settings: SiteSetting[] }>("/api/admin/settings").then((r) => r.settings ?? []),
+  });
+}
+
+/**
+ * Lưu cài đặt. API chỉ nhận MỘT khoá mỗi lần nên phải gọi lần lượt — gửi song
+ * song sẽ đụng giới hạn tần suất (30 lần/phút) và làm revalidate chạy chồng.
+ */
+export function useSaveSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (changes: Record<string, string>) => {
+      for (const [key, value] of Object.entries(changes)) {
+        await api("/api/admin/settings", { method: "PATCH", body: { key, value } });
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.settings }),
+  });
+}
+
+/**
+ * Có bundle web mới hơn bản đang chạy không (cập nhật nóng — xem lib/updater.ts).
+ *
+ * Link tải trong kết quả là signed URL sống 30 phút, nên đừng cache lâu: quá
+ * hạn mà đem đi tải thì Supabase trả 400.
+ */
+export function useBundleUpdate() {
+  return useQuery({
+    queryKey: qk.bundleUpdate,
+    queryFn: () => checkForBundleUpdate(),
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: false,
   });
 }

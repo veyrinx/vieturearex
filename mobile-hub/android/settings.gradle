@@ -1,3 +1,13 @@
+// Plugins DSL lấy plugin từ đây. `google()` là bắt buộc:
+// com.google.gms.google-services nằm trên Google Maven, không có trên Gradle Plugin Portal.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')

@@ -35,6 +35,23 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      # app/build.gradle áp plugin google-services vô điều kiện, mà
+      # google-services.json bị .gitignore chặn → phải dựng lại từ secret,
+      # nếu không Gradle dừng với "File google-services.json is missing".
+      # Tạo secret: Settings → Secrets and variables → Actions → New secret,
+      # tên GOOGLE_SERVICES_JSON, dán nguyên nội dung file tải từ Firebase Console.
+      - name: Ghi google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::Thiếu secret GOOGLE_SERVICES_JSON — không build được Android."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          node -e "JSON.parse(require('fs').readFileSync('android/app/google-services.json','utf8'))" \
+            || { echo "::error::Secret GOOGLE_SERVICES_JSON không phải JSON hợp lệ."; exit 1; }
+
       - name: Cài phụ thuộc
         run: npm ci
 

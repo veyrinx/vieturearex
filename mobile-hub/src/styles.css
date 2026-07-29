@@ -135,3 +135,84 @@
   );
   animation: hub-shimmer 1.4s infinite;
 }
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * Vùng soạn thảo giàu định dạng (components/rich-editor.tsx).
+ *
+ * Viết tay thay vì kéo @tailwindcss/typography về: chỉ cần vài thẻ mà plugin đó
+ * nặng và mặc định thiên nền sáng, chỉnh cho nền tối còn mất công hơn.
+ */
+.prose-hub :where(h2) {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.1em 0 0.45em;
+  line-height: 1.35;
+}
+.prose-hub :where(h3) {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1em 0 0.4em;
+  line-height: 1.4;
+}
+.prose-hub :where(p) {
+  margin: 0.6em 0;
+}
+.prose-hub :where(ul, ol) {
+  margin: 0.6em 0;
+  padding-inline-start: 1.4em;
+}
+.prose-hub :where(ul) {
+  list-style: disc;
+}
+.prose-hub :where(ol) {
+  list-style: decimal;
+}
+.prose-hub :where(li) {
+  margin: 0.2em 0;
+}
+.prose-hub :where(blockquote) {
+  margin: 0.7em 0;
+  padding-inline-start: 0.9em;
+  border-inline-start: 3px solid var(--color-ink-700);
+  color: var(--color-mist-500);
+}
+.prose-hub :where(a) {
+  color: var(--color-cyan-glow);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-hub :where(img) {
+  max-width: 100%;
+  height: auto;
+  margin: 0.7em 0;
+  border-radius: 0.75rem;
+}
+.prose-hub :where(code) {
+  padding: 0.1em 0.35em;
+  border-radius: 0.35rem;
+  background-color: var(--color-ink-800);
+  font-size: 0.9em;
+}
+.prose-hub :where(hr) {
+  margin: 1.1em 0;
+  border-color: var(--color-ink-700);
+}
+.prose-hub :where(.ProseMirror-focused) {
+  outline: none;
+}
+
+/* Chữ mờ gợi ý khi tài liệu còn rỗng — do @tiptap/extension-placeholder gắn. */
+.prose-hub :where(p.is-editor-empty:first-child)::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-mist-500);
+}

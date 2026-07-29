@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState, type ComponentType } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -10,14 +10,27 @@ import { startNotificationPolling } from "@/lib/notify";
 import { ROLE_LABEL } from "@/types";
 import { LoginScreen } from "@/screens/login";
 import { DashboardScreen } from "@/screens/dashboard";
-import { ComposeScreen } from "@/screens/compose";
-import { ContentScreen } from "@/screens/content";
-import { ModerationScreen } from "@/screens/moderation";
-import { SystemScreen } from "@/screens/system";
-import { UsersScreen } from "@/screens/system-users";
-import { BroadcastScreen } from "@/screens/system-broadcast";
-import { ReleasesScreen } from "@/screens/system-releases";
-import { LogsScreen } from "@/screens/system-logs";
+
+/**
+ * Chia nhỏ bundle theo màn hình.
+ *
+ * Đăng nhập và Bảng điều khiển nạp sẵn vì luôn là thứ hiện đầu tiên; các màn
+ * còn lại tải khi bấm tới, nên lần mở app không phải nuốt cả cục JS. Các file
+ * này xuất theo tên nên phải ánh xạ sang `default` cho `lazy()`.
+ */
+const lazyScreen = <T extends string>(load: () => Promise<Record<T, ComponentType>>, name: T) =>
+  lazy(() => load().then((module) => ({ default: module[name] })));
+
+const ComposeScreen = lazyScreen(() => import("@/screens/compose"), "ComposeScreen");
+const ContentScreen = lazyScreen(() => import("@/screens/content"), "ContentScreen");
+const ModerationScreen = lazyScreen(() => import("@/screens/moderation"), "ModerationScreen");
+const SystemScreen = lazyScreen(() => import("@/screens/system"), "SystemScreen");
+const UsersScreen = lazyScreen(() => import("@/screens/system-users"), "UsersScreen");
+const BroadcastScreen = lazyScreen(() => import("@/screens/system-broadcast"), "BroadcastScreen");
+const ReleasesScreen = lazyScreen(() => import("@/screens/system-releases"), "ReleasesScreen");
+const UpdateScreen = lazyScreen(() => import("@/screens/system-update"), "UpdateScreen");
+const SettingsScreen = lazyScreen(() => import("@/screens/system-settings"), "SettingsScreen");
+const LogsScreen = lazyScreen(() => import("@/screens/system-logs"), "LogsScreen");
 
 export function App() {
   const { loading, session, profile, forbidden, signOut } = useAuth();
@@ -84,6 +97,8 @@ export function App() {
 
   return (
     <Routes>
+      {/* Suspense đặt TRONG AppShell để thanh dưới + header đứng yên khi
+          chuyển màn, chỉ phần nội dung nhấp nháy lúc tải chunk. */}
       <Route element={<AppShell online={online} />}>
         <Route index element={<DashboardScreen />} />
         <Route path="/dang" element={<ComposeScreen />} />
@@ -93,6 +108,8 @@ export function App() {
         <Route path="/he-thong/nguoi-dung" element={<UsersScreen />} />
         <Route path="/he-thong/thong-bao" element={<BroadcastScreen />} />
         <Route path="/he-thong/ban-phat-hanh" element={<ReleasesScreen />} />
+        <Route path="/he-thong/cap-nhat" element={<UpdateScreen />} />
+        <Route path="/he-thong/cai-dat" element={<SettingsScreen />} />
         <Route path="/he-thong/nhat-ky" element={<LogsScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
