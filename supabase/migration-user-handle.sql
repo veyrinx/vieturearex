@@ -14,3 +14,4 @@ ALTER TABLE public.users ADD CONSTRAINT users_handle_valid CHECK (
 CREATE UNIQUE INDEX IF NOT EXISTS users_handle_lower_idx
   ON public.users (lower(handle))
   WHERE handle IS NOT NULL;
+  
