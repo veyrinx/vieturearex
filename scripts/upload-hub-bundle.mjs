@@ -5,8 +5,10 @@
  * cài lại — và trên iOS thì không phải ký lại bằng Sideloadly.
  *
  * Dùng:
- *   cd mobile-hub && npm run build && cd ..
- *   node scripts/upload-hub-bundle.mjs --version 1.0.1 --notes "Sửa lỗi đăng nhập"
+ *   cd mobile-hub && npm version patch --no-git-tag-version && npm run build && cd ..
+ *   node scripts/upload-hub-bundle.mjs --notes "Sửa lỗi đăng nhập"
+ *
+ * Không truyền --version thì lấy luôn version trong mobile-hub/package.json.
  *
  * Đường dẫn trên storage: bundle/<version>/bundle.zip (cùng bucket `app-releases`,
  * nhánh riêng nên không lẫn với file APK/IPA).
@@ -49,11 +51,15 @@ const flag = (name) => {
   return i >= 0 ? args[i + 1] : null;
 };
 
-const version = flag("version");
+// Mặc định lấy version trong mobile-hub/package.json — cùng số mà bundle vừa
+// dựng nhúng vào (vite.config.ts → __APP_VERSION__), khỏi lệch giữa số hiển
+// thị trong app và số ghi trên storage. --version chỉ để đè khi cần.
+const pkgVersion = JSON.parse(readFileSync(resolve("mobile-hub/package.json"), "utf8")).version;
+const version = flag("version") ?? pkgVersion;
 const notes = flag("notes") ?? "";
 
 if (!version || !/^\d+(\.\d+)*$/.test(version)) {
-  console.error('❌  Thiếu --version hợp lệ, ví dụ: --version 1.0.1');
+  console.error(`❌  Version không hợp lệ: "${version}" — sửa mobile-hub/package.json hoặc truyền --version 1.0.1`);
   process.exit(1);
 }
 

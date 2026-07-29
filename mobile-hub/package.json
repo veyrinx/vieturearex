@@ -1,6 +1,6 @@
 {
   "name": "arex-hub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Arex Hub — app quản trị native (iOS/Android) cho hệ thống Arex Network",
   "type": "module",

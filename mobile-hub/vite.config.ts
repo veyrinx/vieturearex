@@ -1,9 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import fs from "node:fs";
 import path from "node:path";
 
+// Số phiên bản chỉ khai ở package.json rồi chảy ra mọi nơi: màn Hệ thống,
+// token thông báo đẩy, bundle OTA, versionName của Android. Bump bằng
+// `npm version patch --no-git-tag-version` (hoặc sửa tay) là xong.
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, "package.json"), "utf8"));
+
 export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },

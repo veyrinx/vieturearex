@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 plugins {
     id 'com.android.application'
     // Đọc google-services.json → sinh resource cho Firebase.
@@ -6,6 +8,12 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
+// Số phiên bản chỉ khai một chỗ: mobile-hub/package.json.
+// versionCode phải là số nguyên tăng dần → 1.2.3 thành 10203.
+def hubVersionName = new JsonSlurper().parse(file("../../package.json")).version
+def hubVersionParts = hubVersionName.tokenize('.').collect { it.toInteger() }
+def hubVersionCode = hubVersionParts[0] * 10000 + hubVersionParts[1] * 100 + hubVersionParts[2]
+
 android {
     namespace = "site.arexnetwork.hub"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -13,8 +21,8 @@ android {
         applicationId "site.arexnetwork.hub"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode hubVersionCode
+        versionName hubVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -22,10 +30,39 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    /**
+     * Ký bản phát hành: đọc từ android/keystore.properties (máy dev) hoặc biến
+     * môi trường ANDROID_KEYSTORE_* (CI). Không có thì bỏ qua, build debug vẫn chạy.
+     *
+     * QUAN TRỌNG: APK debug bị ký bằng khoá debug dùng chung của Android SDK và
+     * mang cờ android:debuggable — Play Protect cùng hầu hết phần mềm diệt virus
+     * trên điện thoại đều cảnh báo "ứng dụng có hại". Muốn hết bị nghi là virus
+     * thì phải phát APK release ký bằng keystore riêng ở đây.
+     */
+    signingConfigs {
+        release {
+            def props = new Properties()
+            def propsFile = rootProject.file("keystore.properties")
+            if (propsFile.exists()) {
+                propsFile.withInputStream { props.load(it) }
+            }
+            def storePathValue = props.getProperty("storeFile") ?: System.getenv("ANDROID_KEYSTORE_PATH")
+            if (storePathValue) {
+                storeFile file(storePathValue)
+                storePassword props.getProperty("storePassword") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias props.getProperty("keyAlias") ?: System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword props.getProperty("keyPassword") ?: System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

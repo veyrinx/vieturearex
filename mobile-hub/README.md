@@ -87,9 +87,22 @@ Sửa giao diện xong **không phải gỡ app cài lại** — nhất là trê
 chỉ Apple ID miễn phí chỉ sống 7 ngày và phải cắm máy ký lại bằng Sideloadly.
 
 ```bash
-cd mobile-hub && npm run build && cd ..
-node scripts/upload-hub-bundle.mjs --version 1.0.1 --notes "Sửa lỗi đăng nhập"
+cd mobile-hub
+npm version patch --no-git-tag-version   # 1.0.1 → 1.0.2
+npm run build && cd ..
+node scripts/upload-hub-bundle.mjs --notes "Sửa lỗi đăng nhập"
 ```
+
+Số phiên bản **chỉ khai ở `mobile-hub/package.json`**, mọi chỗ khác tự lấy theo:
+
+| Nơi hiển thị / dùng | Lấy từ đâu |
+|---|---|
+| Màn Hệ thống, màn đăng nhập, token thông báo đẩy | `vite.config.ts` nhét `__APP_VERSION__` vào bundle lúc build |
+| Đường dẫn bundle OTA trên storage | `scripts/upload-hub-bundle.mjs` (bỏ `--version` thì lấy package.json) |
+| `versionName` / `versionCode` của Android | `android/app/build.gradle` đọc package.json (1.2.3 → code 10203) |
+| `MARKETING_VERSION` của iOS | workflow `hub-ios` và `hub-testflight` truyền vào lúc `xcodebuild` |
+
+Quên bump thì bundle mới đè lên đúng chỗ bundle cũ, app không thấy bản mới.
 
 Người dùng mở app → **Hệ thống → Cập nhật app** → thấy chip “Có bản mới” → bấm
 **Cập nhật ngay**. App tải zip về, thay ruột rồi tự khởi động lại.

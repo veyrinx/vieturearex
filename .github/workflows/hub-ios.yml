@@ -41,11 +41,17 @@ jobs:
       - name: Đồng bộ Capacitor
         run: npx cap sync ios
 
+      # Số phiên bản trong Info.plist lấy theo package.json, trùng với số app
+      # hiển thị ở màn Hệ thống. project.pbxproj vẫn để nguyên MARKETING_VERSION.
       - name: Build + đóng gói IPA chưa ký
         run: |
+          VERSION=$(node -p "require('./package.json').version")
+
           xcodebuild -project ios/App/App.xcodeproj \
             -scheme App -configuration Release -sdk iphoneos \
             -derivedDataPath "$RUNNER_TEMP/dd" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             clean build
 

@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       marketing_version:
-        description: "Số phiên bản hiển thị (CFBundleShortVersionString)"
+        description: "Số phiên bản hiển thị — để trống thì lấy theo mobile-hub/package.json"
         type: string
-        default: "1.0.0"
+        default: ""
 
 jobs:
   upload:
@@ -70,6 +70,16 @@ jobs:
           mkdir -p "$HOME/.appstoreconnect/private_keys"
           echo "$KEY_P8" | base64 -d > "$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
 
+      # Số phiên bản hiển thị lấy theo package.json để trùng với số app tự khoe
+      # ở màn Hệ thống; ô nhập khi chạy tay chỉ để đè khi cần.
+      - name: Chốt số phiên bản
+        env:
+          INPUT_VERSION: ${{ inputs.marketing_version }}
+        run: |
+          VERSION="${INPUT_VERSION:-$(node -p "require('./package.json').version")}"
+          echo "MARKETING_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Nộp bản $VERSION (build ${{ github.run_number }})"
+
       # CURRENT_PROJECT_VERSION phải tăng mỗi lần nộp, nếu không App Store
       # Connect từ chối "build number đã tồn tại" → lấy luôn số thứ tự run.
       - name: Đóng gói archive
@@ -86,7 +96,7 @@ jobs:
             -authenticationKeyID "$KEY_ID" \
             -authenticationKeyIssuerID "$ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            MARKETING_VERSION="${{ inputs.marketing_version }}" \
+            MARKETING_VERSION="$MARKETING_VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             clean archive
 
