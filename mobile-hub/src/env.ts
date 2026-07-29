@@ -17,6 +17,9 @@ export const env = {
   apiBaseUrl: pick(import.meta.env.VITE_API_BASE_URL, fallback.apiBaseUrl).replace(/\/+$/, ""),
   supabaseUrl: pick(import.meta.env.VITE_SUPABASE_URL, fallback.supabaseUrl),
   supabaseAnonKey: pick(import.meta.env.VITE_SUPABASE_ANON_KEY, fallback.supabaseAnonKey),
-  /** Lấy thẳng từ package.json lúc build, không gõ tay ở đây. */
+  /**
+   * `version` trong package.json, hoặc VITE_APP_VERSION khi CI muốn gắn thêm số
+   * run (`1.0.1-42`). Chốt ở vite.config.ts, đây chỉ nhận lại.
+   */
   appVersion: __APP_VERSION__,
 } as const;

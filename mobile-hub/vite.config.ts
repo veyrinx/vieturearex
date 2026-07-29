@@ -9,8 +9,12 @@ import path from "node:path";
 // `npm version patch --no-git-tag-version` (hoặc sửa tay) là xong.
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, "package.json"), "utf8"));
 
+// CI đặt VITE_APP_VERSION = "<version>-<số run>" để mỗi bản build là một phiên
+// bản riêng; app so số này với bản mới nhất trong kho để nhắc cập nhật.
+const appVersion = process.env.VITE_APP_VERSION?.trim() || pkg.version;
+
 export default defineConfig({
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  define: { __APP_VERSION__: JSON.stringify(appVersion) },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },

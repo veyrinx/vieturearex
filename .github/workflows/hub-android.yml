@@ -5,6 +5,10 @@ name: Build Arex Hub Android
 # webDir "dist" rỗng và app mở ra màn hình trắng.
 #
 # Máy dev Windows không có JDK/Android SDK → build trên CI.
+#
+# Build xong workflow tự đẩy APK lên kho `app-releases` của Supabase, trang
+# /tai-app trên web lấy thẳng từ đó. Không ai phải tải artifact về rồi gửi file
+# cho nhau nữa.
 on:
   workflow_dispatch:
   push:
@@ -35,6 +39,14 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      # Mỗi lần chạy là một phiên bản riêng: <version trong package.json>-<số run>.
+      # App đọc lại qua VITE_APP_VERSION để biết mình có phải bản mới nhất không.
+      - name: Tính số phiên bản
+        id: ver
+        run: |
+          BASE="$(node -p "require('./package.json').version")"
+          echo "version=${BASE}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
       # app/build.gradle áp plugin google-services vô điều kiện, mà
       # google-services.json bị .gitignore chặn → phải dựng lại từ secret,
       # nếu không Gradle dừng với "File google-services.json is missing".
@@ -52,27 +64,94 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('android/app/google-services.json','utf8'))" \
             || { echo "::error::Secret GOOGLE_SERVICES_JSON không phải JSON hợp lệ."; exit 1; }
 
+      # Keystore riêng để ký bản release. Thiếu thì vẫn build được, nhưng ra APK
+      # debug — thứ Play Protect và phần mềm diệt virus hay báo "ứng dụng có hại".
+      # Tạo keystore một lần rồi nạp vào secret:
+      #   keytool -genkey -v -keystore arex-hub.jks -keyalg RSA -keysize 2048 \
+      #           -validity 10000 -alias arexhub
+      #   base64 -w0 arex-hub.jks   → dán vào secret HUB_KEYSTORE_BASE64
+      - name: Chuẩn bị keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.HUB_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::Thiếu secret HUB_KEYSTORE_BASE64 — chỉ build được APK debug, máy sẽ cảnh báo virus khi cài."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$KEYSTORE_BASE64" | base64 -d > android/arex-hub-release.jks
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # npm install chứ không npm ci: lockfile sinh trên Windows luôn thiếu nhánh
       # wasm32 (@tailwindcss/oxide-wasm32-wasi → @emnapi/*) vì npm trên Windows
       # bỏ qua gói cpu wasm32, còn macOS/Linux thì cài → npm ci báo lệch lock.
       - name: Cài phụ thuộc
         run: npm install --no-audit --no-fund
 
-      # Không cần .env: src/env.ts đã có sẵn giá trị mặc định trỏ production.
+      # Ngoài VITE_APP_VERSION thì không cần .env: src/env.ts đã có sẵn giá trị
+      # mặc định trỏ production.
       - name: Dựng bundle web
+        env:
+          VITE_APP_VERSION: ${{ steps.ver.outputs.version }}
         run: npm run build
 
       - name: Đồng bộ Capacitor
         run: npx cap sync android
 
-      # Chỉ có APK debug: app/build.gradle chưa khai signingConfig cho release,
-      # build release ra file chưa ký thì cũng không cài được.
-      - name: Build APK debug
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/mobile-hub/android/arex-hub-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.HUB_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.HUB_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.HUB_KEY_PASSWORD }}
+        run: |
+          cd android && chmod +x gradlew
+          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+            ./gradlew assembleRelease --no-daemon
+          else
+            unset ANDROID_KEYSTORE_PATH
+            ./gradlew assembleDebug --no-daemon
+          fi
+
+      # Tên file mang sẵn app + phiên bản: kho app-releases dùng chung với app
+      # Arex Network, trùng tên "app-release.apk" là đè mất của nhau.
+      - name: Gom APK
+        id: apk
+        run: |
+          SRC="$(find android/app/build/outputs/apk -name '*.apk' | head -n 1)"
+          if [ -z "$SRC" ]; then echo "::error::Không tìm thấy APK sau khi build."; exit 1; fi
+          mkdir -p dist-apk
+          DEST="dist-apk/arex-hub-${{ steps.ver.outputs.version }}.apk"
+          cp "$SRC" "$DEST"
+          echo "path=mobile-hub/$DEST" >> "$GITHUB_OUTPUT"
+          ls -lh "$DEST"
+
+      - name: Xoá keystore
+        if: always()
+        run: rm -f android/arex-hub-release.jks
+
+      # Đẩy thẳng lên bucket app-releases để /tai-app có bản mới ngay.
+      # Cần 2 secret: SUPABASE_URL (hoặc NEXT_PUBLIC_SUPABASE_URL) và
+      # SUPABASE_SERVICE_ROLE_KEY.
+      - name: Phát hành lên kho
+        working-directory: .
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "::warning::Thiếu secret Supabase — bỏ qua bước phát hành, chỉ có artifact."
+            exit 0
+          fi
+          npm install @supabase/supabase-js --no-save --no-audit --no-fund
+          node scripts/upload-app-release.mjs "${{ steps.apk.outputs.path }}" \
+            --version "${{ steps.ver.outputs.version }}" \
+            --notes "CI ${GITHUB_RUN_NUMBER} · ${GITHUB_SHA:0:7}"
 
       - uses: actions/upload-artifact@v4
         with:
           name: arex-hub-android
           retention-days: 14
           if-no-files-found: error
-          path: mobile-hub/android/app/build/outputs/apk/debug/*.apk
+          path: ${{ steps.apk.outputs.path }}
