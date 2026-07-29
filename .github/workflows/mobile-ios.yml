@@ -26,8 +26,11 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
+      # npm install chứ không npm ci: lockfile sinh trên máy dev Windows luôn
+      # thiếu nhánh cpu wasm32 mà npm trên macOS/Linux lại cài → npm ci dừng với
+      # "Missing: … from lock file". Giống 3 workflow của hub.
       - name: Cài phụ thuộc
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Đồng bộ Capacitor
         run: npx cap sync ios
