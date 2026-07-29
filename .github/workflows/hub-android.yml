@@ -52,8 +52,11 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('android/app/google-services.json','utf8'))" \
             || { echo "::error::Secret GOOGLE_SERVICES_JSON không phải JSON hợp lệ."; exit 1; }
 
+      # npm install chứ không npm ci: lockfile sinh trên Windows luôn thiếu nhánh
+      # wasm32 (@tailwindcss/oxide-wasm32-wasi → @emnapi/*) vì npm trên Windows
+      # bỏ qua gói cpu wasm32, còn macOS/Linux thì cài → npm ci báo lệch lock.
       - name: Cài phụ thuộc
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # Không cần .env: src/env.ts đã có sẵn giá trị mặc định trỏ production.
       - name: Dựng bundle web

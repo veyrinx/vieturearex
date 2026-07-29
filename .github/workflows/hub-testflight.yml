@@ -49,8 +49,11 @@ jobs:
             exit 1
           fi
 
+      # npm install chứ không npm ci: lockfile sinh trên Windows luôn thiếu nhánh
+      # wasm32 (@tailwindcss/oxide-wasm32-wasi → @emnapi/*) vì npm trên Windows
+      # bỏ qua gói cpu wasm32, còn macOS/Linux thì cài → npm ci báo lệch lock.
       - name: Cài phụ thuộc
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Dựng bundle web
         run: npm run build

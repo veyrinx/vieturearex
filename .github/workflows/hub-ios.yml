@@ -28,8 +28,11 @@ jobs:
           cache: npm
           cache-dependency-path: mobile-hub/package-lock.json
 
+      # npm install chứ không npm ci: lockfile sinh trên Windows luôn thiếu nhánh
+      # wasm32 (@tailwindcss/oxide-wasm32-wasi → @emnapi/*) vì npm trên Windows
+      # bỏ qua gói cpu wasm32, còn macOS/Linux thì cài → npm ci báo lệch lock.
       - name: Cài phụ thuộc
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # Giống bên Android: bundle web phải có trước khi cap sync đổ vào App/public.
       - name: Dựng bundle web
