@@ -12,7 +12,9 @@ export type AuthContext = {
   bypass: boolean;
 };
 
-const VALID_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support", "user"];
+const VALID_ROLES: UserRole[] = [
+  "super_admin", "admin", "it", "manager", "support", "team_member", "agent", "seller", "user",
+];
 
 export async function getAuthContext(): Promise<AuthContext> {
   if (!hasSupabaseEnv) {

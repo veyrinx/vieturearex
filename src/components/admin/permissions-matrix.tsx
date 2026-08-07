@@ -18,6 +18,8 @@ const BUILTIN_COLOR: Record<RoleKey, string> = {
   manager: "border-blue-500/40 bg-blue-500/10 text-blue-500",
   support: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500",
   team_member: "border-cyan-500/40 bg-cyan-500/10 text-cyan-500",
+  agent: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500",
+  seller: "border-orange-500/40 bg-orange-500/10 text-orange-500",
   user: "border-border bg-muted text-muted-foreground",
 };
 

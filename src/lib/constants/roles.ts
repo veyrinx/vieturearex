@@ -4,6 +4,8 @@ import {
   Wrench,
   UserCog,
   Headset,
+  HandCoins,
+  Store,
   Users,
   User,
   type LucideIcon,
@@ -89,6 +91,26 @@ export const ROLE_META: Record<UserRole, RoleMeta> = {
     gradient: "from-cyan-950 via-sky-900 to-blue-950",
     staff: true,
   },
+  agent: {
+    label: "Giao Dịch Viên",
+    labelEn: "Trade Agent",
+    icon: HandCoins,
+    color: "text-emerald-500 bg-emerald-500/10",
+    border: "border-emerald-500/30",
+    ring: "ring-emerald-500/30",
+    gradient: "from-emerald-950 via-green-900 to-teal-950",
+    staff: true,
+  },
+  seller: {
+    label: "Người Bán",
+    labelEn: "Seller",
+    icon: Store,
+    color: "text-orange-500 bg-orange-500/10",
+    border: "border-orange-500/30",
+    ring: "ring-orange-500/30",
+    gradient: "from-orange-950 via-amber-900 to-yellow-950",
+    staff: false,
+  },
   user: {
     label: "Thành Viên",
     labelEn: "Member",
@@ -108,6 +130,7 @@ export const ROLE_ORDER: UserRole[] = [
   "it",
   "manager",
   "support",
+  "agent",
   "team_member",
 ];
 

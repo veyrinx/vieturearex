@@ -4,8 +4,15 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getClientIp } from "@/lib/server/get-client-ip";
+import { SHOP_PRIVATE_BUCKET, toPrivateRef } from "@/lib/server/shop-files";
 
-const ALLOWED_BUCKETS = ["logos", "forum", "events"] as const;
+const ALLOWED_BUCKETS = ["logos", "forum", "events", "shop", "shop-private"] as const;
+
+/**
+ * Bucket kín: không có link công khai. Trả về đường dẫn nội bộ qua
+ * `/api/shop/file` — nơi kiểm tra quyền rồi mới cấp link ký ngắn hạn.
+ */
+const PRIVATE_BUCKETS = new Set<string>([SHOP_PRIVATE_BUCKET]);
 
 export async function POST(request: NextRequest) {
   const key = `user-upload:${getClientIp(request)}`;
@@ -41,6 +48,10 @@ export async function POST(request: NextRequest) {
   });
 
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
+
+  if (PRIVATE_BUCKETS.has(bucket)) {
+    return NextResponse.json({ publicUrl: toPrivateRef(path) }, { status: 201 });
+  }
 
   const { data: publicData } = adminClient.storage.from(bucket).getPublicUrl(path);
   return NextResponse.json({ publicUrl: publicData.publicUrl }, { status: 201 });

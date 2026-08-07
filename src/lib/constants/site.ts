@@ -60,6 +60,7 @@ export const navItems = [
   { title: "SỰ KIỆN", href: "/events" },
   { title: "PHÁT TRỰC TIẾP", href: "/esports" },
   { title: "TIN TỨC", href: "/news" },
+  { title: "CHỢ AREX", href: "/shop" },
   { title: "SẮP RA MẮT", href: "/coming-soon" },
 ] as const;
 
@@ -89,6 +90,7 @@ export const adminNavItems = [
   { title: "ĐỘI NGŨ", href: "/admin/team" },
   { title: "BẢO MẬT", href: "/admin/security" },
   { title: "GIẢI ĐẤU", href: "/admin/tournaments" },
+  { title: "CHỢ AREX", href: "/admin/shop" },
   { title: "PHÂN QUYỀN", href: "/admin/permissions" },
   { title: "CÀI ĐẶT", href: "/admin/settings" },
   { title: "API DOCS", href: "/admin/api-docs" },

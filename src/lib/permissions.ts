@@ -11,7 +11,9 @@
  * setting can't lock the project owner out.
  */
 
-export const ROLE_KEYS = ["super_admin", "admin", "it", "manager", "support", "team_member", "user"] as const;
+export const ROLE_KEYS = [
+  "super_admin", "admin", "it", "manager", "support", "team_member", "agent", "seller", "user",
+] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 export const ROLE_LABELS: Record<RoleKey, string> = {
@@ -21,6 +23,8 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
   manager: "Quản Lý",
   support: "CSKH",
   team_member: "Thành Viên Team",
+  agent: "Giao Dịch Viên",
+  seller: "Người Bán",
   user: "Người Dùng",
 };
 
@@ -31,7 +35,9 @@ export const BUILTIN_ROLE_LEVELS: Record<RoleKey, number> = {
   admin: 100,
   manager: 60,
   support: 40,
+  agent: 35,
   team_member: 30,
+  seller: 25,
   user: 20,
 };
 
@@ -154,6 +160,14 @@ export const CAPABILITIES = [
   { key: "users.edit",         group: "Người dùng", label: "Sửa user / đổi role" },
   { key: "users.ban",          group: "Người dùng", label: "Khoá / mở khoá tài khoản" },
   { key: "users.delete",       group: "Người dùng", label: "Xoá tài khoản" },
+  // Shop — chợ mua bán acc/vật phẩm
+  { key: "shop.sell",           group: "Shop",       label: "Đăng tin bán (người bán đã duyệt)" },
+  { key: "shop.listing.approve", group: "Shop",      label: "Duyệt / gỡ tin đăng" },
+  { key: "shop.seller.approve", group: "Shop",       label: "Duyệt hồ sơ người bán" },
+  { key: "shop.order.claim",    group: "Shop",       label: "Nhận đơn làm trung gian" },
+  { key: "shop.order.view_all", group: "Shop",       label: "Xem toàn bộ đơn hàng" },
+  { key: "shop.escrow.manage",  group: "Shop",       label: "Xác nhận tiền giữ & giải ngân" },
+  { key: "shop.dispute.resolve", group: "Shop",      label: "Xử lý tranh chấp" },
   // Analytics
   { key: "analytics.view",     group: "Thống kê",   label: "Xem thống kê & lượt xem" },
   // System
@@ -178,6 +192,8 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "ratings.manage",
     "team.approve_it", "team.approve_admin", "team.invite",
     "users.view", "users.edit", "users.ban",
+    "shop.listing.approve", "shop.seller.approve", "shop.order.claim",
+    "shop.order.view_all", "shop.escrow.manage", "shop.dispute.resolve",
     "analytics.view",
     "settings.edit", "logs.view",
   ],
@@ -201,14 +217,23 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "tms.manage", "tms.scores",
     "ratings.manage",
     "users.view",
+    "shop.listing.approve", "shop.seller.approve", "shop.order.claim",
+    "shop.order.view_all", "shop.escrow.manage", "shop.dispute.resolve",
     "analytics.view",
   ],
   support: [
     "comments.moderate",
     "ratings.manage",
     "users.view",
+    "shop.order.view_all",
   ],
   team_member: [],
+  // Giao dịch viên: chỉ ôm đơn + giữ/giải ngân tiền, không đụng nội dung site
+  agent: [
+    "shop.order.claim", "shop.order.view_all", "shop.escrow.manage",
+    "shop.dispute.resolve", "shop.listing.approve",
+  ],
+  seller: ["shop.sell"],
   user: [],
 };
 

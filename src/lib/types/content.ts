@@ -22,7 +22,18 @@ export type GameProfile = {
   nickname?: string;
 };
 
-export type UserRole = "super_admin" | "admin" | "it" | "manager" | "support" | "team_member" | "user";
+export type UserRole =
+  | "super_admin"
+  | "admin"
+  | "it"
+  | "manager"
+  | "support"
+  | "team_member"
+  /** Giao dịch viên — trung gian giữ tiền cho đơn ở /shop */
+  | "agent"
+  /** Người bán đã được duyệt ở /shop */
+  | "seller"
+  | "user";
 
 export type EventItem = {
   id: string;

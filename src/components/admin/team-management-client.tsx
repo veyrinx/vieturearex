@@ -15,11 +15,14 @@ const ROLE_LABELS: Record<UserRole, string> = {
   manager: "Manager",
   support: "Support",
   team_member: "Team",
+  agent: "Giao Dịch Viên",
+  seller: "Người Bán",
   user: "User",
 };
 
 const ROLE_ORDER: Record<UserRole, number> = {
-  super_admin: 0, it: 1, admin: 2, manager: 3, support: 4, team_member: 5, user: 6,
+  super_admin: 0, it: 1, admin: 2, manager: 3, support: 4, agent: 5,
+  team_member: 6, seller: 7, user: 8,
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -29,6 +32,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
   manager: "text-green-400 bg-green-400/10 border-green-400/30",
   support: "text-amber-400 bg-amber-400/10 border-amber-400/30",
   team_member: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30",
+  agent: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  seller: "text-orange-400 bg-orange-400/10 border-orange-400/30",
   user: "text-muted-foreground bg-muted border-border",
 };
 

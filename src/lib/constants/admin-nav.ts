@@ -5,7 +5,7 @@ import {
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
   FileText, Users2, SlidersHorizontal, Eye, Download,
-  ShoppingBag, Share2, Handshake,
+  ShoppingBag, Share2, Handshake, Store,
   type LucideIcon,
 } from "lucide-react";
 
@@ -56,6 +56,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: ShoppingBag,
     items: [
       { title: "Cửa hàng Prime", href: "/admin/prime", icon: ShoppingBag },
+      { title: "Chợ Arex",       href: "/admin/shop",  icon: Store },
     ],
   },
   {
