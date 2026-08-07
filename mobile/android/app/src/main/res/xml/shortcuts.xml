@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Lối tắt khi nhấn giữ icon app trên màn hình chính.
+  Mỗi lối tắt mở thẳng một trang trong WebView qua deep link arex://.
+  Nhãn để trong strings.xml để còn dịch được, icon dùng luôn icon app.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shop"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_shop_short"
+        android:shortcutLongLabel="@string/shortcut_shop_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="arex://shop"
+            android:targetPackage="site.arexnetwork.app"
+            android:targetClass="site.arexnetwork.app.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="orders"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_orders_short"
+        android:shortcutLongLabel="@string/shortcut_orders_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="arex://shop/don-hang"
+            android:targetPackage="site.arexnetwork.app"
+            android:targetClass="site.arexnetwork.app.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="events"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_events_short"
+        android:shortcutLongLabel="@string/shortcut_events_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="arex://su-kien"
+            android:targetPackage="site.arexnetwork.app"
+            android:targetClass="site.arexnetwork.app.MainActivity" />
+    </shortcut>
+</shortcuts>

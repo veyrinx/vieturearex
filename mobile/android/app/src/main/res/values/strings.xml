@@ -4,4 +4,12 @@
     <string name="title_activity_main">Arex Network</string>
     <string name="package_name">site.arexnetwork.app</string>
     <string name="custom_url_scheme">site.arexnetwork.app</string>
+
+    <!-- Lối tắt khi nhấn giữ icon app -->
+    <string name="shortcut_shop_short">Chợ</string>
+    <string name="shortcut_shop_long">Chợ Arex</string>
+    <string name="shortcut_orders_short">Đơn hàng</string>
+    <string name="shortcut_orders_long">Đơn hàng của tôi</string>
+    <string name="shortcut_events_short">Sự kiện</string>
+    <string name="shortcut_events_long">Lịch sự kiện Free Fire</string>
 </resources>

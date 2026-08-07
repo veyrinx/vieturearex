@@ -20,6 +20,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Nhấn giữ icon app → Chợ / Đơn hàng / Sự kiện -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+
             <!-- Deep link riêng của app: dùng cho luồng OAuth quay về từ trình
                  duyệt hệ thống (arex://auth/callback?code=…). -->
             <intent-filter>

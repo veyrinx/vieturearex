@@ -225,6 +225,25 @@ export function NativeAppShell() {
     if (!isNativeApp()) return;
     const offs: Array<() => void> = [];
     let cancelled = false;
+    let token: string | null = null;
+
+    /**
+     * Gửi token lên server. Gọi lại mỗi lần app quay ra tiền cảnh vì token chỉ
+     * cấp một lần lúc mở app: ai đăng nhập sau đó sẽ có token treo lơ lửng
+     * không gắn tài khoản, và thông báo riêng (đơn hàng của chợ) không tới được.
+     */
+    const postToken = (value: string) => {
+      void fetch("/api/push/native", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          token: value,
+          platform: nativePlatform(),
+          appVersion: document.documentElement.dataset.nativeVersion,
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    };
 
     const register = async () => {
       const perm = await callPlugin<{ receive: string }>(
@@ -245,16 +264,14 @@ export function NativeAppShell() {
 
       offs.push(
         subscribe<{ value: string }>("PushNotifications", "registration", ({ value }) => {
-          void fetch("/api/push/native", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              token: value,
-              platform: nativePlatform(),
-              appVersion: document.documentElement.dataset.nativeVersion,
-            }),
-            keepalive: true,
-          }).catch(() => {});
+          token = value;
+          postToken(value);
+        }),
+      );
+
+      offs.push(
+        subscribe<{ isActive: boolean }>("App", "appStateChange", ({ isActive }) => {
+          if (isActive && token) postToken(token);
         }),
       );
 

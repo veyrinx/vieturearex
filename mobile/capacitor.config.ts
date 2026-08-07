@@ -35,10 +35,10 @@ const config: CapacitorConfig = {
 
   // Web đọc chuỗi này để biết đang chạy trong app native (ẩn quảng cáo, chừa
   // safe-area, bật luồng đăng nhập Google qua trình duyệt hệ thống…).
-  appendUserAgent: "ArexApp/1.0",
+  appendUserAgent: "ArexApp/1.1",
 
   android: {
-    appendUserAgent: "ArexApp/1.0 ArexAndroid",
+    appendUserAgent: "ArexApp/1.1 ArexAndroid",
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
@@ -46,7 +46,7 @@ const config: CapacitorConfig = {
   },
 
   ios: {
-    appendUserAgent: "ArexApp/1.0 ArexIOS",
+    appendUserAgent: "ArexApp/1.1 ArexIOS",
     contentInset: "never",
     limitsNavigationsToAppBoundDomains: false,
     backgroundColor: "#ffffff",
