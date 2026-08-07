@@ -1243,6 +1243,39 @@ export default function ProfilePage() {
               )}
             </div>
 
+            {/* Kết nối nền tảng ngoài */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="mb-1 flex items-center gap-2.5">
+                <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+                <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-primary dark:text-amber-400 flex items-center gap-2">
+                  <ExternalLink className="size-3.5" /> Kết nối
+                </h2>
+              </div>
+              <p className="mb-4 text-xs text-muted-foreground">
+                Nối tài khoản với Discord / Telegram để nhận thông báo đơn hàng và dùng lệnh bot.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link
+                  href="/discord-link"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3 transition hover:border-primary/40"
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <MessageSquare className="size-4 text-indigo-500" /> Discord
+                  </span>
+                  <span className="text-xs text-muted-foreground">Lấy mã →</span>
+                </Link>
+                <Link
+                  href="/telegram-link"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3 transition hover:border-primary/40"
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Bell className="size-4 text-sky-500" /> Telegram
+                  </span>
+                  <span className="text-xs text-muted-foreground">Lấy mã →</span>
+                </Link>
+              </div>
+            </div>
+
             {/* Đăng xuất */}
             <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
               <div className="mb-1 flex items-center gap-2.5">
