@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
 import { getAllCharacters, ROLE_META, splitSkill } from "@/lib/data/ff-characters";
+import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 
 type ResultType = "news" | "event" | "forum" | "wiki" | "weapon" | "loadout" | "character";
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     (type === "all" || type === "event")
       ? sb.from("events")
-          .select("id, title, description, start_date, status, server_region")
+          .select("id, title, description, start_date, end_date, status, server_region")
           .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
           .limit(perSource)
       : Promise.resolve({ data: null }),
@@ -94,8 +95,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (eventsRes.status === "fulfilled" && eventsRes.value.data) {
-    for (const e of eventsRes.value.data as { id: string; title: string; description: string; start_date: string; status: string; server_region: string | null }[]) {
-      results.push({ type: "event", id: e.id, title: e.title, description: e.description?.slice(0, 150) ?? "", date: e.start_date, href: `/events/${e.id}`, status: e.status, category: e.server_region ?? undefined });
+    for (const e of eventsRes.value.data as { id: string; title: string; description: string; start_date: string; end_date: string; status: string; server_region: string | null }[]) {
+      // Suy lại từ ngày thay vì tin cột `status` — cột chỉ được cron đồng bộ
+      // mỗi giờ, còn kết quả tìm kiếm phải đúng ngay tại thời điểm hỏi.
+      results.push({ type: "event", id: e.id, title: e.title, description: e.description?.slice(0, 150) ?? "", date: e.start_date, href: `/events/${e.id}`, status: getEventStatusInVietnam(e.start_date, e.end_date), category: e.server_region ?? undefined });
     }
   }
 

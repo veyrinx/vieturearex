@@ -3,13 +3,14 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
+import { syncEventStatuses } from "@/lib/server/event-status";
 
 // Auto-hide (not delete — reversible) expired / stale content.
 // Called by Vercel Cron daily. Content is hidden by status change so admins
 // can restore it; nothing is permanently removed.
 //
 // Rules:
-//  - Events: end_date in the past          -> status "expired"
+//  - Events: status re-derived from dates   -> upcoming / active / expired
 //  - News:   published & older than N days  -> status "draft"    (N = settings cron.hide_news_days, default 365, 0 = off)
 //  - Forum:  active & inactive for N days   -> status "removed"  (N = settings cron.hide_forum_days, default 365, 0 = off)
 
@@ -43,19 +44,13 @@ export async function GET(req: NextRequest) {
 
   const newsDays = readDays(map, "cron.hide_news_days", DEFAULT_NEWS_DAYS);
   const forumDays = readDays(map, "cron.hide_forum_days", DEFAULT_FORUM_DAYS);
-  const now = new Date().toISOString();
 
   const result = { events: 0, news: 0, forum: 0 };
 
-  // ── Events: past end_date → expired ──
-  try {
-    const { data } = await untypedFrom(db, "events")
-      .update({ status: "expired" })
-      .lt("end_date", now)
-      .neq("status", "expired")
-      .select("id") as { data: Array<{ id: string }> | null };
-    result.events = data?.length ?? 0;
-  } catch { /* column/table missing — skip */ }
+  // ── Events: đồng bộ cả ba trạng thái theo ngày VN (xem event-status.ts) ──
+  // Trước đây chỗ này chỉ đánh dấu "expired" bằng `end_date < now`, khiến sự
+  // kiện kết thúc trong ngày bị coi là hết hạn ngay từ đầu ngày.
+  result.events = (await syncEventStatuses(db)).changed;
 
   // ── News: published & older than N days → draft ──
   if (newsDays > 0) {

@@ -109,6 +109,18 @@ export function parseVietnamDateInputStart(value: string) {
   return new Date(`${value}T00:00:00+07:00`);
 }
 
+/**
+ * Mốc 00:00 giờ VN của hôm nay, lệch `offsetDays` ngày — dạng ISO để so trong
+ * truy vấn Supabase. Nhờ mốc này mà điều kiện lọc theo NGÀY khớp đúng với
+ * `getEventStatusInVietnam`, vốn so bằng date-key chứ không so timestamp.
+ */
+export function vietnamDayStartIso(offsetDays = 0, now: Date = new Date()) {
+  const { year, month, day } = getVietnamDateParts(now);
+  const midnight = new Date(`${year}-${month}-${day}T00:00:00+07:00`);
+  // VN không có giờ mùa hè nên cộng thẳng số ms là đủ.
+  return new Date(midnight.getTime() + offsetDays * 86_400_000).toISOString();
+}
+
 export function parseVietnamDateInputEnd(value: string) {
   return new Date(`${value}T23:59:59.999+07:00`);
 }

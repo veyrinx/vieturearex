@@ -152,7 +152,6 @@ export async function POST(request: NextRequest) {
       thumbnail_url: normalizeUrlField(rawPayload?.thumbnail_url),
       link: normalizeUrlField(rawPayload?.link),
       server_region: typeof rawPayload?.server_region === "string" ? rawPayload.server_region : "",
-      status: rawPayload?.status,
     };
     const parsed = eventSchema.safeParse(payload);
     if (!parsed.success) {
@@ -250,7 +249,6 @@ export async function PATCH(request: NextRequest) {
       thumbnail_url: normalizeUrlField(rawPayload?.thumbnail_url),
       link: normalizeUrlField(rawPayload?.link),
       server_region: typeof rawPayload?.server_region === "string" ? rawPayload.server_region : "",
-      status: rawPayload?.status,
     };
 
     const parsed = eventSchema.safeParse(payload);

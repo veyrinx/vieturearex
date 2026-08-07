@@ -3,9 +3,23 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
+import { vietnamDayStartIso } from "@/lib/utils/vietnam-time";
 
 const SETTING_ENABLED = "cron.purge_expired_events_enabled";
 const SETTING_GRACE_DAYS = "cron.purge_expired_events_grace_days";
+
+/**
+ * Giữ sự kiện đã kết thúc thêm bao nhiêu ngày trước khi xoá hẳn.
+ *
+ * Trước đây mặc định là 0, tức sự kiện vừa hết là chuyến cron 3h30 sáng hôm đó
+ * xoá luôn — trạng thái "đã kết thúc" gần như không bao giờ nhìn thấy. Đổi
+ * thành 30 ngày để ba trạng thái sắp/đang/kết thúc đều có ý nghĩa; admin muốn
+ * xoá sớm hơn thì chỉnh `cron.purge_expired_events_grace_days` ở /admin/settings.
+ */
+const DEFAULT_GRACE_DAYS = 30;
+
+/** Thông tin bàn giao acc bị xoá sau ngần này ngày kể từ khi đơn khép lại. */
+const SECRET_RETENTION_DAYS = 30;
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
@@ -25,8 +39,10 @@ export async function GET(req: NextRequest) {
   if (!enabled) return NextResponse.json({ ok: true, skipped: "disabled" });
 
   const graceRaw = parseInt(map[SETTING_GRACE_DAYS] ?? "", 10);
-  const graceDays = Number.isFinite(graceRaw) && graceRaw > 0 ? graceRaw : 0;
-  const cutoff = new Date(Date.now() - graceDays * 86_400_000).toISOString();
+  const graceDays = Number.isFinite(graceRaw) && graceRaw >= 0 ? graceRaw : DEFAULT_GRACE_DAYS;
+  // Đếm lùi từ 00:00 giờ VN chứ không từ "bây giờ", để khớp với cách tính
+  // trạng thái theo ngày ở event-status.ts — sự kiện kết thúc hôm nay vẫn còn.
+  const cutoff = vietnamDayStartIso(-graceDays);
 
   let deleted = 0;
   try {
@@ -50,5 +66,29 @@ export async function GET(req: NextRequest) {
     revalidatePath("/calendar", "layout");
   }
 
-  return NextResponse.json({ ok: true, deleted, graceDays });
+  // ── Chợ Arex: xoá thông tin đăng nhập đã bàn giao của đơn đã khép ──
+  // Mật khẩu tài khoản game không có lý do gì nằm lại trong DB sau khi đơn
+  // xong; ảnh và nhật ký vẫn giữ nguyên làm bằng chứng.
+  let secretsPurged = 0;
+  try {
+    const { data: closed } = (await untypedFrom(db, "shop_orders")
+      .select("id")
+      .in("status", ["completed", "cancelled"])
+      .lt("updated_at", new Date(Date.now() - SECRET_RETENTION_DAYS * 86_400_000).toISOString())
+      .limit(500)) as { data: Array<{ id: string }> | null };
+
+    const ids = (closed ?? []).map((o) => o.id);
+    if (ids.length > 0) {
+      const { data } = (await untypedFrom(db, "shop_order_events")
+        .update({ secret: null })
+        .in("order_id", ids)
+        .not("secret", "is", null)
+        .select("id")) as { data: Array<{ id: string }> | null };
+      secretsPurged = data?.length ?? 0;
+    }
+  } catch {
+    /* bảng chưa migrate — bỏ qua */
+  }
+
+  return NextResponse.json({ ok: true, deleted, graceDays, secretsPurged });
 }

@@ -40,7 +40,9 @@ export const eventSchema = z.object({
   thumbnail_url: z.union([z.string().url(), z.literal(""), z.null()]).optional().default(""),
   link: z.union([z.string().url(), z.literal(""), z.null()]).optional().default(""),
   server_region: z.string().max(20).optional().default("").transform((v) => v.trim().toLowerCase()),
-  status: z.enum(["active", "upcoming", "expired"]).optional(),
+  // Không có `status` ở đây: trạng thái sắp diễn ra / đang diễn ra / kết thúc
+  // luôn suy từ start_date + end_date (getEventStatusInVietnam) rồi được cron
+  // /api/cron/event-status giữ đồng bộ. Admin không đặt tay được nữa.
 });
 
 export type EventInput = z.infer<typeof eventSchema>;
