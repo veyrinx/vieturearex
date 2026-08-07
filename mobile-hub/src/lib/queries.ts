@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { checkForBundleUpdate } from "@/lib/updater";
+import { platform } from "@/lib/native";
+import { env } from "@/env";
 import type {
   ActivityLog,
   Announcement,
   AppRelease,
+  AppUpdateCheck,
   CommentItem,
   CommentStatus,
   CommentTable,
@@ -32,6 +35,7 @@ export const qk = {
   announcements: ["announcements"] as const,
   releases: ["releases"] as const,
   bundleUpdate: ["bundle-update"] as const,
+  appUpdate: ["app-update"] as const,
   settings: ["settings"] as const,
 };
 
@@ -365,6 +369,27 @@ export function useBundleUpdate() {
   return useQuery({
     queryKey: qk.bundleUpdate,
     queryFn: () => checkForBundleUpdate(),
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: false,
+  });
+}
+
+/**
+ * Có bản CÀI ĐẶT (APK/IPA) mới hơn bản đang chạy không.
+ *
+ * Khác useBundleUpdate: cập nhật nóng chỉ thay được JS/CSS, còn khi phần native
+ * đổi thì bắt buộc tải file cài về cài đè. CI đẩy file lên kho ngay sau khi
+ * dựng xong nên chỗ này luôn thấy bản mới nhất.
+ */
+export function useAppUpdate() {
+  return useQuery({
+    queryKey: qk.appUpdate,
+    queryFn: () =>
+      api<AppUpdateCheck>(
+        `/api/hub/app/latest?platform=${platform === "ios" ? "ios" : "android"}` +
+          `&current=${encodeURIComponent(env.appVersion)}`,
+      ),
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
     retry: false,

@@ -14,6 +14,20 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<!-- Deep link SSO: /auth/hub đá ngược về app sau khi đăng nhập trên Safari
+	     (xem mobile-hub/src/lib/sso.ts). Scheme riêng, khác `arex` của app
+	     Arex Network để hai app không giành nhau. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>site.arexnetwork.hub</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>arexhub</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>

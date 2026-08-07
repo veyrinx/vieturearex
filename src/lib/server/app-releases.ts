@@ -9,15 +9,29 @@ export const SIGNED_URL_TTL = 60 * 30;
 
 export type AppPlatform = "android" | "ios";
 
+/** Kho dùng chung cho hai app nên phải phân biệt được file của bên nào. */
+export type ReleaseApp = "hub" | "network";
+
 export type AppRelease = {
-  /** Đường dẫn trong bucket, ví dụ `android/1.0.0/app-debug.apk`. */
+  /** Đường dẫn trong bucket, ví dụ `android/1.0.0-42/arex-hub-1.0.0-42.apk`. */
   path: string;
   platform: AppPlatform;
+  app: ReleaseApp;
   version: string;
   fileName: string;
   sizeBytes: number;
   updatedAt: string | null;
 };
+
+/**
+ * App nào là suy từ tên file — CI đặt tên `arex-hub-<version>.apk`.
+ *
+ * File cũ đẩy tay trước khi có quy ước này (ví dụ `app-debug.apk`) sẽ rơi vào
+ * "network"; đẩy lại bằng CI là tự đúng.
+ */
+function appFromFileName(fileName: string): ReleaseApp {
+  return /^arex[-_]hub/i.test(fileName) ? "hub" : "network";
+}
 
 const PLATFORMS: AppPlatform[] = ["android", "ios"];
 
@@ -48,6 +62,7 @@ export async function listAppReleases(): Promise<AppRelease[]> {
         releases.push({
           path: `${platform}/${version.name}/${file.name}`,
           platform,
+          app: appFromFileName(file.name),
           version: version.name,
           fileName: file.name,
           sizeBytes: (file.metadata?.size as number | undefined) ?? 0,
@@ -59,6 +74,21 @@ export async function listAppReleases(): Promise<AppRelease[]> {
 
   // Mới nhất lên đầu.
   return releases.sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+}
+
+/**
+ * Bản mới nhất của một app trên một nền tảng.
+ *
+ * `listAppReleases()` đã xếp theo thời gian tải lên giảm dần, nên phần tử đầu
+ * tiên khớp bộ lọc chính là bản mới nhất — dùng thời gian chứ không so số
+ * phiên bản, vì đẩy lại bản cũ để vá gấp cũng phải được coi là bản hiện hành.
+ */
+export async function latestAppRelease(
+  app: ReleaseApp,
+  platform: AppPlatform,
+): Promise<AppRelease | null> {
+  const releases = await listAppReleases();
+  return releases.find((item) => item.app === app && item.platform === platform) ?? null;
 }
 
 /** Ký link tải tạm thời cho một file trong bucket. */

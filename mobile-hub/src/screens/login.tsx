@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from "react";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { App } from "@capacitor/app";
+import { Eye, EyeOff, Globe, LogIn } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { Button, Field, Input } from "@/components/ui";
 import { errorMessage, useToast } from "@/components/toast";
 import { useAuth } from "@/auth/auth-context";
 import { openExternal } from "@/lib/native";
+import { listenHubSso, startHubSso } from "@/lib/sso";
 import { env } from "@/env";
 
 export function LoginScreen() {
@@ -14,7 +16,45 @@ export function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [ssoBusy, setSsoBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+
+  // Bắt deep link `arexhub://sso` do trang /auth/hub đá về (kể cả khi chính
+  // deep link đánh thức app từ trạng thái tắt hẳn).
+  useEffect(
+    () =>
+      listenHubSso({
+        onExchange: () => setSsoBusy(true),
+        onError: (message) => {
+          setSsoBusy(false);
+          setError(message);
+          toast.error(message);
+        },
+      }),
+    [toast],
+  );
+
+  // Quay lại app mà chưa có vé (bấm huỷ / đóng tab) → thôi quay vòng chờ.
+  useEffect(() => {
+    const handle = App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) window.setTimeout(() => setSsoBusy(false), 1500);
+    });
+    return () => void handle.then((h) => h.remove()).catch(() => null);
+  }, []);
+
+  async function handleSso() {
+    setSsoBusy(true);
+    setError(null);
+    try {
+      await startHubSso();
+    } catch (err) {
+      setSsoBusy(false);
+      const message = errorMessage(err);
+      setError(message);
+      toast.error(message);
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -54,7 +94,43 @@ export function LoginScreen() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {/* Cách chính: đăng nhập ngoài trình duyệt rồi đá ngược về app.
+            Vào thẳng được cả tài khoản Google — thứ WebView không làm nổi. */}
+        <div className="mt-8 space-y-3">
+          <Button
+            size="lg"
+            block
+            icon={Globe}
+            loading={ssoBusy}
+            onClick={() => void handleSso()}
+          >
+            Đăng nhập bằng trình duyệt
+          </Button>
+          <p className="text-center text-[12px] leading-relaxed text-mist-500">
+            Mở trang đăng nhập của arexnetwork.site. Đăng nhập xong là tự quay lại app.
+          </p>
+        </div>
+
+        {error && !showPasswordForm && (
+          <p className="mt-4 text-center text-[13px] leading-relaxed text-danger">{error}</p>
+        )}
+
+        <div className="mt-6 flex items-center gap-3 text-[11px] text-mist-500/70">
+          <span className="h-px flex-1 bg-white/10" />
+          hoặc
+          <span className="h-px flex-1 bg-white/10" />
+        </div>
+
+        {!showPasswordForm ? (
+          <button
+            type="button"
+            onClick={() => setShowPasswordForm(true)}
+            className="mt-4 block w-full text-center text-[13px] text-mist-500"
+          >
+            Đăng nhập bằng email &amp; mật khẩu
+          </button>
+        ) : (
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <Field label="Email" required>
             <Input
               type="email"
@@ -91,10 +167,18 @@ export function LoginScreen() {
             </div>
           </Field>
 
-          <Button type="submit" size="lg" block icon={LogIn} loading={submitting}>
+          <Button
+            type="submit"
+            size="lg"
+            block
+            variant="outline"
+            icon={LogIn}
+            loading={submitting}
+          >
             Đăng nhập
           </Button>
         </form>
+        )}
 
         <button
           type="button"

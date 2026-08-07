@@ -125,6 +125,12 @@ export default async function AdminAppDownloadPage() {
         <h2 className="mb-2 font-heading text-sm font-black uppercase tracking-wide text-foreground">
           Thêm bản build mới
         </h2>
+        <p className="mb-2 text-xs text-muted-foreground">
+          <strong className="text-foreground">Arex Hub tự phát hành:</strong> workflow “Build Arex
+          Hub Android” đẩy thẳng APK lên kho sau khi build xong, nhân viên tự tải ở{" "}
+          <code className="font-mono text-[11px]">/tai-app</code> — không phải gửi file cho ai.
+        </p>
+        <p className="mb-2 text-xs text-muted-foreground">Các app còn lại vẫn đẩy tay:</p>
         <ol className="list-inside list-decimal space-y-1.5 text-xs text-muted-foreground">
           <li>Chạy workflow “Build app Android” / “Build app iOS” trên GitHub Actions.</li>
           <li>Tải artifact về máy (<code className="font-mono">arex-android</code> / <code className="font-mono">arex-ios-unsigned</code>).</li>

@@ -18,6 +18,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep link SSO: trang /auth/hub trên website đá ngược về đây sau
+                 khi đăng nhập xong (xem mobile-hub/src/lib/sso.ts).
+                 Scheme riêng `arexhub`, KHÔNG dùng chung `arex` của app
+                 Arex Network — hai app cùng scheme thì Android hỏi chọn app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="arexhub" />
+            </intent-filter>
         </activity>
 
         <provider

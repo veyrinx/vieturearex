@@ -157,6 +157,21 @@ export type AppRelease = {
   updatedAt: string | null;
 };
 
+/** Kết quả GET /api/hub/app/latest — bản cài đặt mới nhất của chính app này. */
+export type AppUpdateCheck = {
+  release: {
+    version: string;
+    fileName: string;
+    sizeBytes: number;
+    updatedAt: string | null;
+    platform: AppPlatform;
+    /** Signed URL sống 30 phút — mở bằng trình duyệt hệ thống để tải. */
+    url: string | null;
+  } | null;
+  /** Bản trong kho khác bản đang chạy. */
+  outdated: boolean;
+};
+
 /** Thông báo cá nhân của tài khoản đang đăng nhập (GET /api/notifications). */
 export type NotificationItem = {
   id: string;

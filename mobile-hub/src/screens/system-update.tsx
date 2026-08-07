@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, CloudDownload, Info, RefreshCw } from "lucide-react";
+import { CheckCircle2, CloudDownload, Info, Download, RefreshCw } from "lucide-react";
 import { Button, Card, Chip, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { SubHeader } from "@/components/sub-header";
 import { errorMessage, useToast } from "@/components/toast";
-import { useBundleUpdate } from "@/lib/queries";
+import { useAppUpdate, useBundleUpdate } from "@/lib/queries";
 import { applyBundleUpdate, currentBundleVersion } from "@/lib/updater";
 import { formatBytes, formatDateTime } from "@/lib/format";
-import { hapticResult, isNative } from "@/lib/native";
+import { hapticResult, isNative, openExternal } from "@/lib/native";
+import { env } from "@/env";
 
 /**
  * Cập nhật nóng giao diện app mà không phải gỡ ra cài lại.
@@ -17,6 +18,7 @@ import { hapticResult, isNative } from "@/lib/native";
 export function UpdateScreen() {
   const toast = useToast();
   const update = useBundleUpdate();
+  const appUpdate = useAppUpdate();
   const [running, setRunning] = useState(false);
   const [current, setCurrent] = useState<string | null>(null);
 
@@ -49,7 +51,46 @@ export function UpdateScreen() {
           <span className="text-mist-500">Bản đang chạy</span>
           <span className="truncate text-right">{current ?? "…"}</span>
         </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-mist-500">Bản cài đặt</span>
+          <span className="truncate text-right">{env.appVersion}</span>
+        </div>
       </Card>
+
+      {/* Bản cài đặt mới: phải tải APK/IPA về cài đè, cập nhật nóng không tới
+          được phần native. CI đẩy file lên kho ngay sau khi build nên chỗ này
+          thấy bản mới trước cả khi có ai kịp báo. */}
+      {isNative && appUpdate.data?.outdated && appUpdate.data.release && (
+        <Card className="space-y-3 border-warn/30 bg-warn/6">
+          <div className="flex items-center justify-between gap-2">
+            <Chip tone="warn">Bản cài đặt mới · v{appUpdate.data.release.version}</Chip>
+            <span className="text-[11.5px] text-mist-500">
+              {formatBytes(appUpdate.data.release.sizeBytes)}
+            </span>
+          </div>
+
+          <p className="text-[13px] leading-relaxed text-mist-500">
+            Bản này đổi cả phần native nên cập nhật nóng không thay được — tải file cài rồi cài đè
+            lên app hiện tại, dữ liệu đăng nhập vẫn giữ nguyên.
+          </p>
+
+          <p className="text-[11.5px] text-mist-500">
+            Phát hành {formatDateTime(appUpdate.data.release.updatedAt)}
+          </p>
+
+          <Button
+            block
+            variant="secondary"
+            icon={Download}
+            onClick={() => {
+              const url = appUpdate.data?.release?.url;
+              if (url) void openExternal(url);
+            }}
+          >
+            Tải bản cài đặt
+          </Button>
+        </Card>
+      )}
 
       <div className="flex items-start gap-2 rounded-2xl border border-ink-800 bg-ink-900/60 px-3.5 py-3 text-[12px] leading-relaxed text-mist-500">
         <Info className="mt-0.5 size-3.5 shrink-0" />

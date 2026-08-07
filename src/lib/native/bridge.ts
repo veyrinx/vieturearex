@@ -115,6 +115,35 @@ export function haptic(style: "light" | "medium" | "heavy" = "light"): void {
   void callPlugin("Haptics", "impact", { style: style.toUpperCase() });
 }
 
+/**
+ * Thông tin máy từ plugin @capacitor/device (chỉ có trong app native).
+ * Trả `null` trên web thường hoặc khi app cũ chưa có plugin.
+ */
+export type NativeDeviceInfo = {
+  /** "iPhone14,5" trên iOS, "SM-A155F" trên Android */
+  model: string | null;
+  manufacturer: string | null;
+  operatingSystem: string | null;
+  osVersion: string | null;
+  /** RAM khả dụng của app (byte) — Android mới có */
+  memUsed: number | null;
+  isVirtual: boolean;
+};
+
+export async function nativeDeviceInfo(): Promise<NativeDeviceInfo | null> {
+  const res = await callPlugin<Record<string, unknown>>("Device", "getInfo");
+  if (!res) return null;
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  return {
+    model: str(res.model),
+    manufacturer: str(res.manufacturer),
+    operatingSystem: str(res.operatingSystem),
+    osVersion: str(res.osVersion),
+    memUsed: typeof res.memUsed === "number" ? res.memUsed : null,
+    isVirtual: res.isVirtual === true,
+  };
+}
+
 /** Chia sẻ native (share sheet của hệ điều hành). */
 export async function nativeShare(data: {
   title?: string;
