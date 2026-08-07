@@ -32,7 +32,7 @@
     },
     {
       "path": "/api/cron/event-status",
-      "schedule": "5 * * * *"
+      "schedule": "0 17 * * *"
     },
     {
       "path": "/api/cron/purge-expired",

@@ -6,10 +6,11 @@ import { syncEventStatuses } from "@/lib/server/event-status";
 /**
  * Tự chuyển sự kiện giữa "sắp diễn ra → đang diễn ra → đã kết thúc".
  *
- * Mốc chuyển là nửa đêm giờ VN, nên chạy mỗi giờ là dư sức bắt kịp mà vẫn rẻ
- * (ba câu UPDATE có điều kiện, không đụng gì khi không có sự kiện nào đổi).
- * Trang web vẫn tự suy trạng thái lúc đọc — cron này lo phần dữ liệu trong DB
- * cho tìm kiếm, báo cáo và app đọc thẳng bảng.
+ * Lịch `0 17 * * *` UTC = 00:00 giờ VN, đúng lúc trạng thái đổi. Gói Hobby chỉ
+ * cho cron chạy một lần/ngày và sai số tới ±59 phút, nên trong khoảng đầu ngày
+ * cột `status` có thể còn cũ vài chục phút — không sao, trang web luôn tự suy
+ * lại lúc đọc (`getEventStatusInVietnam`). Cron này chỉ lo phần dữ liệu nằm
+ * trong DB cho tìm kiếm, báo cáo và app đọc thẳng bảng.
  */
 export const dynamic = "force-dynamic";
 
