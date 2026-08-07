@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSellerByUser, isShopAdminRole, listSellers } from "@/lib/server/shop";
-import { NO_STORE, ownSellerView, redactSellersForList } from "@/lib/server/shop-privacy";
+import { ownSellerView, redactSellersForList, shopJson } from "@/lib/server/shop-privacy";
 import { isAllowedImageRef } from "@/lib/server/shop-files";
 
 /** Hồ sơ xin làm người bán — nộp một lần, admin duyệt mới được đăng tin. */
@@ -17,21 +17,19 @@ export async function GET(req: NextRequest) {
   if (limited) return limited;
 
   const auth = await getAuthContext();
-  if (!auth.userId) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+  if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
   // Admin xem toàn bộ hồ sơ, nhưng ở dạng đã che: STK và SĐT chỉ còn vài ký
   // tự, ảnh giấy tờ không đi kèm danh sách. Muốn xem đủ phải mở từng hồ sơ
   // qua GET /api/shop/sellers/[id]?reveal=1 và chịu ghi log.
   if (isShopAdminRole(auth.role)) {
     const status = new URL(req.url).searchParams.get("status") ?? undefined;
-    return NextResponse.json(
-      { sellers: redactSellersForList(await listSellers(status)) },
-      { headers: NO_STORE },
-    );
+    return shopJson(
+      { sellers: redactSellersForList(await listSellers(status)) }
+  );
   }
-  return NextResponse.json(
-    { seller: ownSellerView(await getSellerByUser(auth.userId)) },
-    { headers: NO_STORE },
+  return shopJson(
+    { seller: ownSellerView(await getSellerByUser(auth.userId)) }
   );
 }
 
@@ -40,14 +38,14 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   const auth = await getAuthContext();
-  if (!auth.userId) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+  if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
   const db = createAdminSupabaseClient();
-  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+  if (!db) return shopJson({ error: "DB unavailable" }, { status: 503 });
 
   const existing = await getSellerByUser(auth.userId);
   if (existing && existing.status !== "rejected") {
-    return NextResponse.json({ error: "Bạn đã có hồ sơ người bán." }, { status: 409 });
+    return shopJson({ error: "Bạn đã có hồ sơ người bán." }, { status: 409 });
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -71,14 +69,14 @@ export async function POST(req: NextRequest) {
   const missing = (["display_name", "real_name", "phone", "contact", "bank_name", "bank_account", "bank_holder"] as const)
     .filter((k) => !payload[k]);
   if (missing.length > 0) {
-    return NextResponse.json({ error: "Vui lòng điền đủ thông tin bắt buộc." }, { status: 400 });
+    return shopJson({ error: "Vui lòng điền đủ thông tin bắt buộc." }, { status: 400 });
   }
 
   // Nộp lại sau khi bị từ chối thì ghi đè hồ sơ cũ
   const { error } = (await untypedFrom(db, "shop_sellers").upsert(payload as never, {
     onConflict: "user_id",
   })) as { error: { message: string } | null };
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return shopJson({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return shopJson({ ok: true }, { status: 201 });
 }

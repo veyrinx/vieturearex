@@ -1,4 +1,5 @@
 import "server-only";
+import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { decryptSecret } from "@/lib/server/shop-crypto";
@@ -233,3 +234,18 @@ export async function logSensitiveAccess(input: {
 export const NO_STORE = {
   "cache-control": "no-store, no-cache, must-revalidate, private",
 } as const;
+
+/**
+ * Trả JSON cho các route của chợ — luôn kèm `no-store`.
+ *
+ * Dùng thay `NextResponse.json` trong `src/app/api/shop/**`. Trước đây chỉ
+ * nhánh thành công mới gắn header, các nhánh 401/403/404 rơi về mặc định
+ * `public, max-age=0, must-revalidate` của Next. Gói chung một chỗ để route
+ * mới không thể quên.
+ */
+export function shopJson(body: unknown, init?: ResponseInit): NextResponse {
+  return NextResponse.json(body, {
+    ...init,
+    headers: { ...NO_STORE, ...(init?.headers ?? {}) },
+  });
+}

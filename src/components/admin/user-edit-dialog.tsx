@@ -20,8 +20,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import type { UserItem, UserRole } from "@/lib/types/content";
+import { BUILTIN_ROLE_LEVELS, ROLE_KEYS, ROLE_LABELS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { BUILTIN_ROLE_LEVELS } from "@/lib/permissions";
 import {
   BADGE_GROUP_LABELS,
   MAX_USER_BADGES,
@@ -29,16 +29,30 @@ import {
   type BadgeGroup,
 } from "@/lib/constants/user-badges";
 
-const ROLE_META: Record<string, { label: string; color: string; bg: string; dot: string; level: number }> = {
-  super_admin: { label: "Super Admin", color: "text-red-500",    bg: "bg-red-500/10 border-red-500/30",       dot: "bg-red-500",    level: 200 },
-  it:          { label: "IT",          color: "text-violet-500", bg: "bg-violet-500/10 border-violet-500/30", dot: "bg-violet-500", level: 150 },
-  admin:       { label: "Admin",       color: "text-amber-500",  bg: "bg-amber-500/10 border-amber-500/30",   dot: "bg-amber-500",  level: 100 },
-  manager:     { label: "Quản Lý",     color: "text-blue-500",   bg: "bg-blue-500/10 border-blue-500/30",     dot: "bg-blue-500",   level: 60 },
-  support:     { label: "CSKH",        color: "text-green-500",  bg: "bg-green-500/10 border-green-500/30",   dot: "bg-green-500",  level: 40 },
-  user:        { label: "Người Dùng",  color: "text-muted-foreground", bg: "bg-muted border-border",          dot: "bg-muted-foreground", level: 20 },
+/** Màu riêng của hộp thoại; nhãn và cấp lấy từ nguồn chung ở permissions.ts. */
+const ROLE_STYLE: Record<string, { color: string; bg: string; dot: string }> = {
+  super_admin: { color: "text-red-500",     bg: "bg-red-500/10 border-red-500/30",         dot: "bg-red-500" },
+  it:          { color: "text-violet-500",  bg: "bg-violet-500/10 border-violet-500/30",   dot: "bg-violet-500" },
+  admin:       { color: "text-amber-500",   bg: "bg-amber-500/10 border-amber-500/30",     dot: "bg-amber-500" },
+  manager:     { color: "text-blue-500",    bg: "bg-blue-500/10 border-blue-500/30",       dot: "bg-blue-500" },
+  support:     { color: "text-green-500",   bg: "bg-green-500/10 border-green-500/30",     dot: "bg-green-500" },
+  agent:       { color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/30", dot: "bg-emerald-500" },
+  team_member: { color: "text-sky-500",     bg: "bg-sky-500/10 border-sky-500/30",         dot: "bg-sky-500" },
+  seller:      { color: "text-orange-500",  bg: "bg-orange-500/10 border-orange-500/30",   dot: "bg-orange-500" },
+  user:        { color: "text-muted-foreground", bg: "bg-muted border-border",             dot: "bg-muted-foreground" },
 };
 
-const ROLE_ORDER: UserRole[] = ["super_admin", "it", "admin", "manager", "support", "user"];
+const ROLE_META: Record<string, { label: string; color: string; bg: string; dot: string; level: number }> =
+  Object.fromEntries(
+    ROLE_KEYS.map((r) => [
+      r,
+      { label: ROLE_LABELS[r], ...(ROLE_STYLE[r] ?? ROLE_STYLE.user), level: BUILTIN_ROLE_LEVELS[r] ?? 20 },
+    ]),
+  );
+
+const ROLE_ORDER: UserRole[] = [
+  "super_admin", "it", "admin", "manager", "support", "agent", "team_member", "seller", "user",
+];
 
 const AVATAR_COLORS = [
   "from-blue-500 to-indigo-600", "from-purple-500 to-pink-600",

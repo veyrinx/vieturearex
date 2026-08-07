@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { isShopAdminRole } from "@/lib/server/shop";
-import { NO_STORE } from "@/lib/server/shop-privacy";
+import { shopJson } from "@/lib/server/shop-privacy";
 
 /**
  * Ai đã mở giấy tờ người bán / thông tin bàn giao acc, lúc nào, từ IP nào.
@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
 
   const auth = await getAuthContext();
   if (!isShopAdminRole(auth.role)) {
-    return NextResponse.json({ error: "Không có quyền." }, { status: 403, headers: NO_STORE });
+    return shopJson({ error: "Không có quyền." }, { status: 403 });
   }
 
   const db = createAdminSupabaseClient();
-  if (!db) return NextResponse.json({ logs: [] }, { headers: NO_STORE });
+  if (!db) return shopJson({ logs: [] });
 
   const { data } = (await untypedFrom(db, "shop_access_logs")
     .select("*")
@@ -53,8 +53,7 @@ export async function GET(req: NextRequest) {
     names = new Map((users ?? []).map((u) => [u.id, u.display_name || u.email]));
   }
 
-  return NextResponse.json(
-    { logs: rows.map((r) => ({ ...r, actor_name: r.actor_id ? names.get(r.actor_id) ?? null : null })) },
-    { headers: NO_STORE },
+  return shopJson(
+    { logs: rows.map((r) => ({ ...r, actor_name: r.actor_id ? names.get(r.actor_id) ?? null : null })) }
   );
 }

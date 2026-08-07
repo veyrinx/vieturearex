@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { getOrderById, isAgentRole, isShopAdminRole, listDisputes } from "@/lib/server/shop";
-import { NO_STORE } from "@/lib/server/shop-privacy";
+import { shopJson } from "@/lib/server/shop-privacy";
 
 /** Bàn tranh chấp của staff — xem đơn nào đang kẹt để vào xử lý. */
 
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const auth = await getAuthContext();
   if (!isShopAdminRole(auth.role) && !isAgentRole(auth.role)) {
-    return NextResponse.json({ error: "Không có quyền." }, { status: 403 });
+    return shopJson({ error: "Không có quyền." }, { status: 403 });
   }
 
   const status = new URL(req.url).searchParams.get("status") ?? undefined;
@@ -28,5 +28,5 @@ export async function GET(req: NextRequest) {
     listing_title: orders[i]?.listing?.title ?? null,
   }));
 
-  return NextResponse.json({ disputes: rows }, { headers: NO_STORE });
+  return shopJson({ disputes: rows });
 }

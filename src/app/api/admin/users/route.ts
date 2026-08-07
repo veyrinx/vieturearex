@@ -8,9 +8,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { getResolvedRoles, getRoleLevel, BUILTIN_ROLE_LEVELS } from "@/lib/permissions";
 
-const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 200, it: 150, admin: 100, manager: 60, support: 40, user: 20,
-};
+/**
+ * Cấp của vai trò builtin. Trước đây chép tay ở đây nên thiếu team_member,
+ * agent, seller — người mang các vai đó bị coi là cấp 0, ai cũng sửa được.
+ * Giờ lấy thẳng từ nguồn chung, thêm vai trò mới là chỗ này tự có.
+ */
+const ROLE_HIERARCHY: Record<string, number> = BUILTIN_ROLE_LEVELS;
 
 async function getCallerRole(): Promise<string | null> {
   const supabase = createServerSupabaseClient();

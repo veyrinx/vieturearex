@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getListing, getSellerByUser, isAgentRole, isShopAdminRole } from "@/lib/server/shop";
 import type { ListingStatus } from "@/lib/constants/shop";
+import { shopJson } from "@/lib/server/shop-privacy";
 
 /**
  * Sửa tin.
@@ -23,22 +24,22 @@ export async function PATCH(
   if (limited) return limited;
 
   const auth = await getAuthContext();
-  if (!auth.userId) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+  if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
   const db = createAdminSupabaseClient();
-  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+  if (!db) return shopJson({ error: "DB unavailable" }, { status: 503 });
 
   const { id } = await params;
   const listing = await getListing(id);
-  if (!listing) return NextResponse.json({ error: "Không tìm thấy tin." }, { status: 404 });
+  if (!listing) return shopJson({ error: "Không tìm thấy tin." }, { status: 404 });
 
   const seller = await getSellerByUser(auth.userId);
   const isOwner = !!seller && seller.id === listing.seller_id;
   const isStaff = isShopAdminRole(auth.role) || isAgentRole(auth.role);
-  if (!isOwner && !isStaff) return NextResponse.json({ error: "Không có quyền." }, { status: 403 });
+  if (!isOwner && !isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
 
   if (listing.status === "reserved" && !isStaff) {
-    return NextResponse.json({ error: "Tin đang có đơn, không sửa được." }, { status: 409 });
+    return shopJson({ error: "Tin đang có đơn, không sửa được." }, { status: 409 });
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -48,7 +49,7 @@ export async function PATCH(
     const next = body.status as ListingStatus;
     const allowed = isStaff ? STAFF_STATUSES : OWNER_STATUSES;
     if (!allowed.includes(next)) {
-      return NextResponse.json({ error: "Trạng thái không hợp lệ." }, { status: 400 });
+      return shopJson({ error: "Trạng thái không hợp lệ." }, { status: 400 });
     }
     patch.status = next;
     patch.reject_reason = next === "rejected" ? String(body.reason ?? "").slice(0, 300) : null;
@@ -69,15 +70,15 @@ export async function PATCH(
   }
 
   if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ error: "Không có gì để cập nhật." }, { status: 400 });
+    return shopJson({ error: "Không có gì để cập nhật." }, { status: 400 });
   }
 
   const { error } = (await untypedFrom(db, "shop_listings")
     .update(patch as never)
     .eq("id", id)) as { error: { message: string } | null };
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return shopJson({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true });
+  return shopJson({ ok: true });
 }
 
 export async function DELETE(
@@ -85,24 +86,24 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const auth = await getAuthContext();
-  if (!auth.userId) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+  if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
   const db = createAdminSupabaseClient();
-  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+  if (!db) return shopJson({ error: "DB unavailable" }, { status: 503 });
 
   const { id } = await params;
   const listing = await getListing(id);
-  if (!listing) return NextResponse.json({ error: "Không tìm thấy tin." }, { status: 404 });
+  if (!listing) return shopJson({ error: "Không tìm thấy tin." }, { status: 404 });
 
   const seller = await getSellerByUser(auth.userId);
   const isOwner = !!seller && seller.id === listing.seller_id;
   if (!isOwner && !isShopAdminRole(auth.role)) {
-    return NextResponse.json({ error: "Không có quyền." }, { status: 403 });
+    return shopJson({ error: "Không có quyền." }, { status: 403 });
   }
   if (["reserved", "sold"].includes(listing.status)) {
-    return NextResponse.json({ error: "Tin đã phát sinh đơn — chỉ ẩn được." }, { status: 409 });
+    return shopJson({ error: "Tin đã phát sinh đơn — chỉ ẩn được." }, { status: 409 });
   }
 
   await untypedFrom(db, "shop_listings").delete().eq("id", id);
-  return NextResponse.json({ ok: true });
+  return shopJson({ ok: true });
 }

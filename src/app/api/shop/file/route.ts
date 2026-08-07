@@ -4,7 +4,7 @@ import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getOrderById, isShopAdminRole, partyForOrder } from "@/lib/server/shop";
-import { logSensitiveAccess, NO_STORE } from "@/lib/server/shop-privacy";
+import { logSensitiveAccess, shopJson } from "@/lib/server/shop-privacy";
 import { sanitizePrivatePath, signPrivateFile, toPrivateRef } from "@/lib/server/shop-files";
 
 /**
@@ -52,23 +52,23 @@ export async function GET(req: NextRequest) {
 
   const auth = await getAuthContext();
   if (!auth.userId) {
-    return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401, headers: NO_STORE });
+    return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
   }
 
   const path = sanitizePrivatePath(new URL(req.url).searchParams.get("p"));
   if (!path) {
-    return NextResponse.json({ error: "Đường dẫn không hợp lệ." }, { status: 400, headers: NO_STORE });
+    return shopJson({ error: "Đường dẫn không hợp lệ." }, { status: 400 });
   }
 
   // Ảnh luôn nằm dưới thư mục mang id người tải lên, nên chủ ảnh khỏi phải tra DB.
   const owns = path.startsWith(`${auth.userId}/`);
   if (!owns && !(await isAllowed(toPrivateRef(path), auth.userId, auth.role))) {
-    return NextResponse.json({ error: "Không có quyền xem ảnh này." }, { status: 403, headers: NO_STORE });
+    return shopJson({ error: "Không có quyền xem ảnh này." }, { status: 403 });
   }
 
   const signed = await signPrivateFile(path);
   if (!signed) {
-    return NextResponse.json({ error: "Không lấy được ảnh." }, { status: 404, headers: NO_STORE });
+    return shopJson({ error: "Không lấy được ảnh." }, { status: 404 });
   }
 
   if (!owns) {
@@ -81,5 +81,5 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return NextResponse.redirect(signed, { status: 307, headers: NO_STORE });
+  return NextResponse.redirect(signed, { status: 307 });
 }

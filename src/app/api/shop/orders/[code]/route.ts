@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import {
@@ -16,13 +16,7 @@ import {
   submitReview,
 } from "@/lib/server/shop-actions";
 import { isShopAdminRole } from "@/lib/server/shop";
-import {
-  NO_STORE,
-  logSensitiveAccess,
-  redactOrder,
-  redactOrderEvents,
-  revealOrderSecret,
-} from "@/lib/server/shop-privacy";
+import { logSensitiveAccess, redactOrder, redactOrderEvents, revealOrderSecret, shopJson } from "@/lib/server/shop-privacy";
 import { isAllowedImageRef } from "@/lib/server/shop-files";
 
 /**
@@ -33,9 +27,9 @@ import { isAllowedImageRef } from "@/lib/server/shop-files";
 async function loadContext(code: string) {
   const auth = await getAuthContext();
   const order = await getOrderByCode(code);
-  if (!order) return { error: NextResponse.json({ error: "Không tìm thấy đơn." }, { status: 404 }) };
+  if (!order) return { error: shopJson({ error: "Không tìm thấy đơn." }, { status: 404 }) };
   const party = await partyForOrder(order, auth.userId, auth.role);
-  if (!party) return { error: NextResponse.json({ error: "Không có quyền xem đơn này." }, { status: 403 }) };
+  if (!party) return { error: shopJson({ error: "Không có quyền xem đơn này." }, { status: 403 }) };
   return { auth, order, party };
 }
 
@@ -60,9 +54,8 @@ export async function GET(
   const viewer = { userId: ctx.auth.userId, party: ctx.party };
   const events = redactOrderEvents(rawEvents, ctx.order, viewer);
 
-  return NextResponse.json(
-    { order: redactOrder(ctx.order, viewer), events, dispute, review, party: ctx.party },
-    { headers: NO_STORE },
+  return shopJson(
+    { order: redactOrder(ctx.order, viewer), events, dispute, review, party: ctx.party }
   );
 }
 
@@ -77,7 +70,7 @@ export async function POST(
   const ctx = await loadContext(code);
   if ("error" in ctx) return ctx.error;
   const { auth, order, party } = ctx;
-  if (!auth.userId) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+  if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const action = typeof body.action === "string" ? body.action : "";
@@ -92,9 +85,9 @@ export async function POST(
     const event = (await listOrderEvents(order.id)).find((e) => e.id === eventId) ?? null;
     const secret = await revealOrderSecret(event, order, { userId: auth.userId, party });
     if (!secret) {
-      return NextResponse.json(
+      return shopJson(
         { error: "Không mở được thông tin này." },
-        { status: 403, headers: NO_STORE },
+        { status: 403 },
       );
     }
     await logSensitiveAccess({
@@ -104,23 +97,23 @@ export async function POST(
       target: `${order.code}/${eventId}`,
       ip: getClientIp(req),
     });
-    return NextResponse.json({ ok: true, secret }, { headers: NO_STORE });
+    return shopJson({ ok: true, secret });
   }
 
   // Huỷ đơn
   if (action === "cancel") {
     const r = await cancelOrder({ orderId: order.id, party, actorId: auth.userId, reason: message, images });
     return r.ok
-      ? NextResponse.json({ ok: true, status: r.status })
-      : NextResponse.json({ error: r.error }, { status: r.code });
+      ? shopJson({ ok: true, status: r.status })
+      : shopJson({ error: r.error }, { status: r.code });
   }
 
   // Mở tranh chấp
   if (action === "dispute") {
     const r = await openDispute({ orderId: order.id, party, actorId: auth.userId, reason: message, images });
     return r.ok
-      ? NextResponse.json({ ok: true, status: r.status })
-      : NextResponse.json({ error: r.error }, { status: r.code });
+      ? shopJson({ ok: true, status: r.status })
+      : shopJson({ error: r.error }, { status: r.code });
   }
 
   // Đánh giá người bán sau khi đơn xong
@@ -132,14 +125,14 @@ export async function POST(
       comment: message,
     });
     return r.ok
-      ? NextResponse.json({ ok: true })
-      : NextResponse.json({ error: r.error }, { status: r.code });
+      ? shopJson({ ok: true })
+      : shopJson({ error: r.error }, { status: r.code });
   }
 
   // Chốt tranh chấp — chỉ admin
   if (action === "resolve") {
     if (!isShopAdminRole(auth.role)) {
-      return NextResponse.json({ error: "Chỉ admin chốt được tranh chấp." }, { status: 403 });
+      return shopJson({ error: "Chỉ admin chốt được tranh chấp." }, { status: 403 });
     }
     const outcome = body.outcome === "pay_seller" ? "pay_seller" : "refund_buyer";
     const r = await resolveDispute({
@@ -150,8 +143,8 @@ export async function POST(
       images,
     });
     return r.ok
-      ? NextResponse.json({ ok: true, status: r.status })
-      : NextResponse.json({ error: r.error }, { status: r.code });
+      ? shopJson({ ok: true, status: r.status })
+      : shopJson({ error: r.error }, { status: r.code });
   }
 
   // Các bước trong luồng chuẩn
@@ -175,6 +168,6 @@ export async function POST(
   });
 
   return r.ok
-    ? NextResponse.json({ ok: true, status: r.status })
-    : NextResponse.json({ error: r.error }, { status: r.code });
+    ? shopJson({ ok: true, status: r.status })
+    : shopJson({ error: r.error }, { status: r.code });
 }

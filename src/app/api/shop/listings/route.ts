@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -12,6 +12,7 @@ import {
   type ListingKind,
   type ListingStatus,
 } from "@/lib/constants/shop";
+import { shopJson } from "@/lib/server/shop-privacy";
 
 /** Danh sách tin công khai + đăng tin mới (người bán đã duyệt). */
 
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
   if (wanted && wanted in LISTING_STATUS_LABEL) {
     const auth = await getAuthContext();
     if (!isShopAdminRole(auth.role) && !isAgentRole(auth.role)) {
-      return NextResponse.json({ error: "Không có quyền." }, { status: 403 });
+      return shopJson({ error: "Không có quyền." }, { status: 403 });
     }
     status = wanted as ListingStatus;
   }
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     maxPrice: sp.get("max") ? Number(sp.get("max")) : undefined,
     limit: Math.min(100, Number(sp.get("limit") ?? 60) || 60),
   });
-  return NextResponse.json({ listings });
+  return shopJson({ listings });
 }
 
 export async function POST(req: NextRequest) {
@@ -49,18 +50,18 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   const auth = await getAuthContext();
-  if (!auth.userId) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+  if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
   const seller = await getSellerByUser(auth.userId);
   if (!seller || seller.status !== "approved") {
-    return NextResponse.json(
+    return shopJson(
       { error: "Bạn cần được duyệt hồ sơ người bán trước khi đăng tin." },
       { status: 403 },
     );
   }
 
   const db = createAdminSupabaseClient();
-  if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+  if (!db) return shopJson({ error: "DB unavailable" }, { status: 503 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 120) : "";
@@ -71,15 +72,15 @@ export async function POST(req: NextRequest) {
     ? (body.images as unknown[]).filter((u): u is string => typeof u === "string" && u.startsWith("http")).slice(0, MAX_LISTING_IMAGES)
     : [];
 
-  if (title.length < 8) return NextResponse.json({ error: "Tiêu đề quá ngắn." }, { status: 400 });
+  if (title.length < 8) return shopJson({ error: "Tiêu đề quá ngắn." }, { status: 400 });
   if (description.length < 20) {
-    return NextResponse.json({ error: "Mô tả cần chi tiết hơn (tối thiểu 20 ký tự)." }, { status: 400 });
+    return shopJson({ error: "Mô tả cần chi tiết hơn (tối thiểu 20 ký tự)." }, { status: 400 });
   }
   if (!Number.isFinite(price) || price < MIN_PRICE || price > MAX_PRICE) {
-    return NextResponse.json({ error: "Giá không hợp lệ." }, { status: 400 });
+    return shopJson({ error: "Giá không hợp lệ." }, { status: 400 });
   }
   if (images.length < 1) {
-    return NextResponse.json({ error: "Phải có ít nhất 1 ảnh chụp acc/vật phẩm." }, { status: 400 });
+    return shopJson({ error: "Phải có ít nhất 1 ảnh chụp acc/vật phẩm." }, { status: 400 });
   }
 
   const details: Record<string, string> = {};
@@ -106,6 +107,6 @@ export async function POST(req: NextRequest) {
     .select("id")
     .maybeSingle()) as { data: { id: string } | null; error: { message: string } | null };
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, id: data?.id }, { status: 201 });
+  if (error) return shopJson({ error: error.message }, { status: 500 });
+  return shopJson({ ok: true, id: data?.id }, { status: 201 });
 }

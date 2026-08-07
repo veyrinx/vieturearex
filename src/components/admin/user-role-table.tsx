@@ -15,20 +15,46 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { UserBadgeList } from "@/components/common/user-badges";
 import type { UserItem, UserRole } from "@/lib/types/content";
+import { BUILTIN_ROLE_LEVELS, ROLE_KEYS, ROLE_LABELS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { UserEditDialog } from "@/components/admin/user-edit-dialog";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 
-const ROLE_META: Record<string, { label: string; color: string; level: number }> = {
-  super_admin: { label: "Super Admin", color: "bg-red-500/10 text-red-500 border-red-500/20",          level: 200 },
-  it:          { label: "IT",          color: "bg-violet-500/10 text-violet-500 border-violet-500/20", level: 150 },
-  admin:       { label: "Admin",       color: "bg-amber-500/10 text-amber-500 border-amber-500/20",    level: 100 },
-  manager:     { label: "Quản Lý",     color: "bg-blue-500/10 text-blue-500 border-blue-500/20",       level: 60 },
-  support:     { label: "CSKH",        color: "bg-green-500/10 text-green-500 border-green-500/20",    level: 40 },
-  user:        { label: "Người Dùng",  color: "bg-muted text-muted-foreground border-border",           level: 20 },
+/**
+ * Chỉ MÀU là của riêng bảng này. Nhãn lấy từ `ROLE_LABELS` và cấp lấy từ
+ * `BUILTIN_ROLE_LEVELS` (src/lib/permissions.ts) — trước đây chép tay ở đây
+ * nên thêm vai trò mới là bảng này không thấy, admin không gán được.
+ */
+const ROLE_COLOR: Record<string, string> = {
+  super_admin: "bg-red-500/10 text-red-500 border-red-500/20",
+  it:          "bg-violet-500/10 text-violet-500 border-violet-500/20",
+  admin:       "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  manager:     "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  support:     "bg-green-500/10 text-green-500 border-green-500/20",
+  agent:       "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  team_member: "bg-sky-500/10 text-sky-500 border-sky-500/20",
+  seller:      "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  user:        "bg-muted text-muted-foreground border-border",
 };
 
-const ROLE_ORDER: UserRole[] = ["super_admin", "admin", "it", "manager", "support", "user"];
+const ROLE_META: Record<string, { label: string; color: string; level: number }> = Object.fromEntries(
+  ROLE_KEYS.map((r) => [
+    r,
+    {
+      label: ROLE_LABELS[r],
+      color: ROLE_COLOR[r] ?? ROLE_COLOR.user,
+      level: BUILTIN_ROLE_LEVELS[r] ?? 20,
+    },
+  ]),
+);
+
+/** Thứ tự hiển thị ở ô lọc, ô đếm và ô chọn vai trò. */
+const ROLE_ORDER: UserRole[] = [
+  "super_admin", "admin", "it", "manager", "support", "agent", "team_member", "seller", "user",
+];
+
+/** Bảng "Phân quyền hệ thống" bên dưới chỉ có cột cho 6 vai trò gốc. */
+const MATRIX_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support", "user"];
 
 const PERMISSION_MATRIX = [
   { label: "Quản lý người dùng",        super_admin: "✅ Tất cả", it: "✅ (≤ Admin)", admin: "✅ (≤ Manager)", manager: "❌", support: "❌", user: "❌" },
@@ -160,7 +186,7 @@ function PermissionMatrix() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-3 py-2.5 font-semibold uppercase tracking-widest text-muted-foreground">Quyền</th>
-                {ROLE_ORDER.map((r) => (
+                {MATRIX_ROLES.map((r) => (
                   <th key={r} className="px-3 py-2.5 font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                     <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold", ROLE_META[r].color)}>
                       {ROLE_META[r].label}
@@ -173,7 +199,7 @@ function PermissionMatrix() {
               {PERMISSION_MATRIX.map((row) => (
                 <tr key={row.label} className="hover:bg-muted/20">
                   <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">{row.label}</td>
-                  {ROLE_ORDER.map((r) => {
+                  {MATRIX_ROLES.map((r) => {
                     const val = row[r as keyof typeof row];
                     return (
                       <td key={r} className={cn(
@@ -362,7 +388,7 @@ export function UserRoleTable({ users, onSaved }: UserRoleTableProps) {
       <PermissionMatrix />
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
         {ROLE_ORDER.map((role) => {
           const meta = ROLE_META[role];
           return (

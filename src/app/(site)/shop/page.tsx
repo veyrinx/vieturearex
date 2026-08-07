@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PackageSearch, Plus, ReceiptText, ShieldCheck, Store } from "lucide-react";
+import { HandCoins, PackageSearch, Plus, ReceiptText, ShieldCheck, Store } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -92,6 +92,15 @@ export default async function ShopPage({
         ))}
 
         <div className="ml-auto flex flex-wrap gap-2">
+          {/* Lối vào khu nội bộ — chỉ hiện với người được gán vai giao dịch viên. */}
+          {viewer.isAgent && (
+            <Link
+              href="/shop/ctv"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-500/20 dark:text-emerald-400"
+            >
+              <HandCoins className="size-3.5" /> Bàn giao dịch viên
+            </Link>
+          )}
           <Link
             href="/shop/don-hang"
             className="rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition hover:border-primary/30 hover:text-primary"
