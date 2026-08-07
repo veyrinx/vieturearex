@@ -113,16 +113,26 @@ function isStale(status: number, errorCode: string | undefined) {
   return status === 404 || errorCode === "UNREGISTERED" || errorCode === "INVALID_ARGUMENT";
 }
 
-export async function sendNativePush(title: string, body: string, url = "/") {
+/**
+ * @param userIds Chỉ gửi cho các tài khoản này. Bỏ trống = gửi cho tất cả.
+ *                Mảng rỗng = không gửi cho ai (khác hẳn với bỏ trống).
+ */
+export async function sendNativePush(
+  title: string,
+  body: string,
+  url = "/",
+  userIds?: string[],
+) {
   const sa = readServiceAccount();
   if (!sa) return;
+  if (userIds && userIds.length === 0) return;
 
   const db = createAdminSupabaseClient();
   if (!db) return;
 
-  const { data } = (await untypedFrom(db, "native_push_tokens")
-    .select("token, platform")
-    .limit(10000)) as { data: TokenRow[] | null };
+  let query = untypedFrom(db, "native_push_tokens").select("token, platform").limit(10000);
+  if (userIds) query = query.in("user_id", userIds);
+  const { data } = (await query) as { data: TokenRow[] | null };
 
   const rows = data ?? [];
   if (rows.length === 0) return;

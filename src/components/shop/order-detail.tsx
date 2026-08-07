@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImagePicker } from "@/components/shop/image-picker";
+import { OrderChat } from "@/components/shop/order-chat";
 import {
   CANCELLABLE_STATUSES,
   DISPUTABLE_STATUSES,
@@ -341,6 +342,15 @@ export function OrderDetail({ initial }: { initial: Payload }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Hộp thoại ba bên */}
+      {party && (
+        <OrderChat
+          code={order.code}
+          party={party}
+          closed={["completed", "cancelled"].includes(order.status)}
+        />
       )}
 
       {/* Đánh giá người bán — chỉ người mua, sau khi đơn xong */}

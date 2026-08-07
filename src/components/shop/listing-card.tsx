@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Eye, ShieldCheck, Star } from "lucide-react";
+import { BadgeCheck, Eye, Flame, ShieldCheck, Star } from "lucide-react";
 import {
   LISTING_KIND_LABEL,
   LISTING_STATUS_LABEL,
@@ -22,6 +22,8 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
   const cover = listing.images[0];
   const seller = listing.seller;
   const dim = listing.status === "sold" || listing.status === "reserved";
+  const featured =
+    !!listing.featured_until && Date.parse(listing.featured_until) > Date.now();
 
   return (
     <Link
@@ -47,8 +49,15 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
           </div>
         )}
 
-        <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase text-white backdrop-blur">
-          {LISTING_KIND_LABEL[listing.kind]}
+        <span className="absolute left-2 top-2 flex items-center gap-1">
+          <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase text-white backdrop-blur">
+            {LISTING_KIND_LABEL[listing.kind]}
+          </span>
+          {featured && (
+            <span className="flex items-center gap-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
+              <Flame className="size-2.5" /> Nổi bật
+            </span>
+          )}
         </span>
         {listing.status !== "active" && (
           <span

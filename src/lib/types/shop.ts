@@ -66,6 +66,10 @@ export type ShopListing = {
   views: number;
   created_at: string;
   sold_at: string | null;
+  /** Lần đẩy tin gần nhất — thứ tự "mới nhất" trên chợ đọc cột này. */
+  bumped_at: string | null;
+  /** Còn hạn ⇒ tin được ghim ở dải nổi bật đầu trang. */
+  featured_until: string | null;
   seller?: PublicSeller | null;
 };
 

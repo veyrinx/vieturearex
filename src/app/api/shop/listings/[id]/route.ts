@@ -6,6 +6,10 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { getListing, getSellerByUser, isAgentRole, isShopAdminRole } from "@/lib/server/shop";
 import type { ListingStatus } from "@/lib/constants/shop";
 import { shopJson } from "@/lib/server/shop-privacy";
+import { notifyListingApproved, notifyListingRejected } from "@/lib/server/shop-notify";
+
+/** Người bán chỉ đẩy tin được 1 lần / ngày. */
+const BUMP_COOLDOWN_MS = 24 * 3_600_000;
 
 /**
  * Sửa tin.
@@ -45,6 +49,37 @@ export async function PATCH(
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
 
+  // Đẩy tin: đưa tin lên đầu danh sách "mới nhất". Mỗi tin chỉ đẩy được một lần
+  // mỗi ngày, nếu không thì người bán nào chăm bấm nhất sẽ chiếm hết trang đầu.
+  if (body.action === "bump") {
+    if (!isOwner && !isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
+    if (listing.status !== "active") {
+      return shopJson({ error: "Chỉ đẩy được tin đang bán." }, { status: 409 });
+    }
+    const last = listing.bumped_at ? Date.parse(listing.bumped_at) : 0;
+    const waitMs = BUMP_COOLDOWN_MS - (Date.now() - last);
+    if (!isStaff && waitMs > 0) {
+      const hours = Math.ceil(waitMs / 3_600_000);
+      return shopJson({ error: `Còn ${hours} giờ nữa mới đẩy tin tiếp được.` }, { status: 429 });
+    }
+    await untypedFrom(db, "shop_listings")
+      .update({ bumped_at: new Date().toISOString() } as never)
+      .eq("id", id);
+    return shopJson({ ok: true, bumped: true });
+  }
+
+  // Gắn/gỡ nhãn nổi bật — chỉ nhân sự.
+  if (body.action === "feature") {
+    if (!isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
+    const days = Math.min(30, Math.max(0, Number(body.days ?? 7) || 0));
+    await untypedFrom(db, "shop_listings")
+      .update({
+        featured_until: days > 0 ? new Date(Date.now() + days * 86_400_000).toISOString() : null,
+      } as never)
+      .eq("id", id);
+    return shopJson({ ok: true, featuredDays: days });
+  }
+
   if (typeof body.status === "string") {
     const next = body.status as ListingStatus;
     const allowed = isStaff ? STAFF_STATUSES : OWNER_STATUSES;
@@ -77,6 +112,14 @@ export async function PATCH(
     .update(patch as never)
     .eq("id", id)) as { error: { message: string } | null };
   if (error) return shopJson({ error: error.message }, { status: 500 });
+
+  // Vừa được duyệt lên sàn: đăng ra kênh chợ Discord + đánh thức người theo dõi.
+  if (patch.status === "active" && listing.status !== "active") {
+    void notifyListingApproved({ ...listing, status: "active" });
+  }
+  if (patch.status === "rejected") {
+    void notifyListingRejected(listing, String(patch.reject_reason ?? "Không nêu lý do"));
+  }
 
   return shopJson({ ok: true });
 }

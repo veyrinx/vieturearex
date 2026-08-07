@@ -19,8 +19,30 @@ export async function sendPushNotification(title: string, body: string, url = "/
   ]);
 }
 
-/** Gửi web push tới toàn bộ subscriber (đọc từ bảng push_subscriptions). */
-async function sendWebPush(title: string, body: string, url: string) {
+/**
+ * Bắn thông báo cho đúng một nhóm tài khoản — dùng cho việc riêng tư như đơn
+ * hàng của chợ.
+ *
+ * Chỉ tới được thiết bị đã gắn chủ: token native luôn có `user_id`, còn web
+ * push chỉ có nếu người đó bật thông báo lúc đã đăng nhập. Người chưa gắn thì
+ * im lặng bỏ qua — họ vẫn thấy chuông thông báo trong site.
+ */
+export async function sendPushToUsers(
+  userIds: string[],
+  title: string,
+  body: string,
+  url = "/",
+) {
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (ids.length === 0) return;
+  await Promise.allSettled([
+    sendWebPush(title, body, url, ids),
+    sendNativePush(title, body, url, ids),
+  ]);
+}
+
+/** Gửi web push tới subscriber (toàn bộ, hoặc chỉ những người trong `userIds`). */
+async function sendWebPush(title: string, body: string, url: string, userIds?: string[]) {
   const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
   const vapidSubject = process.env.VAPID_SUBJECT ?? "mailto:admin@arex.tech";
@@ -30,9 +52,9 @@ async function sendWebPush(title: string, body: string, url: string) {
   const db = createAdminSupabaseClient();
   if (!db) return;
 
-  const { data } = await untypedFrom(db, "push_subscriptions")
-    .select("endpoint, subscription")
-    .limit(10000) as { data: SubRow[] | null };
+  let query = untypedFrom(db, "push_subscriptions").select("endpoint, subscription").limit(10000);
+  if (userIds) query = query.in("user_id", userIds);
+  const { data } = await query as { data: SubRow[] | null };
 
   const subs = data ?? [];
   if (subs.length === 0) return;

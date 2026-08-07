@@ -28,8 +28,9 @@ async function isAllowed(ref: string, userId: string, role: string): Promise<boo
     .maybeSingle()) as { data: { user_id: string } | null };
   if (seller) return seller.user_id === userId || isShopAdminRole(role);
 
-  // 2. Ảnh bằng chứng của một bước đơn, hoặc ảnh kèm tranh chấp.
-  for (const table of ["shop_order_events", "shop_disputes"] as const) {
+  // 2. Ảnh bằng chứng của một bước đơn, ảnh kèm tranh chấp, hoặc ảnh gửi trong
+  //    hộp thoại của đơn — cả ba đều mở cho đúng những người trong đơn đó.
+  for (const table of ["shop_order_events", "shop_disputes", "shop_messages"] as const) {
     const { data } = (await untypedFrom(db, table)
       .select("order_id")
       .contains("images", [ref])

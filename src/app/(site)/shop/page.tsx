@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
-import { HandCoins, PackageSearch, Plus, ReceiptText, ShieldCheck, Store } from "lucide-react";
+import { Flame, HandCoins, PackageSearch, Plus, ReceiptText, ShieldCheck, Store } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
 import { ListingCard } from "@/components/shop/listing-card";
-import { getShopViewer, listListings } from "@/lib/server/shop";
-import { LISTING_KIND_LABEL, type ListingKind } from "@/lib/constants/shop";
-import { cn } from "@/lib/utils";
+import { ShopFilters } from "@/components/shop/shop-filters";
+import {
+  LISTING_SORTS,
+  getShopViewer,
+  listFeaturedListings,
+  listListings,
+  type ListingSort,
+} from "@/lib/server/shop";
+import { type ListingKind } from "@/lib/constants/shop";
 
 export const dynamic = "force-dynamic";
 
@@ -25,26 +32,42 @@ export const metadata: Metadata = {
   },
 };
 
-const KINDS: (ListingKind | "all")[] = ["all", "account", "item"];
-
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; q?: string }>;
+  searchParams: Promise<{ kind?: string; q?: string; min?: string; max?: string; sort?: string }>;
 }) {
-  const { kind, q } = await searchParams;
-  const activeKind: ListingKind | "all" =
-    kind === "account" || kind === "item" ? kind : "all";
+  const { kind, q, min, max, sort } = await searchParams;
+  const activeKind: ListingKind | undefined =
+    kind === "account" || kind === "item" ? kind : undefined;
+  const activeSort = (LISTING_SORTS as string[]).includes(sort ?? "")
+    ? (sort as ListingSort)
+    : "new";
 
-  const [listings, viewer] = await Promise.all([
+  const num = (v: string | undefined) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
+  };
+
+  const hasFilter = !!(activeKind || q || min || max);
+
+  const [listings, featured, viewer] = await Promise.all([
     listListings({
-      kind: activeKind === "all" ? undefined : activeKind,
+      kind: activeKind,
       search: q,
+      minPrice: num(min),
+      maxPrice: num(max),
+      sort: activeSort,
       limit: 60,
     }),
+    // Dải nổi bật chỉ hiện ở trang gốc — đang lọc thì người dùng muốn đúng thứ
+    // họ tìm, không phải thứ được trả tiền để đẩy lên.
+    hasFilter ? Promise.resolve([]) : listFeaturedListings(8),
     getShopViewer(),
   ]);
 
+  const featuredIds = new Set(featured.map((l) => l.id));
+  const rest = listings.filter((l) => !featuredIds.has(l.id));
   const canSell = viewer.seller?.status === "approved";
 
   return (
@@ -75,23 +98,12 @@ export default async function ShopPage({
       </div>
 
       {/* Bộ lọc + hành động */}
-      <div className="flex flex-wrap items-center gap-2">
-        {KINDS.map((k) => (
-          <Link
-            key={k}
-            href={k === "all" ? "/shop" : `/shop?kind=${k}`}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-xs font-bold transition",
-              activeKind === k
-                ? "border-primary/40 bg-primary/10 text-primary dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300"
-                : "border-border bg-muted/40 text-muted-foreground hover:border-primary/30",
-            )}
-          >
-            {k === "all" ? "Tất cả" : LISTING_KIND_LABEL[k]}
-          </Link>
-        ))}
+      <div className="space-y-3">
+        <Suspense fallback={<div className="h-9 rounded-full bg-muted/40" />}>
+          <ShopFilters signedIn={!!viewer.userId} />
+        </Suspense>
 
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           {/* Lối vào khu nội bộ — chỉ hiện với người được gán vai giao dịch viên. */}
           {viewer.isAgent && (
             <Link
@@ -117,20 +129,45 @@ export default async function ShopPage({
         </div>
       </div>
 
+      {/* Tin nổi bật */}
+      {featured.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-1.5 font-heading text-sm font-black uppercase tracking-wide text-foreground">
+            <Flame className="size-4 text-amber-500" /> Tin nổi bật
+          </h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {featured.map((l) => (
+              <ListingCard key={l.id} listing={l} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Danh sách tin */}
-      {listings.length === 0 ? (
+      {rest.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/20 py-16 text-center">
-          <p className="text-sm font-bold text-foreground">Chưa có tin nào</p>
+          <p className="text-sm font-bold text-foreground">
+            {hasFilter ? "Không có tin nào khớp bộ lọc" : "Chưa có tin nào"}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Hãy là người đầu tiên đăng bán trên chợ Arex.
+            {hasFilter
+              ? "Nới khoảng giá hoặc bỏ bớt từ khoá — hoặc theo dõi bộ lọc để được báo khi có tin mới."
+              : "Hãy là người đầu tiên đăng bán trên chợ Arex."}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {listings.map((l) => (
-            <ListingCard key={l.id} listing={l} />
-          ))}
-        </div>
+        <section className="space-y-2">
+          {featured.length > 0 && (
+            <h2 className="font-heading text-sm font-black uppercase tracking-wide text-foreground">
+              Tất cả tin đăng
+            </h2>
+          )}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {rest.map((l) => (
+              <ListingCard key={l.id} listing={l} />
+            ))}
+          </div>
+        </section>
       )}
 
       <p className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-muted-foreground">

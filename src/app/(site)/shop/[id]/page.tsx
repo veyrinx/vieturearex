@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, Eye, Star } from "lucide-react";
+import { BadgeCheck, ChevronRight, Eye, Star } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { BuyPanel } from "@/components/shop/buy-panel";
@@ -111,11 +112,14 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
 
             {listing.seller && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-2.5">
+              <Link
+                href={`/shop/nguoi-ban/${listing.seller_id}`}
+                className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-2.5 transition hover:border-primary/40"
+              >
                 <span className="flex size-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
                   <BadgeCheck className="size-5" />
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-foreground">{listing.seller.display_name}</p>
                   <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
                     <span>{listing.seller.orders_done} đơn thành công</span>
@@ -127,7 +131,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                     )}
                   </p>
                 </div>
-              </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </Link>
             )}
           </div>
 

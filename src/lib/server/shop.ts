@@ -100,6 +100,11 @@ export async function listSellers(status?: string): Promise<ShopSeller[]> {
 }
 
 // ── Tin đăng ───────────────────────────────────────────────────────────────
+/** Cách sắp xếp chợ. `new` = theo lần đẩy tin gần nhất, không phải ngày đăng. */
+export type ListingSort = "new" | "price_asc" | "price_desc" | "popular";
+
+export const LISTING_SORTS: ListingSort[] = ["new", "price_asc", "price_desc", "popular"];
+
 type ListingFilter = {
   kind?: ListingKind;
   status?: ListingStatus | ListingStatus[];
@@ -107,6 +112,9 @@ type ListingFilter = {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
+  sort?: ListingSort;
+  /** Chỉ lấy tin đang còn hạn nổi bật. */
+  featuredOnly?: boolean;
   limit?: number;
 };
 
@@ -114,22 +122,47 @@ export async function listListings(filter: ListingFilter = {}): Promise<ShopList
   const client = db();
   if (!client) return [];
 
-  let q = untypedFrom(client, "shop_listings")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(filter.limit ?? 60);
+  let q = untypedFrom(client, "shop_listings").select("*").limit(filter.limit ?? 60);
+
+  switch (filter.sort ?? "new") {
+    case "price_asc":
+      q = q.order("price", { ascending: true });
+      break;
+    case "price_desc":
+      q = q.order("price", { ascending: false });
+      break;
+    case "popular":
+      q = q.order("views", { ascending: false });
+      break;
+    default:
+      // Tin cũ chưa có `bumped_at` (trước migration v2) vẫn phải xuất hiện, nên
+      // xếp NULL xuống cuối chứ không loại.
+      q = q.order("bumped_at", { ascending: false, nullsFirst: false }).order("created_at", {
+        ascending: false,
+      });
+  }
 
   const status = filter.status ?? PUBLIC_LISTING_STATUSES;
   q = Array.isArray(status) ? q.in("status", status) : q.eq("status", status);
   if (filter.kind) q = q.eq("kind", filter.kind);
   if (filter.sellerId) q = q.eq("seller_id", filter.sellerId);
-  if (filter.search) q = q.ilike("title", `%${filter.search}%`);
+  // Tìm cả trong mô tả: người mua hay gõ tên skin/nhân vật, thứ chỉ nằm ở đó.
+  if (filter.search) {
+    const term = filter.search.replace(/[%,()]/g, " ").trim();
+    if (term) q = q.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
+  }
   if (filter.minPrice != null) q = q.gte("price", filter.minPrice);
   if (filter.maxPrice != null) q = q.lte("price", filter.maxPrice);
+  if (filter.featuredOnly) q = q.gt("featured_until", new Date().toISOString());
 
   const { data } = (await q) as { data: ShopListing[] | null };
   const rows = data ?? [];
   return attachSellers(rows);
+}
+
+/** Dải tin nổi bật đầu trang chợ. */
+export function listFeaturedListings(limit = 8): Promise<ShopListing[]> {
+  return listListings({ status: "active", featuredOnly: true, limit });
 }
 
 /** Gắn hồ sơ người bán (rút gọn) vào danh sách tin — tránh N+1. */
@@ -317,6 +350,49 @@ export async function getReviewForOrder(orderId: string): Promise<ShopReview | n
     .eq("order_id", orderId)
     .maybeSingle()) as { data: ShopReview | null };
   return data;
+}
+
+/**
+ * Đánh giá của một người bán kèm tên người mua.
+ *
+ * Chỉ lấy tên hiển thị — không kèm id/handle để trang gian hàng công khai
+ * không trở thành nơi dò xem ai đã mua gì.
+ */
+export type SellerReview = ShopReview & { buyer_name: string };
+
+export async function listSellerReviews(sellerId: string, limit = 20): Promise<SellerReview[]> {
+  const client = db();
+  if (!client) return [];
+
+  const { data } = (await untypedFrom(client, "shop_reviews")
+    .select("*")
+    .eq("seller_id", sellerId)
+    .order("created_at", { ascending: false })
+    .limit(limit)) as { data: ShopReview[] | null };
+
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  const { data: users } = (await untypedFrom(client, "users")
+    .select("id, display_name")
+    .in("id", [...new Set(rows.map((r) => r.buyer_id))])) as {
+    data: { id: string; display_name: string | null }[] | null;
+  };
+  const nameMap = new Map((users ?? []).map((u) => [u.id, u.display_name]));
+
+  return rows.map((r) => ({
+    ...r,
+    buyer_id: "",
+    buyer_name: maskBuyerName(nameMap.get(r.buyer_id) ?? null),
+  }));
+}
+
+/** "Nguyễn Văn An" → "Nguyễn V. A." — đủ để nhận ra người thật, không đủ để tra. */
+function maskBuyerName(name: string | null): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Người mua ẩn danh";
+  if (parts.length === 1) return `${parts[0].slice(0, 4)}***`;
+  return `${parts[0]} ${parts.slice(1).map((p) => `${p[0]}.`).join(" ")}`;
 }
 
 /** Danh sách tranh chấp cho bàn làm việc của admin. */

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, PackageOpen } from "lucide-react";
+import { Loader2, MessageCircle, PackageOpen } from "lucide-react";
 import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL, formatVnd } from "@/lib/constants/shop";
 import type { ShopOrder } from "@/lib/types/shop";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ export function OrderList({
 }) {
   const [scope, setScope] = useState<Scope>(initialScope);
   const [orders, setOrders] = useState<ShopOrder[]>([]);
+  const [unread, setUnread] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,8 +28,10 @@ export function OrderList({
     setLoading(true);
     fetch(`/api/shop/orders?scope=${scope}`)
       .then((r) => r.json())
-      .then((d: { orders?: ShopOrder[] }) => {
-        if (!cancelled) setOrders(d.orders ?? []);
+      .then((d: { orders?: ShopOrder[]; unread?: Record<string, number> }) => {
+        if (cancelled) return;
+        setOrders(d.orders ?? []);
+        setUnread(d.unread ?? {});
       })
       .catch(() => { /* im lặng */ })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -94,9 +97,17 @@ export function OrderList({
                   {ORDER_STATUS_LABEL[o.status]}
                 </span>
               </div>
-              <p className="shrink-0 font-heading text-sm font-black text-primary dark:text-amber-400">
-                {formatVnd(o.amount)}
-              </p>
+              <div className="shrink-0 text-right">
+                <p className="font-heading text-sm font-black text-primary dark:text-amber-400">
+                  {formatVnd(o.amount)}
+                </p>
+                {(unread[o.id] ?? 0) > 0 && (
+                  <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black text-white">
+                    <MessageCircle className="size-2.5" />
+                    {unread[o.id]}
+                  </span>
+                )}
+              </div>
             </Link>
           ))}
         </div>

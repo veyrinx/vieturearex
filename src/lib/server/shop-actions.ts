@@ -19,6 +19,14 @@ import {
 } from "@/lib/server/shop";
 import { encryptSecret } from "@/lib/server/shop-crypto";
 import { isAllowedImageRef } from "@/lib/server/shop-files";
+import {
+  notifyDisputeOpened,
+  notifyDisputeResolved,
+  notifyOrderCancelled,
+  notifyOrderCreated,
+  notifyOrderStep,
+} from "@/lib/server/shop-notify";
+import { appendOrderToLarkSheet } from "@/lib/server/lark-sheet";
 import type { ShopOrder, ShopSeller } from "@/lib/types/shop";
 
 /**
@@ -58,6 +66,31 @@ async function logEvent(input: {
     // Tài khoản/mật khẩu bàn giao không bao giờ nằm dạng đọc được trong DB.
     secret: await encryptSecret(input.secret),
   } as never);
+}
+
+/**
+ * Ghi một dòng vào bảng tính Lark (tab "Đơn chợ") mỗi lần đơn đổi trạng thái.
+ * Sổ nội bộ cho đội vận hành — không await, sheet lỗi không được chặn đơn.
+ * Riêng tài khoản/mật khẩu bàn giao thì không bao giờ ra khỏi DB.
+ */
+function sheetOrder(order: ShopOrder, event: string, note?: string | null) {
+  void appendOrderToLarkSheet({
+    event,
+    code: order.code,
+    status: order.status,
+    listing_title: order.listing?.title ?? null,
+    amount: order.amount,
+    fee: order.fee,
+    payout_amount: order.payout_amount,
+    buyer_name: order.buyer_name,
+    buyer_phone: order.buyer_phone,
+    buyer_contact: order.buyer_contact,
+    buyer_bank: order.buyer_bank,
+    seller_id: order.seller_id,
+    agent_id: order.agent_id,
+    note: note ?? null,
+    order_id: order.id,
+  });
 }
 
 // ── Tạo đơn ────────────────────────────────────────────────────────────────
@@ -122,6 +155,14 @@ export async function createOrder(input: {
     type: "created",
     message: `Đặt mua "${listing.title}" — ${amount.toLocaleString("vi-VN")}đ`,
   });
+
+  // Báo người bán + gọi giao dịch viên. Không await: đơn đã tạo xong rồi, người
+  // mua không cần đợi Discord/push trả lời.
+  const created = await getOrderById(data.id);
+  if (created) {
+    void notifyOrderCreated(created);
+    sheetOrder(created, "Tạo đơn", `Đặt mua "${listing.title}"`);
+  }
 
   return { ok: true, code };
 }
@@ -214,6 +255,17 @@ export async function applyOrderAction(input: {
     });
   }
 
+  const updated = await getOrderById(order.id);
+  if (updated) {
+    void notifyOrderStep({
+      order: updated,
+      actorParty: input.party,
+      actorId: input.actorId,
+      label: action.label,
+    });
+    sheetOrder(updated, action.label, input.message);
+  }
+
   return { ok: true, status: action.to };
 }
 
@@ -261,6 +313,9 @@ export async function cancelOrder(input: {
     images: input.images,
   });
 
+  void notifyOrderCancelled({ ...order, status: "cancelled" }, input.reason, input.actorId);
+  sheetOrder({ ...order, status: "cancelled" }, "Huỷ đơn", input.reason);
+
   return { ok: true, status: "cancelled" };
 }
 
@@ -304,6 +359,9 @@ export async function openDispute(input: {
     message: input.reason,
     images: input.images,
   });
+
+  void notifyDisputeOpened({ ...order, status: "disputed" }, input.reason, input.actorId);
+  sheetOrder({ ...order, status: "disputed" }, "Mở tranh chấp", input.reason);
 
   return { ok: true, status: "disputed" };
 }
@@ -364,6 +422,14 @@ export async function resolveDispute(input: {
     message: `${input.outcome === "pay_seller" ? "Trả tiền người bán" : "Hoàn tiền người mua"} — ${input.resolution}`,
     images: input.images,
   });
+
+  const outcomeLabel = input.outcome === "pay_seller" ? "Trả tiền người bán" : "Hoàn tiền người mua";
+  void notifyDisputeResolved(
+    { ...order, status: nextStatus },
+    `${outcomeLabel} — ${input.resolution}`,
+    input.actorId,
+  );
+  sheetOrder({ ...order, status: nextStatus }, `Xử tranh chấp: ${outcomeLabel}`, input.resolution);
 
   return { ok: true, status: nextStatus };
 }

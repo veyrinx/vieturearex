@@ -5,6 +5,7 @@ import { Plus, Store } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
+import { BumpButton } from "@/components/shop/bump-button";
 import { ListingCard } from "@/components/shop/listing-card";
 import { getShopViewer, listListings } from "@/lib/server/shop";
 import { LISTING_STATUS_LABEL } from "@/lib/constants/shop";
@@ -71,6 +72,7 @@ export default async function MyListingsPage() {
           {listings.map((l) => (
             <div key={l.id} className="space-y-1">
               <ListingCard listing={l} />
+              {l.status === "active" && <BumpButton id={l.id} bumpedAt={l.bumped_at} />}
               {l.status === "rejected" && l.reject_reason && (
                 <p className="rounded-lg border border-red-500/30 bg-red-500/5 px-2 py-1 text-[10px] text-red-500">
                   Bị từ chối: {l.reject_reason}

@@ -3,7 +3,14 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { getSellerByUser, isAgentRole, isShopAdminRole, listListings } from "@/lib/server/shop";
+import {
+  LISTING_SORTS,
+  getSellerByUser,
+  isAgentRole,
+  isShopAdminRole,
+  listListings,
+  type ListingSort,
+} from "@/lib/server/shop";
 import {
   LISTING_STATUS_LABEL,
   MAX_LISTING_IMAGES,
@@ -34,12 +41,16 @@ export async function GET(req: NextRequest) {
     status = wanted as ListingStatus;
   }
 
+  const sort = sp.get("sort") ?? "";
+
   const listings = await listListings({
     kind: kind === "account" || kind === "item" ? kind : undefined,
     status,
     search: sp.get("q")?.slice(0, 60) || undefined,
     minPrice: sp.get("min") ? Number(sp.get("min")) : undefined,
     maxPrice: sp.get("max") ? Number(sp.get("max")) : undefined,
+    sort: (LISTING_SORTS as string[]).includes(sort) ? (sort as ListingSort) : undefined,
+    featuredOnly: sp.get("featured") === "1",
     limit: Math.min(100, Number(sp.get("limit") ?? 60) || 60),
   });
   return shopJson({ listings });

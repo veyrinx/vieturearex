@@ -4,9 +4,22 @@ import { getAuthContext } from "@/lib/server/auth";
 import { getSellerByUser, isAgentRole, isShopAdminRole, listOrders } from "@/lib/server/shop";
 import { createOrder } from "@/lib/server/shop-actions";
 import { anonymizeUnclaimed, redactOrders, shopJson } from "@/lib/server/shop-privacy";
+import { unreadCounts } from "@/lib/server/shop-messages";
 import type { OrderStatus } from "@/lib/constants/shop";
+import type { ShopOrder } from "@/lib/types/shop";
 
 /** Đơn của tôi (mua/bán/nhận trung gian) + tạo đơn mới. */
+
+/**
+ * Kèm số tin nhắn chưa đọc để danh sách đơn chấm được dấu đỏ. Tính một lượt
+ * cho cả danh sách thay vì hỏi từng đơn.
+ */
+async function withUnread(orders: ShopOrder[], userId: string) {
+  const counts = await unreadCounts(orders.map((o) => o.id), userId).catch(
+    () => new Map<string, number>(),
+  );
+  return shopJson({ orders, unread: Object.fromEntries(counts) });
+}
 
 export async function GET(req: NextRequest) {
   const limited = enforceRateLimit(req, { name: "shop-orders", limit: 120, windowMs: 60_000 });
@@ -24,9 +37,7 @@ export async function GET(req: NextRequest) {
     if (!seller) return shopJson({ orders: [] });
     // Người bán không nhận được SĐT / STK / kênh chat của người mua.
     const orders = await listOrders({ sellerId: seller.id, status });
-    return shopJson(
-      { orders: redactOrders(orders, { userId: auth.userId, party: "seller" }) }
-  );
+    return withUnread(redactOrders(orders, { userId: auth.userId, party: "seller" }), auth.userId);
   }
 
   if (scope === "agent") {
@@ -40,25 +51,22 @@ export async function GET(req: NextRequest) {
     // Hàng chờ hiện ẩn danh: giao dịch viên chỉ thấy thông tin người mua sau
     // khi đã bấm nhận đơn và chịu trách nhiệm với nó.
     const viewer = { userId: auth.userId, party: "agent" as const };
-    return shopJson(
-      {
-        orders: [
-          ...anonymizeUnclaimed(redactOrders(open.filter((o) => !seen.has(o.id)), viewer)),
-          ...mine,
-        ],
-      }
-  );
+    return withUnread(
+      [
+        ...anonymizeUnclaimed(redactOrders(open.filter((o) => !seen.has(o.id)), viewer)),
+        ...mine,
+      ],
+      auth.userId,
+    );
   }
 
   if (scope === "all") {
     if (!isShopAdminRole(auth.role)) return shopJson({ error: "Không có quyền." }, { status: 403 });
-    return shopJson({ orders: await listOrders({ status }) });
+    return withUnread(await listOrders({ status }), auth.userId);
   }
 
   const mine = await listOrders({ buyerId: auth.userId, status });
-  return shopJson(
-    { orders: redactOrders(mine, { userId: auth.userId, party: "buyer" }) }
-  );
+  return withUnread(redactOrders(mine, { userId: auth.userId, party: "buyer" }), auth.userId);
 }
 
 export async function POST(req: NextRequest) {

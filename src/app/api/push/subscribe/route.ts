@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
+import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
@@ -16,8 +17,15 @@ export async function POST(request: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
+  // Gắn chủ sở hữu nếu đang đăng nhập — nhờ đó mới bắn riêng được thông báo
+  // đơn hàng cho đúng người. Khách vãng lai vẫn đăng ký được (user_id null).
+  const auth = await getAuthContext().catch(() => null);
+
   const { error } = await untypedFrom(db, "push_subscriptions")
-    .upsert({ endpoint: sub.endpoint, subscription: sub } as never, { onConflict: "endpoint" });
+    .upsert(
+      { endpoint: sub.endpoint, subscription: sub, user_id: auth?.userId ?? null } as never,
+      { onConflict: "endpoint" },
+    );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
