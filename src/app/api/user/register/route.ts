@@ -8,6 +8,7 @@ import { awardAchievement } from "@/lib/server/award-achievement";
 import { sendWelcomeEmail } from "@/lib/server/email";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { clientNetInfo } from "@/lib/server/client-net";
+import { appendUserToLarkSheet } from "@/lib/server/lark-sheet";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ."),
@@ -104,6 +105,19 @@ export async function POST(request: NextRequest) {
     ],
     footer: "✨ Arex Register",
   }).catch(() => null);
+
+  // Ghi vào bảng tính Lark (tab "Đăng ký") để đội vận hành có sổ theo dõi.
+  void appendUserToLarkSheet({
+    email,
+    display_name: displayName,
+    user_id: authUser.id,
+    role: "user",
+    source: "Đăng ký công khai",
+    member_no: memberNo,
+    ip: net.ip,
+    device: net.device,
+    browser: net.browser,
+  });
 
   return NextResponse.json({ ok: true, emailVerificationRequired: true });
 }

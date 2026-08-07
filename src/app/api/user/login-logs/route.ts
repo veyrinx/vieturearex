@@ -4,6 +4,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl } from "@/lib/supabase/env";
+import { clientNetInfo } from "@/lib/server/client-net";
+import { appendLoginToLarkSheet } from "@/lib/server/lark-sheet";
 
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "login-logs-get", limit: 15, windowMs: 60_000 });
@@ -42,6 +44,19 @@ export async function POST(request: NextRequest) {
   const ua = request.headers.get("user-agent") ?? null;
   const body = await request.json().catch(() => ({})) as { method?: string };
   const method = body.method === "google" ? "google" : "password";
+
+  // Ghi vào bảng tính Lark (tab "Đăng nhập") — chạy độc lập với login_logs để
+  // Supabase chưa cấu hình vẫn không mất sổ theo dõi.
+  const net = clientNetInfo(request);
+  void appendLoginToLarkSheet({
+    email: user.email ?? "",
+    display_name: (user.user_metadata?.display_name as string | undefined) ?? null,
+    user_id: user.id,
+    method: method === "google" ? "Google" : "Mật khẩu",
+    ip: net.ip,
+    device: net.device,
+    browser: net.browser,
+  });
 
   const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey || !supabaseUrl) return NextResponse.json({ ok: true });

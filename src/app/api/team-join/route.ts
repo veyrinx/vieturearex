@@ -6,6 +6,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { ensureUserAccount } from "@/lib/data/content-service";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
+import { clientNetInfo } from "@/lib/server/client-net";
+import { appendTeamJoinToLarkSheet, appendUserToLarkSheet } from "@/lib/server/lark-sheet";
 
 const optionalUrl = z.string().max(300).optional().default("").transform((v) => v.trim());
 const optionalText = (max: number) =>
@@ -267,6 +269,39 @@ export async function POST(request: NextRequest) {
     footer: "👥 Arex Team Monitor",
   };
   void sendTelegramNotification(joinPayload).catch(() => null);
+
+  // Bảng tính Lark: tab "Gia nhập team" (hồ sơ ứng tuyển) + tab "Đăng ký"
+  // (đây cũng là một tài khoản mới, để sổ thành viên không thiếu người).
+  const net = clientNetInfo(request);
+  void appendTeamJoinToLarkSheet({
+    email,
+    display_name:     displayName,
+    user_id:          authUser.id,
+    phone:            parsed.data.phone,
+    applied_role:     parsed.data.applied_role,
+    application_note: parsed.data.application_note,
+    game_profiles:    gameStr,
+    facebook_url:     parsed.data.facebook_url,
+    instagram_url:    parsed.data.instagram_url,
+    tiktok_url:       parsed.data.tiktok_url,
+    discord_url:      parsed.data.discord_url,
+    zalo_url:         parsed.data.zalo_url,
+    invite_token:     parsed.data.token,
+    invite_label:     invite.label,
+    ip:               net.ip,
+    device:           net.device,
+    browser:          net.browser,
+  });
+  void appendUserToLarkSheet({
+    email,
+    display_name: displayName,
+    user_id:      authUser.id,
+    role:         "team_member",
+    source:       `Mã mời team${invite.label ? ` [${invite.label}]` : ""}`,
+    ip:           net.ip,
+    device:       net.device,
+    browser:      net.browser,
+  });
 
   return NextResponse.json({ ok: true, status: "pending" });
 }

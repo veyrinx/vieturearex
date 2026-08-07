@@ -10,6 +10,7 @@ import { sendWelcomeEmail } from "@/lib/server/email";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { clientNetInfo } from "@/lib/server/client-net";
 import { getClientIp } from "@/lib/server/get-client-ip";
+import { appendLoginToLarkSheet, appendUserToLarkSheet } from "@/lib/server/lark-sheet";
 
 /**
  * Callback OAuth cho NGƯỜI DÙNG trang công khai (Google / Facebook).
@@ -94,6 +95,8 @@ export async function GET(request: NextRequest) {
   }
 
   const isNewUser = !existing;
+  const net = clientNetInfo(request);
+  const providerLabel = provider === "facebook" ? "Facebook" : "Google";
 
   try {
     // ensureUserAccount giữ nguyên role cũ nếu tài khoản đã tồn tại.
@@ -122,7 +125,17 @@ export async function GET(request: NextRequest) {
       summary: `Tài khoản mới đăng ký bằng ${provider}: ${email}`,
     }).catch(() => {});
 
-    const net = clientNetInfo(request);
+    void appendUserToLarkSheet({
+      email,
+      display_name: providerName,
+      user_id: user.id,
+      role: "user",
+      source: `Đăng nhập ${providerLabel}`,
+      ip: net.ip,
+      device: net.device,
+      browser: net.browser,
+    });
+
     void sendTelegramNotification({
       title: "👤 THÀNH VIÊN MỚI ĐĂNG KÝ",
       subtitle: vnNow(),
@@ -151,7 +164,17 @@ export async function GET(request: NextRequest) {
     }).catch(() => null);
   }
 
-  // Nhật ký đăng nhập cho trang hồ sơ.
+  // Nhật ký đăng nhập cho trang hồ sơ + bảng tính Lark.
+  void appendLoginToLarkSheet({
+    email,
+    display_name: existing?.display_name ?? providerName,
+    user_id: user.id,
+    method: providerLabel,
+    ip: net.ip,
+    device: net.device,
+    browser: net.browser,
+  });
+
   if (adminClient) {
     const ip = getClientIp(request);
     try {

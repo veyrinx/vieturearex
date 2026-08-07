@@ -1352,21 +1352,27 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           </Field>
 
           <div className="py-3">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cột dữ liệu sẽ được ghi</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Các tab được ghi tự động
+            </p>
+            <div className="space-y-2">
               {[
-                { col: "A", label: "Thời gian đăng ký" },
-                { col: "B", label: "Email" },
-                { col: "C", label: "Tên hiển thị" },
-                { col: "D", label: "Vai trò (role)" },
-                { col: "E", label: "FF ID" },
-              ].map(({ col, label }) => (
-                <div key={col} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5">
-                  <span className="font-mono text-[11px] font-black text-primary">{col}</span>
-                  <span className="text-[10px] text-muted-foreground">{label}</span>
+                { tab: "Đăng ký", desc: "Thời gian · Email · Tên · User ID · Vai trò · Hình thức · Thành viên số · FF ID · IP · Thiết bị · Trình duyệt" },
+                { tab: "Đăng nhập", desc: "Mỗi lượt đăng nhập (mật khẩu / Google / Facebook) kèm IP, thiết bị, trình duyệt" },
+                { tab: "Đơn chợ", desc: "Mỗi lần đơn đổi trạng thái: mã đơn, tin đăng, giá, phí, thực nhận, người mua, GDV" },
+                { tab: "Đăng ký giải", desc: "Yêu cầu tổ chức giải: tên giải, thể thức, số đội, giải thưởng, liên hệ" },
+                { tab: "Gia nhập team", desc: "Hồ sơ ứng tuyển đầy đủ: SĐT, vị trí, tài khoản game, mạng xã hội, mã mời" },
+              ].map(({ tab, desc }) => (
+                <div key={tab} className="rounded-lg border border-border bg-background px-3 py-2">
+                  <p className="font-mono text-[11px] font-black text-primary">{tab}</p>
+                  <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">{desc}</p>
                 </div>
               ))}
             </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              Tab nào chưa có sẽ được tự tạo kèm dòng tiêu đề ở lần ghi đầu tiên — không cần dựng bảng bằng tay.
+              Ô <span className="font-mono">Tên Sheet</span> ở trên chỉ đổi tên tab &ldquo;Đăng ký&rdquo;.
+            </p>
           </div>
         </Card>
 
