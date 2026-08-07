@@ -531,7 +531,14 @@
       "Bash(echo \"$\\(curl -s -o /dev/null -w '%{http_code}' 'https://arexnetwork.site/shop/ctv'\\)  /shop/ctv \\(chưa đăng nhập → 307 về /login là đúng\\)\")",
       "Bash(PORT=3999 npx next *)",
       "Bash(pkill -f \"next start\")",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(echo \"tsc-exit=$?\")",
+      "Bash(echo \"web-tsc=$?\")",
+      "PowerShell(Get-PSDrive -PSProvider FileSystem | Select-Object Name, @{n='FreeGB';e={[math]::Round\\($_.Free/1GB,2\\)}}, @{n='UsedGB';e={[math]::Round\\($_.Used/1GB,2\\)}})",
+      "PowerShell($d = Get-CimInstance Win32_LogicalDisk -Filter \"DeviceID='C:'\"; \"Free: {0} MB\" -f [math]::Round\\($d.FreeSpace/1MB,0\\))",
+      "Bash(echo \"ts=$?\")",
+      "Bash(rm -rf /c/Windows/SoftwareDistribution/Download/*)",
+      "Bash(rm -rf /c/Users/WIN/AppData/Local/pip/Cache/*)"
     ]
   }
 }
