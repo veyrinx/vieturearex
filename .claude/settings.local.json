@@ -527,7 +527,11 @@
       "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 30)",
       "PowerShell(npx next build 2>&1 | Select-Object -Last 30)",
       "Bash(/d/Git/cmd/git.exe *)",
-      "WebFetch(domain:vercel.link)"
+      "WebFetch(domain:vercel.link)",
+      "Bash(echo \"$\\(curl -s -o /dev/null -w '%{http_code}' 'https://arexnetwork.site/shop/ctv'\\)  /shop/ctv \\(chưa đăng nhập → 307 về /login là đúng\\)\")",
+      "Bash(PORT=3999 npx next *)",
+      "Bash(pkill -f \"next start\")",
+      "Bash(pkill -f \"next-server\")"
     ]
   }
 }
