@@ -3,16 +3,25 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Crosshair, Zap, Target, Crown, Smartphone, Hand, Sparkles,
-  Copy, Save, RotateCcw, Check, Gauge, Cpu, ScanLine,
+  Copy, Save, RotateCcw, Check, Gauge, Cpu, ScanLine, Wand2, Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  brandFromModel,
+  guessBrand,
+  iosDeviceFromIdentifier,
+  iosDeviceFromScreen,
+  prettyGpu,
+  tierFromGpu,
+  type DeviceTier,
+} from "@/lib/constants/devices";
+import { isNativeApp, nativeDeviceInfo } from "@/lib/native/bridge";
 
 // ── Cấu hình lựa chọn ──────────────────────────────────────────────
 type PlayStyle = "rusher" | "balanced" | "sniper" | "beginner";
 type Fingers = 2 | 3 | 4 | 5;
-type DeviceTier = "entry" | "mid" | "flagship";
 
 const PLAYSTYLES: { key: PlayStyle; label: string; desc: string; icon: React.ElementType }[] = [
   { key: "rusher",   label: "Rush",       desc: "Cận chiến, xoay nhanh",   icon: Zap },
@@ -81,6 +90,16 @@ type DetectedInfo = {
   dpr: number;
   shortSide: number; // cạnh ngắn (pixel vật lý) ~ độ phân giải ngang
   brand: string;
+  /** Tên máy cụ thể nếu đoán được (SM-A155F, iPhone 14 Pro…) */
+  model: string | null;
+  /** GPU rút gọn từ WebGL — tín hiệu mạnh nhất để chấm hạng máy */
+  gpu: string | null;
+  /** Số điểm chạm tối đa màn hình nhận */
+  touchPoints: number | null;
+  /** Số ngón gợi ý, chỉ có khi đủ tự tin */
+  suggestFingers: Fingers | null;
+  /** Lấy được từ vỏ app native (chính xác) hay chỉ đoán từ trình duyệt */
+  source: "native" | "web";
 };
 
 // Đo tần số quét màn hình bằng cách đếm frame trong ~500ms
@@ -99,24 +118,47 @@ function measureRefresh(): Promise<number | null> {
   });
 }
 
-function guessBrand(ua: string): string {
-  const s = ua || "";
-  if (/iPhone/i.test(s)) return "iPhone";
-  if (/iPad/i.test(s)) return "iPad";
-  if (/SM-|Samsung/i.test(s)) return "Samsung";
-  if (/Redmi|POCO|Xiaomi|\bMI\b/i.test(s)) return "Xiaomi";
-  if (/OPPO|CPH/i.test(s)) return "OPPO";
-  if (/vivo/i.test(s)) return "vivo";
-  if (/Realme|RMX/i.test(s)) return "Realme";
-  if (/OnePlus/i.test(s)) return "OnePlus";
-  if (/HUAWEI|Honor/i.test(s)) return "Huawei/Honor";
-  if (/Android/i.test(s)) return "Android";
-  if (/Windows|Macintosh|Mac OS|Linux/i.test(s)) return "Máy tính";
-  return "Thiết bị";
+/** Chuỗi GPU thật của máy — tín hiệu đáng tin nhất mà web lấy được. */
+function readGpu(): string | null {
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = (canvas.getContext("webgl") ?? canvas.getContext("experimental-webgl")) as
+      | WebGLRenderingContext
+      | null;
+    if (!gl) return null;
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    const raw = ext
+      ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) as string)
+      : (gl.getParameter(gl.RENDERER) as string);
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  } catch {
+    return null;
+  }
 }
 
+/** Tên model từ User-Agent Client Hints — Chrome Android trả mã máy thật. */
+async function readUaModel(): Promise<string | null> {
+  type UAData = {
+    getHighEntropyValues?: (hints: string[]) => Promise<{ model?: string; platform?: string }>;
+  };
+  const uaData = (navigator as Navigator & { userAgentData?: UAData }).userAgentData;
+  if (!uaData?.getHighEntropyValues) return null;
+  try {
+    const v = await uaData.getHighEntropyValues(["model", "platform"]);
+    return v.model?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chấm hạng máy. GPU (hoặc đời iPhone) là tín hiệu chính; số nhân / RAM /
+ * tần số quét chỉ dùng để kéo lên hoặc dìm xuống một bậc.
+ */
 function classifyTier(o: {
-  cores: number | null; memory: number | null; refreshHz: number | null; dpr: number; shortSide: number;
+  cores: number | null; memory: number | null; refreshHz: number | null;
+  dpr: number; shortSide: number; hint: DeviceTier | null;
 }): DeviceTier {
   let score = 0;
   if (o.cores != null) score += o.cores >= 8 ? 2 : o.cores >= 6 ? 1 : 0;
@@ -124,9 +166,27 @@ function classifyTier(o: {
   if (o.refreshHz != null) score += o.refreshHz >= 100 ? 2 : o.refreshHz >= 85 ? 1 : 0;
   if (o.dpr >= 3) score += 1;
   if (o.shortSide >= 1080) score += 1;
-  if (score >= 5) return "flagship";
-  if (score <= 1) return "entry";
-  return "mid";
+
+  // Không nhận ra phần cứng → chấm thuần theo điểm như trước.
+  if (!o.hint) {
+    if (score >= 5) return "flagship";
+    if (score <= 1) return "entry";
+    return "mid";
+  }
+
+  // Có tên GPU/đời máy: tin nó, chỉ nhích 1 bậc khi điểm quá lệch.
+  const ladder: DeviceTier[] = ["entry", "mid", "flagship"];
+  let idx = ladder.indexOf(o.hint);
+  if (score >= 6 && idx < 2) idx += 1;
+  if (score <= 1 && idx > 0) idx -= 1;
+  return ladder[idx];
+}
+
+/** Màn to (tablet) thì mặc định nhiều ngón; màn chỉ nhận 2 chạm thì ngược lại. */
+function suggestFingers(shortSideDp: number, touchPoints: number | null): Fingers | null {
+  if (touchPoints != null && touchPoints > 0 && touchPoints <= 2) return 2;
+  if (shortSideDp >= 600) return 4;
+  return null;
 }
 
 async function detectDevice(): Promise<DetectedInfo> {
@@ -134,13 +194,47 @@ async function detectDevice(): Promise<DetectedInfo> {
   const cores = typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : null;
   const memory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : null;
   const dpr = window.devicePixelRatio || 1;
-  const sw = (window.screen?.width ?? 0) * dpr;
-  const sh = (window.screen?.height ?? 0) * dpr;
-  const shortSide = Math.round(Math.min(sw, sh));
-  const brand = guessBrand(nav.userAgent);
+  const dpW = window.screen?.width ?? 0;
+  const dpH = window.screen?.height ?? 0;
+  const shortSide = Math.round(Math.min(dpW, dpH) * dpr);
+  const touchPoints = typeof nav.maxTouchPoints === "number" ? nav.maxTouchPoints : null;
+
+  // Vỏ app native cho biết chính xác máy gì — ưu tiên trước mọi phép đoán.
+  const native = isNativeApp() ? await nativeDeviceInfo() : null;
+  const uaModel = await readUaModel();
+  const model = native?.model ?? uaModel;
+
+  const gpuRaw = readGpu();
+  const gpu = gpuRaw ? prettyGpu(gpuRaw) : null;
+
+  const isApple = /iPhone|iPad|Mac/i.test(nav.userAgent) || /ios/i.test(native?.operatingSystem ?? "");
+  const iosByModel = isApple ? iosDeviceFromIdentifier(model) : null;
+  const iosByScreen = isApple ? iosDeviceFromScreen(dpW, dpH, dpr) : null;
+  // GPU của iOS luôn là "Apple GPU" nên vô dụng — dùng bảng iPhone thay thế.
+  const hint = iosByScreen?.tier ?? iosByModel?.tier ?? tierFromGpu(gpuRaw);
+
+  const brand =
+    native?.manufacturer
+    ?? brandFromModel(model)
+    ?? guessBrand(nav.userAgent);
+
   const refreshHz = await measureRefresh();
-  const tier = classifyTier({ cores, memory, refreshHz, dpr, shortSide });
-  return { tier, refreshHz, cores, memory, dpr, shortSide, brand };
+  const tier = classifyTier({ cores, memory, refreshHz, dpr, shortSide, hint });
+
+  return {
+    tier,
+    refreshHz,
+    cores,
+    memory,
+    dpr,
+    shortSide,
+    brand,
+    model: iosByScreen?.name ?? model,
+    gpu,
+    touchPoints,
+    suggestFingers: suggestFingers(Math.min(dpW, dpH), touchPoints),
+    source: native ? "native" : "web",
+  };
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -152,6 +246,7 @@ export function SensitivityTool() {
   const [copied, setCopied] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
   const [detected, setDetected] = useState<DetectedInfo | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   // Nạp preset đã lưu + tự nhận diện máy
   useEffect(() => {
@@ -174,7 +269,10 @@ export function SensitivityTool() {
       if (cancelled) return;
       setDetected(info);
       // Chỉ tự chọn cấu hình máy khi người dùng chưa có preset lưu sẵn
-      if (!hadSaved) setDevice(info.tier);
+      if (!hadSaved) {
+        setDevice(info.tier);
+        if (info.suggestFingers) setFingers(info.suggestFingers);
+      }
     }).catch(() => { /**/ });
     return () => { cancelled = true; };
   }, []);
@@ -204,15 +302,25 @@ export function SensitivityTool() {
     }
   };
 
-  const handleRedetect = () => {
-    setDetected(null);
-    detectDevice().then((info) => {
+  /** Quét lại máy và điền sẵn cấu hình + số ngón (nếu đoán được). */
+  const handleAutoFill = async () => {
+    setScanning(true);
+    try {
+      const info = await detectDevice();
       setDetected(info);
       setDevice(info.tier);
-      toast.success("Đã nhận diện lại máy!");
-    }).catch(() => {
-      toast.error("Không nhận diện được. Thử lại.");
-    });
+      if (info.suggestFingers) setFingers(info.suggestFingers);
+      setIntensity(0);
+      toast.success(
+        info.model
+          ? `Đã lấy thông số: ${info.model} → ${DEVICES.find((d) => d.key === info.tier)?.label}`
+          : `Đã lấy thông số máy → ${DEVICES.find((d) => d.key === info.tier)?.label}`,
+      );
+    } catch {
+      toast.error("Không lấy được thông tin máy. Thử lại.");
+    } finally {
+      setScanning(false);
+    }
   };
 
   const handleReset = () => {
@@ -291,22 +399,50 @@ export function SensitivityTool() {
             ))}
           </div>
 
-          {/* Kết quả tự nhận diện máy */}
+          {/* Nút lấy thông số máy — điền sẵn cấu hình + số ngón */}
+          <button
+            onClick={handleAutoFill}
+            disabled={scanning}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 py-3 text-xs font-black uppercase tracking-wide text-white shadow-sm transition hover:opacity-90 disabled:opacity-60 dark:from-amber-500 dark:to-orange-500"
+          >
+            {scanning ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
+            {scanning ? "Đang đọc thông số máy..." : "Lấy thông số máy tự động"}
+          </button>
+
+          {/* Kết quả nhận diện */}
           {detected ? (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1 font-bold text-foreground">
-                <Cpu className="size-3.5 text-primary dark:text-amber-400" /> {detected.brand}
-              </span>
-              {detected.refreshHz != null && <SpecChip>{detected.refreshHz}Hz</SpecChip>}
-              {detected.cores != null && <SpecChip>{detected.cores} nhân</SpecChip>}
-              {detected.memory != null && <SpecChip>{detected.memory}GB RAM</SpecChip>}
-              {detected.shortSide > 0 && <SpecChip>{detected.shortSide}px</SpecChip>}
-              <span className="ml-auto whitespace-nowrap text-[10px]">
+            <div className="mt-2 space-y-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 font-bold text-foreground">
+                  <Cpu className="size-3.5 text-primary dark:text-amber-400" />
+                  {detected.model ?? detected.brand}
+                </span>
+                {detected.model && detected.brand !== detected.model && (
+                  <SpecChip>{detected.brand}</SpecChip>
+                )}
+                {detected.source === "native" && (
+                  <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+                    Chính xác
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {detected.gpu && <SpecChip>{detected.gpu}</SpecChip>}
+                {detected.refreshHz != null && <SpecChip>{detected.refreshHz}Hz</SpecChip>}
+                {detected.cores != null && <SpecChip>{detected.cores} nhân</SpecChip>}
+                {detected.memory != null && <SpecChip>{detected.memory}GB RAM</SpecChip>}
+                {detected.shortSide > 0 && <SpecChip>{detected.shortSide}px</SpecChip>}
+                {detected.touchPoints != null && detected.touchPoints > 0 && (
+                  <SpecChip>{detected.touchPoints} chạm</SpecChip>
+                )}
+              </div>
+              <div className="text-[10px]">
                 → đề xuất{" "}
                 <span className="font-bold text-primary dark:text-amber-400">
                   {DEVICES.find((d) => d.key === detected.tier)?.label}
                 </span>
-              </span>
+                {detected.suggestFingers && ` · ${detected.suggestFingers} ngón`}
+              </div>
             </div>
           ) : (
             <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
@@ -314,15 +450,6 @@ export function SensitivityTool() {
               Đang nhận diện cấu hình máy của bạn...
             </div>
           )}
-
-          <button
-            onClick={handleRedetect}
-            disabled={!detected}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground transition hover:border-primary/30 hover:text-primary disabled:opacity-50 dark:hover:text-amber-300"
-          >
-            <ScanLine className="size-3.5" />
-            Nhận diện lại máy
-          </button>
         </Section>
 
         {/* Tinh chỉnh */}
