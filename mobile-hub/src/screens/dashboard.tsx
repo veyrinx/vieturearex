@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
   CalendarRange,
   Eye,
   FileText,
@@ -10,13 +11,24 @@ import {
   PenLine,
   ShieldCheck,
   Smartphone,
+  Store,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { Card, Chip, ErrorState, SectionTitle, Skeleton, cx } from "@/components/ui";
 import { TrendChart } from "@/components/trend-chart";
 import { useAuth, useHasRole } from "@/auth/auth-context";
-import { useComments, useEvents, useLogs, useNews, useStats, useUsers } from "@/lib/queries";
+import {
+  useComments,
+  useEvents,
+  useLogs,
+  useNews,
+  useShopDisputes,
+  useShopListings,
+  useShopSellers,
+  useStats,
+  useUsers,
+} from "@/lib/queries";
 import { compactNumber, timeAgo, truncate } from "@/lib/format";
 import { errorMessage } from "@/components/toast";
 import { haptic } from "@/lib/native";
@@ -34,8 +46,18 @@ export function DashboardScreen() {
   const pendingNews = useComments("news_comments", "pending");
   const pendingEvents = useComments("event_comments", "pending");
 
+  // API của chợ chỉ mở cho manager trở lên; tài khoản support hỏi cũng chỉ nhận
+  // 403 nên đừng hỏi.
+  const canShop = useHasRole("manager");
+  const pendingListingsQuery = useShopListings("pending", canShop);
+  const pendingSellersQuery = useShopSellers("pending", canShop);
+  const openDisputesQuery = useShopDisputes("open", canShop);
+
   const pendingCount = (pendingNews.data?.length ?? 0) + (pendingEvents.data?.length ?? 0);
   const draftCount = news.data?.filter((item) => item.status === "draft").length ?? 0;
+  const pendingListings = pendingListingsQuery.data?.length ?? 0;
+  const pendingSellers = pendingSellersQuery.data?.length ?? 0;
+  const openDisputes = openDisputesQuery.data?.length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -79,19 +101,43 @@ export function DashboardScreen() {
         />
       </section>
 
+      {/* Việc đang chờ người thật xử lý — xếp trên mọi biểu đồ, vì đây là lý do
+          admin mở app giữa đường. */}
       {pendingCount > 0 && (
-        <Card
-          className="animate-in-up flex items-center gap-3 border-warn/30 bg-warn/8"
+        <TodoCard
+          icon={MessageSquare}
+          tone="warn"
+          title={`${pendingCount} bình luận chờ duyệt`}
           onClick={() => navigate("/duyet")}
-        >
-          <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-warn/15 text-warn">
-            <MessageSquare className="size-4.5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-medium">{pendingCount} bình luận chờ duyệt</p>
-            <p className="text-[12px] text-mist-500">Chạm để mở trang kiểm duyệt</p>
-          </div>
-        </Card>
+        />
+      )}
+
+      {openDisputes > 0 && (
+        <TodoCard
+          icon={AlertTriangle}
+          tone="danger"
+          title={`${openDisputes} tranh chấp đang mở`}
+          hint="Tiền đang bị giữ — vào xử lý sớm"
+          onClick={() => navigate("/cho")}
+        />
+      )}
+
+      {pendingListings > 0 && (
+        <TodoCard
+          icon={Store}
+          tone="warn"
+          title={`${pendingListings} tin chợ chờ duyệt`}
+          onClick={() => navigate("/cho")}
+        />
+      )}
+
+      {pendingSellers > 0 && (
+        <TodoCard
+          icon={Store}
+          tone="warn"
+          title={`${pendingSellers} hồ sơ người bán chờ duyệt`}
+          onClick={() => navigate("/cho")}
+        />
       )}
 
       <section>
@@ -116,6 +162,12 @@ export function DashboardScreen() {
             label="Kiểm duyệt"
             badge={pendingCount || undefined}
             onClick={() => navigate("/duyet")}
+          />
+          <QuickAction
+            icon={Store}
+            label="Chợ Arex"
+            badge={pendingListings + pendingSellers + openDisputes || undefined}
+            onClick={() => navigate("/cho")}
           />
           <QuickAction
             icon={Megaphone}
@@ -190,6 +242,38 @@ export function DashboardScreen() {
         </Card>
       </section>
     </div>
+  );
+}
+
+/** Thẻ "có việc cần làm" — chỉ hiện khi thật sự có việc, bấm là tới thẳng nơi xử lý. */
+function TodoCard({
+  icon: Icon,
+  tone,
+  title,
+  hint,
+  onClick,
+}: {
+  icon: LucideIcon;
+  tone: "warn" | "danger";
+  title: string;
+  hint?: string;
+  onClick: () => void;
+}) {
+  const tones = {
+    warn: { card: "border-warn/30 bg-warn/8", badge: "bg-warn/15 text-warn" },
+    danger: { card: "border-danger/30 bg-danger/8", badge: "bg-danger/15 text-danger" },
+  }[tone];
+
+  return (
+    <Card className={cx("animate-in-up flex items-center gap-3", tones.card)} onClick={onClick}>
+      <div className={cx("grid size-10 shrink-0 place-items-center rounded-2xl", tones.badge)}>
+        <Icon className="size-4.5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[14px] font-medium">{title}</p>
+        <p className="text-[12px] text-mist-500">{hint ?? "Chạm để mở"}</p>
+      </div>
+    </Card>
   );
 }
 

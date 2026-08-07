@@ -16,6 +16,11 @@ import type {
   ForumKind,
   GalleryItem,
   NewsItem,
+  NotificationItem,
+  ShopDisputeItem,
+  ShopListingItem,
+  ShopOrderItem,
+  ShopSellerItem,
   SiteSetting,
   StatsResponse,
   UserItem,
@@ -37,6 +42,12 @@ export const qk = {
   bundleUpdate: ["bundle-update"] as const,
   appUpdate: ["app-update"] as const,
   settings: ["settings"] as const,
+  notifications: ["notifications"] as const,
+  unreadCount: ["notifications", "unread-count"] as const,
+  shopListings: (status: string) => ["shop-listings", status] as const,
+  shopOrders: (status: string) => ["shop-orders", status] as const,
+  shopDisputes: (status: string) => ["shop-disputes", status] as const,
+  shopSellers: (status: string) => ["shop-sellers", status] as const,
 };
 
 // ── Nội dung ────────────────────────────────────────────────────────────────
@@ -393,5 +404,139 @@ export function useAppUpdate() {
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
     retry: false,
+  });
+}
+
+// ── Chợ Arex ────────────────────────────────────────────────────────────────
+/**
+ * Hub dùng thẳng API của chợ (`/api/shop/*`) chứ không có endpoint admin
+ * riêng: quyền đã được kiểm ngay trong các route đó theo vai trò tài khoản,
+ * nên không cần lớp trung gian nào nữa.
+ */
+
+export function useShopListings(status: string, enabled = true) {
+  return useQuery({
+    queryKey: qk.shopListings(status),
+    enabled,
+    queryFn: () =>
+      api<{ listings: ShopListingItem[] }>(
+        `/api/shop/listings?status=${encodeURIComponent(status)}&limit=100`,
+      ).then((r) => r.listings ?? []),
+  });
+}
+
+export function useModerateListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; status: "active" | "rejected" | "hidden"; reason?: string }) =>
+      api(`/api/shop/listings/${input.id}`, {
+        method: "PATCH",
+        body: { status: input.status, reason: input.reason },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shop-listings"] });
+      void queryClient.invalidateQueries({ queryKey: qk.logs });
+    },
+  });
+}
+
+export function useFeatureListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; days: number }) =>
+      api(`/api/shop/listings/${input.id}`, {
+        method: "PATCH",
+        body: { action: "feature", days: input.days },
+      }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["shop-listings"] }),
+  });
+}
+
+export function useShopOrders(status: string) {
+  return useQuery({
+    queryKey: qk.shopOrders(status),
+    queryFn: () =>
+      api<{ orders: ShopOrderItem[] }>(
+        `/api/shop/orders?scope=all${status === "all" ? "" : `&status=${encodeURIComponent(status)}`}`,
+      ).then((r) => r.orders ?? []),
+  });
+}
+
+export function useShopDisputes(status: string, enabled = true) {
+  return useQuery({
+    queryKey: qk.shopDisputes(status),
+    enabled,
+    queryFn: () =>
+      api<{ disputes: ShopDisputeItem[] }>(
+        `/api/shop/disputes${status === "all" ? "" : `?status=${encodeURIComponent(status)}`}`,
+      ).then((r) => r.disputes ?? []),
+  });
+}
+
+export function useShopSellers(status: string, enabled = true) {
+  return useQuery({
+    queryKey: qk.shopSellers(status),
+    enabled,
+    queryFn: () =>
+      api<{ sellers: ShopSellerItem[] }>(
+        `/api/shop/sellers${status === "all" ? "" : `?status=${encodeURIComponent(status)}`}`,
+      ).then((r) => r.sellers ?? []),
+  });
+}
+
+export function useModerateSeller() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      id: string;
+      status: "approved" | "rejected" | "suspended";
+      reason?: string;
+    }) =>
+      api(`/api/shop/sellers/${input.id}`, {
+        method: "PATCH",
+        body: { status: input.status, reason: input.reason },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shop-sellers"] });
+      void queryClient.invalidateQueries({ queryKey: qk.logs });
+    },
+  });
+}
+
+// ── Thông báo ───────────────────────────────────────────────────────────────
+/**
+ * Chuông trong Hub dùng chung dữ liệu với chuông trên web (`/api/notifications`).
+ *
+ * Khác `src/lib/notify.ts`: file kia lo việc bắn thông báo hệ điều hành khi app
+ * đang mở, còn đây là danh sách đọc được trong app — mở app lúc nào cũng thấy
+ * đủ, kể cả những cái đã lỡ khi app đóng.
+ */
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: qk.notifications,
+    queryFn: () => api<NotificationItem[]>("/api/notifications"),
+    // Chuông là thứ người ta mong thấy ngay; 60 giây một nhịp là đủ tươi.
+    refetchInterval: 60_000,
+  });
+}
+
+export function useUnreadCount() {
+  return useQuery({
+    queryKey: qk.unreadCount,
+    queryFn: () => api<{ count: number }>("/api/notifications?count=true").then((r) => r.count ?? 0),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMarkNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id?: string; all?: boolean }) =>
+      api("/api/notifications", { method: "PATCH", body: input }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.notifications });
+      void queryClient.invalidateQueries({ queryKey: qk.unreadCount });
+    },
   });
 }

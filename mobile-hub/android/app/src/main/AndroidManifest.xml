@@ -49,7 +49,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-    <!-- Thông báo đẩy trên Android 13+ (@capacitor/push-notifications) -->
+    <!-- Thông báo đẩy trên Android 13+ (@capacitor-firebase/messaging) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Máy không có camera vẫn cài được (vẫn chọn ảnh từ thư viện). -->

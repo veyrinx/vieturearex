@@ -17,7 +17,12 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(appVersion) },
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      // Bản Web của @capacitor-firebase/messaging kéo theo cả SDK JavaScript
+      // của Firebase, trong khi Hub chỉ chạy native — xem stub để biết vì sao.
+      "firebase/messaging": path.resolve(__dirname, "src/lib/firebase-messaging-web-stub.ts"),
+    },
   },
   build: {
     // WebView của iOS 15 / Android 8 trở lên — không cần transpile xuống thấp hơn.

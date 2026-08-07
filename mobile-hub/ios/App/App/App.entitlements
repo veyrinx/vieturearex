@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Thông báo đẩy (APNs). Firebase chuyển tiếp thông báo qua APNs, không có
+	  dòng này thì iOS từ chối cấp token và `FirebaseMessaging.getToken()` luôn
+	  lỗi.
+
+	  "development" dùng khi chạy từ Xcode / sideload. ĐỔI THÀNH "production"
+	  trước khi nộp TestFlight hoặc App Store — sai môi trường thì token cấp ra
+	  không dùng được với khoá APNs bên Firebase và thông báo im lặng biến mất.
+	-->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

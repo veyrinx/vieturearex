@@ -38,6 +38,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Hub chỉ dùng HTTPS tiêu chuẩn, không có mã hoá tự viết. Khai sẵn ở đây
+	     để mỗi lần nộp TestFlight khỏi phải trả lời câu hỏi tuân thủ xuất khẩu. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Arex Hub cần dùng camera để bạn chụp ảnh bìa cho bài viết và sự kiện.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -48,9 +52,11 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Mẫu của Capacitor để armv7 (máy 32-bit đời 2013). App yêu cầu iOS 15 nên
+	     không máy armv7 nào chạy được; khai arm64 cho đúng thực tế. -->
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

@@ -100,7 +100,7 @@ Số phiên bản **chỉ khai ở `mobile-hub/package.json`**, mọi chỗ khá
 | Màn Hệ thống, màn đăng nhập, token thông báo đẩy | `vite.config.ts` nhét `__APP_VERSION__` vào bundle lúc build |
 | Đường dẫn bundle OTA trên storage | `scripts/upload-hub-bundle.mjs` (bỏ `--version` thì lấy package.json) |
 | `versionName` / `versionCode` của Android | `android/app/build.gradle` đọc package.json (1.2.3 → code 10203) |
-| `MARKETING_VERSION` của iOS | workflow `hub-ios` và `hub-testflight` truyền vào lúc `xcodebuild` |
+| `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` của iOS | `scripts/sync-ios-version.mjs` ghi vào `project.pbxproj`, chạy tự động trong `npm run sync` (CI vẫn có thể ghi đè lúc `xcodebuild`) |
 
 Quên bump thì bundle mới đè lên đúng chỗ bundle cũ, app không thấy bản mới.
 
@@ -186,15 +186,34 @@ bản phát hành app, nhật ký hoạt động. Giao diện tự ẩn thao tá
 
 ## Việc cần làm khi phát hành thật
 
-1. **Thông báo đẩy.** Code đã đăng ký token và gửi về `/api/push/native`, nhưng
-   cần cấu hình dịch vụ đẩy trước khi có tác dụng:
-   - Android: Gradle đã áp sẵn plugin `com.google.gms.google-services` (plugins
-     DSL), chỉ cần đặt `google-services.json` vào `android/app/`. **Thiếu file
-     này là không build được** — chi tiết ở [ANDROID-STUDIO.md](./ANDROID-STUDIO.md)
-     mục 8. CI lấy file từ secret `GOOGLE_SERVICES_JSON`.
-   - iOS: bật capability *Push Notifications* + *Background Modes → Remote
-     notifications* trong Xcode, tải APNs key lên Firebase.
-   iOS chưa cấu hình thì `registerPush()` im lặng bỏ qua, app vẫn chạy bình thường.
+1. **Thông báo đẩy.** Cả hai nền tảng đi qua **Firebase Cloud Messaging** bằng
+   `@capacitor-firebase/messaging`; server gửi ở `src/lib/server/native-push.ts`.
+   Cần đúng hai file cấu hình (đều nằm trong `.gitignore`, CI lấy từ secret):
+
+   | Nền tảng | File | Đặt ở đâu | Thiếu thì sao |
+   |---|---|---|---|
+   | Android | `google-services.json` | `android/app/` | Không build được |
+   | iOS | `GoogleService-Info.plist` | `ios/App/App/` | Không build được |
+
+   Lấy file: Firebase Console → Project settings → **Your apps** → thêm app với
+   bundle id `site.arexnetwork.hub` (đúng id này, khác app Arex Network) → tải
+   file cấu hình về. Cả hai file đã được khai sẵn trong dự án nên **chỉ cần thả
+   đúng thư mục**, không phải kéo thả trong Xcode.
+
+   Riêng iOS còn cần thêm, làm một lần trong Apple Developer + Firebase:
+   - Tạo **APNs Authentication Key** (`.p8`) ở Apple Developer → Keys, tải lên
+     Firebase Console → Cloud Messaging → *Apple app configuration*. Không có
+     bước này thì Firebase không đẩy được sang APNs.
+   - `ios/App/App/App.entitlements` đã khai `aps-environment = development`.
+     **Đổi thành `production` trước khi nộp TestFlight / App Store** — sai môi
+     trường thì token cấp ra không khớp khoá APNs và thông báo im lặng biến mất.
+
+   Thiếu file cấu hình thì app **không khởi động được** (plugin gọi
+   `FirebaseApp.configure()` ngay lúc nạp), nên đừng build thiếu.
+
+   Ngoài push, app còn có đường thông báo cục bộ (`src/lib/notify.ts`, chạy khi
+   app đang mở) và **màn Thông báo** đọc thẳng từ server — chỗ này luôn đầy đủ
+   kể cả khi push chưa cấu hình xong.
 2. **Ký ứng dụng.** Android cần keystore release; iOS cần chứng chỉ Apple
    Developer (hoặc sideload bằng Sideloadly/AltStore như bản Arex Network).
 3. **Đổi máy chủ** khi cần: sửa `VITE_API_BASE_URL` trong `.env` rồi `npm run sync`.

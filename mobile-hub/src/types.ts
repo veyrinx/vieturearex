@@ -189,3 +189,69 @@ export type SiteSetting = {
   key: string;
   value: string;
 };
+
+// ── Chợ Arex ────────────────────────────────────────────────────────────────
+/** Chỉ khai những trường Hub thật sự hiển thị — API còn trả nhiều hơn. */
+
+export type ShopListingItem = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  kind: "account" | "item";
+  status: "pending" | "active" | "reserved" | "sold" | "rejected" | "hidden";
+  images: string[];
+  views: number;
+  created_at: string;
+  reject_reason: string | null;
+  seller?: { display_name: string; orders_done: number; rating: number | null } | null;
+};
+
+export type ShopOrderItem = {
+  id: string;
+  code: string;
+  amount: number;
+  fee: number;
+  status: string;
+  created_at: string;
+  buyer_name: string;
+  listing?: { title: string; images: string[] } | null;
+  seller?: { display_name: string } | null;
+};
+
+export type ShopDisputeItem = {
+  id: string;
+  order_id: string;
+  reason: string;
+  status: "open" | "resolving" | "refund_buyer" | "pay_seller" | "closed";
+  opened_role: "buyer" | "seller" | "agent";
+  created_at: string;
+  order_code?: string | null;
+  order_status?: string | null;
+};
+
+export type ShopSellerItem = {
+  id: string;
+  display_name: string;
+  real_name: string;
+  phone: string;
+  contact: string;
+  bank_name: string;
+  bank_account: string;
+  status: "pending" | "approved" | "rejected" | "suspended";
+  orders_done: number;
+  id_images_count?: number;
+  created_at: string;
+};
+
+export const SHOP_ORDER_STATUS_LABEL: Record<string, string> = {
+  pending_agent: "Chờ giao dịch viên",
+  awaiting_payment: "Chờ chuyển tiền",
+  payment_review: "Đang soát tiền",
+  holding: "Đang giữ tiền",
+  delivering: "Đang bàn giao",
+  payout: "Chờ trả người bán",
+  completed: "Hoàn tất",
+  disputed: "Tranh chấp",
+  cancelled: "Đã huỷ",
+};

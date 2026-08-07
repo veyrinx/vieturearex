@@ -77,7 +77,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     // BOM khoá version cho mọi thư viện Firebase khai không kèm số bên dưới.
-    // firebase-messaging KHÔNG nằm ở đây: @capacitor/push-notifications tự kéo
+    // firebase-messaging KHÔNG nằm ở đây: @capacitor-firebase/messaging tự kéo
     // bản riêng trong module của nó.
     implementation platform("com.google.firebase:firebase-bom:34.16.0")
     implementation "com.google.firebase:firebase-analytics"

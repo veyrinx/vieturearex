@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { BrandMark } from "@/components/brand-mark";
 import { Button, Spinner } from "@/components/ui";
 import { useAuth } from "@/auth/auth-context";
-import { bootNativeChrome, registerPush, watchNetwork } from "@/lib/native";
+import { bootNativeChrome, onPushOpened, registerPush, watchNetwork } from "@/lib/native";
 import { startNotificationPolling } from "@/lib/notify";
 import { ROLE_LABEL } from "@/types";
 import { LoginScreen } from "@/screens/login";
@@ -24,6 +24,11 @@ const lazyScreen = <T extends string>(load: () => Promise<Record<T, ComponentTyp
 const ComposeScreen = lazyScreen(() => import("@/screens/compose"), "ComposeScreen");
 const ContentScreen = lazyScreen(() => import("@/screens/content"), "ContentScreen");
 const ModerationScreen = lazyScreen(() => import("@/screens/moderation"), "ModerationScreen");
+const ShopScreen = lazyScreen(() => import("@/screens/shop"), "ShopScreen");
+const NotificationsScreen = lazyScreen(
+  () => import("@/screens/notifications"),
+  "NotificationsScreen",
+);
 const SystemScreen = lazyScreen(() => import("@/screens/system"), "SystemScreen");
 const UsersScreen = lazyScreen(() => import("@/screens/system-users"), "UsersScreen");
 const BroadcastScreen = lazyScreen(() => import("@/screens/system-broadcast"), "BroadcastScreen");
@@ -47,13 +52,20 @@ export function App() {
     if (session && profile && !forbidden) void registerPush();
   }, [session, profile, forbidden]);
 
+  // Chạm vào thông báo đẩy → mở hộp thông báo trong app.
+  useEffect(() => {
+    if (!session || !profile || forbidden) return;
+    return onPushOpened(() => navigate("/thong-bao"));
+  }, [session, profile, forbidden, navigate]);
+
   // Chưa có FCM nên thông báo chạy bằng cách tự hỏi server theo chu kỳ.
   useEffect(() => {
     if (!session || !profile || forbidden) return;
-    return startNotificationPolling((url) => {
-      // entity_url là đường dẫn của website; Hub có bộ route riêng nên chỉ
-      // nhận những đường trong app, còn lại đưa về màn hình chính.
-      navigate(url.startsWith("/") ? url : "/");
+    return startNotificationPolling(() => {
+      // entity_url là đường dẫn của website, Hub có bộ route riêng nên đi thẳng
+      // sẽ rơi vào catch-all. Đưa về hộp thông báo: ở đó bấm vào từng mục sẽ
+      // được dẫn đúng chỗ (màn trong app, hoặc mở web).
+      navigate("/thong-bao");
     });
   }, [session, profile, forbidden, navigate]);
 
@@ -104,6 +116,8 @@ export function App() {
         <Route path="/dang" element={<ComposeScreen />} />
         <Route path="/noi-dung" element={<ContentScreen />} />
         <Route path="/duyet" element={<ModerationScreen />} />
+        <Route path="/cho" element={<ShopScreen />} />
+        <Route path="/thong-bao" element={<NotificationsScreen />} />
         <Route path="/he-thong" element={<SystemScreen />} />
         <Route path="/he-thong/nguoi-dung" element={<UsersScreen />} />
         <Route path="/he-thong/thong-bao" element={<BroadcastScreen />} />

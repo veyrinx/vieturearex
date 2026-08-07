@@ -6,7 +6,7 @@ import { Network } from "@capacitor/network";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Browser } from "@capacitor/browser";
-import { PushNotifications } from "@capacitor/push-notifications";
+import { FirebaseMessaging } from "@capacitor-firebase/messaging";
 // Nhập thẳng plugin (không qua lib/updater) để tránh vòng import: updater cần
 // `isNative` từ chính file này.
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
@@ -93,38 +93,85 @@ export async function openExternal(url: string) {
   if (opened === null) window.open(url, "_blank", "noopener,noreferrer");
 }
 
+let tokenListenerBound = false;
+
+/** Gửi token FCM về server để gắn vào tài khoản admin đang đăng nhập. */
+async function savePushToken(value: string) {
+  const accessToken = await currentAccessToken();
+  await fetch(`${env.apiBaseUrl}/api/push/native`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify({ token: value, platform, appVersion: env.appVersion }),
+  }).catch(() => null);
+}
+
 /**
- * Xin quyền + đăng ký token đẩy, rồi gửi token về `/api/push/native`
- * để server gắn vào tài khoản admin đang đăng nhập.
+ * Xin quyền + đăng ký token đẩy cho CẢ iOS lẫn Android.
+ *
+ * Dùng `@capacitor-firebase/messaging` thay cho `@capacitor/push-notifications`:
+ * server gửi thông báo qua FCM (xem src/lib/server/native-push.ts), mà plugin
+ * cũ trên iOS chỉ trả token APNs thô — FCM coi là token rác nên iOS không bao
+ * giờ nhận được gì. Plugin này nhúng Firebase SDK ở cả hai nền tảng nên token
+ * lấy ra luôn là token FCM, một đường gửi duy nhất cho cả hai.
+ *
+ * Token FCM có thể bị Firebase cấp lại (cài lại app, khôi phục máy, hết hạn),
+ * nên nghe luôn `tokenReceived` chứ không chỉ lấy một lần lúc mở app.
  */
 export async function registerPush(onError?: (message: string) => void) {
   if (!isNative) return;
 
   try {
-    let permission = await PushNotifications.checkPermissions();
+    let permission = await FirebaseMessaging.checkPermissions();
     if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") {
-      permission = await PushNotifications.requestPermissions();
+      permission = await FirebaseMessaging.requestPermissions();
     }
     if (permission.receive !== "granted") return;
 
-    await PushNotifications.addListener("registration", async ({ value }) => {
-      const token = await currentAccessToken();
-      await fetch(`${env.apiBaseUrl}/api/push/native`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ token: value, platform, appVersion: env.appVersion }),
-      }).catch(() => null);
-    });
+    // `registerPush()` chạy lại mỗi lần phiên đăng nhập đổi; chỉ gắn listener
+    // một lần, nếu không mỗi lần cấp token lại là mấy lời gọi API trùng nhau.
+    if (!tokenListenerBound) {
+      tokenListenerBound = true;
+      await FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
+        if (token) void savePushToken(token);
+      });
+    }
 
-    await PushNotifications.addListener("registrationError", (err) => {
-      onError?.(String(err?.error ?? "Không đăng ký được thông báo đẩy."));
-    });
-
-    await PushNotifications.register();
-  } catch {
-    /* thiết bị không hỗ trợ / chưa cấu hình FCM — bỏ qua, app vẫn chạy */
+    const { token } = await FirebaseMessaging.getToken();
+    if (token) await savePushToken(token);
+  } catch (error) {
+    // Thiếu GoogleService-Info.plist / google-services.json, hoặc máy không có
+    // Google Play services — app vẫn chạy, chỉ là không có thông báo đẩy.
+    onError?.(error instanceof Error ? error.message : "Không đăng ký được thông báo đẩy.");
   }
+}
+
+/**
+ * Chạm vào thông báo đẩy → mở đúng chỗ trong app.
+ *
+ * Đường dẫn gửi kèm (`data.url`) là của website, Hub có bộ route riêng nên đưa
+ * về hộp thông báo; ở đó bấm từng mục sẽ được dẫn tiếp đúng nơi.
+ */
+export function onPushOpened(handler: (url: string | null) => void) {
+  if (!isNative) return () => {};
+
+  let remove: (() => void) | null = null;
+  let disposed = false;
+
+  void FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
+    const url = (event.notification?.data as { url?: string } | undefined)?.url ?? null;
+    handler(url);
+  })
+    .then((handle) => {
+      if (disposed) void handle.remove();
+      else remove = () => void handle.remove();
+    })
+    .catch(() => null);
+
+  return () => {
+    disposed = true;
+    remove?.();
+  };
 }
