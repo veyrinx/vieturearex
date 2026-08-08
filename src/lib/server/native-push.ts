@@ -1,5 +1,6 @@
 import "server-only";
 import { createSign } from "node:crypto";
+import { getSettings } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 
@@ -13,10 +14,12 @@ import { untypedFrom } from "@/lib/supabase/untyped";
  * iOS cũng đi qua FCM (Firebase chuyển tiếp sang APNs), nên chỉ cần một bộ
  * thông tin xác thực — với điều kiện đã nạp khoá APNs `.p8` lên Firebase.
  *
- * Cần 3 biến môi trường, lấy từ Firebase Console → Project settings →
- * Service accounts → Generate new private key:
- *   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
- * Thiếu bất kỳ biến nào thì hàm im lặng bỏ qua (giống web push khi thiếu VAPID).
+ * Cần 3 thông tin, lấy từ Firebase Console → Project settings →
+ * Service accounts → Generate new private key. Điền ở /admin/settings (mục
+ * Firebase) hoặc để ở biến môi trường FIREBASE_PROJECT_ID /
+ * FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY — settings được ưu tiên, env là
+ * lưới đỡ. Thiếu bất kỳ phần nào thì hàm im lặng bỏ qua (giống web push khi
+ * thiếu VAPID).
  */
 
 type TokenRow = { token: string; platform: "ios" | "android" };
@@ -29,11 +32,29 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 /** Gửi theo lô để không mở hàng nghìn kết nối cùng lúc. */
 const BATCH_SIZE = 100;
 
-function readServiceAccount(): ServiceAccount | null {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  // Biến môi trường không giữ được xuống dòng thật nên khoá được lưu dạng "\n".
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+export const FIREBASE_SETTING_KEYS = {
+  projectId:   "integrations.firebase_project_id",
+  clientEmail: "integrations.firebase_client_email",
+  privateKey:  "integrations.firebase_private_key",
+} as const;
+
+async function readServiceAccount(): Promise<ServiceAccount | null> {
+  let settings: Awaited<ReturnType<typeof getSettings>> = [];
+  try {
+    settings = await getSettings();
+  } catch {
+    // DB lỗi thì vẫn gửi được bằng env — push không nên chết theo Supabase.
+  }
+  const fromSettings = (key: string) => settings.find((s) => s.key === key)?.value?.trim() || "";
+
+  const projectId = fromSettings(FIREBASE_SETTING_KEYS.projectId) || process.env.FIREBASE_PROJECT_ID;
+  const clientEmail =
+    fromSettings(FIREBASE_SETTING_KEYS.clientEmail) || process.env.FIREBASE_CLIENT_EMAIL;
+  // Ô nhập lẫn biến môi trường đều không giữ được xuống dòng thật nên khoá được
+  // lưu dạng "\n" — trả về đúng PEM trước khi đưa cho createSign.
+  const privateKey = (
+    fromSettings(FIREBASE_SETTING_KEYS.privateKey) || process.env.FIREBASE_PRIVATE_KEY
+  )?.replace(/\\n/g, "\n");
 
   if (!projectId || !clientEmail || !privateKey) return null;
   return { projectId, clientEmail, privateKey };
@@ -123,7 +144,7 @@ export async function sendNativePush(
   url = "/",
   userIds?: string[],
 ) {
-  const sa = readServiceAccount();
+  const sa = await readServiceAccount();
   if (!sa) return;
   if (userIds && userIds.length === 0) return;
 

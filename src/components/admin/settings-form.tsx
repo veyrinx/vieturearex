@@ -1245,18 +1245,57 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <div className="py-4">
             <SectionHeader
               icon={Plug}
-              title="Discord Bot — ID kênh & role"
-              desc="Bot token/App ID nằm ở biến môi trường. Còn ID từng kênh và role thì sửa ở đây, không cần deploy lại"
+              title="Discord Bot"
+              desc="Toàn bộ cấu hình bot: token, App ID, ID kênh và role — sửa ở đây, không cần deploy lại"
             />
           </div>
 
           <div className="mb-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              <span className="font-bold">Lấy ID:</span> bật Discord → Cài đặt → Nâng cao → Chế độ nhà phát triển,
-              rồi chuột phải vào kênh/role → &ldquo;Sao chép ID&rdquo;. Ô nào để trống sẽ dùng biến môi trường
-              <span className="font-mono"> DISCORD_*</span> như trước.
+              <span className="font-bold">Token &amp; App ID:</span> Discord Developer Portal → app của bạn →
+              tab Bot (token) và General Information (Application ID, Public Key).{" "}
+              <span className="font-bold">ID kênh/role:</span> bật Discord → Cài đặt → Nâng cao → Chế độ nhà
+              phát triển, rồi chuột phải vào kênh/role → &ldquo;Sao chép ID&rdquo;. Ô nào để trống sẽ dùng
+              biến môi trường <span className="font-mono">DISCORD_*</span> như trước.
             </p>
           </div>
+
+          <Field label="Bot Token" hint="Tab Bot → Reset Token. Nhạy cảm — lưu mã hoá, không hiện lại" icon={Plug}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.discord_bot_token")}
+                onChange={(e) => set("integrations.discord_bot_token", e.target.value)}
+                placeholder="MTIzNDU2Nzg5.GxYzAb...."
+                className="font-mono text-xs"
+                type="password"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.discord_bot_token")} />
+            </div>
+          </Field>
+
+          <Field label="Application ID" hint="General Information → Application ID" icon={Plug}>
+            <Input
+              value={v("integrations.discord_app_id")}
+              onChange={(e) => set("integrations.discord_app_id", e.target.value.replace(/\D/g, ""))}
+              placeholder="1234567890123456789"
+              inputMode="numeric"
+              maxLength={20}
+              className="font-mono text-xs max-w-64"
+            />
+          </Field>
+
+          <Field
+            label="Public Key"
+            hint="General Information → Public Key. Dùng để kiểm chữ ký mỗi tương tác Discord gửi tới"
+            icon={Plug}
+          >
+            <Input
+              value={v("integrations.discord_public_key")}
+              onChange={(e) => set("integrations.discord_public_key", e.target.value.trim().toLowerCase())}
+              placeholder="295fac4b46e04171993c..."
+              className="font-mono text-xs"
+            />
+          </Field>
 
           {[
             { key: "integrations.discord_guild_id",           label: "Guild ID (server)",   hint: "Server Discord của Arex — bắt buộc để gán role" },
@@ -1280,6 +1319,56 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               />
             </Field>
           ))}
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader
+              icon={BellRing}
+              title="Firebase — thông báo đẩy app native"
+              desc="Service account để đẩy thông báo xuống app Arex Hub và Arex Network (iOS + Android)"
+            />
+          </div>
+
+          <div className="mb-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Firebase Console → Project settings → Service accounts → Generate new private key. File JSON tải
+              về có đủ 3 giá trị dưới đây. Riêng khoá bí mật phải dán dạng một dòng, giữ nguyên các đoạn
+              <span className="font-mono"> \n</span> như trong file JSON. Ô nào để trống sẽ dùng biến môi trường
+              <span className="font-mono"> FIREBASE_*</span>.
+            </p>
+          </div>
+
+          <Field label="Project ID" hint="Trường project_id — ví dụ arexnetwork-3df99" icon={BellRing}>
+            <Input
+              value={v("integrations.firebase_project_id")}
+              onChange={(e) => set("integrations.firebase_project_id", e.target.value.trim())}
+              placeholder="arexnetwork-3df99"
+              className="font-mono text-xs max-w-80"
+            />
+          </Field>
+
+          <Field label="Client Email" hint="Trường client_email — đuôi @…iam.gserviceaccount.com" icon={BellRing}>
+            <Input
+              value={v("integrations.firebase_client_email")}
+              onChange={(e) => set("integrations.firebase_client_email", e.target.value.trim())}
+              placeholder="firebase-adminsdk-xxxxx@arexnetwork-3df99.iam.gserviceaccount.com"
+              className="font-mono text-xs"
+            />
+          </Field>
+
+          <Field label="Private Key" hint="Trường private_key. Nhạy cảm — lưu mã hoá, không hiện lại" icon={BellRing}>
+            <div className="space-y-2">
+              <Input
+                value={v("integrations.firebase_private_key")}
+                onChange={(e) => set("integrations.firebase_private_key", e.target.value)}
+                placeholder="-----BEGIN PRIVATE KEY-----\nMIIEv..."
+                className="font-mono text-xs"
+                type="password"
+              />
+              <SensitiveHint hint={sensitiveHint("integrations.firebase_private_key")} />
+            </div>
+          </Field>
         </Card>
 
         <Card>

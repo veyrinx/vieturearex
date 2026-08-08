@@ -63,15 +63,19 @@ export const discordEnv = {
   },
 };
 
-export function hasDiscordBot(): boolean {
-  return !!discordEnv.token;
-}
+// ── Toàn bộ cấu hình sửa được trong /admin/settings ───────────────────────
+// Trước đây mọi thứ nằm ở biến môi trường, đổi một ID kênh cũng phải deploy
+// lại. Giờ settings được ưu tiên, biến môi trường chỉ là lưới đỡ cho ô còn
+// trống — cấu hình sẵn có không vỡ, mà admin vẫn tự xoay được.
+//
+// Bot token nằm trong SENSITIVE_KEYS nên được mã hoá AES trong DB và API admin
+// chỉ trả về mặt nạ "__configured__", không bao giờ lộ giá trị thật ra client.
 
-// ── ID kênh & role: sửa được trong /admin/settings ─────────────────────────
-// Token/App ID/Public Key là bí mật nên chỉ nằm ở biến môi trường. Còn ID kênh
-// và role thì không bí mật mà lại hay đổi (lập kênh mới, tách role), nên đọc từ
-// settings trước — admin đổi kênh không cần deploy lại. Ô nào để trống thì rơi
-// về biến môi trường cũ, cấu hình sẵn có không vỡ.
+const DISCORD_CRED_KEYS = {
+  token:     "integrations.discord_bot_token",
+  appId:     "integrations.discord_app_id",
+  publicKey: "integrations.discord_public_key",
+} as const;
 
 const DISCORD_ID_KEYS = {
   guildId:         "integrations.discord_guild_id",
@@ -85,17 +89,23 @@ const DISCORD_ID_KEYS = {
   staffRoleId:     "integrations.discord_staff_role_id",
 } as const;
 
+const DISCORD_SETTING_KEYS = { ...DISCORD_CRED_KEYS, ...DISCORD_ID_KEYS } as const;
+
 export type DiscordIdKey = keyof typeof DISCORD_ID_KEYS;
 export type DiscordIds = Record<DiscordIdKey, string>;
+export type DiscordCredKey = keyof typeof DISCORD_CRED_KEYS;
+export type DiscordCreds = Record<DiscordCredKey, string>;
+type DiscordField = keyof typeof DISCORD_SETTING_KEYS;
 
 /** Danh sách key settings để trang admin render đúng ô. */
 export const DISCORD_ID_SETTING_KEYS = Object.values(DISCORD_ID_KEYS);
+export const DISCORD_CRED_SETTING_KEYS = Object.values(DISCORD_CRED_KEYS);
 
 /**
- * ID kênh/role hiện hành. `getSettings` được bọc `cache()` nên gọi nhiều lần
- * trong một request không tốn thêm truy vấn.
+ * Giá trị hiện hành của mọi ô cấu hình Discord. `getSettings` được bọc `cache()`
+ * nên gọi nhiều lần trong một request không tốn thêm truy vấn.
  */
-export async function discordIds(): Promise<DiscordIds> {
+async function discordConfig(): Promise<Record<DiscordField, string>> {
   let settings: Awaited<ReturnType<typeof getSettings>> = [];
   try {
     settings = await getSettings();
@@ -103,12 +113,28 @@ export async function discordIds(): Promise<DiscordIds> {
     // DB lỗi thì vẫn chạy được bằng env — Discord không được chặn nghiệp vụ.
   }
 
-  const entries = Object.entries(DISCORD_ID_KEYS) as Array<[DiscordIdKey, string]>;
-  const out = {} as DiscordIds;
+  const entries = Object.entries(DISCORD_SETTING_KEYS) as Array<[DiscordField, string]>;
+  const out = {} as Record<DiscordField, string>;
   for (const [field, settingKey] of entries) {
     out[field] = settings.find((s) => s.key === settingKey)?.value?.trim() || discordEnv[field];
   }
   return out;
+}
+
+/** ID kênh/role hiện hành. */
+export async function discordIds(): Promise<DiscordIds> {
+  const { token: _t, appId: _a, publicKey: _p, ...ids } = await discordConfig();
+  return ids;
+}
+
+/** Token/App ID/Public Key hiện hành. */
+export async function discordCreds(): Promise<DiscordCreds> {
+  const { token, appId, publicKey } = await discordConfig();
+  return { token, appId, publicKey };
+}
+
+export async function hasDiscordBot(): Promise<boolean> {
+  return !!(await discordCreds()).token;
 }
 
 type RestResult<T> = T | null;
@@ -118,12 +144,13 @@ async function rest<T = unknown>(
   path: string,
   body?: unknown,
 ): Promise<RestResult<T>> {
-  if (!discordEnv.token) return null;
+  const { token } = await discordCreds();
+  if (!token) return null;
   try {
     const res = await fetch(`${API}${path}`, {
       method,
       headers: {
-        Authorization: `Bot ${discordEnv.token}`,
+        Authorization: `Bot ${token}`,
         "Content-Type": "application/json",
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -225,10 +252,11 @@ export function archiveThread(threadId: string) {
  * Ghi đè toàn bộ danh sách lệnh. Có `guildId` thì lệnh hiện ngay (dùng khi
  * phát triển); không có thì đăng ký toàn cục, Discord mất tới 1 giờ để đẩy.
  */
-export function overwriteCommands(commands: unknown[], guildId?: string) {
-  if (!discordEnv.appId) return Promise.resolve(null);
+export async function overwriteCommands(commands: unknown[], guildId?: string) {
+  const { appId } = await discordCreds();
+  if (!appId) return null;
   const path = guildId
-    ? `/applications/${discordEnv.appId}/guilds/${guildId}/commands`
-    : `/applications/${discordEnv.appId}/commands`;
+    ? `/applications/${appId}/guilds/${guildId}/commands`
+    : `/applications/${appId}/commands`;
   return rest("PUT", path, commands);
 }

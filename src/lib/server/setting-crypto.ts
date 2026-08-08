@@ -29,6 +29,8 @@ export const SENSITIVE_KEYS = new Set([
   "integrations.telegram_chat_id",
   "integrations.telegram_user_bot_token",
   "integrations.telegram_user_chat_id",
+  "integrations.discord_bot_token",
+  "integrations.firebase_private_key",
   "tms.payment_info",
   "push.vapid_private_key",
   "streams.youtube_api_key",

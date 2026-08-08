@@ -1,6 +1,6 @@
 import { createPublicKey, verify as verifySignature } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { discordEnv } from "@/lib/server/discord-api";
+import { discordCreds } from "@/lib/server/discord-api";
 import {
   RESPONSE,
   handleCommand,
@@ -26,8 +26,12 @@ export const dynamic = "force-dynamic";
 /** Vỏ SPKI của khoá công khai Ed25519 (RFC 8410) — phần đầu cố định. */
 const SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
-function verifyDiscordSignature(body: string, signature: string, timestamp: string): boolean {
-  const publicKey = discordEnv.publicKey;
+async function verifyDiscordSignature(
+  body: string,
+  signature: string,
+  timestamp: string,
+): Promise<boolean> {
+  const { publicKey } = await discordCreds();
   if (!publicKey || !signature || !timestamp) return false;
   try {
     const key = createPublicKey({
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-signature-ed25519") ?? "";
   const timestamp = req.headers.get("x-signature-timestamp") ?? "";
 
-  if (!verifyDiscordSignature(body, signature, timestamp)) {
+  if (!(await verifyDiscordSignature(body, signature, timestamp))) {
     return new NextResponse("invalid request signature", { status: 401 });
   }
 

@@ -547,7 +547,17 @@
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' diff --stat; & 'D:\\\\Git\\\\cmd\\\\git.exe' remote -v)",
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' diff -- src/lib/server/discord-api.ts src/lib/utils/site-settings.ts src/components/admin/settings-form.tsx | Select-Object -First 160)",
       "PowerShell($env:NODE_OPTIONS=\"--max-old-space-size=8192\"; npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -Last 30)",
-      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\122cf52a-0bed-45b3-915c-2b1493091804\\\\scratchpad\\\\commitmsg.txt\" | Select-Object -Last 5)"
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\122cf52a-0bed-45b3-915c-2b1493091804\\\\scratchpad\\\\commitmsg.txt\" | Select-Object -Last 5)",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main 2>&1 | Select-Object -Last 5)",
+      "PowerShell(npx vercel ls --yes 2>&1 | Select-Object -First 15)",
+      "PowerShell(npx vercel inspect https://vieturearex-ke3deoif8-vieturegroups-projects.vercel.app --wait --timeout 15m 2>&1 | Select-Object -Last 20)",
+      "PowerShell(npx vercel ls --yes 2>&1 | Select-Object -Skip 4 -First 4)",
+      "PowerShell(npx vercel ls --yes 2>&1 | Select-Object -Skip 4 -First 6)",
+      "Bash(sed 's/^GOOGLE_SERVICE_ACCOUNT_EMAIL=\"\\\\?//')",
+      "Bash(sed 's/.*process.env.//')",
+      "Bash(rm -f \"C:/Users/WIN/AppData/Local/Temp/claude/D--vieture-arex/122cf52a-0bed-45b3-915c-2b1493091804/scratchpad/.env.vercel\")",
+      "PowerShell($env:NODE_OPTIONS=\"--max-old-space-size=8192\"; npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -Last 20)",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A 2>$null; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\122cf52a-0bed-45b3-915c-2b1493091804\\\\scratchpad\\\\commitmsg2.txt\" 2>&1 | Select-Object -Last 3)"
     ]
   }
 }
