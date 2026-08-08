@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { addGuildRole, discordEnv, getGuildMember, removeGuildRole } from "@/lib/server/discord-api";
+import { addGuildRole, discordIds, getGuildMember, removeGuildRole } from "@/lib/server/discord-api";
 
 /**
  * Liên kết tài khoản Discord ↔ tài khoản Arex.
@@ -160,7 +160,8 @@ const STAFF_ROLES = ["super_admin", "admin", "it", "manager", "support"];
  */
 export async function syncDiscordRoles(userId: string, discordUserId?: string): Promise<void> {
   const client = db();
-  const guildId = discordEnv.guildId;
+  const ids = await discordIds();
+  const guildId = ids.guildId;
   if (!client || !guildId) return;
 
   const targetDiscordId = discordUserId ?? (await getLinkByUserId(userId))?.discord_user_id;
@@ -179,10 +180,10 @@ export async function syncDiscordRoles(userId: string, discordUserId?: string): 
 
   const role = profile?.role ?? "user";
   const wanted: Record<string, boolean> = {
-    [discordEnv.linkedRoleId]: true,
-    [discordEnv.sellerRoleId]: seller?.status === "approved",
-    [discordEnv.agentRoleId]: role === "agent" || STAFF_ROLES.includes(role),
-    [discordEnv.staffRoleId]: STAFF_ROLES.includes(role),
+    [ids.linkedRoleId]: true,
+    [ids.sellerRoleId]: seller?.status === "approved",
+    [ids.agentRoleId]: role === "agent" || STAFF_ROLES.includes(role),
+    [ids.staffRoleId]: STAFF_ROLES.includes(role),
   };
 
   await Promise.allSettled(

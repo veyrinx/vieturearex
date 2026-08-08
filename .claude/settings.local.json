@@ -538,7 +538,16 @@
       "PowerShell($d = Get-CimInstance Win32_LogicalDisk -Filter \"DeviceID='C:'\"; \"Free: {0} MB\" -f [math]::Round\\($d.FreeSpace/1MB,0\\))",
       "Bash(echo \"ts=$?\")",
       "Bash(rm -rf /c/Windows/SoftwareDistribution/Download/*)",
-      "Bash(rm -rf /c/Users/WIN/AppData/Local/pip/Cache/*)"
+      "Bash(rm -rf /c/Users/WIN/AppData/Local/pip/Cache/*)",
+      "Bash(cp \"/d/Users/WIN/Downloads/GoogleService-Info.plist\" \"/d/vieture-arex/mobile/ios/App/App/GoogleService-Info.plist\")",
+      "Read(//d/vieture-arex/mobile/ios/App/App/**)",
+      "Bash(K=295fac4b46e04171993c97337f52cc128826bb4a4f3b5f41bcc5793138379a86 node *)",
+      "PowerShell(Get-PSDrive -PSProvider FileSystem | Where-Object {$_.Name -in 'C','D'} | Select-Object Name, @{n='FreeMB';e={[math]::Round\\($_.Free/1MB,0\\)}})",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' status --short; & 'D:\\\\Git\\\\cmd\\\\git.exe' log --oneline -3)",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' diff --stat; & 'D:\\\\Git\\\\cmd\\\\git.exe' remote -v)",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' diff -- src/lib/server/discord-api.ts src/lib/utils/site-settings.ts src/components/admin/settings-form.tsx | Select-Object -First 160)",
+      "PowerShell($env:NODE_OPTIONS=\"--max-old-space-size=8192\"; npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -Last 30)",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\122cf52a-0bed-45b3-915c-2b1493091804\\\\scratchpad\\\\commitmsg.txt\" | Select-Object -Last 5)"
     ]
   }
 }

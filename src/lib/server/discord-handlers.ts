@@ -5,7 +5,7 @@ import {
   addThreadMember,
   archiveThread,
   createPrivateThread,
-  discordEnv,
+  discordIds,
   editChannelMessage,
   sendChannelMessage,
 } from "@/lib/server/discord-api";
@@ -511,7 +511,8 @@ async function openTicket(
   subject: string,
   detail: string,
 ): Promise<InteractionResponse> {
-  const channelId = discordEnv.ticketChannelId || i.channel_id || "";
+  const ids = await discordIds();
+  const channelId = ids.ticketChannelId || i.channel_id || "";
   if (!channelId) return text("Chưa cấu hình kênh ticket, báo admin giúp nhé.", BRAND.red);
 
   const t = TICKET_TOPICS.find((x) => x.value === topic) ?? TICKET_TOPICS[TICKET_TOPICS.length - 1];
@@ -540,10 +541,10 @@ async function openTicket(
   }
 
   await sendChannelMessage(thread.id, {
-    content: discordEnv.staffRoleId ? `<@${actor.id}> <@&${discordEnv.staffRoleId}>` : `<@${actor.id}>`,
+    content: ids.staffRoleId ? `<@${actor.id}> <@&${ids.staffRoleId}>` : `<@${actor.id}>`,
     allowed_mentions: {
       users: [actor.id],
-      ...(discordEnv.staffRoleId ? { roles: [discordEnv.staffRoleId] } : {}),
+      ...(ids.staffRoleId ? { roles: [ids.staffRoleId] } : {}),
     },
     embeds: [
       embed({

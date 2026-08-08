@@ -2,8 +2,9 @@ name: Nộp Arex Hub lên TestFlight
 
 # Chạy TAY thôi (mỗi lần chạy là tốn 1 số build trên App Store Connect).
 #
-# Cần 4 secret — xem hướng dẫn lấy ở cuối file:
+# Cần 5 secret — xem hướng dẫn lấy ở cuối file:
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64, IOS_TEAM_ID
+#   GOOGLE_SERVICE_INFO_PLIST (nội dung file Firebase, bundle site.arexnetwork.hub)
 #
 # Dùng App Store Connect API Key thay cho .p12 + .mobileprovision: xcodebuild
 # tự xin chứng chỉ và profile qua `-allowProvisioningUpdates`, đỡ phải xuất tay
@@ -38,12 +39,14 @@ jobs:
           ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           KEY_P8: ${{ secrets.ASC_KEY_P8_BASE64 }}
           TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: |
           missing=""
           [ -z "$KEY_ID" ]    && missing="$missing ASC_KEY_ID"
           [ -z "$ISSUER_ID" ] && missing="$missing ASC_ISSUER_ID"
           [ -z "$KEY_P8" ]    && missing="$missing ASC_KEY_P8_BASE64"
           [ -z "$TEAM_ID" ]   && missing="$missing IOS_TEAM_ID"
+          [ -z "$PLIST" ]     && missing="$missing GOOGLE_SERVICE_INFO_PLIST"
           if [ -n "$missing" ]; then
             echo "::error::Thiếu secret:$missing — xem chú thích cuối file workflow"
             exit 1
@@ -60,6 +63,26 @@ jobs:
 
       - name: Đồng bộ Capacitor
         run: npx cap sync ios
+
+      # Giống hub-ios.yml: file bị .gitignore chặn nhưng pbxproj vẫn khai trong
+      # Resources → dựng lại từ secret GOOGLE_SERVICE_INFO_PLIST, nếu không
+      # xcodebuild dừng với "Build input file cannot be found".
+      - name: Ghi GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "::error::Thiếu secret GOOGLE_SERVICE_INFO_PLIST — không build được iOS."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > ios/App/App/GoogleService-Info.plist
+          plutil -lint ios/App/App/GoogleService-Info.plist \
+            || { echo "::error::Secret GOOGLE_SERVICE_INFO_PLIST không phải plist hợp lệ."; exit 1; }
+          BUNDLE=$(plutil -extract BUNDLE_ID raw ios/App/App/GoogleService-Info.plist)
+          if [ "$BUNDLE" != "site.arexnetwork.hub" ]; then
+            echo "::error::Plist khai BUNDLE_ID=$BUNDLE, phải là site.arexnetwork.hub — tải nhầm app trong Firebase Console."
+            exit 1
+          fi
 
       # altool tự tìm khoá ở ~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8
       - name: Nạp khoá App Store Connect

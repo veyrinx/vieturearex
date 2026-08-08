@@ -1,4 +1,5 @@
 import "server-only";
+import { getSettings } from "@/lib/data/content-service";
 import type { MessagePayload } from "@/lib/server/discord-ui";
 
 /**
@@ -64,6 +65,50 @@ export const discordEnv = {
 
 export function hasDiscordBot(): boolean {
   return !!discordEnv.token;
+}
+
+// ── ID kênh & role: sửa được trong /admin/settings ─────────────────────────
+// Token/App ID/Public Key là bí mật nên chỉ nằm ở biến môi trường. Còn ID kênh
+// và role thì không bí mật mà lại hay đổi (lập kênh mới, tách role), nên đọc từ
+// settings trước — admin đổi kênh không cần deploy lại. Ô nào để trống thì rơi
+// về biến môi trường cũ, cấu hình sẵn có không vỡ.
+
+const DISCORD_ID_KEYS = {
+  guildId:         "integrations.discord_guild_id",
+  shopChannelId:   "integrations.discord_shop_channel_id",
+  staffChannelId:  "integrations.discord_staff_channel_id",
+  ticketChannelId: "integrations.discord_ticket_channel_id",
+  eventChannelId:  "integrations.discord_event_channel_id",
+  agentRoleId:     "integrations.discord_agent_role_id",
+  linkedRoleId:    "integrations.discord_linked_role_id",
+  sellerRoleId:    "integrations.discord_seller_role_id",
+  staffRoleId:     "integrations.discord_staff_role_id",
+} as const;
+
+export type DiscordIdKey = keyof typeof DISCORD_ID_KEYS;
+export type DiscordIds = Record<DiscordIdKey, string>;
+
+/** Danh sách key settings để trang admin render đúng ô. */
+export const DISCORD_ID_SETTING_KEYS = Object.values(DISCORD_ID_KEYS);
+
+/**
+ * ID kênh/role hiện hành. `getSettings` được bọc `cache()` nên gọi nhiều lần
+ * trong một request không tốn thêm truy vấn.
+ */
+export async function discordIds(): Promise<DiscordIds> {
+  let settings: Awaited<ReturnType<typeof getSettings>> = [];
+  try {
+    settings = await getSettings();
+  } catch {
+    // DB lỗi thì vẫn chạy được bằng env — Discord không được chặn nghiệp vụ.
+  }
+
+  const entries = Object.entries(DISCORD_ID_KEYS) as Array<[DiscordIdKey, string]>;
+  const out = {} as DiscordIds;
+  for (const [field, settingKey] of entries) {
+    out[field] = settings.find((s) => s.key === settingKey)?.value?.trim() || discordEnv[field];
+  }
+  return out;
 }
 
 type RestResult<T> = T | null;

@@ -3,7 +3,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { createNotifications } from "@/lib/server/notifications";
 import { sendPushToUsers } from "@/lib/server/push-notify";
-import { discordEnv, sendChannelMessage, sendDirectMessage } from "@/lib/server/discord-api";
+import { discordIds, sendChannelMessage, sendDirectMessage } from "@/lib/server/discord-api";
 import { getDiscordIdsForUsers } from "@/lib/server/discord-link";
 import {
   BRAND,
@@ -102,6 +102,7 @@ async function fanOut(input: SendInput): Promise<void> {
   if (input.exceptUserId) targets.delete(input.exceptUserId);
 
   const userIds = [...targets];
+  const ids = await discordIds();
 
   await Promise.allSettled([
     createNotifications(
@@ -133,11 +134,11 @@ async function fanOut(input: SendInput): Promise<void> {
       components: [row(linkButton("Mở đơn trên web", url, "🔗"))],
     }),
     to.includes("staff")
-      ? sendChannelMessage(discordEnv.staffChannelId, {
-          ...(input.pingAgents && discordEnv.agentRoleId
+      ? sendChannelMessage(ids.staffChannelId, {
+          ...(input.pingAgents && ids.agentRoleId
             ? {
-                content: `<@&${discordEnv.agentRoleId}>`,
-                allowed_mentions: { roles: [discordEnv.agentRoleId] },
+                content: `<@&${ids.agentRoleId}>`,
+                allowed_mentions: { roles: [ids.agentRoleId] },
               }
             : {}),
           embeds: [input.staffEmbed ?? defaultStaffEmbed(order, title, body)],
@@ -279,6 +280,7 @@ export async function notifyListingApproved(listing: ShopListing): Promise<void>
   try {
     const url = `${SITE_URL}/shop/${listing.id}`;
     const seller = await getSellerById(listing.seller_id).catch(() => null);
+    const ids = await discordIds();
 
     const listingEmbed = embed({
       title: listing.title,
@@ -319,7 +321,7 @@ export async function notifyListingApproved(listing: ShopListing): Promise<void>
             },
           ])
         : Promise.resolve(),
-      sendChannelMessage(discordEnv.shopChannelId, {
+      sendChannelMessage(ids.shopChannelId, {
         embeds: [listingEmbed],
         components: [
           row(

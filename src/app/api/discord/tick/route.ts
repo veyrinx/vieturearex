@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { endGiveaway } from "@/lib/server/discord-handlers";
-import { discordEnv, sendChannelMessage } from "@/lib/server/discord-api";
+import { discordIds, sendChannelMessage } from "@/lib/server/discord-api";
 import { BRAND, SITE_URL, discordTime, embed, linkButton, row } from "@/lib/server/discord-ui";
 
 /**
@@ -67,7 +67,7 @@ type EventRow = {
 
 async function tickEvents(): Promise<number> {
   const db = createAdminSupabaseClient();
-  const channelId = discordEnv.eventChannelId;
+  const channelId = (await discordIds()).eventChannelId;
   if (!db || !channelId) return 0;
 
   const now = Date.now();

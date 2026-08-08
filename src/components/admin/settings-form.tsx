@@ -1243,6 +1243,47 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
 
         <Card>
           <div className="py-4">
+            <SectionHeader
+              icon={Plug}
+              title="Discord Bot — ID kênh & role"
+              desc="Bot token/App ID nằm ở biến môi trường. Còn ID từng kênh và role thì sửa ở đây, không cần deploy lại"
+            />
+          </div>
+
+          <div className="mb-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              <span className="font-bold">Lấy ID:</span> bật Discord → Cài đặt → Nâng cao → Chế độ nhà phát triển,
+              rồi chuột phải vào kênh/role → &ldquo;Sao chép ID&rdquo;. Ô nào để trống sẽ dùng biến môi trường
+              <span className="font-mono"> DISCORD_*</span> như trước.
+            </p>
+          </div>
+
+          {[
+            { key: "integrations.discord_guild_id",           label: "Guild ID (server)",   hint: "Server Discord của Arex — bắt buộc để gán role" },
+            { key: "integrations.discord_shop_channel_id",    label: "Kênh chợ",            hint: "Đăng tin chợ vừa được duyệt" },
+            { key: "integrations.discord_staff_channel_id",   label: "Kênh nội bộ",         hint: "Đơn mới, tranh chấp, cảnh báo" },
+            { key: "integrations.discord_ticket_channel_id",  label: "Kênh ticket",         hint: "Nơi đặt bảng mở phòng hỗ trợ" },
+            { key: "integrations.discord_event_channel_id",   label: "Kênh sự kiện",        hint: "Nhắc sự kiện Free Fire sắp diễn ra" },
+            { key: "integrations.discord_agent_role_id",      label: "Role giao dịch viên", hint: "Được ping khi có đơn chờ nhận" },
+            { key: "integrations.discord_linked_role_id",     label: "Role đã liên kết",    hint: "Gán cho người đã nối tài khoản site" },
+            { key: "integrations.discord_seller_role_id",     label: "Role người bán",      hint: "Gán cho người bán đã được duyệt" },
+            { key: "integrations.discord_staff_role_id",      label: "Role quản trị",       hint: "Được ping trong phòng ticket" },
+          ].map(({ key, label, hint }) => (
+            <Field key={key} label={label} hint={hint} icon={Plug}>
+              <Input
+                value={v(key)}
+                onChange={(e) => set(key, e.target.value.replace(/\D/g, ""))}
+                placeholder="1234567890123456789"
+                inputMode="numeric"
+                maxLength={20}
+                className="font-mono text-xs max-w-64"
+              />
+            </Field>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="py-4">
             <SectionHeader icon={Plug} title="Lark / Feishu" desc="Webhook bot Lark — báo gia nhập team, báo cáo ngày, cảnh báo bảo mật" />
           </div>
           <Field label="Tên bot (hiển thị nội bộ)" hint="VD: Arex-Notifier" icon={Plug}>
