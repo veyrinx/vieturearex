@@ -40,16 +40,21 @@ const DEVICES: { key: DeviceTier; label: string; desc: string }[] = [
 
 // ── Thông số nền theo phong cách ───────────────────────────────────
 // [general, redDot, x2, x4, sniper, freeLook]
-const BASE: Record<PlayStyle, { s: number[]; dpi: number }> = {
-  rusher:   { s: [200, 190, 175, 150, 120, 200], dpi: 480 },
-  balanced: { s: [175, 165, 150, 125, 105, 180], dpi: 430 },
-  sniper:   { s: [150, 140, 130, 112, 95, 160],  dpi: 400 },
-  beginner: { s: [135, 125, 112, 98, 82, 145],   dpi: 360 },
+// fireButton: Nút bắn kích thước từ 41 đến 100%
+const BASE: Record<PlayStyle, { s: number[]; dpi: number; fireButton: number }> = {
+  rusher:   { s: [200, 190, 175, 150, 120, 200], dpi: 480, fireButton: 46 },
+  balanced: { s: [175, 165, 150, 125, 105, 180], dpi: 430, fireButton: 52 },
+  sniper:   { s: [150, 140, 130, 112, 95, 160],  dpi: 400, fireButton: 60 },
+  beginner: { s: [135, 125, 112, 98, 82, 145],   dpi: 360, fireButton: 65 },
 };
 
 const FINGER_MOD: Record<Fingers, number> = { 2: 0.85, 3: 0.95, 4: 1.05, 5: 1.12 };
 const DEVICE_MOD: Record<DeviceTier, number> = { entry: 0.9, mid: 1.0, flagship: 1.08 };
 const DEVICE_DPI: Record<DeviceTier, number> = { entry: 0.82, mid: 1.0, flagship: 1.12 };
+
+// Kích thước nút bắn điều chỉnh theo số ngón (ngón nhiều -> nút gọn hơn)
+const FINGER_FIRE_MOD: Record<Fingers, number> = { 2: 1.15, 3: 1.05, 4: 0.95, 5: 0.90 };
+const DEVICE_FIRE_MOD: Record<DeviceTier, number> = { entry: 1.10, mid: 1.0, flagship: 0.95 };
 
 const FIELDS = [
   { key: "general",  label: "Chung",        short: "Tổng thể" },
@@ -62,14 +67,16 @@ const FIELDS = [
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-type Result = { values: number[]; dpi: number };
+type Result = { values: number[]; dpi: number; fireButton: number };
 
 function compute(style: PlayStyle, fingers: Fingers, device: DeviceTier, intensity: number): Result {
   const base = BASE[style];
   const mod = FINGER_MOD[fingers] * DEVICE_MOD[device] * (1 + intensity / 100);
   const values = base.s.map((v) => clamp(Math.round(v * mod), 0, 200));
   const dpi = clamp(Math.round(base.dpi * DEVICE_DPI[device] * (1 + intensity / 200)), 200, 800);
-  return { values, dpi };
+  const fireMod = FINGER_FIRE_MOD[fingers] * DEVICE_FIRE_MOD[device] * (1 - intensity / 300);
+  const fireButton = clamp(Math.round(base.fireButton * fireMod), 41, 100);
+  return { values, dpi, fireButton };
 }
 
 const PRESETS: { name: string; style: PlayStyle; fingers: Fingers; device: DeviceTier }[] = [
@@ -281,7 +288,7 @@ export function SensitivityTool() {
 
   const handleCopy = async () => {
     const lines = FIELDS.map((f, i) => `${f.label}: ${result.values[i]}`).join("\n");
-    const text = `⚙️ Độ nhạy Free Fire (Arex)\n${lines}\nDPI đề xuất: ${result.dpi}`;
+    const text = `⚙️ Độ nhạy Free Fire (Arex)\n${lines}\nNút bắn đề xuất: ${result.fireButton}%\nDPI đề xuất: ${result.dpi}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -515,13 +522,22 @@ export function SensitivityTool() {
               <ValueBar key={f.key} label={f.label} short={f.short} value={result.values[i]} />
             ))}
 
-            {/* DPI */}
-            <div className="mt-4 flex items-center justify-between rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-3">
-              <div>
-                <p className="text-sm font-bold text-foreground">DPI đề xuất</p>
-                <p className="text-[11px] text-muted-foreground">Cài trong phần cài đặt máy</p>
+            {/* Nút bắn & DPI */}
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-between rounded-2xl border border-dashed border-border bg-muted/30 px-3.5 py-3">
+                <div>
+                  <p className="text-xs font-bold text-foreground">Nút bắn</p>
+                  <p className="text-[10px] text-muted-foreground">Kích cỡ đề xuất</p>
+                </div>
+                <span className="font-heading text-xl font-black text-primary dark:text-amber-400">{result.fireButton}%</span>
               </div>
-              <span className="font-heading text-2xl font-black text-primary dark:text-amber-400">{result.dpi}</span>
+              <div className="flex items-center justify-between rounded-2xl border border-dashed border-border bg-muted/30 px-3.5 py-3">
+                <div>
+                  <p className="text-xs font-bold text-foreground">DPI đề xuất</p>
+                  <p className="text-[10px] text-muted-foreground">Cài đặt máy</p>
+                </div>
+                <span className="font-heading text-xl font-black text-primary dark:text-amber-400">{result.dpi}</span>
+              </div>
             </div>
           </div>
 

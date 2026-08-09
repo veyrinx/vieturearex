@@ -14,10 +14,12 @@ import {
   Swords,
   Trophy,
   Users,
+  Phone,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 
-export type ToolBadge = "MỚI" | "HOT";
+export type ToolBadge = "MỚI" | "HOT" | "BẢO TRÌ";
 
 export type ToolCategory = "tra-cuu" | "tinh-toan" | "meta" | "tien-ich";
 
@@ -57,6 +59,32 @@ export type Tool = {
  * Sửa ở đây, cả hai nơi cùng cập nhật.
  */
 export const TOOLS: Tool[] = [
+  {
+    href: "/check-scam",
+    category: "tra-cuu",
+    keywords: ["check scam", "lừa đảo", "tố cáo", "kiểm tra stk", "sđt lừa đảo", "checkscam"],
+    title: "Check Scam — Kiểm Tra Lừa Đảo",
+    desc: "Tính năng đang trong quá trình nâng cấp và bảo trì hệ thống. Vui lòng quay lại sau!",
+    icon: ShieldAlert,
+    accent: "text-rose-500 bg-rose-500/10",
+    gradient: "from-rose-600 to-pink-600",
+    featured: true,
+    shortDesc: "[BẢO TRÌ] Tra cứu tố cáo scam, STK & SĐT lừa đảo.",
+    badge: "BẢO TRÌ",
+  },
+  {
+    href: "/phone-lookup",
+    category: "tra-cuu",
+    keywords: ["phone", "sđt", "điện thoại", "tra cứu số", "phone lookup", "quốc tế"],
+    title: "Phone Lookup VietNam",
+    desc: "Tra cứu số điện thoại Việt Nam (đầu 84): nhà mạng, định dạng quốc tế, loại số, UID & dữ liệu RAW.",
+    icon: Phone,
+    accent: "text-cyan-500 bg-cyan-500/10",
+    gradient: "from-cyan-500 to-teal-500",
+    featured: true,
+    shortDesc: "Tra cứu SĐT Việt Nam (đầu 84) + dữ liệu RAW.",
+    badge: "MỚI",
+  },
   {
     href: "/player-lookup",
     category: "tra-cuu",

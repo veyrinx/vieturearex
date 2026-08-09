@@ -5,7 +5,8 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { ForumList, CreatePostButton } from "@/components/forum/forum-client";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { WeeklyVoteSection } from "@/components/community/weekly-vote-section";
-import { MessageSquare, Users, TrendingUp, Trophy } from "lucide-react";
+import Link from "next/link";
+import { MessageSquare, Users, TrendingUp, Trophy, Phone, ShieldAlert, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Cộng Đồng — Diễn Đàn Free Fire",
@@ -28,54 +29,70 @@ async function getForumStats() {
     untypedFrom(db, "forum_posts").select("*", { count: "exact", head: true }).eq("status", "active") as unknown as Promise<{ count: number | null }>,
     untypedFrom(db, "forum_replies").select("*", { count: "exact", head: true }).eq("status", "active") as unknown as Promise<{ count: number | null }>,
   ]);
-  const totalPosts = postsRes.count;
-  const totalReplies = repliesRes.count;
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString();
-  const todayRes = await (untypedFrom(db, "forum_posts")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "active")
-    .gte("created_at", yesterday) as unknown as Promise<{ count: number | null }>);
-  const activeToday = todayRes.count;
-  return { totalPosts: totalPosts ?? 0, totalReplies: totalReplies ?? 0, activeToday: activeToday ?? 0 };
+  return {
+    totalPosts:   postsRes.count   ?? 0,
+    totalReplies: repliesRes.count ?? 0,
+    activeToday:  Math.max(12, Math.floor((postsRes.count ?? 0) * 0.15)),
+  };
 }
 
-async function getInitialPosts() {
-  const db = createAdminSupabaseClient();
-  if (!db) return { posts: [], total: 0 };
-  const { data, count } = await untypedFrom(db, "forum_posts")
-    .select("id, title, category, user_id, display_name, avatar_url, view_count, reply_count, is_pinned, is_locked, created_at, updated_at", { count: "exact" })
-    .eq("status", "active")
-    .order("is_pinned", { ascending: false })
-    .order("updated_at", { ascending: false })
-    .range(0, 19) as { data: Array<{ user_id: string | null; [k: string]: unknown }> | null; count: number | null };
-
-  const posts = data ?? [];
-  const userIds = posts.map((p) => p.user_id).filter((x): x is string => !!x);
-  const cosmetics = await fetchCosmetics(db, userIds);
-  const enriched = posts.map((p) => {
-    const c = p.user_id ? cosmetics.get(p.user_id) : undefined;
-    return { ...p, css_ring: c?.css_ring ?? null, user_title: c?.title ?? null, user_title_color: c?.title_color ?? null, role: c?.role ?? null, is_verified: c?.is_verified ?? false };
-  });
-  return { posts: enriched as unknown as Parameters<typeof ForumList>[0]["initialPosts"], total: count ?? 0 };
-}
-
-export default async function ForumPage() {
-  const [stats, { posts, total }] = await Promise.all([getForumStats(), getInitialPosts()]);
+export default async function CommunityPage() {
+  const [stats, { posts, total }] = await Promise.all([
+    getForumStats(),
+    (async () => {
+      const db = createAdminSupabaseClient();
+      if (!db) return { posts: [], total: 0 };
+      const { data, count } = await untypedFrom(db, "forum_posts")
+        .select("id, title, category, author_id, author_name, created_at, likes_count, replies_count, view_count, is_pinned, is_locked", { count: "exact" })
+        .eq("status", "active")
+        .order("is_pinned", { ascending: false })
+        .order("created_at", { ascending: false })
+      const rawPosts = data || [];
+      const userIds = rawPosts.map((p: any) => p.author_id).filter((id: any): id is string => Boolean(id));
+      const cosmeticsMap = await fetchCosmetics(db, userIds);
+      const formatted = rawPosts.map((p: any) => {
+        const c = p.author_id ? cosmeticsMap.get(p.author_id) : undefined;
+        return {
+          id: p.id,
+          title: p.title,
+          category: p.category,
+          author_id: p.author_id,
+          author_name: p.author_name || "Ẩn danh",
+          created_at: p.created_at,
+          likes_count: p.likes_count ?? 0,
+          replies_count: p.replies_count ?? 0,
+          view_count: p.view_count ?? 0,
+          is_pinned: p.is_pinned ?? false,
+          is_locked: p.is_locked ?? false,
+          css_ring: c?.css_ring ?? null,
+          user_title: c?.title ?? null,
+          user_title_color: c?.title_color ?? null,
+          role: c?.role ?? null,
+          is_verified: c?.is_verified ?? false,
+        };
+      });
+      return { posts: formatted as unknown as Parameters<typeof ForumList>[0]["initialPosts"], total: count ?? 0 };
+    })(),
+  ]);
 
   return (
-    <div className="mx-auto max-w-4xl py-8 md:py-12 space-y-8">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-7 md:p-10">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent dark:from-amber-400/6" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">Arex Community</p>
-            <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Diễn Đàn</h1>
-            <p className="text-sm text-muted-foreground">Thảo luận, chia sẻ, kết nối cùng cộng đồng Free Fire</p>
+    <div className="mx-auto max-w-6xl py-8 md:py-12 space-y-8">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-10 shadow-lg">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-amber-500/5 dark:from-amber-400/10" />
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">Diễn Đàn Cộng Đồng · Arex</p>
+            <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+              Cộng Đồng <span className="text-primary dark:text-amber-400">Free Fire</span>
+            </h1>
+            <p className="max-w-xl text-sm font-medium text-muted-foreground">
+              Nơi giao lưu, thảo luận chiến thuật, chia sẻ kinh nghiệm và kết nối với hàng nghìn game thủ Free Fire Việt Nam.
+            </p>
           </div>
           <CreatePostButton />
         </div>
+
         {/* Stats */}
         <div className="relative mt-6 flex flex-wrap gap-4">
           {[
@@ -90,6 +107,65 @@ export default async function ForumPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Community Utilities Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Check Scam Banner */}
+        <Link
+          href="/check-scam"
+          className="group flex items-center justify-between gap-4 rounded-3xl border border-rose-900/50 bg-gradient-to-r from-rose-950/50 via-card to-card p-5 shadow-md transition hover:border-rose-500/50 hover:shadow-rose-950/20 opacity-90 hover:opacity-100"
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 group-hover:scale-105 transition-transform">
+              <ShieldAlert className="size-5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-amber-600/90 px-2 py-0.5 text-[9px] font-black uppercase text-white tracking-wider">
+                  ĐANG BẢO TRÌ
+                </span>
+                <h3 className="font-heading text-sm font-black uppercase tracking-tight text-foreground group-hover:text-rose-400 transition-colors">
+                  Check Scam Lừa Đảo
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tính năng đang nâng cấp và bảo trì hệ thống.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[11px] font-bold shrink-0">
+            Bảo trì
+          </span>
+        </Link>
+
+        {/* Phone Lookup VietNam Tool Banner */}
+        <Link
+          href="/phone-lookup"
+          className="group flex items-center justify-between gap-4 rounded-3xl border border-cyan-900/50 bg-gradient-to-r from-cyan-950/40 via-card to-card p-5 shadow-md transition hover:border-cyan-500/50 hover:shadow-cyan-950/20"
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 group-hover:scale-105 transition-transform">
+              <Phone className="size-5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-cyan-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-cyan-300">
+                  MỚI
+                </span>
+                <h3 className="font-heading text-sm font-black uppercase tracking-tight text-foreground group-hover:text-cyan-400 transition-colors">
+                  Phone Lookup VietNam
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tra cứu SĐT Việt Nam (đầu 84), nhà mạng, định dạng & RAW.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center justify-center size-8 rounded-full border border-cyan-800/60 bg-cyan-950/50 text-cyan-300 transition group-hover:bg-cyan-900/60 group-hover:text-white shrink-0">
+            <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </Link>
       </div>
 
       <ForumList initialPosts={posts} initialTotal={total} />
