@@ -1,32 +1,22 @@
 import { NewsTicker } from "@/components/home/news-ticker";
-import { StatsBar } from "@/components/home/stats-bar";
 import type { NewsItem } from "@/lib/types/content";
 
 type PulseBarProps = {
   news: NewsItem[];
-  newsCount: number;
-  galleryCount: number;
-  toolCount?: number;
 };
 
 /**
- * Dải "nhịp" ngay dưới hero: chữ chạy tin mới + lưới chỉ số, dính liền nhau
- * thành một khối duy nhất.
+ * Dải "nhịp" ngay dưới hero: chữ chạy tin mới, tràn hết bề ngang màn hình.
  *
- * Trước đây hai thứ này là hai section rời, mỗi cái tự kéo full-bleed và có
- * khoảng trống ở giữa, nên đọc như hai lần "bắt đầu lại". Gộp lại thì phần mở
- * đầu trang chỉ còn một điểm dừng, và các section nội dung phía dưới mới là
- * chuỗi nhịp thật sự.
+ * Trước đây khối này còn gánh thêm lưới chỉ số (StatsBar) bên dưới ticker; lưới
+ * đó đã được gỡ khỏi trang chủ. Giữ lại lớp bọc này chứ không nhập thẳng
+ * NewsTicker vào trang: full-bleed nằm ở đây, còn NewsTicker cố ý chỉ dựng phần
+ * nội dung — tách vậy để không chỗ nào phải tự tính lại mẹo `w-screen`.
  */
-export function PulseBar({ news, newsCount, galleryCount, toolCount }: PulseBarProps) {
+export function PulseBar({ news }: PulseBarProps) {
   return (
     <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden">
       <NewsTicker news={news} />
-      <StatsBar
-        newsCount={newsCount}
-        galleryCount={galleryCount}
-        toolCount={toolCount}
-      />
     </div>
   );
 }

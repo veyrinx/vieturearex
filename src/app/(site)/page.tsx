@@ -9,7 +9,6 @@ import { PulseBar } from "@/components/home/pulse-bar";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
 import { CommunityHighlights } from "@/components/common/community-highlights";
 import { ArticleAd } from "@/components/common/article-ad";
-import { TOOLS } from "@/lib/constants/tools";
 import {
   getEvents,
   getGalleryItems,
@@ -156,13 +155,8 @@ export default async function HomePage() {
       {/* Không đặt overflow-x-clip ở đây: nó sẽ cắt mất phần tràn mép của các
           dải full-bleed bên trong. Việc chặn tràn ngang do html lo (globals.css). */}
       <div className="home-rhythm pt-12 md:pt-16">
-        {/* ① Nhịp: tin mới chạy + chỉ số cộng đồng, dính liền thành một dải */}
-        <PulseBar
-          news={tickerNews}
-          newsCount={news.length}
-          galleryCount={gallery.length}
-          toolCount={TOOLS.length}
-        />
+        {/* ① Nhịp: dải tin mới chạy */}
+        <PulseBar news={tickerNews} />
 
         {/* Quảng cáo đặt ở ranh giới giữa hai khối, không cắt ngang nội dung
             (Google AdSense — slot Header) */}
