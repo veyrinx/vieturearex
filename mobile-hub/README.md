@@ -193,7 +193,7 @@ bản phát hành app, nhật ký hoạt động. Giao diện tự ẩn thao tá
    | Nền tảng | File | Đặt ở đâu | Secret cho CI | Thiếu thì sao |
    |---|---|---|---|---|
    | Android | `google-services.json` | `android/app/` | `GOOGLE_SERVICES_JSON` | Không build được |
-   | iOS | `GoogleService-Info.plist` | `ios/App/App/` | `GOOGLE_SERVICE_INFO_PLIST` | Không build được |
+   | iOS | `GoogleService-Info.plist` | `ios/App/App/` | — (build tay) | Không build được |
 
    Lấy file: Firebase Console → Project settings → **Your apps** → thêm app với
    bundle id `site.arexnetwork.hub` (đúng id này, khác app Arex Network — app
@@ -201,8 +201,12 @@ bản phát hành app, nhật ký hoạt động. Giao diện tự ẩn thao tá
    được) → tải file cấu hình về. Cả hai file đã được khai sẵn trong dự án nên
    **chỉ cần thả đúng thư mục**, không phải kéo thả trong Xcode.
 
-   Secret cho CI dán **nguyên nội dung** file (không base64). Workflow iOS kiểm
-   `BUNDLE_ID` trong plist, khai sai bundle là dừng ngay.
+   Secret cho CI dán **nguyên nội dung** file (không base64).
+
+   iOS **không còn workflow CI** (`hub-ios.yml` và `hub-testflight.yml` đã gỡ vì
+   secret `GOOGLE_SERVICE_INFO_PLIST` chưa bao giờ được tạo nên chạy lần nào đỏ
+   lần đó). Muốn dựng bản iOS thì thả plist vào `ios/App/App/` rồi build tay
+   bằng Xcode. Android vẫn build qua `hub-android.yml` như cũ.
 
    Riêng iOS còn cần thêm, làm một lần trong Apple Developer + Firebase:
    - Tạo **APNs Authentication Key** (`.p8`) ở Apple Developer → Keys, tải lên
