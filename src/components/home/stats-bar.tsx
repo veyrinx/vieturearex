@@ -64,25 +64,22 @@ export function StatsBar({ eventCount, newsCount, galleryCount, memberCount, too
   ];
 
   return (
-    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2">
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-amber-400/5 dark:via-amber-400/8 dark:to-amber-400/5" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent dark:via-amber-400/20" />
+    // Full-bleed do <PulseBar> bọc ngoài lo — ở đây chỉ dựng lưới chỉ số.
+    <div className="relative bg-primary/[0.04]">
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-4">
         {stats.map((stat, i) => (
           <div
             key={i}
-            className="group relative flex flex-col items-center justify-center gap-1.5 px-4 py-6 text-center"
+            className="group relative flex flex-col items-center justify-center gap-1 px-4 py-6 text-center"
           >
-            {/* Vertical divider */}
+            {/* Vạch ngăn dọc giữa các ô */}
             {i > 0 && (
               <div className="absolute inset-y-4 left-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
             )}
 
-            {/* Icon with pill bg */}
-            <div className="mb-1 flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 group-hover:bg-primary/15 group-hover:scale-110 dark:bg-amber-400/10 dark:text-amber-400 dark:group-hover:bg-amber-400/15">
+            <div className="mb-1 flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               {stat.icon}
             </div>
 

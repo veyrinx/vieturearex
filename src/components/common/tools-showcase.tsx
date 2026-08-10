@@ -85,7 +85,7 @@ export function ToolsShowcase() {
               onClick={() => scrollBy(-1)}
               disabled={!canPrev}
               aria-label="Cuộn về trước"
-              className="flex size-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-amber-400"
+              className="flex size-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -94,14 +94,14 @@ export function ToolsShowcase() {
               onClick={() => scrollBy(1)}
               disabled={!canNext}
               aria-label="Cuộn tiếp"
-              className="flex size-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-amber-400"
+              className="flex size-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ChevronRight className="size-4" />
             </button>
           </div>
           <Link
             href="/tools"
-            className="group inline-flex shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary dark:hover:text-amber-400"
+            className="group inline-flex shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
           >
             Tất cả
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -127,7 +127,11 @@ export function ToolsShowcase() {
             >
               <div
                 className={cn(
-                  "absolute -right-8 -top-8 size-24 rounded-full bg-gradient-to-br opacity-20 blur-2xl transition-all duration-500 group-hover:scale-[2.5]",
+                  // Phóng to 2.5× một khối đã `blur-2xl` khiến trình duyệt dựng
+                  // lại lớp mờ suốt nửa giây mỗi lần rê chuột qua thẻ — với
+                  // hàng cuộn ngang thì đó là liên tục. Đổi độ đậm thay vì đổi
+                  // kích thước cho cùng cảm giác "sáng lên" mà không vẽ lại.
+                  "absolute -right-8 -top-8 size-24 rounded-full bg-gradient-to-br opacity-20 blur-2xl transition-opacity duration-500 group-hover:opacity-40",
                   tool.gradient,
                 )}
               />
@@ -152,7 +156,7 @@ export function ToolsShowcase() {
                 </div>
                 <p className="font-bold text-foreground">{tool.title}</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{tool.shortDesc ?? tool.desc}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
+                <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors group-hover:text-primary">
                   Mở
                   <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
                 </span>
@@ -173,7 +177,7 @@ export function ToolsShowcase() {
             className={cn(
               "h-1.5 rounded-full transition-all",
               i === activeIndex
-                ? "w-5 bg-primary dark:bg-amber-400"
+                ? "w-5 bg-primary"
                 : "w-1.5 bg-muted-foreground/30",
             )}
           />

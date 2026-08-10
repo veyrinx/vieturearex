@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { CalendarDays, ArrowRight, ExternalLink, Pencil, Trash2, Plus, User } from "lucide-react";
@@ -33,8 +32,8 @@ const TABS: { value: FilterTab; label: string }[] = [
 ];
 
 const statusBorderMap: Record<string, string> = {
-  upcoming: "border-[#4CAF50] shadow-[0_0_0_1px_rgba(76,175,80,0.3),0_8px_32px_rgba(76,175,80,0.18)]",
-  active: "border-[#ff9800] shadow-[0_0_0_1px_rgba(255,152,0,0.35),0_8px_32px_rgba(255,152,0,0.22)]",
+  upcoming: "border-upcoming shadow-[0_0_0_1px_hsl(var(--upcoming)/0.3),0_8px_32px_hsl(var(--upcoming)/0.18)]",
+  active: "border-live shadow-[0_0_0_1px_hsl(var(--live)/0.35),0_8px_32px_hsl(var(--live)/0.22)]",
   expired: "border-border/60",
 };
 
@@ -92,18 +91,19 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
 
   return (
     <section className="relative space-y-6">
-      {/* Aurora nền động — dải màu xoay chậm phía sau khu sự kiện */}
-      <motion.div
+      {/* Aurora nền động — dải màu xoay chậm phía sau khu sự kiện.
+          Bản cũ xoay một khối `blur(120px)` bằng framer-motion: mỗi khung hình
+          trình duyệt phải dựng lại lớp mờ cỡ vài trăm nghìn điểm ảnh, liên tục
+          suốt thời gian trang mở, kể cả khi khu này đã cuộn khuất. Nay dùng
+          mask radial để làm mềm mép (không filter) và xoay bằng keyframes CSS.
+          `contain: paint` chốt vùng vẽ lại để nó không lan ra ngoài. */}
+      <div
         aria-hidden
-        className="pointer-events-none absolute -top-20 left-1/2 -z-10 h-72 w-[85%] -translate-x-1/2 rounded-full blur-[120px]"
+        className="aurora-spin pointer-events-none absolute -top-20 left-1/2 -z-10 h-72 w-[85%] rounded-full opacity-70"
         style={{
           background:
             "conic-gradient(from 0deg, rgba(255,152,0,0.16), rgba(76,175,80,0.13), rgba(77,124,255,0.16), rgba(168,85,247,0.13), rgba(255,152,0,0.16))",
-        }}
-        animate={{ rotate: 360, opacity: [0.45, 0.8, 0.45] }}
-        transition={{
-          rotate: { duration: 44, repeat: Infinity, ease: "linear" },
-          opacity: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+          contain: "paint",
         }}
       />
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -163,7 +163,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
 
       {selectedEvent && (
         <div
-          className="fixed left-0 top-0 z-40 h-screen w-screen bg-black/40 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed left-0 top-0 z-40 h-screen w-screen bg-black/55 transition-opacity duration-300"
           onClick={() => setSelectedEvent(null)}
         />
       )}
@@ -194,17 +194,18 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
             return (
               <Reveal key={event.id} delay={index * 0.07} className="relative">
                 {/* Glow nhấp nháy cho sự kiện đang diễn ra */}
+                {/* Chỉ nhấp nháy độ đậm, không phóng to: khối này có `blur-lg`
+                    nên đổi kích thước là bắt dựng lại lớp mờ mỗi khung hình,
+                    nhân với số sự kiện đang diễn ra. */}
                 {event.status === "active" && (
-                  <motion.div
+                  <div
                     aria-hidden
-                    className="pointer-events-none absolute -inset-1 -z-10 rounded-[18px] bg-[#ff9800]/25 blur-lg"
-                    animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.99, 1.01, 0.99] }}
-                    transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                    className="orb-breathe pointer-events-none absolute -inset-1 -z-10 rounded-2xl bg-live/25 blur-lg [animation-duration:2.6s]"
                   />
                 )}
                 <article
                   className={cn(
-                    "group relative flex cursor-pointer flex-col overflow-hidden rounded-[14px] border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+                    "group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
                     statusBorderMap[event.status] ?? "border-border",
                     selectedEvent && selectedEvent.id !== event.id && "opacity-50 scale-[0.98]",
                   )}
@@ -244,7 +245,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <StatusBadge
                       status={event.status}
-                      className="absolute right-0 top-0 z-30 rounded-[6px] px-[7px] py-3 text-[0.8rem] font-bold uppercase shadow-sm"
+                      className="absolute right-0 top-0 z-30 rounded-md px-[7px] py-3 text-[0.8rem] font-bold uppercase shadow-sm"
                     />
                     {event.server_region && (
                       <ServerBadge
@@ -255,7 +256,7 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                   </div>
 
                   <div className="flex flex-1 flex-col gap-2 px-4 py-3">
-                    <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 text-center leading-snug transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
+                    <h3 className="font-heading text-[0.9rem] font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 text-center leading-snug transition-colors group-hover:text-primary">
                       {event.title}
                     </h3>
 
@@ -280,11 +281,11 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                           <span>Tiến trình</span>
-                          <span className="font-bold text-[#ff9800]">{progress}%</span>
+                          <span className="font-bold text-live">{progress}%</span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60">
                           <div
-                            className="relative h-full rounded-full bg-gradient-to-r from-[#ff9800] to-[#ff5722] transition-all after:absolute after:inset-0 after:animate-pulse after:rounded-full after:bg-white/20"
+                            className="relative h-full rounded-full bg-gradient-to-r from-live to-destructive transition-all after:absolute after:inset-0 after:animate-pulse after:rounded-full after:bg-white/20"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -296,8 +297,8 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       if (daysLeft <= 0) return null;
                       return (
                         <div className="flex items-center justify-center gap-1.5">
-                          <span className="inline-block size-1.5 animate-pulse rounded-full bg-[#4CAF50]" />
-                          <p className="text-center text-[10px] font-bold uppercase tracking-[0.08em] text-[#4CAF50]">
+                          <span className="inline-block size-1.5 animate-pulse rounded-full bg-upcoming" />
+                          <p className="text-center text-[10px] font-bold uppercase tracking-[0.08em] text-upcoming">
                             Còn {daysLeft} ngày nữa
                           </p>
                         </div>
@@ -313,9 +314,9 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                         className={cn(
                           "mt-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all",
                           event.status === "active"
-                            ? "border border-[#ff9800]/40 bg-[#ff9800]/10 text-[#ff9800] hover:bg-[#ff9800]/20"
+                            ? "border border-live/40 bg-live/10 text-live hover:bg-live/20"
                             : event.status === "upcoming"
-                              ? "border border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20"
+                              ? "border border-upcoming/40 bg-upcoming/10 text-upcoming hover:bg-upcoming/20"
                               : "border border-border bg-muted/50 text-muted-foreground hover:bg-muted",
                         )}
                       >
@@ -333,9 +334,9 @@ export function FeaturedEvents({ events }: FeaturedEventsProps) {
                       className={cn(
                         "flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] transition-all",
                         event.status === "active"
-                          ? "border-[#ff9800]/30 bg-[#ff9800]/8 text-[#ff9800] hover:bg-[#ff9800]/15"
+                          ? "border-live/30 bg-live/8 text-live hover:bg-live/15"
                           : event.status === "upcoming"
-                            ? "border-[#4CAF50]/30 bg-[#4CAF50]/8 text-[#4CAF50] hover:bg-[#4CAF50]/15"
+                            ? "border-upcoming/30 bg-upcoming/8 text-upcoming hover:bg-upcoming/15"
                             : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
                       )}
                     >

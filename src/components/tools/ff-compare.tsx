@@ -166,7 +166,7 @@ export function FfCompare() {
               <div
                 key={row.label}
                 className={cn(
-                  "grid grid-cols-[1fr,auto,1fr] items-center gap-2 px-3 py-2.5 text-sm",
+                  "grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2.5 text-sm",
                   idx % 2 === 0 ? "bg-card" : "bg-muted/20",
                 )}
               >

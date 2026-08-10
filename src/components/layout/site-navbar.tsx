@@ -131,7 +131,7 @@ function NavDropdown({
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "relative flex items-center gap-1 rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+          "relative flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap 2xl:px-3",
           isHomePage
             ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -178,7 +178,9 @@ function NavDropdown({
           >
             {/* Inner card — pt-2 above creates the invisible bridge so mouse can move
                 from trigger to dropdown without triggering mouseLeave */}
-            <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl">
+            {/* Nền đã đục 95% nên backdrop-blur không đổi được gì về mặt nhìn,
+                chỉ thêm một lớp lọc phải tính lại — bỏ. */}
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
               {/* Header strip */}
               <div className="border-b border-border/50 px-4 py-2.5">
                 <p className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground">
@@ -239,15 +241,23 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
   return (
     <header
       style={{ top: 0 }}
+      // Không backdrop-blur ở đây. Thanh này fixed/sticky chạy hết bề ngang màn
+      // hình, nên mỗi khung hình khi cuộn trình duyệt phải đọc lại toàn bộ vùng
+      // phía sau nó rồi làm mờ — đúng vào lúc cần mượt nhất, và là nguyên nhân
+      // giật rõ nhất khi cuộn. Nền được tăng độ đặc để bù lại phần "kính mờ";
+      // ở mức đục 80–95% thì gần như không ai phân biệt được.
       className={cn(
-        "site-navbar z-50 backdrop-blur-xl",
+        "site-navbar z-50",
         isHomePage
-          ? "fixed inset-x-0 bg-white/72 shadow-[0_8px_24px_rgba(15,23,42,0.07)] dark:bg-slate-950/42 dark:shadow-none"
-          : "sticky border-b border-border bg-background/90",
+          ? "fixed inset-x-0 bg-white/[0.88] shadow-[0_8px_24px_rgba(15,23,42,0.07)] dark:bg-slate-950/70 dark:shadow-none"
+          : "sticky border-b border-border bg-background/95",
       )}
     >
       <div
-        className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 md:px-6"
+        // Logo và cụm điều khiển lấy đúng bề rộng cần (auto), cột giữa nhận phần
+        // còn lại. Trước đây cột giữa là `auto` nên thanh nav 798px luôn thắng và
+        // đẩy hai cột 1fr co về 0 — kết quả là nav đè lên cụm nút ở mọi bề rộng.
+        className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 md:px-6"
       >
 
         {/* ── Logo ── */}
@@ -289,7 +299,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
         </Link>
 
         {/* ── Nav links (desktop center) ── */}
-        <nav className="col-start-2 hidden items-center justify-center gap-0.5 lg:flex">
+        <nav className="col-start-2 hidden items-center justify-center gap-0.5 xl:flex">
           {/* TRANG CHỦ → TIN TỨC */}
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -298,7 +308,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative rounded-lg px-3 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap",
+                  "relative rounded-lg px-2.5 py-1.5 text-[clamp(0.6rem,1.1vw,0.68rem)] font-bold uppercase tracking-[0.08em] transition-all duration-150 whitespace-nowrap 2xl:px-3",
                   isHomePage
                     ? "text-slate-600 hover:bg-black/5 hover:text-slate-950 dark:text-white/70 dark:hover:bg-white/8 dark:hover:text-white"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -355,7 +365,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           </Link>
           <UserNavButton className={isHomePage ? ctrlClass : undefined} />
           {/* Hide extra icons below lg — moved into sheet (avoids cramping) */}
-          <span className="hidden lg:contents">
+          <span className="hidden xl:contents">
             <LanguageToggle className={isHomePage ? ctrlClass : "theme-control-surface"} />
             <NotificationBell className={isHomePage ? ctrlClass : undefined} />
             <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
@@ -366,7 +376,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger
               className={cn(
-                "inline-flex size-9 items-center justify-center rounded-xl lg:hidden",
+                "inline-flex size-9 items-center justify-center rounded-xl xl:hidden",
                 isHomePage ? ctrlClass : "theme-control-surface",
               )}
             >
@@ -375,7 +385,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
 
             <SheetContent
               side="right"
-              className="flex w-72 max-w-[85vw] flex-col gap-0 overflow-hidden rounded-l-[28px] border-l border-border/60 bg-card/95 p-0 text-foreground shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+              className="flex w-72 max-w-[85vw] flex-col gap-0 overflow-hidden rounded-l-[28px] border-l border-border/60 bg-card p-0 text-foreground shadow-[0_20px_70px_rgba(0,0,0,0.28)]"
             >
               {/* Brand header */}
               <div className="relative flex items-center gap-3 border-b border-border/60 bg-gradient-to-br from-primary/8 to-transparent px-4 py-4 dark:from-amber-400/8">

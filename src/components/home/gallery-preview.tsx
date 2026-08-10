@@ -179,8 +179,8 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
                 <figure
                   className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 ${gridClass} ${
                     isHot
-                      ? "border-primary/60 shadow-[0_0_24px_rgba(0,82,255,0.25)] dark:border-amber-400/60 dark:shadow-[0_0_24px_rgba(252,211,77,0.2)] scale-[1.01]"
-                      : "border-border hover:border-primary/40 dark:hover:border-amber-400/30"
+                      ? "border-primary/60 shadow-[0_0_24px_hsl(var(--primary)/0.25)] scale-[1.01]"
+                      : "border-border hover:border-primary/40"
                   }`}
                   onMouseEnter={() => setHovered(item.id)}
                   onMouseLeave={() => setHovered(null)}
@@ -230,7 +230,7 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
 
                         {/* Corner accent for featured */}
                         {isFeatured && (
-                          <div className="absolute left-0 top-0 h-16 w-1 bg-gradient-to-b from-primary to-transparent dark:from-amber-400 opacity-80" />
+                          <div className="absolute left-0 top-0 h-16 w-1 bg-gradient-to-b from-primary to-transparent opacity-80" />
                         )}
                       </>
                     )}

@@ -77,7 +77,7 @@ export default async function NewsPage() {
       />
       {/* Banner quảng cáo đầu trang (chỉ hiện khi đã cấu hình slot) */}
       <ArticleAd slotKey="ads.slot_news_top" />
-      <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <div className="space-y-6">
           <NewsList news={newsForList} />
           <ArticleAd slotKey="ads.slot_news_inline" />

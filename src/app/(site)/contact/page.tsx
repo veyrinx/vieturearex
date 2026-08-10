@@ -72,7 +72,7 @@ export default async function ContactPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr,1.1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <aside className="rounded-[24px] border border-border bg-card space-y-5 p-5">
           <div className="flex items-center gap-2.5">
             <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />

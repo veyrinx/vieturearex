@@ -65,7 +65,7 @@ export function PrimePanel({ initialItems, canEdit }: { initialItems: PrimeItem[
       <div className="space-y-3">
         {rows.map((r) => (
           <div key={r._rid} className="rounded-2xl border border-border bg-card p-4">
-            <div className="grid gap-3 sm:grid-cols-[1fr,130px,120px]">
+            <div className="grid gap-3 sm:grid-cols-[1fr_130px_120px]">
               <label className="space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tên gói</span>
                 <input value={r.name} disabled={!canEdit} onChange={(e) => patch(r._rid, { name: e.target.value })}

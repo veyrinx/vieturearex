@@ -39,7 +39,7 @@ function FeaturedCard({ item, canEdit, onEdit, onDelete }: { item: NewsItem } & 
   const ago = timeAgo(item.created_at);
   return (
     <Reveal>
-      <article className="group relative flex flex-col overflow-hidden rounded-[18px] border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
+      <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
         <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
         <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
         {canEdit && (
@@ -54,7 +54,7 @@ function FeaturedCard({ item, canEdit, onEdit, onDelete }: { item: NewsItem } & 
             </button>
           </div>
         )}
-        <div className="relative overflow-hidden rounded-[18px]">
+        <div className="relative overflow-hidden rounded-2xl">
           <MediaFrame
             src={item.cover}
             alt={item.title}
@@ -109,7 +109,7 @@ function MiniCard({ item, index, canEdit, onEdit, onDelete }: { item: NewsItem; 
   const author = item.created_by_name;
   return (
     <Reveal delay={index * 0.07}>
-      <article className="group relative flex gap-3 overflow-hidden rounded-[12px] border border-border bg-card p-3 transition-all duration-200 hover:shadow-md hover:border-primary/30">
+      <article className="group relative flex gap-3 overflow-hidden rounded-xl border border-border bg-card p-3 transition-all duration-200 hover:shadow-md hover:border-primary/30">
         <div className="grid-sheen pointer-events-none absolute inset-y-0 left-0 z-20" />
         <Link href={`/news/${item.slug}`} className="absolute inset-0 z-40" aria-label={item.title} />
         {canEdit && (
@@ -124,7 +124,7 @@ function MiniCard({ item, index, canEdit, onEdit, onDelete }: { item: NewsItem; 
             </button>
           </div>
         )}
-        <div className="relative w-24 shrink-0 overflow-hidden rounded-[8px] md:w-28">
+        <div className="relative w-24 shrink-0 overflow-hidden rounded-xl md:w-28">
           <MediaFrame
             src={item.cover}
             alt={item.title}
@@ -139,7 +139,7 @@ function MiniCard({ item, index, canEdit, onEdit, onDelete }: { item: NewsItem; 
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-          <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary dark:group-hover:text-amber-400">
+          <h3 className="font-heading text-[0.85rem] font-bold uppercase tracking-[0.03em] text-foreground line-clamp-2 transition-colors group-hover:text-primary">
             {item.title}
           </h3>
           <div className="flex items-center justify-between gap-2">
@@ -160,14 +160,14 @@ function MiniCard({ item, index, canEdit, onEdit, onDelete }: { item: NewsItem; 
             <Link
               href={`/news/${item.slug}#comments`}
               onClick={(e) => e.stopPropagation()}
-              className="relative z-50 inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary dark:hover:border-amber-400/40 dark:hover:text-amber-400"
+              className="relative z-50 inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
             >
               <MessageSquare className="size-3" />
               BL
             </Link>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-0.5 rounded-r-full bg-primary/0 transition-all duration-200 group-hover:bg-primary/60 dark:group-hover:bg-amber-400/60" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-0.5 rounded-r-full bg-primary/0 transition-all duration-200 group-hover:bg-primary/60" />
       </article>
     </Reveal>
   );
@@ -248,7 +248,7 @@ export function LatestNews({ news }: LatestNewsProps) {
           description="Tin tức và bài viết mới sẽ xuất hiện tại đây."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           {featured && <FeaturedCard item={featured} {...adminProps} />}
           {rest.length > 0 && (
             <div className="flex flex-col gap-3">

@@ -62,9 +62,12 @@ export async function PATCH(
       const hours = Math.ceil(waitMs / 3_600_000);
       return shopJson({ error: `Còn ${hours} giờ nữa mới đẩy tin tiếp được.` }, { status: 429 });
     }
-    await untypedFrom(db, "shop_listings")
+    // Kiểm tra lỗi ghi: cột `bumped_at` chỉ có sau migration v2, mà báo "đã đẩy
+    // tin" trong khi không có gì thay đổi thì tệ hơn là báo hỏng.
+    const { error } = (await untypedFrom(db, "shop_listings")
       .update({ bumped_at: new Date().toISOString() } as never)
-      .eq("id", id);
+      .eq("id", id)) as { error: { message: string } | null };
+    if (error) return shopJson({ error: error.message }, { status: 500 });
     return shopJson({ ok: true, bumped: true });
   }
 
@@ -72,11 +75,12 @@ export async function PATCH(
   if (body.action === "feature") {
     if (!isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
     const days = Math.min(30, Math.max(0, Number(body.days ?? 7) || 0));
-    await untypedFrom(db, "shop_listings")
+    const { error } = (await untypedFrom(db, "shop_listings")
       .update({
         featured_until: days > 0 ? new Date(Date.now() + days * 86_400_000).toISOString() : null,
       } as never)
-      .eq("id", id);
+      .eq("id", id)) as { error: { message: string } | null };
+    if (error) return shopJson({ error: error.message }, { status: 500 });
     return shopJson({ ok: true, featuredDays: days });
   }
 

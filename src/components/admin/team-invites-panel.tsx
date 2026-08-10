@@ -195,7 +195,7 @@ export function TeamInvitesPanel({ canCreate, isAdmin }: { canCreate: boolean; i
         <CardContent className="space-y-4">
         {canCreate && (
           <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
-            <div className="grid gap-2 sm:grid-cols-[1fr,110px,110px,auto]">
+            <div className="grid gap-2 sm:grid-cols-[1fr_110px_110px_auto]">
               <Input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}

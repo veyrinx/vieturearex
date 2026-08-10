@@ -138,7 +138,7 @@ export function PartnersPanel({ initialItems, canEdit }: { initialItems: Partner
           const socialCount = Object.keys(r.socials ?? {}).length;
           return (
             <div key={r._rid} className={cn("rounded-2xl border bg-card p-4", live ? "border-border" : "border-dashed border-border opacity-75")}>
-              <div className="grid gap-3 sm:grid-cols-[1fr,180px]">
+              <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
                 <label className="space-y-1">
                   <span className={LABEL}>Tên đối tác</span>
                   <input value={r.name} disabled={!canEdit} onChange={(e) => patch(r._rid, { name: e.target.value })} className={INPUT} />

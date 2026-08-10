@@ -102,18 +102,18 @@ export function JoinCommunityCta(props: JoinCommunityCtaProps) {
       <div className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.06]"
         style={{ backgroundImage: "radial-gradient(ellipse at 20% 50%, hsl(var(--primary)) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, hsl(var(--primary)) 0%, transparent 50%)" }}
       />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent dark:via-amber-400/30" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <div className="relative p-6 sm:p-8 space-y-6">
         {/* Header row */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
-              <span className="h-px w-6 bg-primary dark:bg-amber-400" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary dark:text-amber-400">
+              <span className="h-px w-6 bg-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary">
                 Cộng đồng
               </span>
-              <span className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent dark:from-amber-400/30" />
+              <span className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
             </div>
             <h2 className="font-heading text-3xl font-black uppercase tracking-[0.03em] text-foreground md:text-4xl">
               KẾT NỐI VỚI AREX
@@ -124,8 +124,8 @@ export function JoinCommunityCta(props: JoinCommunityCtaProps) {
           </div>
 
           {daysActive !== null && daysActive !== undefined && (
-            <div className="shrink-0 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-4 text-center dark:border-amber-400/20 dark:bg-amber-400/5">
-              <p className="font-heading text-4xl font-black tabular-nums text-primary dark:text-amber-400">
+            <div className="shrink-0 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-4 text-center">
+              <p className="font-heading text-4xl font-black tabular-nums text-primary">
                 <CountUp target={Number(daysActive ?? 0)} />
               </p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">

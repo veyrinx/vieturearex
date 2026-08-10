@@ -33,6 +33,46 @@ function db() {
   return createAdminSupabaseClient();
 }
 
+// ── Lỗi truy vấn ───────────────────────────────────────────────────────────
+type PgError = { message: string; code?: string } | null;
+
+/**
+ * Ghi lại lỗi truy vấn thay vì bỏ qua.
+ *
+ * Trước đây mọi hàm ở file này chỉ destructure `data`, nên khi PostgREST trả
+ * lỗi thì `data` là null và hàm trả về mảng rỗng — giao diện hiện "không có dữ
+ * liệu" thay vì báo hỏng, và không có lấy một dòng log. Đúng bẫy đó đã làm toàn
+ * bộ tin đăng biến mất khỏi cả /shop lẫn màn duyệt của admin khi thiếu cột
+ * `bumped_at`.
+ */
+function logQueryError(label: string, error: PgError): void {
+  if (!error) return;
+  console.error(`[shop] ${label} lỗi ${error.code ?? "?"}: ${error.message}`);
+}
+
+/** 42703 = undefined_column. Dấu hiệu schema chưa chạy migration. */
+function isUndefinedColumn(error: PgError): boolean {
+  return error?.code === "42703";
+}
+
+/**
+ * `bumped_at` và `featured_until` chỉ tồn tại sau khi chạy
+ * `supabase/migration-shop-v2-discord.sql`.
+ *
+ * Thiếu chúng thì truy vấn sắp xếp mặc định hỏng và chợ trông như trống trơn,
+ * nên ở đây tự hạ cấp về `created_at` để việc duyệt tin không bị chặn. Nhớ kết
+ * quả dò trong 5 phút: đã chạy migration thì không phải trả giá cho lần thử
+ * hỏng, mà chạy migration muộn cũng tự khỏi chứ không cần restart.
+ */
+let listingV2Columns: { present: boolean; checkedAt: number } | null = null;
+const V2_RECHECK_MS = 5 * 60_000;
+
+function knownListingV2State(): boolean | null {
+  if (!listingV2Columns) return null;
+  if (listingV2Columns.present) return true;
+  return Date.now() - listingV2Columns.checkedAt < V2_RECHECK_MS ? false : null;
+}
+
 /** Vai trò được phép làm trung gian. */
 const AGENT_ROLES = ["super_admin", "admin", "it", "manager", "agent"];
 
@@ -73,20 +113,22 @@ export function toPublicSeller(
 export async function getSellerByUser(userId: string): Promise<ShopSeller | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_sellers")
+  const { data, error } = (await untypedFrom(client, "shop_sellers")
     .select("*")
     .eq("user_id", userId)
-    .maybeSingle()) as { data: ShopSeller | null };
+    .maybeSingle()) as { data: ShopSeller | null ; error: PgError };
+  logQueryError("getSellerByUser", error);
   return data;
 }
 
 export async function getSellerById(id: string): Promise<ShopSeller | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_sellers")
+  const { data, error } = (await untypedFrom(client, "shop_sellers")
     .select("*")
     .eq("id", id)
-    .maybeSingle()) as { data: ShopSeller | null };
+    .maybeSingle()) as { data: ShopSeller | null ; error: PgError };
+  logQueryError("getSellerById", error);
   return data;
 }
 
@@ -95,7 +137,8 @@ export async function listSellers(status?: string): Promise<ShopSeller[]> {
   if (!client) return [];
   let q = untypedFrom(client, "shop_sellers").select("*").order("created_at", { ascending: false });
   if (status) q = q.eq("status", status);
-  const { data } = (await q) as { data: ShopSeller[] | null };
+  const { data, error } = (await q) as { data: ShopSeller[] | null ; error: PgError };
+  logQueryError("listSellers", error);
   return data ?? [];
 }
 
@@ -118,10 +161,14 @@ type ListingFilter = {
   limit?: number;
 };
 
-export async function listListings(filter: ListingFilter = {}): Promise<ShopListing[]> {
-  const client = db();
-  if (!client) return [];
+type ListingsResult = { data: ShopListing[] | null; error: PgError };
 
+/** Dựng truy vấn tin đăng. `v2` = schema đã có bumped_at/featured_until. */
+function buildListingQuery(
+  client: NonNullable<ReturnType<typeof db>>,
+  filter: ListingFilter,
+  v2: boolean,
+) {
   let q = untypedFrom(client, "shop_listings").select("*").limit(filter.limit ?? 60);
 
   switch (filter.sort ?? "new") {
@@ -137,9 +184,8 @@ export async function listListings(filter: ListingFilter = {}): Promise<ShopList
     default:
       // Tin cũ chưa có `bumped_at` (trước migration v2) vẫn phải xuất hiện, nên
       // xếp NULL xuống cuối chứ không loại.
-      q = q.order("bumped_at", { ascending: false, nullsFirst: false }).order("created_at", {
-        ascending: false,
-      });
+      if (v2) q = q.order("bumped_at", { ascending: false, nullsFirst: false });
+      q = q.order("created_at", { ascending: false });
   }
 
   const status = filter.status ?? PUBLIC_LISTING_STATUSES;
@@ -153,11 +199,41 @@ export async function listListings(filter: ListingFilter = {}): Promise<ShopList
   }
   if (filter.minPrice != null) q = q.gte("price", filter.minPrice);
   if (filter.maxPrice != null) q = q.lte("price", filter.maxPrice);
-  if (filter.featuredOnly) q = q.gt("featured_until", new Date().toISOString());
+  if (v2 && filter.featuredOnly) q = q.gt("featured_until", new Date().toISOString());
 
-  const { data } = (await q) as { data: ShopListing[] | null };
-  const rows = data ?? [];
-  return attachSellers(rows);
+  return q;
+}
+
+export async function listListings(filter: ListingFilter = {}): Promise<ShopListing[]> {
+  const client = db();
+  if (!client) return [];
+
+  const attempt = async (v2: boolean): Promise<ListingsResult> =>
+    (await buildListingQuery(client, filter, v2)) as ListingsResult;
+
+  const known = knownListingV2State();
+  // Chưa biết thì cứ giả định schema đầy đủ — trường hợp bình thường.
+  let usedV2 = known !== false;
+  let { data, error } = await attempt(usedV2);
+
+  if (usedV2 && isUndefinedColumn(error)) {
+    listingV2Columns = { present: false, checkedAt: Date.now() };
+    console.warn(
+      "[shop] Thiếu cột bumped_at/featured_until trên shop_listings — hãy chạy " +
+        "supabase/migration-shop-v2-discord.sql. Tạm sắp xếp theo created_at.",
+    );
+    usedV2 = false;
+    ({ data, error } = await attempt(false));
+  } else if (usedV2 && !error) {
+    listingV2Columns = { present: true, checkedAt: Date.now() };
+  }
+
+  // Không có cột hạn nổi bật thì không tin nào đang nổi bật — trả rỗng chứ
+  // không trả nhầm toàn bộ tin thường vào dải "nổi bật".
+  if (!usedV2 && filter.featuredOnly) return [];
+
+  logQueryError("listListings", error);
+  return attachSellers(data ?? []);
 }
 
 /** Dải tin nổi bật đầu trang chợ. */
@@ -170,9 +246,10 @@ async function attachSellers(rows: ShopListing[]): Promise<ShopListing[]> {
   const client = db();
   if (!client || rows.length === 0) return rows;
   const ids = [...new Set(rows.map((r) => r.seller_id))];
-  const { data } = (await untypedFrom(client, "shop_sellers")
+  const { data, error } = (await untypedFrom(client, "shop_sellers")
     .select("*")
-    .in("id", ids)) as { data: ShopSeller[] | null };
+    .in("id", ids)) as { data: ShopSeller[] | null ; error: PgError };
+  logQueryError("attachSellers", error);
   const map = new Map((data ?? []).map((s) => [s.id, toPublicSeller(s)]));
   return rows.map((r) => ({ ...r, seller: map.get(r.seller_id) ?? null }));
 }
@@ -180,10 +257,11 @@ async function attachSellers(rows: ShopListing[]): Promise<ShopListing[]> {
 export async function getListing(id: string): Promise<ShopListing | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_listings")
+  const { data, error } = (await untypedFrom(client, "shop_listings")
     .select("*")
     .eq("id", id)
-    .maybeSingle()) as { data: ShopListing | null };
+    .maybeSingle()) as { data: ShopListing | null ; error: PgError };
+  logQueryError("getListing", error);
   if (!data) return null;
   const [withSeller] = await attachSellers([data]);
   return withSeller;
@@ -192,10 +270,11 @@ export async function getListing(id: string): Promise<ShopListing | null> {
 export async function bumpListingViews(id: string): Promise<void> {
   const client = db();
   if (!client) return;
-  const { data } = (await untypedFrom(client, "shop_listings")
+  const { data, error } = (await untypedFrom(client, "shop_listings")
     .select("views")
     .eq("id", id)
-    .maybeSingle()) as { data: { views: number } | null };
+    .maybeSingle()) as { data: { views: number } | null ; error: PgError };
+  logQueryError("bumpListingViews", error);
   if (!data) return;
   await untypedFrom(client, "shop_listings")
     .update({ views: (data.views ?? 0) + 1 })
@@ -216,10 +295,11 @@ export { calcFee, calcPayout };
 export async function getOrderByCode(code: string): Promise<ShopOrder | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_orders")
+  const { data, error } = (await untypedFrom(client, "shop_orders")
     .select("*")
     .eq("code", code)
-    .maybeSingle()) as { data: ShopOrder | null };
+    .maybeSingle()) as { data: ShopOrder | null ; error: PgError };
+  logQueryError("getOrderByCode", error);
   if (!data) return null;
   return hydrateOrder(data);
 }
@@ -227,10 +307,11 @@ export async function getOrderByCode(code: string): Promise<ShopOrder | null> {
 export async function getOrderById(id: string): Promise<ShopOrder | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_orders")
+  const { data, error } = (await untypedFrom(client, "shop_orders")
     .select("*")
     .eq("id", id)
-    .maybeSingle()) as { data: ShopOrder | null };
+    .maybeSingle()) as { data: ShopOrder | null ; error: PgError };
+  logQueryError("getOrderById", error);
   if (!data) return null;
   return hydrateOrder(data);
 }
@@ -282,7 +363,8 @@ export async function listOrders(filter: OrderFilter = {}): Promise<ShopOrder[]>
     q = q.in("status", ACTIVE_ORDER_STATUSES);
   }
 
-  const { data } = (await q) as { data: ShopOrder[] | null };
+  const { data, error } = (await q) as { data: ShopOrder[] | null ; error: PgError };
+  logQueryError("listOrders", error);
   const rows = data ?? [];
   if (rows.length === 0) return rows;
 
@@ -323,32 +405,35 @@ export async function partyForOrder(
 export async function listOrderEvents(orderId: string): Promise<ShopOrderEvent[]> {
   const client = db();
   if (!client) return [];
-  const { data } = (await untypedFrom(client, "shop_order_events")
+  const { data, error } = (await untypedFrom(client, "shop_order_events")
     .select("*")
     .eq("order_id", orderId)
-    .order("created_at", { ascending: true })) as { data: ShopOrderEvent[] | null };
+    .order("created_at", { ascending: true })) as { data: ShopOrderEvent[] | null ; error: PgError };
+  logQueryError("listOrderEvents", error);
   return data ?? [];
 }
 
 export async function getDisputeForOrder(orderId: string): Promise<ShopDispute | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_disputes")
+  const { data, error } = (await untypedFrom(client, "shop_disputes")
     .select("*")
     .eq("order_id", orderId)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()) as { data: ShopDispute | null };
+    .maybeSingle()) as { data: ShopDispute | null ; error: PgError };
+  logQueryError("getDisputeForOrder", error);
   return data;
 }
 
 export async function getReviewForOrder(orderId: string): Promise<ShopReview | null> {
   const client = db();
   if (!client) return null;
-  const { data } = (await untypedFrom(client, "shop_reviews")
+  const { data, error } = (await untypedFrom(client, "shop_reviews")
     .select("*")
     .eq("order_id", orderId)
-    .maybeSingle()) as { data: ShopReview | null };
+    .maybeSingle()) as { data: ShopReview | null ; error: PgError };
+  logQueryError("getReviewForOrder", error);
   return data;
 }
 
@@ -364,11 +449,12 @@ export async function listSellerReviews(sellerId: string, limit = 20): Promise<S
   const client = db();
   if (!client) return [];
 
-  const { data } = (await untypedFrom(client, "shop_reviews")
+  const { data, error } = (await untypedFrom(client, "shop_reviews")
     .select("*")
     .eq("seller_id", sellerId)
     .order("created_at", { ascending: false })
-    .limit(limit)) as { data: ShopReview[] | null };
+    .limit(limit)) as { data: ShopReview[] | null ; error: PgError };
+  logQueryError("listSellerReviews", error);
 
   const rows = data ?? [];
   if (rows.length === 0) return [];
@@ -404,7 +490,8 @@ export async function listDisputes(status?: string): Promise<ShopDispute[]> {
     .order("created_at", { ascending: false })
     .limit(100);
   if (status) q = q.eq("status", status);
-  const { data } = (await q) as { data: ShopDispute[] | null };
+  const { data, error } = (await q) as { data: ShopDispute[] | null ; error: PgError };
+  logQueryError("listDisputes", error);
   return data ?? [];
 }
 

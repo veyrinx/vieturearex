@@ -39,12 +39,12 @@ export function LivestreamPreview({ streams }: LivestreamPreviewProps) {
         </Button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr,1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         {/* Featured stream */}
         <Reveal>
           <Link
             href="/esports"
-            className="group relative flex flex-col overflow-hidden rounded-[16px] border border-border bg-card transition-all hover:border-[#FF0000]/50 hover:shadow-[0_0_32px_rgba(255,0,0,0.12)] dark:hover:shadow-[0_0_32px_rgba(255,0,0,0.18)]"
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-[#FF0000]/50 hover:shadow-[0_0_32px_rgba(255,0,0,0.12)] dark:hover:shadow-[0_0_32px_rgba(255,0,0,0.18)]"
           >
             <div className="relative aspect-video w-full overflow-hidden bg-black">
               {featured.thumbnail_url && (
@@ -101,13 +101,13 @@ export function LivestreamPreview({ streams }: LivestreamPreviewProps) {
                 <Link
                   href="/esports"
                   className={cn(
-                    "group flex gap-3 overflow-hidden rounded-[12px] border bg-card p-3 transition-all hover:shadow-md",
+                    "group flex gap-3 overflow-hidden rounded-xl border bg-card p-3 transition-all hover:shadow-md",
                     stream.status === "live"
                       ? "border-border hover:border-[#FF0000]/50 hover:shadow-[0_0_16px_rgba(255,0,0,0.08)]"
                       : "border-border hover:border-emerald-500/40",
                   )}
                 >
-                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[8px] bg-black">
+                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-xl bg-black">
                     {stream.thumbnail_url && (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -127,7 +127,7 @@ export function LivestreamPreview({ streams }: LivestreamPreviewProps) {
                     )}
                   </div>
                   <div className="flex flex-1 flex-col justify-center gap-1 min-w-0">
-                    <h4 className="font-heading text-sm font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 group-hover:text-primary dark:group-hover:text-amber-400">
+                    <h4 className="font-heading text-sm font-bold uppercase tracking-[0.04em] text-foreground line-clamp-2 group-hover:text-primary">
                       {stream.title}
                     </h4>
                     <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">

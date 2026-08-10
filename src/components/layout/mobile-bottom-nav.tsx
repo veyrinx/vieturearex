@@ -106,12 +106,28 @@ export function MobileBottomNav() {
 
   useEffect(() => {
     let prev = window.scrollY;
-    const onScroll = () => {
+    // Sự kiện scroll bắn tới 120 lần/giây trên máy màn hình tần số cao. Gộp về
+    // một lần mỗi khung hình, và chỉ gọi setState khi giá trị thật sự đổi —
+    // trước đây mỗi lần cuộn trong 48px đầu đều đẩy một lần cập nhật vào React.
+    let queued = false;
+    let collapsedNow = false;
+    const measure = () => {
+      queued = false;
       const cur = window.scrollY;
-      if (cur < 48) setCollapsed(false);
-      else if (cur > prev + 4) setCollapsed(true);
-      else if (prev > cur + 4) setCollapsed(false);
+      let nextCollapsed = collapsedNow;
+      if (cur < 48) nextCollapsed = false;
+      else if (cur > prev + 4) nextCollapsed = true;
+      else if (prev > cur + 4) nextCollapsed = false;
       prev = cur;
+      if (nextCollapsed !== collapsedNow) {
+        collapsedNow = nextCollapsed;
+        setCollapsed(nextCollapsed);
+      }
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(measure);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -135,7 +151,10 @@ export function MobileBottomNav() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px] md:hidden"
+            // Bỏ backdrop-blur: đây là lớp phủ toàn màn hình, mà backdrop-filter
+            // trên cả viewport phải lấy mẫu lại nền trong suốt lúc sheet trượt
+            // lên — chính là lúc cần mượt nhất. Nền đặc hơn cho cùng hiệu quả.
+            className="fixed inset-0 z-40 bg-black/60 md:hidden"
             onClick={() => setMenuOpen(false)}
           />
         )}

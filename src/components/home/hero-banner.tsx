@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useSpring, useTransform } from "framer-motion";
@@ -24,16 +24,16 @@ type HeroBannerProps = {
 function getSliderVariants(effect: HeroSliderEffect) {
   if (effect === "cinematic") {
     return {
-      initial: { opacity: 0, scale: 1.06, filter: "blur(10px)" },
+      initial: { opacity: 0, scale: 1.05, filter: "blur(8px)" },
       animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-      exit: { opacity: 0, scale: 1.02, filter: "blur(4px)" },
+      exit: { opacity: 0, scale: 1.02, filter: "blur(3px)" },
     };
   }
   if (effect === "drift") {
     return {
-      initial: { opacity: 0, x: 24, scale: 1.04 },
+      initial: { opacity: 0, x: 20, scale: 1.03 },
       animate: { opacity: 1, x: 0, scale: 1 },
-      exit: { opacity: 0, x: -24, scale: 1.01 },
+      exit: { opacity: 0, x: -20, scale: 1.01 },
     };
   }
   return {
@@ -96,34 +96,64 @@ export function HeroBanner({
   const countdown = useCountdown(nextEventDate);
   const reduceMotion = useReducedMotion();
 
-  // Parallax theo con trỏ — ảnh nền dịch nhẹ ngược hướng chuột tạo chiều sâu.
+  // Parallax theo con trỏ — biên độ nhỏ, chỉ đủ gợi chiều sâu chứ không kéo ảnh trôi.
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 45, damping: 22 });
-  const springY = useSpring(mouseY, { stiffness: 45, damping: 22 });
-  const parallaxX = useTransform(springX, [-0.5, 0.5], [22, -22]);
-  const parallaxY = useTransform(springY, [-0.5, 0.5], [16, -16]);
+  const springX = useSpring(mouseX, { stiffness: 45, damping: 24 });
+  const springY = useSpring(mouseY, { stiffness: 45, damping: 24 });
+  const parallaxX = useTransform(springX, [-0.5, 0.5], [12, -12]);
+  const parallaxY = useTransform(springY, [-0.5, 0.5], [9, -9]);
+
+  // Chỉ bật parallax cho con trỏ chính xác (chuột). Trên cảm ứng nó không bao
+  // giờ chạy nhưng vẫn bắt sự kiện và vẫn giữ ảnh hero ở scale 1.05 — tức là
+  // trả giá cho một hiệu ứng không ai thấy, đúng trên nhóm máy yếu nhất.
+  const [pointerFine, setPointerFine] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: fine)");
+    const sync = () => setPointerFine(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const parallaxOn = pointerFine && !reduceMotion;
+
+  // Kích thước/vị trí hero đo một lần rồi giữ lại; chỉ bỏ nhớ khi cuộn hoặc đổi
+  // kích thước cửa sổ, vì đó là hai thứ duy nhất làm nó lệch.
+  const rectRef = useRef<DOMRect | null>(null);
+  useEffect(() => {
+    const invalidate = () => { rectRef.current = null; };
+    window.addEventListener("scroll", invalidate, { passive: true });
+    window.addEventListener("resize", invalidate);
+    return () => {
+      window.removeEventListener("scroll", invalidate);
+      window.removeEventListener("resize", invalidate);
+    };
+  }, []);
 
   const handleParallax = useCallback(
     (e: ReactMouseEvent<HTMLElement>) => {
-      if (reduceMotion) return;
-      const rect = e.currentTarget.getBoundingClientRect();
+      if (!parallaxOn) return;
+      // getBoundingClientRect trong mousemove buộc trình duyệt tính lại layout ở
+      // mỗi lần con trỏ nhích. Kích thước hero chỉ đổi khi resize, nên đo một
+      // lần rồi dùng lại là đủ.
+      const rect = rectRef.current ?? e.currentTarget.getBoundingClientRect();
+      rectRef.current = rect;
       mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
       mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
     },
-    [reduceMotion, mouseX, mouseY],
+    [parallaxOn, mouseX, mouseY],
   );
 
   // Tàn lửa bay lên — vị trí/nhịp cố định theo index để tránh lệch hydrate.
   const embers = useMemo(
     () =>
-      Array.from({ length: 20 }, (_, i) => ({
-        left: (i * 47 + 7) % 100,
-        size: 2 + (i % 3),
-        duration: 6 + (i % 6),
-        delay: (i % 8) * 0.7,
-        drift: ((i % 5) - 2) * 24,
-        rise: 360 + (i % 4) * 90,
+      Array.from({ length: 14 }, (_, i) => ({
+        left: (i * 67 + 5) % 100,
+        size: 2 + (i % 2),
+        duration: 8 + (i % 5),
+        delay: (i % 7) * 1.1,
+        drift: ((i % 5) - 2) * 20,
+        rise: 320 + (i % 4) * 80,
       })),
     [],
   );
@@ -143,38 +173,43 @@ export function HeroBanner({
   }, [allImages.length, sliderIntervalMs, transitionMs, isPaused]);
 
   const currentImage = allImages[index];
-  const transitionSecs = transitionMs / 1000;
+  const transitionSecs = reduceMotion ? 0.35 : transitionMs / 1000;
   const hasMultiple = allImages.length > 1;
-  const variants = getSliderVariants(transitionEffect);
+  // Khi người dùng bật giảm chuyển động thì mọi hiệu ứng chuyển cảnh rút về fade.
+  const variants = reduceMotion ? getSliderVariants("fade") : getSliderVariants(transitionEffect);
 
-  const titleWords = heroTitle?.trim().split(/\s+/) ?? [];
-  const line1 = titleWords.slice(0, 1).join(" ") || "AREX";
-  const line2 = titleWords.slice(1, 3).join(" ") || "COMMUNITY";
-  const line3 = titleWords.slice(3).join(" ") || "HUB";
+  // Từ đầu tiên là dòng nhấn thương hiệu, phần còn lại xuống dòng và tự ngắt —
+  // an toàn với mọi độ dài tiêu đề admin đặt, không phụ thuộc vị trí từ.
+  const titleWords = (heroTitle?.trim() || "AREX COMMUNITY HUB").split(/\s+/);
+  const leadWord = titleWords[0];
+  const restWords = titleWords.slice(1).join(" ");
 
   const stats = [
-    { icon: "local_fire_department", label: "Sự kiện",  value: activeEventCount,   color: "text-orange-400" },
-    { icon: "newspaper",             label: "Bài viết", value: publishedNewsCount, color: "text-primary dark:text-amber-400" },
-    { icon: "image",                 label: "Ảnh",      value: galleryCount,       color: "text-emerald-400" },
+    { icon: "local_fire_department", label: "Sự kiện",  value: activeEventCount },
+    { icon: "newspaper",             label: "Bài viết", value: publishedNewsCount },
+    { icon: "image",                 label: "Ảnh",      value: galleryCount },
   ];
 
   return (
     <section
-      className="-mx-4 -mt-6 md:-mx-6 relative flex min-h-[78vh] md:min-h-[84vh] items-end overflow-hidden"
+      // Full-bleed thật sự: trước đây hero chỉ dùng -mx-4/-mx-6 nên dừng ở mép
+      // container max-w-7xl, trong khi dải ticker ngay dưới lại tràn hết màn —
+      // hai mép lệch nhau trông như lỗi. Nay cả hai cùng chạm mép viewport.
+      className="relative left-1/2 -mt-6 flex w-screen -translate-x-1/2 min-h-[clamp(560px,86svh,900px)] items-end overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => { setIsPaused(false); mouseX.set(0); mouseY.set(0); }}
       onMouseMove={handleParallax}
     >
-      {/* ── Background layer ── */}
+      {/* ── Lớp nền ── */}
       <div className="absolute inset-0 bg-slate-950">
-        {/* Base gradient fallback */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(0,82,255,0.22),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(247,147,26,0.20),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(77,124,255,0.18),transparent)] dark:bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,rgba(255,178,30,0.12),transparent)]" />
+        {/* Gradient nền dự phòng khi chưa có ảnh */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,hsl(var(--primary-on-dark)/0.22),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_10%_110%,hsl(var(--brand-2)/0.16),transparent)]" />
 
-        {/* Slider images — lớp bọc parallax dịch nhẹ theo chuột, scale để không hở mép */}
+        {/* Ảnh slider — lớp bọc parallax, scale để không hở mép khi dịch */}
         <motion.div
           className="absolute inset-0"
-          style={{ x: parallaxX, y: parallaxY, scale: reduceMotion ? 1 : 1.08 }}
+          style={parallaxOn ? { x: parallaxX, y: parallaxY, scale: 1.05 } : undefined}
         >
           <AnimatePresence mode="sync" initial={false}>
             {currentImage && (
@@ -205,222 +240,214 @@ export function HeroBanner({
           </AnimatePresence>
         </motion.div>
 
-        {/* Gradient overlays — lighter than before */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/30 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/15 to-transparent" />
-
-        {/* Ambient glow orbs */}
-        <motion.div
-          animate={reduceMotion ? { opacity: 0.5 } : { opacity: [0.35, 0.65, 0.35], scale: [1, 1.08, 1] }}
-          transition={reduceMotion ? undefined : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-0 left-0 h-[420px] w-[520px] rounded-full blur-[120px]"
-          style={{ background: "radial-gradient(circle, hsl(var(--primary)/0.28) 0%, transparent 70%)" }}
-        />
-        <motion.div
-          animate={reduceMotion ? { opacity: 0.3 } : { opacity: [0.2, 0.4, 0.2], scale: [1, 1.12, 1] }}
-          transition={reduceMotion ? undefined : { duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute right-[10%] top-[20%] h-[300px] w-[300px] rounded-full blur-[90px]"
-          style={{ background: "radial-gradient(circle, rgba(147,51,234,0.18) 0%, transparent 70%)" }}
-        />
-
-        {/* Animated light streak — tắt khi giảm chuyển động */}
-        {!reduceMotion && (
-          <motion.div
-            initial={{ x: "-100%", opacity: 0 }}
-            animate={{ x: "200%", opacity: [0, 0.7, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 6, ease: [0.4, 0, 0.6, 1] }}
-            className="absolute top-[38%] h-px w-48 -rotate-12"
-            style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary)/0.9), rgba(255,255,255,0.8), transparent)" }}
-          />
-        )}
-
-        {/* Scanline texture */}
+        {/* Scrim đọc chữ — một lớp dọc lo tương phản chung, một lớp ngang siết
+            riêng nửa trái nơi đặt nội dung. Gọn hơn 4 lớp gradient cũ và không
+            làm đục ảnh ở nửa phải. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/40 to-black/10" />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(100deg, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.66) 28%, rgba(0,0,0,0.28) 52%, transparent 72%)",
+          }}
+        />
+
+        {/* Quầng sáng nền — trước đây là khối `blur-[120px]` bị framer-motion
+            phóng to/thu nhỏ vô hạn, tức là dựng lại một lớp mờ 520×420 ở mỗi
+            khung hình suốt thời gian mở trang. Nay gradient tự mềm sẵn (không
+            cần filter) và chỉ "thở" bằng opacity qua keyframes CSS. */}
+        <div
+          className="ambient-orb orb-breathe absolute bottom-0 left-0 h-[420px] w-[520px]"
+          style={{ ["--orb" as string]: "hsl(var(--primary-on-dark)/0.22)" }}
+        />
+        <div
+          className="ambient-orb orb-breathe orb-breathe--slow absolute right-[10%] top-[18%] h-[300px] w-[300px]"
+          style={{ ["--orb" as string]: "hsl(var(--brand-2)/0.16)" }}
+        />
+
+        {/* Vệt sáng quét ngang — thưa và mờ; keyframes CSS tự tắt khi người dùng
+            bật giảm chuyển động (quy tắc chung trong globals.css). */}
+        <div
+          className="hero-sweep absolute top-[36%] h-px w-48"
+          style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary-on-dark)/0.7), rgba(255,255,255,0.6), transparent)" }}
+        />
+
+        {/* Vân scanline */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.02]"
           style={{
             backgroundImage: "linear-gradient(transparent 50%, rgba(0,0,0,1) 50%)",
             backgroundSize: "100% 4px",
           }}
         />
 
-        {/* Top vignette edge */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent" />
+        {/* Vignette mép trên — để navbar nổi trên ảnh sáng */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 to-transparent" />
 
-        {/* Tàn lửa bay lên — thắp không khí Free Fire */}
+        {/* Tàn lửa bay lên — thắp không khí Free Fire.
+            Mỗi hạt từng là một vòng lặp framer-motion riêng, tức 14 vòng chạy
+            trên luồng chính vĩnh viễn. Nay là 14 animation CSS thuần, chạy trên
+            compositor nên không cướp khung hình của thao tác cuộn. */}
         {!reduceMotion && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {embers.map((p, i) => (
-              <motion.span
+              <span
                 key={i}
-                className="absolute rounded-full"
-                style={{
-                  left: `${p.left}%`,
-                  bottom: -12,
-                  width: p.size,
-                  height: p.size,
-                  background: "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)",
-                  boxShadow: "0 0 6px hsl(var(--primary)/0.85)",
-                }}
-                initial={{ y: 0, x: 0, opacity: 0 }}
-                animate={{ y: [-10, -p.rise], x: [0, p.drift, 0], opacity: [0, 0.9, 0] }}
-                transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "easeOut" }}
+                className="ember absolute rounded-full"
+                style={
+                  {
+                    left: `${p.left}%`,
+                    bottom: -12,
+                    width: p.size,
+                    height: p.size,
+                    background: "radial-gradient(circle, hsl(var(--primary-on-dark)) 0%, transparent 70%)",
+                    boxShadow: "0 0 5px hsl(var(--primary-on-dark)/0.6)",
+                    "--drift": `${p.drift}px`,
+                    "--rise": `${p.rise}px`,
+                    "--dur": `${p.duration}s`,
+                    "--delay": `${p.delay}s`,
+                  } as React.CSSProperties
+                }
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* ── Content ── */}
-      <div className="relative z-10 w-full px-4 pb-12 pt-24 md:px-8 md:pb-16 md:pt-32 lg:px-12">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-[660px] space-y-5 md:space-y-6">
+      {/* ── Nội dung ── */}
+      {/* Cùng max-w-7xl + px-4/px-6 với <main> để mép chữ hero thẳng hàng với
+          mọi section bên dưới. */}
+      <div className="relative z-10 w-full pb-16 pt-24 md:pb-20 md:pt-32">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <div className="max-w-[46rem] space-y-6">
 
-            {/* Live badge */}
+            {/* Nhãn trạng thái */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="flex items-center gap-3"
             >
-              {/* Glow ping */}
-              <span className="relative flex size-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
-                <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
               </span>
-              <span
-                className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-300"
-                style={{ textShadow: "0 0 12px rgba(52,211,153,0.6)" }}
-              >
+              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-300">
                 Đang hoạt động
               </span>
-              <span className="h-px w-8 bg-white/30" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">Free Fire Vietnam</span>
+              <span className="h-px w-8 bg-white/25" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/60">
+                Free Fire Vietnam
+              </span>
             </motion.div>
 
-            {/* Decorative line */}
+            {/* Tiêu đề — hai bậc, một hệ thống: dòng dẫn trắng, dòng nhấn màu
+                thương hiệu. Không dùng text-stroke vì rất khó đọc trên nền ảnh. */}
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="font-heading font-black uppercase leading-[0.88] tracking-tight text-balance"
+              style={{ fontSize: "clamp(2.75rem, 8.5vw, 6rem)" }}
+            >
+              <span
+                className="block text-white"
+                style={{ textShadow: "0 2px 24px rgba(0,0,0,0.55)" }}
+              >
+                {leadWord}
+              </span>
+              {restWords && (
+                <span
+                  className="block text-primary-on-dark"
+                  style={{ textShadow: "0 0 32px hsl(var(--primary-on-dark)/0.45), 0 2px 22px rgba(0,0,0,0.65)" }}
+                >
+                  {restWords}
+                </span>
+              )}
+            </motion.h1>
+
+            {/* Gạch nhấn dưới tiêu đề */}
             <motion.div
               initial={{ scaleX: 0, opacity: 0 }}
               animate={{ scaleX: 1, opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.05 }}
+              transition={{ duration: 0.7, delay: 0.22 }}
               className="origin-left h-px w-40"
-              style={{ background: "linear-gradient(90deg, hsl(var(--primary)), transparent)" }}
+              style={{ background: "linear-gradient(90deg, hsl(var(--primary-on-dark)), transparent)" }}
             />
 
-            {/* Main heading */}
-            <motion.h1
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="font-heading font-black uppercase leading-[0.85] tracking-tight"
-              style={{ fontSize: "clamp(3rem, 11vw, 7.5rem)" }}
-            >
-              {/* Line 1 — glowing primary color */}
-              <span
-                className="block text-primary dark:text-amber-400"
-                style={{
-                  textShadow: "0 0 30px hsl(var(--primary)/0.8), 0 0 70px hsl(var(--primary)/0.4), 0 0 120px hsl(var(--primary)/0.2)",
-                }}
-              >
-                {line1}
-              </span>
-
-              {/* Line 2 — bright outline */}
-              <span
-                className="block text-transparent"
-                style={{ WebkitTextStroke: "2px rgba(255,255,255,0.55)" }}
-              >
-                {line2}
-              </span>
-
-              {/* Line 3 — bright white */}
-              <span
-                className="block text-white"
-                style={{ textShadow: "0 2px 30px rgba(255,255,255,0.3)" }}
-              >
-                {line3}
-              </span>
-            </motion.h1>
-
-            {/* Tagline */}
+            {/* Mô tả */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="max-w-md text-sm leading-relaxed text-white/78 md:text-base"
+              transition={{ duration: 0.6, delay: 0.26 }}
+              className="max-w-lg text-sm leading-relaxed text-white/75 md:text-base"
             >
               Theo dõi sự kiện, cập nhật tin tức Esports và kết nối cộng đồng Free Fire Việt Nam.
             </motion.p>
 
-            {/* Stats pills */}
+            {/* Chỉ số nhanh + đếm ngược — cùng một hàng, cùng một ngôn ngữ thị giác */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.28 }}
-              className="flex flex-wrap gap-2"
+              transition={{ duration: 0.5, delay: 0.32 }}
+              className="flex flex-wrap items-center gap-2"
             >
-              {stats.map(({ icon, label, value, color }, i) => (
-                <motion.div
+              {stats.map(({ icon, label, value }) => (
+                <div
                   key={label}
-                  initial={{ opacity: 0, scale: 0.88 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.35, delay: 0.3 + i * 0.07 }}
-                  className="flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-3.5 py-1.5 backdrop-blur-md"
-                  style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 0 16px rgba(255,255,255,0.04)" }}
+                  // Không backdrop-blur: các thẻ này nằm đè lên lớp ảnh có
+                  // parallax, nên mỗi lần ảnh nhích là trình duyệt phải lấy mẫu
+                  // và làm mờ lại vùng phía sau. Nền đặc hơn một chút cho cùng
+                  // độ tương phản mà không tốn gì.
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.14] px-3.5 py-1.5"
                 >
-                  <Icon name={icon} size={15} className={`shrink-0 ${color}`} />
-                  <span className={`font-heading text-sm font-black tabular-nums ${color}`}>{value}</span>
-                  <span className="text-[10px] font-medium text-white/62">{label}</span>
-                </motion.div>
+                  <Icon name={icon} size={14} className="shrink-0 text-primary-on-dark" />
+                  <span className="font-heading text-sm font-black tabular-nums text-white">{value}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-white/55">{label}</span>
+                </div>
               ))}
             </motion.div>
 
-            {/* Countdown */}
             {countdown.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.32 }}
+                transition={{ duration: 0.5, delay: 0.36 }}
                 className="flex flex-wrap items-center gap-3"
               >
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/55">
-                  ⏱ Sự kiện tiếp theo
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50">
+                  Sự kiện tiếp theo
                 </span>
                 <div className="flex gap-1.5">
-                  {countdown.map((unit, i) => (
-                    <motion.div
+                  {countdown.map((unit) => (
+                    <div
                       key={unit.label}
-                      animate={i === countdown.length - 1 && !reduceMotion ? { scale: [1, 1.04, 1] } : {}}
-                      transition={reduceMotion ? undefined : { duration: 1, repeat: Infinity }}
-                      className="flex min-w-[44px] flex-col items-center rounded-xl border border-primary/40 bg-primary/18 px-2 py-1.5 backdrop-blur-sm dark:border-amber-400/40 dark:bg-amber-400/12"
-                      style={{ boxShadow: "0 0 14px hsl(var(--primary)/0.25), inset 0 1px 0 hsl(var(--primary)/0.2)" }}
+                      className="flex min-w-[46px] flex-col items-center rounded-xl border border-primary-on-dark/30 bg-primary-on-dark/[0.16] px-2 py-1.5"
                     >
-                      <span
-                        className="font-heading text-base font-black leading-none tabular-nums text-primary dark:text-amber-400 md:text-xl"
-                        style={{ textShadow: "0 0 16px hsl(var(--primary)/0.7)" }}
-                      >
+                      <span className="font-heading text-base font-black leading-none tabular-nums text-primary-on-dark md:text-lg">
                         {String(unit.value).padStart(2, "0")}
                       </span>
-                      <span className="text-[8px] font-bold uppercase tracking-wide text-white/50">
+                      <span className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-white/45">
                         {unit.label}
                       </span>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </motion.div>
             )}
 
-            {/* CTA buttons */}
+            {/* Nút hành động */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.38 }}
-              className="flex flex-row flex-wrap gap-3"
+              transition={{ duration: 0.5, delay: 0.42 }}
+              className="flex flex-row flex-wrap gap-3 pt-1"
             >
               <Button
                 asChild
                 size="lg"
                 className="h-11 rounded-xl px-6"
-                style={{ boxShadow: "0 4px 24px hsl(var(--primary)/0.5), 0 0 40px hsl(var(--primary)/0.2)" }}
+                style={{ boxShadow: "0 4px 24px hsl(var(--primary)/0.45)" }}
               >
                 <Link href="/calendar">
                   XEM LỊCH SỰ KIỆN
@@ -431,7 +458,7 @@ export function HeroBanner({
                 asChild
                 size="lg"
                 variant="outline"
-                className="h-11 rounded-xl border-white/25 bg-white/10 px-5 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white hover:border-white/40"
+                className="h-11 rounded-xl border-white/25 bg-white/[0.14] px-5 text-white hover:bg-white/25 hover:text-white hover:border-white/40"
               >
                 <Link href="/news">
                   TIN TỨC
@@ -443,21 +470,22 @@ export function HeroBanner({
         </div>
       </div>
 
-      {/* ── Slider controls ── */}
+      {/* ── Điều khiển slider ── */}
       {hasMultiple && (
         <>
-          <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 md:bottom-6">
+          <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
             {allImages.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => goTo(i)}
                 aria-label={`Ảnh ${i + 1}`}
+                aria-current={i === index}
                 className={[
                   "rounded-full transition-all duration-300",
                   i === index
-                    ? "h-2 w-6 bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]"
-                    : "size-2 bg-white/35 hover:bg-white/65",
+                    ? "h-1.5 w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]"
+                    : "size-1.5 bg-white/35 hover:bg-white/65",
                 ].join(" ")}
               />
             ))}
@@ -467,7 +495,7 @@ export function HeroBanner({
             type="button"
             onClick={prev}
             aria-label="Ảnh trước"
-            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 hover:border-white/40 md:left-5 md:size-10"
+            className="absolute left-3 top-1/2 z-20 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white transition-colors hover:border-white/40 hover:bg-black/70 md:left-5 md:flex"
           >
             <Icon name="chevron_left" size={18} />
           </button>
@@ -475,14 +503,14 @@ export function HeroBanner({
             type="button"
             onClick={next}
             aria-label="Ảnh tiếp theo"
-            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 hover:border-white/40 md:right-5 md:size-10"
+            className="absolute right-3 top-1/2 z-20 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white transition-colors hover:border-white/40 hover:bg-black/70 md:right-5 md:flex"
           >
             <Icon name="chevron_right" size={18} />
           </button>
         </>
       )}
 
-      {/* Bottom fade into page */}
+      {/* Hoà mép dưới vào nền trang */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
     </section>
   );

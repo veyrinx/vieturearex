@@ -56,7 +56,7 @@ export function SocialPanel({ initialItems, canEdit }: { initialItems: SocialVid
       <div className="space-y-3">
         {rows.map((r) => (
           <div key={r._rid} className="rounded-2xl border border-border bg-card p-4 space-y-3">
-            <div className="grid gap-3 sm:grid-cols-[1fr,130px]">
+            <div className="grid gap-3 sm:grid-cols-[1fr_130px]">
               <label className="space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tiêu đề</span>
                 <input value={r.title} disabled={!canEdit} onChange={(e) => patch(r._rid, { title: e.target.value })}

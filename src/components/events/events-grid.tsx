@@ -93,7 +93,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
       {/* Overlay mờ khi có card được chọn */}
       {selectedEvent && (
         <div
-          className="fixed left-0 top-0 z-40 h-screen w-screen bg-black/40 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed left-0 top-0 z-40 h-screen w-screen bg-black/55 transition-opacity duration-300"
           onClick={() => setSelectedEvent(null)}
         />
       )}

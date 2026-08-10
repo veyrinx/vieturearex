@@ -89,7 +89,7 @@ export function CountdownsPanel({ initialItems, canEdit }: { initialItems: FFCou
           const past = !Number.isNaN(new Date(r.date).getTime()) && new Date(r.date).getTime() < Date.now();
           return (
             <div key={r._rid} className="rounded-2xl border border-border bg-card p-4">
-              <div className="grid gap-3 sm:grid-cols-[1fr,200px,150px]">
+              <div className="grid gap-3 sm:grid-cols-[1fr_200px_150px]">
                 <label className="space-y-1">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tên mốc</span>
                   <input value={r.label} disabled={!canEdit} onChange={(e) => patch(r._rid, { label: e.target.value })}

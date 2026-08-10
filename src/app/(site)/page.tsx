@@ -7,8 +7,7 @@ import { LatestNews } from "@/components/home/latest-news";
 import { GalleryPreview } from "@/components/home/gallery-preview";
 import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
-import { NewsTicker } from "@/components/home/news-ticker";
-import { StatsBar } from "@/components/home/stats-bar";
+import { PulseBar } from "@/components/home/pulse-bar";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
 import { CommunityHighlights } from "@/components/common/community-highlights";
 import { ToolsShowcase } from "@/components/common/tools-showcase";
@@ -119,7 +118,22 @@ export default async function HomePage() {
         />
       ) : null}
 
-      <div className="space-y-12 pb-12 md:space-y-20 lg:space-y-24">
+      {/* Ambient background cho toàn bộ khu nội dung */}
+      {/* Hai quả cầu này từng dùng `blur-[120px]` trên khối 600px — một lớp mờ
+          cỡ nửa màn hình mà trình duyệt phải dựng lại mỗi khi vùng nền đổi.
+          `.ambient-orb` vẽ thẳng bằng radial-gradient: nhìn y hệt, tốn ~0. */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+        <div
+          className="ambient-orb absolute left-[10%] top-[30%] size-[600px]"
+          style={{ ["--orb" as string]: "hsl(var(--primary)/0.06)" }}
+        />
+        <div
+          className="ambient-orb absolute right-[5%] top-[60%] size-[500px]"
+          style={{ ["--orb" as string]: "hsl(var(--brand-2)/0.06)" }}
+        />
+      </div>
+
+      <div className="pb-12">
       <HeroBanner
         heroTitle={heroTitle}
         desktopBackgroundUrls={heroSlider.desktopImages}
@@ -133,94 +147,102 @@ export default async function HomePage() {
         nextEventDate={nextUpcomingEvent?.start_date ?? null}
       />
 
-      <NewsTicker news={newsForDisplay.slice(0, 8)} />
+      {/* Nhịp trang chủ — sáu khối, khoảng cách do .home-rhythm quy định thay vì
+          mỗi chỗ tự chọn một giá trị space-y. Các khối xen kẽ nền thường và
+          .home-band (nền nhạt full-bleed) để mắt có điểm nghỉ khi cuộn. */}
+      {/* Không đặt overflow-x-clip ở đây: nó sẽ cắt mất phần tràn mép của các
+          dải full-bleed bên trong. Việc chặn tràn ngang do html lo (globals.css). */}
+      <div className="home-rhythm pt-12 md:pt-16">
+        {/* ① Nhịp: tin mới chạy + chỉ số cộng đồng, dính liền thành một dải */}
+        <PulseBar
+          news={newsForDisplay.slice(0, 8)}
+          eventCount={events.length}
+          newsCount={news.length}
+          galleryCount={gallery.length}
+          toolCount={TOOLS.length}
+        />
 
-      <StatsBar
-        eventCount={events.length}
-        newsCount={news.length}
-        galleryCount={gallery.length}
-        toolCount={TOOLS.length}
-      />
-
-      {/* Subtle ambient background for content sections */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
-        <div className="absolute left-[10%] top-[30%] size-[600px] rounded-full bg-primary/[0.03] blur-[120px] dark:bg-amber-400/[0.04]" />
-        <div className="absolute right-[5%] top-[60%] size-[500px] rounded-full bg-violet-500/[0.025] blur-[100px]" />
-      </div>
-
-      <div className="space-y-12 overflow-x-clip md:space-y-20 lg:space-y-24">
-        {/* Quảng cáo banner đầu khu nội dung (Google AdSense — slot Header) */}
+        {/* Quảng cáo đặt ở ranh giới giữa hai khối, không cắt ngang nội dung
+            (Google AdSense — slot Header) */}
         <ArticleAd slotKey="ads.slot_header" className="mx-auto w-full max-w-4xl" />
 
-        <div className="relative isolate">
-          {(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
-            <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
-              {eventsBackdrop.videoUrl ? (
-                <video
-                  src={eventsBackdrop.videoUrl}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="none"
-                  poster={eventsBackdrop.imageUrl || undefined}
-                  className="absolute inset-0 size-full object-cover"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Image
-                  src={eventsBackdrop.imageUrl}
-                  alt=""
-                  fill
-                  unoptimized
-                  className="object-cover"
-                  sizes="100vw"
-                />
+        {/* ② Đang diễn ra: sự kiện + livestream — cùng một mạch "ngay lúc này" */}
+        <section className="home-band">
+          <div className="space-y-12 md:space-y-16">
+            <div className="relative isolate">
+              {(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
+                <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
+                  {eventsBackdrop.videoUrl ? (
+                    <video
+                      src={eventsBackdrop.videoUrl}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="none"
+                      poster={eventsBackdrop.imageUrl || undefined}
+                      className="absolute inset-0 size-full object-cover"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Image
+                      src={eventsBackdrop.imageUrl}
+                      alt=""
+                      fill
+                      unoptimized
+                      className="object-cover"
+                      sizes="100vw"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background" />
+                </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background" />
+              <div className={(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) ? "px-4 py-10 md:px-8 md:py-14" : ""}>
+                {eventsBackdrop.caption && (eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
+                  <p className="mb-4 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+                    {eventsBackdrop.caption}
+                  </p>
+                )}
+                <FeaturedEvents events={events} />
+              </div>
             </div>
-          )}
-          <div className={(eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) ? "px-4 py-10 md:px-8 md:py-14" : ""}>
-            {eventsBackdrop.caption && (eventsBackdrop.imageUrl || eventsBackdrop.videoUrl) && (
-              <p className="mb-4 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-primary dark:text-amber-400">
-                {eventsBackdrop.caption}
-              </p>
-            )}
-            <FeaturedEvents events={events} />
-          </div>
-        </div>
-        {liveAndUpcomingStreams.length > 0 && (
-          <LivestreamPreview streams={liveAndUpcomingStreams} />
-        )}
-        <LatestNews news={newsForDisplay.slice(0, 6)} />
 
-        {/* Quảng cáo box giữa nội dung (Google AdSense — slot Sidebar) */}
+            {liveAndUpcomingStreams.length > 0 && (
+              <LivestreamPreview streams={liveAndUpcomingStreams} />
+            )}
+          </div>
+        </section>
+
+        {/* ③ Nội dung: tin tức + ảnh cộng đồng */}
+        <section className="container-main space-y-12 px-0 md:space-y-16">
+          <LatestNews news={newsForDisplay.slice(0, 6)} />
+          <GalleryPreview gallery={gallery.slice(0, 6)} />
+        </section>
+
+        {/* (Google AdSense — slot Sidebar) */}
         <ArticleAd slotKey="ads.slot_sidebar" className="mx-auto w-full max-w-sm" />
 
-        <GalleryPreview gallery={gallery.slice(0, 6)} />
+        {/* ④ Khám phá: công cụ + tâm điểm cộng đồng */}
+        <section className="home-band">
+          <div className="space-y-12 md:space-y-16">
+            <ToolsShowcase />
+            <CommunityHighlights />
+          </div>
+        </section>
 
-        {/* Công cụ (cuộn ngang) */}
-        <div className="container-main">
-          <ToolsShowcase />
-        </div>
-
-        {/* Tâm điểm cộng đồng */}
-        <div className="container-main">
-          <CommunityHighlights />
-        </div>
+        {/* ⑤ Lời mời tham gia — điểm dừng cuối */}
+        <JoinCommunityCta
+          facebook={socialLinks.facebook}
+          youtube={socialLinks.youtube}
+          tiktok={socialLinks.tiktok}
+          community={siteConfig.links.community}
+          daysActive={communityStats.daysActive}
+          facebookMembers={communityStats.facebookMembers}
+          youtubeSubscribers={communityStats.youtubeSubscribers}
+          tiktokFollowers={communityStats.tiktokFollowers}
+          zaloMembers={communityStats.zaloMembers}
+        />
       </div>
-
-      <JoinCommunityCta
-        facebook={socialLinks.facebook}
-        youtube={socialLinks.youtube}
-        tiktok={socialLinks.tiktok}
-        community={siteConfig.links.community}
-        daysActive={communityStats.daysActive}
-        facebookMembers={communityStats.facebookMembers}
-        youtubeSubscribers={communityStats.youtubeSubscribers}
-        tiktokFollowers={communityStats.tiktokFollowers}
-        zaloMembers={communityStats.zaloMembers}
-      />
       </div>
     </>
   );

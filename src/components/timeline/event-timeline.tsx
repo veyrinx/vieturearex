@@ -235,7 +235,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
           <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">BỘ LỌC</span>
           <span className="text-xs text-muted-foreground">{filterOpen ? "▲ Thu gọn" : "▼ Mở rộng"}</span>
         </button>
-        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr,220px,200px,200px]", filterOpen ? "mt-3" : "hidden md:grid")}>
+        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_220px_200px_200px]", filterOpen ? "mt-3" : "hidden md:grid")}>
           <div className="space-y-1">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">TÌM KIẾM</p>
             <div className="relative">

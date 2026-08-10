@@ -14,33 +14,33 @@ export function NewsTicker({ news }: NewsTickerProps) {
   const items = [...news, ...news];
 
   return (
-    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90 dark:from-amber-500/90 dark:via-amber-400 dark:to-amber-500/90" />
+    // Full-bleed do <PulseBar> bọc ngoài lo — ở đây chỉ dựng dải nội dung.
+    <div className="relative overflow-hidden">
+      {/* Nền dải — dùng token primary nên tự đổi theo theme, không cần biến thể dark. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90" />
       <div className="absolute inset-0 opacity-20"
         style={{ backgroundImage: "repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(255,255,255,0.06) 60px,rgba(255,255,255,0.06) 61px)" }}
       />
 
-      <div className="relative flex items-center">
-        {/* Label pill */}
-        <div className="flex shrink-0 items-center gap-2 bg-black/20 px-4 py-2.5 backdrop-blur-sm">
+      <div className="relative flex items-stretch">
+        {/* Nhãn */}
+        <div className="flex shrink-0 items-center gap-2 bg-black/20 px-4 backdrop-blur-sm">
           <span className="relative flex size-2 shrink-0">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-75" />
             <span className="relative inline-flex size-2 rounded-full bg-white" />
           </span>
           <Zap className="size-3.5 shrink-0 fill-white text-white" />
-          <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white">
+          <span className="hidden text-[10px] font-black uppercase tracking-[0.24em] text-white sm:inline">
             MỚI NHẤT
           </span>
         </div>
 
-        {/* Divider */}
-        <div className="h-full w-px bg-white/20" />
+        <div className="w-px bg-white/20" />
 
-        {/* Scrolling area */}
+        {/* Vùng chạy chữ */}
         <div className="relative flex flex-1 overflow-hidden">
-          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-primary to-transparent dark:from-amber-400/90" />
-          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-primary to-transparent dark:from-amber-400/90" />
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-primary to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-primary to-transparent" />
 
           <div className="ticker-track flex w-max gap-0 whitespace-nowrap">
             {items.map((item, i) => (
@@ -63,6 +63,9 @@ export function NewsTicker({ news }: NewsTickerProps) {
         @keyframes ticker-scroll {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ticker-track { animation: none; }
         }
       `}</style>
     </div>

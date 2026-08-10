@@ -158,7 +158,7 @@ export function TeamJoinForm({ token, config }: Props) {
                 const isOther = g.game === "other";
                 const meta = GAME_LIST.find((x) => x.key === g.game);
                 return (
-                  <div key={idx} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-2.5 sm:grid-cols-[140px,1fr,1fr,auto]">
+                  <div key={idx} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-2.5 sm:grid-cols-[140px_1fr_1fr_auto]">
                     <select
                       value={g.game}
                       onChange={(e) => {

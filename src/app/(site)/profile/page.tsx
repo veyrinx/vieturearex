@@ -804,7 +804,7 @@ export default function ProfilePage() {
                     {games.map((g, idx) => {
                       const isOther = g.game === "other";
                       return (
-                        <div key={idx} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-2.5 sm:grid-cols-[140px,1fr,1fr,auto]">
+                        <div key={idx} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-2.5 sm:grid-cols-[140px_1fr_1fr_auto]">
                           <select value={g.game} onChange={(e) => { const next = [...games]; next[idx] = { ...next[idx], game: e.target.value }; setGames(next); }}
                             className="h-9 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {GAME_LIST.map((opt) => (<option key={opt.key} value={opt.key}>{opt.label}</option>))}
