@@ -3,14 +3,11 @@ import Image from "next/image";
 import { EventJsonLd, OrganizationJsonLd } from "next-seo";
 import { HeroBanner } from "@/components/home/hero-banner";
 import { FeaturedEvents } from "@/components/home/featured-events";
-import { LatestNews } from "@/components/home/latest-news";
-import { GalleryPreview } from "@/components/home/gallery-preview";
 import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
 import { PulseBar } from "@/components/home/pulse-bar";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
 import { CommunityHighlights } from "@/components/common/community-highlights";
-import { ToolsShowcase } from "@/components/common/tools-showcase";
 import { ArticleAd } from "@/components/common/article-ad";
 import { TOOLS } from "@/lib/constants/tools";
 import {
@@ -68,9 +65,11 @@ export default async function HomePage() {
   // The data layer already returns events/news/gallery sorted by descending date,
   // so no client-side re-sort is needed here.
   // Strip the heavy news `content` HTML body before handing news to client components:
-  // the ticker and cards only read title/slug/cover/category/date, so serializing every
+  // the ticker only reads title/slug/cover/category/date, so serializing every
   // published article's full body into the RSC/HTML payload is pure waste.
-  const newsForDisplay = news.map((item) => ({ ...item, content: "" }));
+  // Cắt trước rồi mới map: từ khi khối tin tức rời khỏi trang chủ, chỉ còn 8 mục
+  // chạy trên ticker — map cả danh sách rồi vứt gần hết là làm không công.
+  const tickerNews = news.slice(0, 8).map((item) => ({ ...item, content: "" }));
 
   const popupEnabled = settingsMap["popup.enabled"] === "true";
   const popupTitle = settingsMap["popup.title"] ?? "";
@@ -151,7 +150,7 @@ export default async function HomePage() {
         nextEventDate={nextUpcomingEvent?.start_date ?? null}
       />
 
-      {/* Nhịp trang chủ — sáu khối, khoảng cách do .home-rhythm quy định thay vì
+      {/* Nhịp trang chủ — bốn khối, khoảng cách do .home-rhythm quy định thay vì
           mỗi chỗ tự chọn một giá trị space-y. Các khối xen kẽ nền thường và
           .home-band (nền nhạt full-bleed) để mắt có điểm nghỉ khi cuộn. */}
       {/* Không đặt overflow-x-clip ở đây: nó sẽ cắt mất phần tràn mép của các
@@ -159,7 +158,7 @@ export default async function HomePage() {
       <div className="home-rhythm pt-12 md:pt-16">
         {/* ① Nhịp: tin mới chạy + chỉ số cộng đồng, dính liền thành một dải */}
         <PulseBar
-          news={newsForDisplay.slice(0, 8)}
+          news={tickerNews}
           newsCount={news.length}
           galleryCount={gallery.length}
           toolCount={TOOLS.length}
@@ -216,24 +215,18 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ③ Nội dung: tin tức + ảnh cộng đồng */}
-        <section className="container-main space-y-12 px-0 md:space-y-16">
-          <LatestNews news={newsForDisplay.slice(0, 6)} />
-          <GalleryPreview gallery={gallery.slice(0, 6)} />
-        </section>
-
         {/* (Google AdSense — slot Sidebar) */}
         <ArticleAd slotKey="ads.slot_sidebar" className="mx-auto w-full max-w-sm" />
 
-        {/* ④ Khám phá: công cụ + tâm điểm cộng đồng */}
+        {/* ③ Khám phá: tâm điểm cộng đồng.
+            Khối tin tức, thư viện ảnh và băng công cụ từng nằm ở đây đã được gỡ
+            theo yêu cầu — nội dung của chúng vẫn còn nguyên ở /news, /gallery
+            và /tools, chỉ là không dội lại ở trang chủ nữa. */}
         <section className="home-band">
-          <div className="space-y-12 md:space-y-16">
-            <ToolsShowcase />
-            <CommunityHighlights />
-          </div>
+          <CommunityHighlights />
         </section>
 
-        {/* ⑤ Lời mời tham gia — điểm dừng cuối */}
+        {/* ④ Lời mời tham gia — điểm dừng cuối */}
         <JoinCommunityCta
           facebook={socialLinks.facebook}
           youtube={socialLinks.youtube}
