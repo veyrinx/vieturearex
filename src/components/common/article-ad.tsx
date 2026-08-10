@@ -1,11 +1,15 @@
 import { getSettings } from "@/lib/data/content-service";
 import { AdSense } from "@/components/common/adsense";
-import { cn } from "@/lib/utils";
+import { buildSettingsMap, resolveAdsDisplay } from "@/lib/utils/site-settings";
 
 /**
  * Ô quảng cáo dùng chung cho các trang nội dung (tin tức, wiki…).
  * Chỉ hiện khi slot tương ứng đã được cấu hình trong Cài đặt → Quảng cáo,
  * nên không bao giờ để lại khung trống nếu chưa bật.
+ *
+ * Khung viền do AdSense tự dựng (prop `framed`) chứ không bọc ở đây: công tắc
+ * bật/tắt theo thiết bị chỉ chốt được ở client, nên khung phải biến mất cùng
+ * quảng cáo thay vì đứng lại thành hộp rỗng.
  */
 export async function ArticleAd({
   slotKey = "ads.slot_article",
@@ -15,16 +19,20 @@ export async function ArticleAd({
   className?: string;
 }) {
   const settings = await getSettings();
-  const slot = settings.find((s) => s.key === slotKey)?.value?.trim() || null;
+  const settingsMap = buildSettingsMap(settings);
+  const slot = settingsMap[slotKey]?.trim() || null;
   if (!slot) return null;
-  const client = settings.find((s) => s.key === "ads.google_adsense_id")?.value?.trim() || undefined;
+  const client = settingsMap["ads.google_adsense_id"]?.trim() || undefined;
+  const ads = resolveAdsDisplay(settingsMap);
 
   return (
-    <div className={cn("overflow-hidden rounded-2xl border border-dashed border-border/60 bg-card/40 p-2", className)}>
-      <p className="mb-1 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
-        Quảng cáo
-      </p>
-      <AdSense slot={slot} client={client} />
-    </div>
+    <AdSense
+      slot={slot}
+      client={client}
+      framed
+      frameClassName={className}
+      showOnMobile={ads.showOnMobile}
+      showOnDesktop={ads.showOnDesktop}
+    />
   );
 }

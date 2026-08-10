@@ -4,7 +4,6 @@ import type { NewsItem } from "@/lib/types/content";
 
 type PulseBarProps = {
   news: NewsItem[];
-  eventCount: number;
   newsCount: number;
   galleryCount: number;
   toolCount?: number;
@@ -19,12 +18,11 @@ type PulseBarProps = {
  * đầu trang chỉ còn một điểm dừng, và các section nội dung phía dưới mới là
  * chuỗi nhịp thật sự.
  */
-export function PulseBar({ news, eventCount, newsCount, galleryCount, toolCount }: PulseBarProps) {
+export function PulseBar({ news, newsCount, galleryCount, toolCount }: PulseBarProps) {
   return (
     <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden">
       <NewsTicker news={news} />
       <StatsBar
-        eventCount={eventCount}
         newsCount={newsCount}
         galleryCount={galleryCount}
         toolCount={toolCount}

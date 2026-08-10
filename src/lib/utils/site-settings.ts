@@ -96,6 +96,16 @@ export const settingsFormFieldOrder = [
   "ads.slot_header",
   "ads.slot_sidebar",
   "ads.slot_article",
+  // Bốn slot dưới đây có ô nhập trong admin từ lâu nhưng chưa từng nằm trong
+  // danh sách này, nên API chặn lúc lưu (route.ts → isAdminSettingsApiKey).
+  // Chúng là id công khai (in thẳng vào data-ad-slot của HTML) nên không xếp
+  // vào SENSITIVE_FORM_KEYS như ba slot cũ.
+  "ads.slot_news_top",
+  "ads.slot_news_inline",
+  "ads.slot_wiki_top",
+  "ads.slot_wiki_article",
+  "ads.show_on_mobile",
+  "ads.show_on_desktop",
   "tms.free_per_week",
   "tms.payment_price",
   "tms.payment_info",
@@ -278,6 +288,12 @@ export const defaultSiteSettingValues: Record<string, string> = {
   "ads.slot_header": "",
   "ads.slot_sidebar": "",
   "ads.slot_article": "",
+  "ads.slot_news_top": "",
+  "ads.slot_news_inline": "",
+  "ads.slot_wiki_top": "",
+  "ads.slot_wiki_article": "",
+  "ads.show_on_mobile": "true",
+  "ads.show_on_desktop": "true",
   "site.maintenance_mode": "false",
   "site.maintenance_message": "Website đang được bảo trì. Vui lòng quay lại sau.",
   "site.maintenance_end_time": "",
@@ -471,6 +487,19 @@ export function resolveEventsBackdrop(settingsMap: Record<string, string>) {
     caption: settingsMap["home.events_bg.caption"] || "",
   };
 }
+
+/**
+ * Quảng cáo được bật ở thiết bị nào. Mặc định bật cả hai — thiếu key (site chưa
+ * lưu lần nào) phải hiểu là "bật", nếu không nâng cấp code sẽ tắt hết doanh thu.
+ */
+export function resolveAdsDisplay(settingsMap: Record<string, string>) {
+  return {
+    showOnMobile: settingsMap["ads.show_on_mobile"] !== "false",
+    showOnDesktop: settingsMap["ads.show_on_desktop"] !== "false",
+  };
+}
+
+export type AdsDisplayConfig = ReturnType<typeof resolveAdsDisplay>;
 
 export function resolveHomeSideAds(settingsMap: Record<string, string>) {
   return {

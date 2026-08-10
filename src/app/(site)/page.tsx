@@ -28,6 +28,7 @@ import {
   resolveCommunityStats,
   resolveEventsBackdrop,
   resolveHeroSliderSettings,
+  resolveAdsDisplay,
   resolveHomeSideAds,
   resolveSocialLinks,
 } from "@/lib/utils/site-settings";
@@ -59,6 +60,7 @@ export default async function HomePage() {
   const socialLinks = resolveSocialLinks(settingsMap);
   const heroSlider = resolveHeroSliderSettings(settingsMap);
   const sideAds = resolveHomeSideAds(settingsMap);
+  const adsDisplay = resolveAdsDisplay(settingsMap);
   const eventsBackdrop = resolveEventsBackdrop(settingsMap);
   const communityStats = resolveCommunityStats(settingsMap);
 
@@ -86,7 +88,9 @@ export default async function HomePage() {
 
   return (
     <>
-      <SideAds left={sideAds.left} right={sideAds.right} />
+      {/* Hai cột này vốn `hidden xl:block` nên chỉ có mặt ở desktop — chốt được
+          ngay từ server, không cần đợi client đo màn hình như AdSense. */}
+      {adsDisplay.showOnDesktop && <SideAds left={sideAds.left} right={sideAds.right} />}
       {firstHeroImage && (
         // eslint-disable-next-line @next/next/no-head-element
         <link rel="preload" as="image" href={firstHeroImage} fetchPriority="high" />
@@ -156,7 +160,6 @@ export default async function HomePage() {
         {/* ① Nhịp: tin mới chạy + chỉ số cộng đồng, dính liền thành một dải */}
         <PulseBar
           news={newsForDisplay.slice(0, 8)}
-          eventCount={events.length}
           newsCount={news.length}
           galleryCount={gallery.length}
           toolCount={TOOLS.length}

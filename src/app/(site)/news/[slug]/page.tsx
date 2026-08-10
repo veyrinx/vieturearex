@@ -14,6 +14,7 @@ import { ShareButtons } from "@/components/news/share-buttons";
 import { NewsReactions } from "@/components/news/news-reactions";
 import { FollowCategoryButton } from "@/components/news/follow-category-button";
 import { siteConfig } from "@/lib/constants/site";
+import { buildSettingsMap, resolveAdsDisplay } from "@/lib/utils/site-settings";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -64,7 +65,9 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     getSettings().catch(() => [] as Awaited<ReturnType<typeof getSettings>>),
   ]);
 
-  const adSlotArticle = settings.find((s) => s.key === "ads.slot_article")?.value?.trim() || null;
+  const adSettingsMap = buildSettingsMap(settings);
+  const adSlotArticle = adSettingsMap["ads.slot_article"]?.trim() || null;
+  const adsDisplay = resolveAdsDisplay(adSettingsMap);
 
   const processedHtml = injectHeadingIds(article.content);
 
@@ -201,10 +204,12 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
       {/* In-article ad (only renders when a slot is configured in Settings) */}
       {adSlotArticle && (
-        <div className="overflow-hidden rounded-2xl border border-dashed border-border/60 bg-card/40 p-2">
-          <p className="mb-1 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">Quảng cáo</p>
-          <AdSense slot={adSlotArticle} />
-        </div>
+        <AdSense
+          slot={adSlotArticle}
+          framed
+          showOnMobile={adsDisplay.showOnMobile}
+          showOnDesktop={adsDisplay.showOnDesktop}
+        />
       )}
 
       {/* Related articles */}

@@ -473,7 +473,11 @@ export function HeroBanner({
       {/* ── Điều khiển slider ── */}
       {hasMultiple && (
         <>
-          <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
+          {/* Vùng chạm và chấm hiển thị tách làm hai lớp: chấm vẫn nhỏ như thiết
+              kế, còn <button> được nới ra ~44px — mức tối thiểu để ngón tay bấm
+              trúng. Trên mobile đây là cách duy nhất đổi ảnh vì hai mũi tên
+              trái/phải chỉ hiện từ md trở lên. */}
+          <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 md:bottom-4">
             {allImages.map((_, i) => (
               <button
                 key={i}
@@ -481,13 +485,19 @@ export function HeroBanner({
                 onClick={() => goTo(i)}
                 aria-label={`Ảnh ${i + 1}`}
                 aria-current={i === index}
-                className={[
-                  "rounded-full transition-all duration-300",
-                  i === index
-                    ? "h-1.5 w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]"
-                    : "size-1.5 bg-white/35 hover:bg-white/65",
-                ].join(" ")}
-              />
+                // min-w-9 chứ không phải w cố định: chấm đang chọn rộng 28px,
+                // khung hẹp hơn thì nó tràn ra ngoài vùng chạm.
+                className="group flex h-11 min-w-9 items-center justify-center px-1"
+              >
+                <span
+                  className={[
+                    "block rounded-full transition-all duration-300",
+                    i === index
+                      ? "h-1.5 w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]"
+                      : "size-1.5 bg-white/35 group-hover:bg-white/65",
+                  ].join(" ")}
+                />
+              </button>
             ))}
           </div>
 

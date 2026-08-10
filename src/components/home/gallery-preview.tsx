@@ -175,9 +175,13 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
             const isFeatured = index === 0;
 
             return (
-              <Reveal key={item.id} delay={index * 0.04}>
+              // gridClass phải nằm trên <Reveal> chứ không phải <figure>: Reveal
+              // dựng một <div> bọc ngoài, nên chính nó mới là con trực tiếp của
+              // lưới. Đặt col-span/row-span vào <figure> thì trình duyệt bỏ qua
+              // và cả khối mosaic rút về lưới 1×1 đều tăm tắp.
+              <Reveal key={item.id} delay={index * 0.04} className={gridClass}>
                 <figure
-                  className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 ${gridClass} ${
+                  className={`group relative flex h-full cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 ${
                     isHot
                       ? "border-primary/60 shadow-[0_0_24px_hsl(var(--primary)/0.25)] scale-[1.01]"
                       : "border-border hover:border-primary/40"
@@ -186,7 +190,9 @@ export function GalleryPreview({ gallery }: GalleryPreviewProps) {
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => !isFailed && setLightboxIndex(index)}
                 >
-                  <div className={`relative overflow-hidden bg-muted ${!isFeatured ? aspectClass : "h-full"}`}>
+                  {/* w-full vì <figure> giờ là flex container — thiếu nó thì ô
+                      ảnh co lại theo nội dung thay vì lấp đầy ô lưới. */}
+                  <div className={`relative w-full overflow-hidden bg-muted ${!isFeatured ? aspectClass : "h-full"}`}>
                     {isFailed ? (
                       <div className="flex h-full min-h-[120px] items-center justify-center bg-muted text-xs text-muted-foreground">
                         Lỗi tải ảnh

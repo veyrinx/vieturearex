@@ -923,6 +923,43 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <div className="py-4">
             <SectionHeader icon={BarChart3} title="Google AdSense" desc="Cấu hình quảng cáo Google trên website" />
           </div>
+          <div className="space-y-2 py-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Hiển thị theo thiết bị</p>
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Hiện quảng cáo trên điện thoại</p>
+                <p className="text-xs text-muted-foreground">
+                  Tắt để màn hình dưới 768px sạch hoàn toàn. Ô quảng cáo không được tải chứ không phải bị giấu bằng CSS,
+                  nên không tính lượt hiển thị.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={v("ads.show_on_mobile") !== "false"}
+                onChange={(e) => set("ads.show_on_mobile", e.target.checked ? "true" : "false")}
+                className="mt-1 size-4 cursor-pointer accent-primary"
+              />
+            </label>
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Hiện quảng cáo trên máy tính</p>
+                <p className="text-xs text-muted-foreground">
+                  Bao gồm cả hai cột quảng cáo hai bên ở trang chủ.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={v("ads.show_on_desktop") !== "false"}
+                onChange={(e) => set("ads.show_on_desktop", e.target.checked ? "true" : "false")}
+                className="mt-1 size-4 cursor-pointer accent-primary"
+              />
+            </label>
+            {v("ads.show_on_mobile") === "false" && v("ads.show_on_desktop") === "false" && (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-400">
+                Đang tắt ở cả hai thiết bị — không quảng cáo nào chạy, doanh thu AdSense về 0.
+              </p>
+            )}
+          </div>
           <Field label="Publisher ID" hint="ca-pub-XXXXXXXXXX" icon={BarChart3}>
             <div className="space-y-2">
               <Input value={v("ads.google_adsense_id")} onChange={(e) => set("ads.google_adsense_id", e.target.value)} placeholder="ca-pub-0000000000000000" className="font-mono" />
