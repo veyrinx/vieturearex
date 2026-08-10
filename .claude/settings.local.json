@@ -561,7 +561,22 @@
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main 2>&1 | Select-Object -Last 3)",
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' status --short; & 'D:\\\\Git\\\\cmd\\\\git.exe' log --oneline -2; & 'D:\\\\Git\\\\cmd\\\\git.exe' status -sb | Select-Object -First 1)",
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' diff -- .claude/settings.local.json)",
-      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A 2>$null; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\122cf52a-0bed-45b3-915c-2b1493091804\\\\scratchpad\\\\commitmsg3.txt\" 2>&1 | Select-Object -Last 2; & 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main 2>&1 | Select-Object -Last 2)"
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A 2>$null; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\122cf52a-0bed-45b3-915c-2b1493091804\\\\scratchpad\\\\commitmsg3.txt\" 2>&1 | Select-Object -Last 2; & 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main 2>&1 | Select-Object -Last 2)",
+      "Bash(npx playwright *)",
+      "Bash(npm init *)",
+      "Bash(D:/Git/cmd/git.exe --no-pager diff --stat)",
+      "Bash(sed -i 's|bg-card/90 shadow-md backdrop-blur-sm transition-colors|bg-card shadow-md transition-colors|' src/components/common/scroll-to-top.tsx)",
+      "Bash(sed -i 's|shadow-\\\\[0_14px_34px_rgba\\(15,23,42,0.12\\)\\\\] backdrop-blur-md|shadow-[0_14px_34px_rgba\\(15,23,42,0.12\\)]|' src/components/common/experimental-badge.tsx)",
+      "Bash(sed -i 's|bg-background/95 backdrop-blur-xl|bg-background/95|' \"src/app/\\(site\\)/cookie-policy/page.tsx\")",
+      "Bash(D:/Git/cmd/git.exe --no-pager log --oneline -3)",
+      "Bash(D:/Git/cmd/git.exe --no-pager log --oneline HEAD..origin/main)",
+      "Bash(D:/Git/cmd/git.exe rev-list *)",
+      "Bash(D:/Git/cmd/git.exe --no-pager show --stat --oneline 49e24ed)",
+      "Bash(D:/Git/cmd/git.exe --no-pager log --oneline -2)",
+      "PowerShell(Get-ChildItem D:\\\\ -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { $s = \\(Get-ChildItem $_.FullName -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object -Sum Length\\).Sum; [PSCustomObject]@{ Dir=$_.Name; GB=[math]::Round\\($s/1GB,2\\) } } | Sort-Object GB -Descending | Select-Object -First 12 | Format-Table -AutoSize)",
+      "Bash(powershell -NoProfile -Command \"'{0:N1} GB .next' -f \\(\\(Get-ChildItem D:\\\\vieture-arex\\\\.next -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum\\).Sum/1GB\\)\" 2>/dev/null)",
+      "Bash(rm -rf /d/vieture-arex/.next/cache)",
+      "Bash(rm -f /d/vieture-arex/tsconfig.tsbuildinfo)"
     ]
   }
 }
