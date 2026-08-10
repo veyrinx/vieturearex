@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { EventJsonLd, OrganizationJsonLd } from "next-seo";
 import { HeroBanner } from "@/components/home/hero-banner";
-import { FeaturedEvents } from "@/components/home/featured-events";
+import { FeaturedEventsShowcase } from "@/components/home/featured-events-showcase";
+import { NewsShowcase } from "@/components/home/news-showcase";
+import { GalleryStrip } from "@/components/home/gallery-strip";
 import { JoinCommunityCta } from "@/components/home/join-community-cta";
 import { AnnouncementPopup } from "@/components/home/announcement-popup";
 import { PulseBar } from "@/components/home/pulse-bar";
 import { LivestreamPreview } from "@/components/home/livestream-preview";
 import { CommunityHighlights } from "@/components/common/community-highlights";
-import { ArticleAd } from "@/components/common/article-ad";
 import {
   getEvents,
   getGalleryItems,
@@ -18,14 +19,11 @@ import {
 import { getStreams } from "@/lib/server/stream-service";
 import { siteConfig } from "@/lib/constants/site";
 import { getSiteConfig } from "@/lib/server/get-site-config";
-import { SideAds } from "@/components/home/side-ads";
 import {
   buildSettingsMap,
   resolveCommunityStats,
   resolveEventsBackdrop,
   resolveHeroSliderSettings,
-  resolveAdsDisplay,
-  resolveHomeSideAds,
   resolveSocialLinks,
 } from "@/lib/utils/site-settings";
 
@@ -55,8 +53,6 @@ export default async function HomePage() {
   const settingsMap = buildSettingsMap(settings);
   const socialLinks = resolveSocialLinks(settingsMap);
   const heroSlider = resolveHeroSliderSettings(settingsMap);
-  const sideAds = resolveHomeSideAds(settingsMap);
-  const adsDisplay = resolveAdsDisplay(settingsMap);
   const eventsBackdrop = resolveEventsBackdrop(settingsMap);
   const communityStats = resolveCommunityStats(settingsMap);
 
@@ -84,11 +80,12 @@ export default async function HomePage() {
 
   const liveAndUpcomingStreams = streams.filter((s) => s.status === "live" || s.status === "upcoming");
 
+  // Năm bài: một bài dẫn lớn + bốn bài danh sách trong NewsShowcase. Cắt ở đây
+  // để phần body HTML nặng của những bài còn lại không đi kèm xuống client.
+  const featuredNews = news.slice(0, 5);
+
   return (
     <>
-      {/* Hai cột này vốn `hidden xl:block` nên chỉ có mặt ở desktop — chốt được
-          ngay từ server, không cần đợi client đo màn hình như AdSense. */}
-      {adsDisplay.showOnDesktop && <SideAds left={sideAds.left} right={sideAds.right} />}
       {firstHeroImage && (
         // eslint-disable-next-line @next/next/no-head-element
         <link rel="preload" as="image" href={firstHeroImage} fetchPriority="high" />
@@ -136,6 +133,7 @@ export default async function HomePage() {
       </div>
 
       <div className="pb-12">
+      {/* Banner lớn — phần gây ấn tượng, ảnh do admin đặt trong Cài đặt. */}
       <HeroBanner
         heroTitle={heroTitle}
         desktopBackgroundUrls={heroSlider.desktopImages}
@@ -149,20 +147,26 @@ export default async function HomePage() {
         nextEventDate={nextUpcomingEvent?.start_date ?? null}
       />
 
-      {/* Nhịp trang chủ — bốn khối, khoảng cách do .home-rhythm quy định thay vì
-          mỗi chỗ tự chọn một giá trị space-y. Các khối xen kẽ nền thường và
-          .home-band (nền nhạt full-bleed) để mắt có điểm nghỉ khi cuộn. */}
+      {/* Dải tin chạy dính ngay dưới banner, tràn hết bề ngang. */}
+      <PulseBar news={tickerNews} />
+
+      {/* Nhịp trang chủ — khoảng cách do .home-rhythm quy định thay vì mỗi chỗ
+          tự chọn một giá trị space-y. Các khối xen kẽ nền thường và .home-band
+          (nền nhạt full-bleed) để mắt có điểm nghỉ khi cuộn.
+
+          Banner lớn lo phần gây ấn tượng, từ đây xuống là ba khối nội dung
+          cùng một khuôn "tin dẫn lớn + danh sách phụ" — người đọc học một lần
+          rồi lướt được cả trang:
+            ① SỰ KIỆN NỔI BẬT
+            ② TIN TỨC NỔI BẬT
+            ③ PHÁT TRỰC TIẾP
+            ④ ảnh cộng đồng
+            ⑤ tâm điểm cộng đồng
+            ⑥ lời mời tham gia */}
       {/* Không đặt overflow-x-clip ở đây: nó sẽ cắt mất phần tràn mép của các
           dải full-bleed bên trong. Việc chặn tràn ngang do html lo (globals.css). */}
-      <div className="home-rhythm pt-12 md:pt-16">
-        {/* ① Nhịp: dải tin mới chạy */}
-        <PulseBar news={tickerNews} />
-
-        {/* Quảng cáo đặt ở ranh giới giữa hai khối, không cắt ngang nội dung
-            (Google AdSense — slot Header) */}
-        <ArticleAd slotKey="ads.slot_header" className="mx-auto w-full max-w-4xl" />
-
-        {/* ② Đang diễn ra: sự kiện + livestream — cùng một mạch "ngay lúc này" */}
+      <div className="home-rhythm pt-10 md:pt-14">
+        {/* ① Sự kiện nổi bật — vẫn giữ nền trang trí do admin đặt */}
         <section className="home-band">
           <div className="space-y-12 md:space-y-16">
             <div className="relative isolate">
@@ -199,28 +203,29 @@ export default async function HomePage() {
                     {eventsBackdrop.caption}
                   </p>
                 )}
-                <FeaturedEvents events={events} />
+                <FeaturedEventsShowcase events={events} />
               </div>
             </div>
-
-            {liveAndUpcomingStreams.length > 0 && (
-              <LivestreamPreview streams={liveAndUpcomingStreams} />
-            )}
           </div>
         </section>
 
-        {/* (Google AdSense — slot Sidebar) */}
-        <ArticleAd slotKey="ads.slot_sidebar" className="mx-auto w-full max-w-sm" />
+        {/* ② Tin tức nổi bật */}
+        <NewsShowcase news={featuredNews} />
 
-        {/* ③ Khám phá: tâm điểm cộng đồng.
-            Khối tin tức, thư viện ảnh và băng công cụ từng nằm ở đây đã được gỡ
-            theo yêu cầu — nội dung của chúng vẫn còn nguyên ở /news, /gallery
-            và /tools, chỉ là không dội lại ở trang chủ nữa. */}
+        {/* ③ Phát trực tiếp */}
+        {liveAndUpcomingStreams.length > 0 && (
+          <LivestreamPreview streams={liveAndUpcomingStreams} />
+        )}
+
+        {/* ④ Ảnh cộng đồng */}
         <section className="home-band">
-          <CommunityHighlights />
+          <GalleryStrip gallery={gallery} />
         </section>
 
-        {/* ④ Lời mời tham gia — điểm dừng cuối */}
+        {/* ⑤ Cộng đồng */}
+        <CommunityHighlights />
+
+        {/* ⑥ Lời mời tham gia — điểm dừng cuối */}
         <JoinCommunityCta
           facebook={socialLinks.facebook}
           youtube={socialLinks.youtube}

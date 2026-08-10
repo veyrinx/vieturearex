@@ -5,6 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Icon } from "@/components/common/icon";
+import { HeroCountdown } from "@/components/home/hero-countdown";
 import { Button } from "@/components/ui/button";
 import type { HeroSliderEffect } from "@/lib/utils/site-settings";
 
@@ -43,33 +44,6 @@ function getSliderVariants(effect: HeroSliderEffect) {
   };
 }
 
-type CountdownUnit = { value: number; label: string };
-
-function useCountdown(targetDate: string | null | undefined) {
-  const [units, setUnits] = useState<CountdownUnit[]>([]);
-  useEffect(() => {
-    if (!targetDate) return;
-    const calc = () => {
-      const diff = new Date(targetDate).getTime() - Date.now();
-      if (diff <= 0) { setUnits([]); return; }
-      const d = Math.floor(diff / 86_400_000);
-      const h = Math.floor((diff % 86_400_000) / 3_600_000);
-      const m = Math.floor((diff % 3_600_000) / 60_000);
-      const s = Math.floor((diff % 60_000) / 1000);
-      setUnits([
-        { value: d, label: "ngày" },
-        { value: h, label: "giờ" },
-        { value: m, label: "phút" },
-        { value: s, label: "giây" },
-      ]);
-    };
-    calc();
-    const timer = window.setInterval(calc, 1000);
-    return () => window.clearInterval(timer);
-  }, [targetDate]);
-  return units;
-}
-
 export function HeroBanner({
   desktopBackgroundUrls = [],
   mobileBackgroundUrls = [],
@@ -93,7 +67,6 @@ export function HeroBanner({
 
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const countdown = useCountdown(nextEventDate);
   const reduceMotion = useReducedMotion();
 
   // Parallax theo con trỏ — biên độ nhỏ, chỉ đủ gợi chiều sâu chứ không kéo ảnh trôi.
@@ -347,8 +320,11 @@ export function HeroBanner({
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="font-heading font-black uppercase leading-[0.88] tracking-tight text-balance"
-              style={{ fontSize: "clamp(2.75rem, 8.5vw, 6rem)" }}
+              // Chặn dưới 2.25rem chứ không phải 2.75rem: tiêu đề do admin đặt,
+              // một từ dài (vd "COMMUNITY") ở 44px đã sát mép màn 360px, chỉ cần
+              // dài hơn chút là tràn. `break-words` là lưới an toàn cuối cùng.
+              className="font-heading font-black uppercase leading-[0.88] tracking-tight text-balance break-words"
+              style={{ fontSize: "clamp(2.25rem, 8.5vw, 6rem)" }}
             >
               <span
                 className="block text-white"
@@ -408,33 +384,8 @@ export function HeroBanner({
               ))}
             </motion.div>
 
-            {countdown.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.36 }}
-                className="flex flex-wrap items-center gap-3"
-              >
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50">
-                  Sự kiện tiếp theo
-                </span>
-                <div className="flex gap-1.5">
-                  {countdown.map((unit) => (
-                    <div
-                      key={unit.label}
-                      className="flex min-w-[46px] flex-col items-center rounded-xl border border-primary-on-dark/30 bg-primary-on-dark/[0.16] px-2 py-1.5"
-                    >
-                      <span className="font-heading text-base font-black leading-none tabular-nums text-primary-on-dark md:text-lg">
-                        {String(unit.value).padStart(2, "0")}
-                      </span>
-                      <span className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-white/45">
-                        {unit.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+            {/* Đồng hồ tự lo state của nó — hero không re-render theo mỗi giây. */}
+            {nextEventDate && <HeroCountdown target={nextEventDate} />}
 
             {/* Nút hành động */}
             <motion.div

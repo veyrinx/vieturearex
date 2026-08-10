@@ -1,8 +1,12 @@
-"use client";
-
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import type { NewsItem } from "@/lib/types/content";
+
+/**
+ * Không còn "use client": từ khi keyframes chuyển sang globals.css, khối này chỉ
+ * là markup tĩnh — không hook, không handler. Để nó dựng ở server thì cả danh
+ * sách tin không cần đi kèm dưới dạng payload cho trình duyệt hydrate lại.
+ */
 
 type NewsTickerProps = {
   news: NewsItem[];
@@ -56,18 +60,6 @@ export function NewsTicker({ news }: NewsTickerProps) {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .ticker-track { animation: ticker-scroll 42s linear infinite; }
-        .ticker-track:hover { animation-play-state: paused; }
-        @keyframes ticker-scroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .ticker-track { animation: none; }
-        }
-      `}</style>
     </div>
   );
 }

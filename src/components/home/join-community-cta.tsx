@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { CountUp } from "@/components/home/stats-bar";
 
 type JoinCommunityCtaProps = {
@@ -119,7 +119,7 @@ export function JoinCommunityCta(props: JoinCommunityCtaProps) {
               KẾT NỐI VỚI AREX
             </h2>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Tham gia cộng đồng Free Fire — cập nhật sự kiện, theo dõi tin tức và giao lưu cùng mọi người.
+              Đây là toàn bộ kênh chính thức của Arex — ngoài danh sách này, chúng tôi không vận hành trang nào khác.
             </p>
           </div>
 
@@ -179,11 +179,13 @@ export function JoinCommunityCta(props: JoinCommunityCtaProps) {
                   </p>
                 )}
 
-                {/* Label */}
+                {/* Label — kèm dấu xác thực để phân biệt với các trang mạo danh
+                    cùng tên đang tồn tại đầy trong cộng đồng Free Fire. */}
                 <div className="flex items-center gap-1.5">
                   <span className={["text-xs font-bold uppercase tracking-[0.1em]", platform.accentText].join(" ")}>
                     {platform.label}
                   </span>
+                  <BadgeCheck className={["size-3.5 shrink-0", platform.accentText].join(" ")} aria-label="Kênh chính thức" />
                 </div>
               </a>
             );

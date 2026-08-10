@@ -744,6 +744,27 @@ body, .font-body {
   100% { transform: translate3d(0, calc(var(--rise, 320px) * -1), 0); opacity: 0; }
 }
 
+/* Dải tin chạy dưới hero. Trước đây khai bằng <style jsx> ngay trong
+   news-ticker.tsx — chỉ vì mấy dòng keyframes này mà cả runtime styled-jsx phải
+   đi kèm xuống trình duyệt ở trang chủ, dù không nơi nào khác trong dự án dùng
+   tới nó. */
+.ticker-track {
+  animation: ticker-scroll 42s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}
+
 /* Vệt sáng quét ngang ở hero. */
 .hero-sweep {
   animation: hero-sweep 13s cubic-bezier(0.4, 0, 0.6, 1) infinite;
