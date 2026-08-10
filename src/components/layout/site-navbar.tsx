@@ -11,7 +11,6 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/common/theme-toggle";
-import { LanguageToggle } from "@/components/common/language-toggle";
 import { PushNotificationButton } from "@/components/common/push-notification-button";
 import { UserNavButton } from "@/components/common/user-nav-button";
 import { NotificationBell } from "@/components/common/notification-bell";
@@ -366,7 +365,6 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
           <UserNavButton className={isHomePage ? ctrlClass : undefined} />
           {/* Hide extra icons below lg — moved into sheet (avoids cramping) */}
           <span className="hidden xl:contents">
-            <LanguageToggle className={isHomePage ? ctrlClass : "theme-control-surface"} />
             <NotificationBell className={isHomePage ? ctrlClass : undefined} />
             <PushNotificationButton className={isHomePage ? ctrlClass : undefined} />
             <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
@@ -461,7 +459,6 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
                 <div className="flex items-center gap-1">
-                  <LanguageToggle className="theme-control-surface" openUp />
                   <NotificationBell />
                   <PushNotificationButton />
                   <ThemeToggle />

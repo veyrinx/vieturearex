@@ -138,11 +138,6 @@ const nextConfig = {
       "https://www.googletagmanager.com",
       "https://www.google-analytics.com",
       "https://va.vercel-scripts.com",
-      // Google Dịch (widget nhúng element.js)
-      "https://translate.google.com",
-      "https://translate.googleapis.com",
-      // el_main tải thêm JSONP danh sách ngôn ngữ từ translate-pa (trong iframe srcdoc)
-      "https://translate-pa.googleapis.com",
       "https://www.gstatic.com",
       // Google AdSense (loader + script phụ trợ)
       "https://pagead2.googlesyndication.com",
@@ -167,10 +162,6 @@ const nextConfig = {
       "https://va.vercel-scripts.com",
       "wss://*.twitch.tv",
       "https://*.twitch.tv",
-      // Google Dịch gọi API dịch từ trình duyệt
-      "https://translate.googleapis.com",
-      "https://translate-pa.googleapis.com",
-      "https://translate.google.com",
       "https://www.gstatic.com",
       // Google AdSense (beacon / đo lường chất lượng quảng cáo)
       "https://pagead2.googlesyndication.com",
@@ -182,13 +173,11 @@ const nextConfig = {
       "https://www.google.com",
     ].join(" ");
 
-    // Google Dịch nạp CSS/font của widget từ gstatic + translate.googleapis.com.
     const styleSrc = [
       "'self'",
       "'unsafe-inline'",
       "https://fonts.googleapis.com",
       "https://www.gstatic.com",
-      "https://translate.googleapis.com",
     ].join(" ");
 
     const fontSrc = [
@@ -209,7 +198,6 @@ const nextConfig = {
       "https://www.facebook.com",
       "https://web.facebook.com",
       "https://www.tiktok.com",
-      "https://translate.google.com",
       "https://googleads.g.doubleclick.net",
       "https://pagead2.googlesyndication.com",
       "https://tpc.googlesyndication.com",
