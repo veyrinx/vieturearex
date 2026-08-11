@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { Flame, HandCoins, PackageSearch, Plus, ReceiptText, ShieldCheck, Store } from "lucide-react";
+import {
+  ClipboardList,
+  Flame,
+  HandCoins,
+  Hourglass,
+  Lock,
+  PackageSearch,
+  Plus,
+  ReceiptText,
+  ShieldCheck,
+  Settings2,
+  Store,
+} from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -68,7 +80,28 @@ export default async function ShopPage({
 
   const featuredIds = new Set(featured.map((l) => l.id));
   const rest = listings.filter((l) => !featuredIds.has(l.id));
-  const canSell = viewer.seller?.status === "approved";
+
+  // Nút bán đổi theo tình trạng hồ sơ. Trước đây chỉ xét "approved", nên người
+  // vừa nộp hồ sơ và đang chờ vẫn thấy đúng lời mời "Xin bán trên chợ" như lúc
+  // chưa nộp gì — phải bấm vào mới biết hồ sơ của mình đang nằm ở đâu.
+  const sellCta = ((): { href: string; label: string; icon: typeof Plus; primary: boolean } => {
+    switch (viewer.seller?.status) {
+      case "approved":
+        return { href: "/shop/dang-tin", label: "Đăng tin bán", icon: Plus, primary: true };
+      case "pending":
+        return { href: "/shop/dang-ky-ban", label: "Hồ sơ chờ duyệt", icon: Hourglass, primary: false };
+      case "suspended":
+        return { href: "/shop/dang-ky-ban", label: "Hồ sơ bị tạm khoá", icon: Lock, primary: false };
+      default:
+        // Chưa nộp, hoặc bị từ chối — trang đăng ký cho sửa rồi gửi lại.
+        return { href: "/shop/dang-ky-ban", label: "Xin bán trên chợ", icon: Plus, primary: true };
+    }
+  })();
+  const SellCtaIcon = sellCta.icon;
+
+  // Pill phụ: dùng chung cho mọi lối vào không phải hành động chính.
+  const pill =
+    "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition hover:border-primary/30 hover:text-primary";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 py-8">
@@ -103,8 +136,20 @@ export default async function ShopPage({
           <ShopFilters signedIn={!!viewer.userId} />
         </Suspense>
 
+        {/* Thanh hành động — sắp theo vai, hẹp dần từ nội bộ ra tới người mua.
+            Ba trang dưới đây vốn đã dựng xong nhưng không có lối vào nào: người
+            bán chỉ tới được "Tin của tôi" nhờ cú redirect sau khi đăng tin, còn
+            trang quản lý thì phải tự gõ URL. */}
         <div className="flex flex-wrap justify-end gap-2">
-          {/* Lối vào khu nội bộ — chỉ hiện với người được gán vai giao dịch viên. */}
+          {/* Lối vào khu nội bộ — chỉ hiện với người được gán vai. */}
+          {viewer.isAdmin && (
+            <Link
+              href="/admin/shop"
+              className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/40 bg-violet-500/10 px-3.5 py-1.5 text-xs font-bold text-violet-600 transition hover:bg-violet-500/20 dark:text-violet-400"
+            >
+              <Settings2 className="size-3.5" /> Quản lý chợ
+            </Link>
+          )}
           {viewer.isAgent && (
             <Link
               href="/shop/ctv"
@@ -113,18 +158,35 @@ export default async function ShopPage({
               <HandCoins className="size-3.5" /> Bàn giao dịch viên
             </Link>
           )}
-          <Link
-            href="/shop/don-hang"
-            className="rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition hover:border-primary/30 hover:text-primary"
-          >
-            Đơn của tôi
+
+          {/* Khu của người bán — có hồ sơ là quản lý được tin, dù đang chờ duyệt. */}
+          {viewer.seller && (
+            <Link href="/shop/tin-cua-toi" className={pill}>
+              <ClipboardList className="size-3.5" /> Tin của tôi
+            </Link>
+          )}
+          {viewer.seller?.status === "approved" && (
+            // Gian hàng công khai: nơi duy nhất hiện đánh giá và số đơn thành
+            // công, mà chính người bán lại không có đường nào xem thử.
+            <Link href={`/shop/nguoi-ban/${viewer.seller.id}`} className={pill}>
+              <Store className="size-3.5" /> Gian hàng của tôi
+            </Link>
+          )}
+
+          <Link href="/shop/don-hang" className={pill}>
+            <ReceiptText className="size-3.5" /> Đơn của tôi
           </Link>
+
           <Link
-            href={canSell ? "/shop/dang-tin" : "/shop/dang-ky-ban"}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 dark:bg-amber-500"
+            href={sellCta.href}
+            className={
+              sellCta.primary
+                ? "inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 dark:bg-amber-500"
+                : "inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-600 transition hover:bg-amber-500/20 dark:text-amber-400"
+            }
           >
-            <Plus className="size-3.5" />
-            {canSell ? "Đăng tin bán" : "Xin bán trên chợ"}
+            <SellCtaIcon className="size-3.5" />
+            {sellCta.label}
           </Link>
         </div>
       </div>
