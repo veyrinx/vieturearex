@@ -41,6 +41,16 @@ export async function GET(req: NextRequest) {
     status = wanted as ListingStatus;
   }
 
+  // Hàng chờ "xin đẩy nổi bật" — chỉ nhân sự xem được, vì nó lộ ý định của
+  // người bán chứ không phải thông tin công khai của tin.
+  const featureRequests = sp.get("featureRequests") === "1";
+  if (featureRequests) {
+    const auth = await getAuthContext();
+    if (!isShopAdminRole(auth.role) && !isAgentRole(auth.role)) {
+      return shopJson({ error: "Không có quyền." }, { status: 403 });
+    }
+  }
+
   const sort = sp.get("sort") ?? "";
 
   const listings = await listListings({
@@ -51,6 +61,10 @@ export async function GET(req: NextRequest) {
     maxPrice: sp.get("max") ? Number(sp.get("max")) : undefined,
     sort: (LISTING_SORTS as string[]).includes(sort) ? (sort as ListingSort) : undefined,
     featuredOnly: sp.get("featured") === "1",
+    featureRequestedOnly: featureRequests,
+    // Hàng chờ nằm rải ở mọi trạng thái người bán đang bán, không riêng "active"
+    // — nên bỏ bộ lọc trạng thái mặc định để không cắt mất yêu cầu nào.
+    ...(featureRequests && !status ? { status: ["active", "reserved"] as ListingStatus[] } : {}),
     limit: Math.min(100, Number(sp.get("limit") ?? 60) || 60),
   });
   return shopJson({ listings });

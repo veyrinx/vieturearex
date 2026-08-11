@@ -358,6 +358,53 @@ export async function notifyListingRejected(listing: ShopListing, reason: string
   }
 }
 
+/**
+ * Yêu cầu đẩy nổi bật được duyệt.
+ *
+ * Chỉ báo cho người bán, không đăng ra kênh Discord: tin đã lên sàn từ trước
+ * nên kênh chợ đã có bài của nó rồi, đăng lại chỉ là lặp.
+ */
+export async function notifyListingFeatured(listing: ShopListing, days: number): Promise<void> {
+  try {
+    const seller = await getSellerById(listing.seller_id);
+    if (!seller?.user_id) return;
+    await createNotifications([
+      {
+        user_id: seller.user_id,
+        type: "shop_listing",
+        title: "Tin của bạn được đẩy nổi bật",
+        body: `${listing.title} — ghim ở dải nổi bật trong ${days} ngày.`.slice(0, 300),
+        entity_type: "shop_listing",
+        entity_id: listing.id,
+        entity_url: `/shop/${listing.id}`,
+      },
+    ]);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Yêu cầu đẩy nổi bật bị từ chối — tin vẫn bán bình thường, chỉ không được ghim. */
+export async function notifyFeatureRejected(listing: ShopListing): Promise<void> {
+  try {
+    const seller = await getSellerById(listing.seller_id);
+    if (!seller?.user_id) return;
+    await createNotifications([
+      {
+        user_id: seller.user_id,
+        type: "shop_listing",
+        title: "Yêu cầu đẩy nổi bật không được duyệt",
+        body: `${listing.title} — tin vẫn đang bán bình thường.`.slice(0, 300),
+        entity_type: "shop_listing",
+        entity_id: listing.id,
+        entity_url: `/shop/tin-cua-toi`,
+      },
+    ]);
+  } catch {
+    /* best-effort */
+  }
+}
+
 // ── Theo dõi bộ lọc ─────────────────────────────────────────────────────────
 type WatchRow = {
   user_id: string;

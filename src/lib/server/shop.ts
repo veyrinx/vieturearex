@@ -158,6 +158,8 @@ type ListingFilter = {
   sort?: ListingSort;
   /** Chỉ lấy tin đang còn hạn nổi bật. */
   featuredOnly?: boolean;
+  /** Chỉ lấy tin người bán đang xin đẩy nổi bật (hàng chờ của admin). */
+  featureRequestedOnly?: boolean;
   limit?: number;
 };
 
@@ -170,6 +172,13 @@ function buildListingQuery(
   v2: boolean,
 ) {
   let q = untypedFrom(client, "shop_listings").select("*").limit(filter.limit ?? 60);
+
+  // Hàng chờ duyệt nổi bật xếp theo thứ tự xin — ai giơ tay trước được xét
+  // trước. Phải đặt trước khối sort bên dưới: PostgREST gom các lần .order()
+  // theo thứ tự gọi, gọi sau thì chỉ còn là khoá phụ.
+  if (filter.featureRequestedOnly) {
+    q = q.order("featured_requested_at", { ascending: true });
+  }
 
   switch (filter.sort ?? "new") {
     case "price_asc":
@@ -200,6 +209,9 @@ function buildListingQuery(
   if (filter.minPrice != null) q = q.gte("price", filter.minPrice);
   if (filter.maxPrice != null) q = q.lte("price", filter.maxPrice);
   if (v2 && filter.featuredOnly) q = q.gt("featured_until", new Date().toISOString());
+  // Cột này đến từ migration-shop-featured-request.sql, muộn hơn nhóm v2 — nên
+  // không gộp vào cờ `v2`. Thiếu cột thì listListings bắt 42703 và trả rỗng.
+  if (filter.featureRequestedOnly) q = q.not("featured_requested_at", "is", null);
 
   return q;
 }
@@ -215,6 +227,17 @@ export async function listListings(filter: ListingFilter = {}): Promise<ShopList
   // Chưa biết thì cứ giả định schema đầy đủ — trường hợp bình thường.
   let usedV2 = known !== false;
   let { data, error } = await attempt(usedV2);
+
+  // Hàng chờ nổi bật đọc cột của một migration muộn hơn nhóm v2. Thiếu đúng cột
+  // đó thì hạ cấp xuống v2=false cũng vô ích (bộ lọc vẫn còn), và tệ hơn là sẽ
+  // đánh dấu nhầm cả nhóm v2 là "chưa có" suốt 5 phút sau đó.
+  if (filter.featureRequestedOnly && isUndefinedColumn(error)) {
+    console.warn(
+      "[shop] Thiếu cột featured_requested_at trên shop_listings — hãy chạy " +
+        "supabase/migration-shop-featured-request.sql. Tạm coi như chưa ai xin nổi bật.",
+    );
+    return [];
+  }
 
   if (usedV2 && isUndefinedColumn(error)) {
     listingV2Columns = { present: false, checkedAt: Date.now() };

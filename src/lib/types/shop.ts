@@ -70,6 +70,8 @@ export type ShopListing = {
   bumped_at: string | null;
   /** Còn hạn ⇒ tin được ghim ở dải nổi bật đầu trang. */
   featured_until: string | null;
+  /** Người bán đã xin đẩy nổi bật và đang chờ admin duyệt. NULL = không xin. */
+  featured_requested_at: string | null;
   seller?: PublicSeller | null;
 };
 

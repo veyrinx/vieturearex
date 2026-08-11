@@ -6,7 +6,12 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { getListing, getSellerByUser, isAgentRole, isShopAdminRole } from "@/lib/server/shop";
 import type { ListingStatus } from "@/lib/constants/shop";
 import { shopJson } from "@/lib/server/shop-privacy";
-import { notifyListingApproved, notifyListingRejected } from "@/lib/server/shop-notify";
+import {
+  notifyFeatureRejected,
+  notifyListingApproved,
+  notifyListingFeatured,
+  notifyListingRejected,
+} from "@/lib/server/shop-notify";
 
 /** Người bán chỉ đẩy tin được 1 lần / ngày. */
 const BUMP_COOLDOWN_MS = 24 * 3_600_000;
@@ -71,16 +76,50 @@ export async function PATCH(
     return shopJson({ ok: true, bumped: true });
   }
 
-  // Gắn/gỡ nhãn nổi bật — chỉ nhân sự.
+  // Người bán xin đẩy nổi bật. Chỉ ghi một mốc thời gian vào hàng chờ — quyền
+  // bật nhãn vẫn nằm ở nhân sự, người bán không tự làm tin mình nổi bật được.
+  if (body.action === "feature_request") {
+    if (!isOwner) return shopJson({ error: "Chỉ chủ tin xin được." }, { status: 403 });
+    if (listing.status !== "active") {
+      return shopJson({ error: "Chỉ xin được cho tin đang bán." }, { status: 409 });
+    }
+    if (listing.featured_until && Date.parse(listing.featured_until) > Date.now()) {
+      return shopJson({ error: "Tin đang nổi bật rồi." }, { status: 409 });
+    }
+    if (listing.featured_requested_at) {
+      return shopJson({ error: "Yêu cầu trước còn đang chờ duyệt." }, { status: 409 });
+    }
+    const { error } = (await untypedFrom(db, "shop_listings")
+      .update({ featured_requested_at: new Date().toISOString() } as never)
+      .eq("id", id)) as { error: { message: string } | null };
+    if (error) return shopJson({ error: error.message }, { status: 500 });
+    return shopJson({ ok: true, requested: true });
+  }
+
+  // Nhân sự từ chối yêu cầu: chỉ dọn hàng chờ, tin vẫn bán bình thường.
+  if (body.action === "feature_reject") {
+    if (!isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
+    const { error } = (await untypedFrom(db, "shop_listings")
+      .update({ featured_requested_at: null } as never)
+      .eq("id", id)) as { error: { message: string } | null };
+    if (error) return shopJson({ error: error.message }, { status: 500 });
+    if (listing.featured_requested_at) void notifyFeatureRejected(listing);
+    return shopJson({ ok: true, requestCleared: true });
+  }
+
+  // Gắn/gỡ nhãn nổi bật — chỉ nhân sự. Duyệt xong thì dọn luôn hàng chờ, nếu
+  // không yêu cầu đã xử lý vẫn nằm đó và admin sẽ duyệt lại lần nữa.
   if (body.action === "feature") {
     if (!isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
     const days = Math.min(30, Math.max(0, Number(body.days ?? 7) || 0));
     const { error } = (await untypedFrom(db, "shop_listings")
       .update({
         featured_until: days > 0 ? new Date(Date.now() + days * 86_400_000).toISOString() : null,
+        featured_requested_at: null,
       } as never)
       .eq("id", id)) as { error: { message: string } | null };
     if (error) return shopJson({ error: error.message }, { status: 500 });
+    if (days > 0) void notifyListingFeatured(listing, days);
     return shopJson({ ok: true, featuredDays: days });
   }
 

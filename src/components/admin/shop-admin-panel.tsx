@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle, Ban, Check, ExternalLink, Eye, Inbox, RefreshCw, ShieldAlert, Store, Tag, Users, X,
+  AlertTriangle, Ban, Check, ExternalLink, Eye, Inbox, RefreshCw, ShieldAlert, Sparkles, Store, Tag,
+  Users, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/empty-state";
@@ -55,11 +56,12 @@ const ACCESS_KIND_LABEL: Record<AccessLogRow["kind"], string> = {
   private_file: "Xem ảnh bằng chứng",
 };
 
-type TabKey = "sellers" | "listings" | "orders" | "disputes" | "access";
+type TabKey = "sellers" | "listings" | "featured" | "orders" | "disputes" | "access";
 
 const TABS: { key: TabKey; label: string; icon: typeof Users }[] = [
   { key: "sellers", label: "Hồ sơ người bán", icon: Users },
   { key: "listings", label: "Tin chờ duyệt", icon: Tag },
+  { key: "featured", label: "Xin nổi bật", icon: Sparkles },
   { key: "orders", label: "Đơn hàng", icon: Store },
   { key: "disputes", label: "Tranh chấp", icon: AlertTriangle },
   { key: "access", label: "Nhật ký truy cập", icon: ShieldAlert },
@@ -89,6 +91,15 @@ export function ShopAdminPanel({ canReview }: { canReview: boolean }) {
     refetchInterval: 60_000,
     enabled: canReview,
   });
+  const featureRequests = useQuery({
+    queryKey: ["admin-shop", "feature-requests"],
+    queryFn: () =>
+      getJson<{ listings: ShopListing[] }>("/api/shop/listings?featureRequests=1&limit=100").then(
+        (d) => d.listings ?? [],
+      ),
+    refetchInterval: 60_000,
+    enabled: canReview,
+  });
   const orders = useQuery({
     queryKey: ["admin-shop", "orders"],
     queryFn: () => getJson<{ orders: ShopOrder[] }>("/api/shop/orders?scope=all").then((d) => d.orders ?? []),
@@ -114,6 +125,7 @@ export function ShopAdminPanel({ canReview }: { canReview: boolean }) {
   const counts: Record<TabKey, number> = {
     sellers: pendingSellers,
     listings: listings.data?.length ?? 0,
+    featured: featureRequests.data?.length ?? 0,
     orders: (orders.data ?? []).filter((o) => !["completed", "cancelled"].includes(o.status)).length,
     disputes: openDisputes,
     access: 0,
@@ -179,6 +191,7 @@ export function ShopAdminPanel({ canReview }: { canReview: boolean }) {
 
       {tab === "sellers" && <SellersTab query={sellers} onDone={refresh} />}
       {tab === "listings" && <ListingsTab query={listings} onDone={refresh} />}
+      {tab === "featured" && <FeatureRequestsTab query={featureRequests} onDone={refresh} />}
       {tab === "orders" && <OrdersTab query={orders} />}
       {tab === "disputes" && <DisputesTab query={disputes} />}
       {tab === "access" && <AccessLogTab query={accessLogs} />}
@@ -477,6 +490,111 @@ function ListingsTab({
             </ActionBtn>
             <ActionBtn tone="mute" disabled={busy === l.id} onClick={() => void review(l.id, "hidden")}>
               <Ban className="size-3.5" /> Gỡ
+            </ActionBtn>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Hàng chờ xin đẩy nổi bật ────────────────────────────────────────────────
+/**
+ * Khác tab "Tin chờ duyệt": ở đó tin chưa được lên sàn, còn ở đây tin đã bán
+ * bình thường rồi — từ chối cũng không ảnh hưởng gì tới nó, chỉ là không được
+ * ghim. Nên không hỏi lý do như lúc từ chối tin.
+ */
+const FEATURE_DAY_CHOICES = [3, 7, 30];
+
+function FeatureRequestsTab({
+  query,
+  onDone,
+}: {
+  query: ReturnType<typeof useQuery<ShopListing[]>>;
+  onDone: () => void;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+
+  if (query.isLoading) return <LoadingSpinner className="py-10" />;
+  if (query.error) return <ErrorBox message={(query.error as Error).message} />;
+
+  const rows = query.data ?? [];
+
+  const act = async (id: string, body: Record<string, unknown>, done: string) => {
+    setBusy(id);
+    try {
+      const res = await fetch(`/api/shop/listings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = (await res.json()) as { error?: string };
+      if (!res.ok) { toast.error(d.error ?? "Không cập nhật được."); return; }
+      toast.success(done);
+      onDone();
+    } catch {
+      toast.error("Lỗi mạng, thử lại.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        icon={Sparkles}
+        title="Không có yêu cầu nào"
+        description="Người bán chưa xin đẩy tin nào lên dải nổi bật."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {rows.map((l) => (
+        <div key={l.id} className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex gap-3">
+            <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+              {l.images[0] && <Image src={l.images[0]} alt="" fill sizes="64px" className="object-cover" unoptimized />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-sm font-bold text-foreground">{l.title}</p>
+              <p className="font-heading text-base font-black text-primary">{formatVnd(l.price)}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {LISTING_KIND_LABEL[l.kind]} · {l.seller?.display_name ?? "—"}
+                {l.seller ? ` · ${l.seller.orders_done} đơn xong` : ""}
+                {l.featured_requested_at
+                  ? ` · xin lúc ${new Date(l.featured_requested_at).toLocaleString("vi-VN")}`
+                  : ""}
+              </p>
+            </div>
+            <Link
+              href={`/shop/${l.id}`}
+              target="_blank"
+              className="shrink-0 self-start text-[11px] font-semibold text-muted-foreground hover:text-primary"
+            >
+              <ExternalLink className="size-4" />
+            </Link>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-muted-foreground">Ghim trong:</span>
+            {FEATURE_DAY_CHOICES.map((days) => (
+              <ActionBtn
+                key={days}
+                tone="ok"
+                disabled={busy === l.id}
+                onClick={() => void act(l.id, { action: "feature", days }, `Đã ghim nổi bật ${days} ngày.`)}
+              >
+                <Check className="size-3.5" /> {days} ngày
+              </ActionBtn>
+            ))}
+            <ActionBtn
+              tone="bad"
+              disabled={busy === l.id}
+              onClick={() => void act(l.id, { action: "feature_reject" }, "Đã bỏ yêu cầu.")}
+            >
+              <X className="size-3.5" /> Từ chối
             </ActionBtn>
           </div>
         </div>
