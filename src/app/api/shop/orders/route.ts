@@ -31,12 +31,15 @@ export async function GET(req: NextRequest) {
   const sp = new URL(req.url).searchParams;
   const scope = sp.get("scope") ?? "buying";
   const status = (sp.get("status") as OrderStatus | null) ?? undefined;
+  // Bàn admin dựng số liệu từ chính danh sách này, nên cần lấy sâu hơn 100 đơn
+  // mặc định — nếu không thì "tổng tiền đã qua chợ" chỉ đúng với đợt gần nhất.
+  const limit = Math.min(500, Math.max(1, Number(sp.get("limit")) || 100));
 
   if (scope === "selling") {
     const seller = await getSellerByUser(auth.userId);
     if (!seller) return shopJson({ orders: [] });
     // Người bán không nhận được SĐT / STK / kênh chat của người mua.
-    const orders = await listOrders({ sellerId: seller.id, status });
+    const orders = await listOrders({ sellerId: seller.id, status, limit });
     return withUnread(redactOrders(orders, { userId: auth.userId, party: "seller" }), auth.userId);
   }
 
@@ -44,8 +47,8 @@ export async function GET(req: NextRequest) {
     if (!isAgentRole(auth.role)) return shopJson({ error: "Không có quyền." }, { status: 403 });
     // Đơn mình đang ôm + đơn chưa ai nhận
     const [mine, open] = await Promise.all([
-      listOrders({ agentId: auth.userId, status }),
-      listOrders({ status: "pending_agent" }),
+      listOrders({ agentId: auth.userId, status, limit }),
+      listOrders({ status: "pending_agent", limit }),
     ]);
     const seen = new Set(mine.map((o) => o.id));
     // Hàng chờ hiện ẩn danh: giao dịch viên chỉ thấy thông tin người mua sau
@@ -62,10 +65,10 @@ export async function GET(req: NextRequest) {
 
   if (scope === "all") {
     if (!isShopAdminRole(auth.role)) return shopJson({ error: "Không có quyền." }, { status: 403 });
-    return withUnread(await listOrders({ status }), auth.userId);
+    return withUnread(await listOrders({ status, limit }), auth.userId);
   }
 
-  const mine = await listOrders({ buyerId: auth.userId, status });
+  const mine = await listOrders({ buyerId: auth.userId, status, limit });
   return withUnread(redactOrders(mine, { userId: auth.userId, party: "buyer" }), auth.userId);
 }
 

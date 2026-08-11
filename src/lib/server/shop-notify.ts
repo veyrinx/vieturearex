@@ -15,7 +15,15 @@ import {
   type Embed,
   type MessagePayload,
 } from "@/lib/server/discord-ui";
-import { ORDER_STATUS_LABEL, type OrderParty, type OrderStatus } from "@/lib/constants/shop";
+import {
+  ORDER_STATUS_LABEL,
+  ORDER_WAITING_ON,
+  STALE_ORDER_HOURS,
+  hoursSince,
+  orderLastMoved,
+  type OrderParty,
+  type OrderStatus,
+} from "@/lib/constants/shop";
 import { getSellerById } from "@/lib/server/shop";
 import type { ShopListing, ShopOrder } from "@/lib/types/shop";
 
@@ -270,6 +278,132 @@ const PARTY_LABEL: Record<string, string> = {
   admin: "Quản trị viên",
   system: "Hệ thống",
 };
+
+// ── Đơn treo ────────────────────────────────────────────────────────────────
+function fmtIdle(hours: number): string {
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} phút`;
+  if (hours < 48) return `${Math.round(hours)} giờ`;
+  return `${Math.round(hours / 24)} ngày`;
+}
+
+/**
+ * Cảnh báo đơn đứng yên quá lâu (xem STALE_ORDER_HOURS).
+ *
+ * Hai đường đi khác nhau, cố ý:
+ *  - Đơn đã có người phụ trách → nhắn riêng đúng giao dịch viên đó. Đây là
+ *    việc của họ, cả đội không cần biết.
+ *  - Đơn chưa ai nhận → chỉ đăng kênh nội bộ kèm ping role giao dịch viên,
+ *    vì chưa có ai để mà nhắc.
+ *
+ * Bản tóm tắt lên kênh nội bộ luôn có đủ cả hai nhóm, để người trực nhìn một
+ * chỗ là thấy hết hàng chờ đang kẹt.
+ */
+export async function notifyStaleOrders(orders: ShopOrder[]): Promise<void> {
+  if (orders.length === 0) return;
+
+  try {
+    const sorted = [...orders].sort(
+      (a, b) => hoursSince(orderLastMoved(b)) - hoursSince(orderLastMoved(a)),
+    );
+    const unclaimed = sorted.filter((o) => !o.agent_id);
+
+    const lines = sorted.slice(0, 12).map((o) => {
+      const idle = fmtIdle(hoursSince(orderLastMoved(o)));
+      const limit = STALE_ORDER_HOURS[o.status];
+      const who = o.agent_id ? `chờ ${ORDER_WAITING_ON[o.status]}` : "**chưa ai nhận**";
+      return `[\`${o.code}\`](${orderUrl(o)}) · ${vnd(o.amount)} · ${who} · đứng yên **${idle}**${
+        limit ? ` (ngưỡng ${limit}h)` : ""
+      }`;
+    });
+    if (sorted.length > lines.length) lines.push(`…và ${sorted.length - lines.length} đơn nữa.`);
+
+    const ids = await discordIds();
+
+    await Promise.allSettled([
+      sendChannelMessage(ids.staffChannelId, {
+        ...(unclaimed.length > 0 && ids.agentRoleId
+          ? { content: `<@&${ids.agentRoleId}>`, allowed_mentions: { roles: [ids.agentRoleId] } }
+          : {}),
+        embeds: [
+          embed({
+            title: `⏳ ${sorted.length} đơn đang treo`,
+            description: lines.join("\n").slice(0, 3800),
+            color: BRAND.red,
+            fields: [
+              { name: "Chưa ai nhận", value: String(unclaimed.length), inline: true },
+              { name: "Đã có người phụ trách", value: String(sorted.length - unclaimed.length), inline: true },
+              {
+                name: "Tiền đang kẹt",
+                value: vnd(sorted.reduce((s, o) => s + o.amount, 0)),
+                inline: true,
+              },
+            ],
+            footer: { text: "Quét tự động · đơn không nhúc nhích quá ngưỡng của bước hiện tại" },
+          }),
+        ],
+        components: [row(linkButton("Mở bàn làm việc", `${SITE_URL}/admin/shop`, "🧰"))],
+      }),
+      pingAssignedAgents(sorted.filter((o) => o.agent_id)),
+    ]);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Gom đơn treo theo người phụ trách rồi nhắc mỗi người đúng phần của mình. */
+async function pingAssignedAgents(orders: ShopOrder[]): Promise<void> {
+  const byAgent = new Map<string, ShopOrder[]>();
+  for (const o of orders) {
+    if (!o.agent_id) continue;
+    const list = byAgent.get(o.agent_id);
+    if (list) list.push(o);
+    else byAgent.set(o.agent_id, [o]);
+  }
+  if (byAgent.size === 0) return;
+
+  await Promise.allSettled(
+    [...byAgent.entries()].map(async ([agentId, rows]) => {
+      const worst = rows[0];
+      const title = `⏳ ${rows.length} đơn của bạn đang treo`;
+      const body =
+        rows.length === 1
+          ? `${worst.code} đứng yên ${fmtIdle(hoursSince(orderLastMoved(worst)))} — đang chờ ${ORDER_WAITING_ON[worst.status]}.`
+          : `Cũ nhất: ${worst.code} (${fmtIdle(hoursSince(orderLastMoved(worst)))}). Vào xử lý trước khi khách hỏi.`;
+      const url = rows.length === 1 ? `/shop/don-hang/${worst.code}` : "/shop/ctv";
+
+      await Promise.allSettled([
+        createNotifications([
+          {
+            user_id: agentId,
+            type: "shop_order",
+            title,
+            body,
+            entity_type: "shop_order",
+            entity_id: worst.id,
+            entity_url: url,
+          },
+        ]),
+        sendPushToUsers([agentId], title, body, url),
+        dmLinkedUsers([agentId], {
+          embeds: [
+            embed({
+              title,
+              description: rows
+                .slice(0, 10)
+                .map(
+                  (o) =>
+                    `[\`${o.code}\`](${orderUrl(o)}) · ${vnd(o.amount)} · chờ ${ORDER_WAITING_ON[o.status]} · ${fmtIdle(hoursSince(orderLastMoved(o)))}`,
+                )
+                .join("\n"),
+              color: BRAND.red,
+            }),
+          ],
+          components: [row(linkButton("Bàn giao dịch viên", `${SITE_URL}/shop/ctv`, "🤝"))],
+        }),
+      ]);
+    }),
+  );
+}
 
 // ── Tin đăng ────────────────────────────────────────────────────────────────
 /**

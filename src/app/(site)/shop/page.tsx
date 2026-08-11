@@ -26,7 +26,14 @@ import {
   listListings,
   type ListingSort,
 } from "@/lib/server/shop";
-import { type ListingKind } from "@/lib/constants/shop";
+import {
+  FEE_MAX,
+  FEE_MIN,
+  FEE_PERCENT,
+  LISTING_KIND_LABEL,
+  formatVnd,
+  type ListingKind,
+} from "@/lib/constants/shop";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +87,20 @@ export default async function ShopPage({
 
   const featuredIds = new Set(featured.map((l) => l.id));
   const rest = listings.filter((l) => !featuredIds.has(l.id));
+
+  // Nhắc lại bộ lọc đang áp bằng chữ. Chip lọc nằm tít trên đầu, cuộn xuống
+  // giữa lưới tin là không còn thấy vì sao danh sách lại ngắn đến thế.
+  const filterSummary = [
+    activeKind && LISTING_KIND_LABEL[activeKind],
+    q && `từ khoá "${q}"`,
+    num(min) && num(max)
+      ? `${formatVnd(num(min)!)} – ${formatVnd(num(max)!)}`
+      : num(min)
+        ? `từ ${formatVnd(num(min)!)}`
+        : num(max)
+          ? `đến ${formatVnd(num(max)!)}`
+          : "",
+  ].filter((v): v is string => !!v);
 
   // Nút bán đổi theo tình trạng hồ sơ. Trước đây chỉ xét "approved", nên người
   // vừa nộp hồ sơ và đang chờ vẫn thấy đúng lời mời "Xin bán trên chợ" như lúc
@@ -191,6 +212,30 @@ export default async function ShopPage({
         </div>
       </div>
 
+      {/* Hồ sơ bán của chính người đang xem — trước đây chỉ có cái nút đổi chữ,
+          nên người bị từ chối không đọc được lý do ở đâu ngoài email. */}
+      {viewer.seller && viewer.seller.status !== "approved" && (
+        <div
+          className={
+            viewer.seller.status === "pending"
+              ? "rounded-2xl border border-sky-500/30 bg-sky-500/5 p-3 text-xs text-sky-700 dark:text-sky-300"
+              : "rounded-2xl border border-red-500/30 bg-red-500/5 p-3 text-xs text-red-600 dark:text-red-400"
+          }
+        >
+          <p className="font-bold">
+            {viewer.seller.status === "pending" && "Hồ sơ người bán của bạn đang chờ duyệt."}
+            {viewer.seller.status === "rejected" && "Hồ sơ người bán của bạn bị từ chối."}
+            {viewer.seller.status === "suspended" && "Gian hàng của bạn đang bị tạm khoá."}
+          </p>
+          <p className="mt-0.5 leading-relaxed opacity-90">
+            {viewer.seller.status === "pending"
+              ? "Thường trong vòng 24 giờ. Duyệt xong bạn đăng tin được ngay, không cần nộp lại gì."
+              : viewer.seller.reject_reason ||
+                "Không có ghi chú kèm theo — nhắn cho admin nếu bạn cần biết thêm."}
+          </p>
+        </div>
+      )}
+
       {/* Tin nổi bật */}
       {featured.length > 0 && (
         <section className="space-y-2">
@@ -219,11 +264,16 @@ export default async function ShopPage({
         </div>
       ) : (
         <section className="space-y-2">
-          {featured.length > 0 && (
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-heading text-sm font-black uppercase tracking-wide text-foreground">
-              Tất cả tin đăng
+              {hasFilter ? "Kết quả tìm kiếm" : "Tất cả tin đăng"}
             </h2>
-          )}
+            <p className="text-[11px] text-muted-foreground">
+              Đang hiện <b className="text-foreground">{rest.length}</b> tin
+              {rest.length >= 60 ? " đầu tiên" : ""}
+              {filterSummary.length > 0 && ` · ${filterSummary.join(" · ")}`}
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
             {rest.map((l) => (
               <ListingCard key={l.id} listing={l} />
@@ -231,6 +281,35 @@ export default async function ShopPage({
           </div>
         </section>
       )}
+
+      {/* Chợ chạy thế nào — người mua lần đầu cần đọc trước khi bấm mua, chứ
+          không phải sau khi đã tạo đơn rồi mới thấy các bước hiện ra. */}
+      <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+        <h2 className="font-heading text-sm font-black uppercase tracking-wide text-foreground">
+          Một đơn đi qua những bước nào
+        </h2>
+        <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {[
+            ["Đặt mua", "Bạn để lại tên và kênh liên hệ. Chưa mất đồng nào."],
+            ["Giao dịch viên nhận", "Một nhân sự Arex ôm đơn và gửi số tài khoản trung gian."],
+            ["Bạn chuyển tiền", "Chụp bill lên đơn. Tiền nằm ở trung gian, chưa về người bán."],
+            ["Nhận acc/vật phẩm", "Người bán bàn giao kèm ảnh. Bạn đăng nhập kiểm tra."],
+            ["Xác nhận & trả tiền", "Bạn xác nhận đủ, trung gian mới chuyển tiền cho người bán."],
+          ].map(([title, desc], i) => (
+            <li key={title} className="rounded-xl border border-border bg-background p-2.5">
+              <p className="text-[11px] font-black text-primary dark:text-amber-400">Bước {i + 1}</p>
+              <p className="text-xs font-bold text-foreground">{title}</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{desc}</p>
+            </li>
+          ))}
+        </ol>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          <b className="text-foreground">Phí trung gian {FEE_PERCENT}%</b> (tối thiểu{" "}
+          {formatVnd(FEE_MIN)}, tối đa {formatVnd(FEE_MAX)}) trừ vào tiền người bán nhận — người mua
+          trả đúng giá niêm yết, không cộng thêm. Có trục trặc ở bất kỳ bước nào, bạn mở tranh chấp
+          ngay trong đơn và tiền vẫn bị giữ cho tới khi admin xử lý xong.
+        </p>
+      </section>
 
       <p className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-muted-foreground">
         <span className="font-bold text-amber-600 dark:text-amber-400">Lưu ý:</span> Arex chỉ đóng vai

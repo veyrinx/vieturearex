@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Eye, Flame, ShieldCheck, Star } from "lucide-react";
+import { BadgeCheck, Clock, Eye, Flame, ShieldCheck, Star } from "lucide-react";
 import {
   LISTING_KIND_LABEL,
   LISTING_STATUS_LABEL,
   formatVnd,
+  timeAgo,
   type ListingStatus,
 } from "@/lib/constants/shop";
 import type { ShopListing } from "@/lib/types/shop";
@@ -24,6 +25,9 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
   const dim = listing.status === "sold" || listing.status === "reserved";
   const featured =
     !!listing.featured_until && Date.parse(listing.featured_until) > Date.now();
+  // Tin được đẩy thì mốc "mới" là lần đẩy, đúng với thứ tự đang sắp trên chợ —
+  // nếu hiện ngày đăng thì tin đầu trang lại ghi "3 tháng trước", trông như lỗi.
+  const freshness = timeAgo(listing.bumped_at ?? listing.created_at);
 
   return (
     <Link
@@ -88,11 +92,16 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
             <span className="truncate font-semibold text-foreground/80">
               {seller?.display_name ?? "Người bán"}
             </span>
-            {seller?.rating != null && (
+            {seller?.rating != null ? (
               <span className="flex shrink-0 items-center gap-0.5 text-amber-500">
                 <Star className="size-3 fill-current" />
                 {seller.rating}
+                <span className="text-muted-foreground">({seller.rating_count})</span>
               </span>
+            ) : (
+              // Người bán chưa có đánh giá nào: nói thẳng thay vì để trống, người
+              // mua cần biết mình là khách đầu tiên chứ không phải đoán.
+              <span className="shrink-0 text-[10px] text-muted-foreground">chưa có đánh giá</span>
             )}
           </span>
           <span className="flex shrink-0 items-center gap-1">
@@ -101,9 +110,22 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
           </span>
         </div>
 
-        <p className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-          <ShieldCheck className="size-3" /> Có trung gian giữ tiền
-        </p>
+        <div className="flex items-center justify-between gap-2 text-[10px]">
+          <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+            <ShieldCheck className="size-3" /> Có trung gian giữ tiền
+          </span>
+          {freshness && (
+            <span className="flex shrink-0 items-center gap-0.5 text-muted-foreground">
+              <Clock className="size-2.5" /> {freshness}
+            </span>
+          )}
+        </div>
+
+        {(seller?.orders_done ?? 0) > 0 && (
+          <p className="text-[10px] text-muted-foreground">
+            Người bán đã hoàn tất {seller?.orders_done} đơn qua chợ
+          </p>
+        )}
       </div>
     </Link>
   );

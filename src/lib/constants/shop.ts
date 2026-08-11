@@ -93,6 +93,88 @@ export const ACTIVE_ORDER_STATUSES: OrderStatus[] = [
   "pending_agent", "awaiting_payment", "payment_review", "holding", "delivering", "payout", "disputed",
 ];
 
+/**
+ * Đường đi bình thường của một đơn — dùng vẽ thanh tiến độ.
+ * `disputed` và `cancelled` nằm ngoài vì chúng là nhánh rẽ, không phải bước.
+ */
+export const ORDER_STEPS: OrderStatus[] = [
+  "pending_agent", "awaiting_payment", "payment_review", "holding", "delivering", "payout", "completed",
+];
+
+/** Bước thứ mấy trên đường đi. `null` = đơn đã rẽ nhánh (tranh chấp/huỷ). */
+export function orderStep(status: OrderStatus): number | null {
+  const i = ORDER_STEPS.indexOf(status);
+  return i < 0 ? null : i + 1;
+}
+
+/**
+ * Đơn đang chờ ai bấm bước tiếp theo.
+ *
+ * Bàn admin cần đọc được ngay "kẹt ở bên nào" mà không phải mở từng đơn —
+ * suy ra từ `ORDER_FLOW.by` sẽ đúng hơn nhưng ở đó một bước có thể do nhiều
+ * vai làm, còn ở đây chỉ cần một cái tên để nhìn lướt.
+ */
+export const ORDER_WAITING_ON: Record<OrderStatus, string> = {
+  pending_agent: "Giao dịch viên",
+  awaiting_payment: "Người mua",
+  payment_review: "Giao dịch viên",
+  holding: "Người bán",
+  delivering: "Người mua",
+  payout: "Giao dịch viên",
+  completed: "—",
+  disputed: "Admin",
+  cancelled: "—",
+};
+
+/**
+ * Quá số giờ này mà đơn không nhúc nhích thì coi là treo và cần người đẩy.
+ *
+ * Mỗi bước một ngưỡng khác nhau vì kỳ vọng khác nhau: đơn chưa ai nhận mà để
+ * quá 2 tiếng là mất khách, còn người mua đi vay tiền chuyển khoản thì cả ngày
+ * vẫn là bình thường.
+ */
+/**
+ * Mốc gần nhất đơn có chuyển động.
+ *
+ * Nhận đúng các cột thời gian chứ không nhận cả `ShopOrder` để file hằng số
+ * này không phải phụ thuộc ngược vào tầng kiểu dữ liệu.
+ */
+export type OrderTimestamps = {
+  created_at: string;
+  claimed_at?: string | null;
+  held_at?: string | null;
+  delivered_at?: string | null;
+  confirmed_at?: string | null;
+  completed_at?: string | null;
+  cancelled_at?: string | null;
+};
+
+export function orderLastMoved(order: OrderTimestamps): string {
+  const marks = [
+    order.cancelled_at, order.completed_at, order.confirmed_at,
+    order.delivered_at, order.held_at, order.claimed_at, order.created_at,
+  ].filter((v): v is string => !!v);
+  // Không giả định thứ tự: đơn bị admin sửa tay có thể có mốc muộn ở cột sớm.
+  return marks.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a), marks[0] ?? order.created_at);
+}
+
+export const STALE_ORDER_HOURS: Partial<Record<OrderStatus, number>> = {
+  pending_agent: 2,
+  awaiting_payment: 24,
+  payment_review: 2,
+  holding: 24,
+  delivering: 24,
+  payout: 6,
+  disputed: 24,
+};
+
+/** Đơn còn chạy mà đứng yên quá ngưỡng của bước hiện tại. */
+export function isOrderStale(order: OrderTimestamps & { status: OrderStatus }): boolean {
+  const limit = STALE_ORDER_HOURS[order.status];
+  if (limit == null) return false;
+  return hoursSince(orderLastMoved(order)) > limit;
+}
+
 // ── Nhật ký & bằng chứng ───────────────────────────────────────────────────
 export type OrderEventType =
   | "created"
@@ -215,6 +297,44 @@ export function calcPayout(amount: number): number {
 
 export function formatVnd(amount: number): string {
   return `${amount.toLocaleString("vi-VN")}đ`;
+}
+
+/** 2.400.000đ → "2,4tr" — cho ô số liệu hẹp, chỗ nào cần chính xác thì formatVnd. */
+export function formatVndShort(amount: number): string {
+  if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1).replace(".0", "")} tỷ`;
+  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1).replace(".0", "")}tr`;
+  if (amount >= 1_000) return `${Math.round(amount / 1_000)}k`;
+  return `${amount}đ`;
+}
+
+// ── Mốc thời gian ──────────────────────────────────────────────────────────
+/** "3 giờ trước". Trả chuỗi rỗng khi không có mốc. */
+export function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const diff = (Date.now() - Date.parse(iso)) / 1000;
+  if (!Number.isFinite(diff)) return "";
+  if (diff < 60) return "vừa xong";
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  if (diff < 2_592_000) return `${Math.floor(diff / 86400)} ngày trước`;
+  return `${Math.floor(diff / 2_592_000)} tháng trước`;
+}
+
+/** "còn 2 ngày". Rỗng nếu mốc đã qua hoặc không có. */
+export function timeLeft(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const diff = (Date.parse(iso) - Date.now()) / 1000;
+  if (!Number.isFinite(diff) || diff <= 0) return "";
+  if (diff < 3600) return `còn ${Math.max(1, Math.floor(diff / 60))} phút`;
+  if (diff < 86400) return `còn ${Math.floor(diff / 3600)} giờ`;
+  return `còn ${Math.floor(diff / 86400)} ngày`;
+}
+
+/** Số giờ trôi qua kể từ một mốc. */
+export function hoursSince(iso: string | null | undefined): number {
+  if (!iso) return 0;
+  const ms = Date.now() - Date.parse(iso);
+  return Number.isFinite(ms) ? ms / 3_600_000 : 0;
 }
 
 // ── Giới hạn nhập liệu ─────────────────────────────────────────────────────
