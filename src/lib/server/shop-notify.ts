@@ -25,7 +25,8 @@ import {
   type OrderStatus,
 } from "@/lib/constants/shop";
 import { getSellerById } from "@/lib/server/shop";
-import type { ShopListing, ShopOrder } from "@/lib/types/shop";
+import { shopSideUserIds } from "@/lib/server/shop-staff";
+import type { ShopListing, ShopOrder, ShopSeller, ShopStaff } from "@/lib/types/shop";
 
 /**
  * Báo tin của chợ ra mọi kênh: chuông trong site, push (web + app native) và
@@ -55,15 +56,16 @@ export type NotifyAudience = "buyer" | "seller" | "agent" | "staff";
 
 type OrderPeople = {
   buyerId: string;
-  sellerUserId: string | null;
+  /** Chủ gian hàng + CTV được bật quyền xử lý đơn — họ cùng phải biết đơn chạy tới đâu. */
+  sellerUserIds: string[];
   agentId: string | null;
 };
 
 async function peopleOf(order: ShopOrder): Promise<OrderPeople> {
-  const seller = await getSellerById(order.seller_id).catch(() => null);
+  const sellerUserIds = await shopSideUserIds(order.seller_id).catch(() => [] as string[]);
   return {
     buyerId: order.buyer_id,
-    sellerUserId: seller?.user_id ?? null,
+    sellerUserIds,
     agentId: order.agent_id,
   };
 }
@@ -104,7 +106,7 @@ async function fanOut(input: SendInput): Promise<void> {
 
   const targets = new Set<string>();
   if (to.includes("buyer")) targets.add(people.buyerId);
-  if (to.includes("seller") && people.sellerUserId) targets.add(people.sellerUserId);
+  if (to.includes("seller")) for (const id of people.sellerUserIds) targets.add(id);
   if (to.includes("agent") && people.agentId) targets.add(people.agentId);
   if (to.includes("staff")) for (const id of await staffUserIds()) targets.add(id);
   if (input.exceptUserId) targets.delete(input.exceptUserId);
@@ -534,6 +536,98 @@ export async function notifyFeatureRejected(listing: ShopListing): Promise<void>
         entity_url: `/shop/tin-cua-toi`,
       },
     ]);
+  } catch {
+    /* best-effort */
+  }
+}
+
+// ── CTV của gian hàng ───────────────────────────────────────────────────────
+/**
+ * Ba hàm dưới đây chỉ báo trong site + push, không đụng tới Discord: việc nhân
+ * sự của một gian hàng là chuyện riêng giữa chủ shop và người được mời, không
+ * phải thứ để đăng lên kênh chung.
+ */
+async function tellUser(
+  userId: string | null,
+  title: string,
+  body: string,
+  url: string,
+  entityId: string,
+): Promise<void> {
+  if (!userId) return;
+  try {
+    await Promise.allSettled([
+      createNotifications([
+        {
+          user_id: userId,
+          type: "shop_staff",
+          title,
+          body: body.slice(0, 300),
+          entity_type: "shop_staff",
+          entity_id: entityId,
+          entity_url: url,
+        },
+      ]),
+      sendPushToUsers([userId], title, body, url),
+    ]);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Có người mời bạn làm CTV. */
+export async function notifyStaffInvite(staff: ShopStaff, shop: ShopSeller): Promise<void> {
+  await tellUser(
+    staff.user_id,
+    "Lời mời làm CTV gian hàng",
+    `${shop.display_name} mời bạn phụ bán cùng. Vào trang nhân sự để đồng ý hoặc từ chối.`,
+    "/shop/nhan-su",
+    staff.id,
+  );
+}
+
+/** Người được mời đã trả lời — báo lại cho chủ shop. */
+export async function notifyStaffInviteAnswered(staff: ShopStaff, accepted: boolean): Promise<void> {
+  try {
+    const seller = await getSellerById(staff.seller_id);
+    await tellUser(
+      seller?.user_id ?? null,
+      accepted ? "CTV đã nhận lời" : "CTV đã từ chối lời mời",
+      accepted
+        ? "Người bạn mời đã bắt đầu làm CTV cho gian hàng."
+        : "Người bạn mời đã từ chối. Bạn có thể mời người khác.",
+      "/shop/nhan-su",
+      staff.id,
+    );
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Gỡ CTV: chủ shop gỡ thì báo cho CTV, CTV tự nghỉ thì báo cho chủ shop. */
+export async function notifyStaffRevoked(
+  staff: ShopStaff,
+  options: { bySelf: boolean },
+): Promise<void> {
+  try {
+    const seller = await getSellerById(staff.seller_id);
+    if (options.bySelf) {
+      await tellUser(
+        seller?.user_id ?? null,
+        "Một CTV đã nghỉ",
+        "Người này không còn quyền đăng tin hay xử lý đơn cho gian hàng của bạn.",
+        "/shop/nhan-su",
+        staff.id,
+      );
+      return;
+    }
+    await tellUser(
+      staff.user_id,
+      "Bạn không còn là CTV",
+      `Gian hàng ${seller?.display_name ?? "này"} đã gỡ quyền CTV của bạn.`,
+      "/shop/nhan-su",
+      staff.id,
+    );
   } catch {
     /* best-effort */
   }

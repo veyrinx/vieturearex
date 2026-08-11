@@ -16,8 +16,20 @@ import {
 } from "@/lib/constants/shop";
 import { cn } from "@/lib/utils";
 
-/** Form đăng tin. Tin luôn qua duyệt trước khi lên chợ. */
-export function ListingForm() {
+/**
+ * Form đăng tin. Tin luôn qua duyệt trước khi lên chợ.
+ *
+ * `sellerId` cho biết đăng cho gian hàng nào — CTV có thể phụ nhiều shop, nên
+ * không thể để server tự đoán. `shopName` chỉ có khi người đăng là CTV: cần
+ * nhắc rõ tin này sẽ mang tên gian hàng nào, không phải tên họ.
+ */
+export function ListingForm({
+  sellerId,
+  shopName,
+}: {
+  sellerId?: string;
+  shopName?: string | null;
+} = {}) {
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [kind, setKind] = useState<ListingKind>("account");
@@ -42,6 +54,7 @@ export function ListingForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sellerId,
           kind,
           title: form.title,
           description: form.description,
@@ -55,7 +68,7 @@ export function ListingForm() {
       const data = (await res.json()) as { error?: string };
       if (!res.ok) return void toast.error(data.error ?? "Đăng tin thất bại.");
       toast.success("Đã gửi tin, chờ duyệt là lên chợ.");
-      router.push("/shop/tin-cua-toi");
+      router.push(sellerId ? `/shop/tin-cua-toi?shop=${sellerId}` : "/shop/tin-cua-toi");
     } catch {
       toast.error("Lỗi mạng, thử lại.");
     } finally {
@@ -65,6 +78,13 @@ export function ListingForm() {
 
   return (
     <div className="space-y-4">
+      {shopName && (
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] text-amber-600 dark:text-amber-400">
+          Bạn đang đăng với tư cách CTV của <b>{shopName}</b>. Tin lên chợ sẽ mang tên gian hàng
+          này, và đơn phát sinh cũng thuộc về họ.
+        </p>
+      )}
+
       {/* Loại hàng */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="mb-2 text-xs font-black uppercase tracking-wide text-foreground">Bán gì?</p>

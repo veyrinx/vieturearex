@@ -5,12 +5,13 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import {
   LISTING_SORTS,
-  getSellerByUser,
   isAgentRole,
   isShopAdminRole,
   listListings,
+  pickShop,
   type ListingSort,
 } from "@/lib/server/shop";
+import { listAccessibleShops } from "@/lib/server/shop-staff";
 import {
   LISTING_STATUS_LABEL,
   MAX_LISTING_IMAGES,
@@ -77,10 +78,25 @@ export async function POST(req: NextRequest) {
   const auth = await getAuthContext();
   if (!auth.userId) return shopJson({ error: "Chưa đăng nhập." }, { status: 401 });
 
-  const seller = await getSellerByUser(auth.userId);
-  if (!seller || seller.status !== "approved") {
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+  // Đăng cho gian hàng nào: mặc định gian hàng đầu tiên người này làm việc được
+  // (shop của chính mình), CTV nhiều shop thì gửi kèm `sellerId`.
+  const shops = await listAccessibleShops(auth.userId);
+  const access = pickShop(
+    shops.filter((s) => s.canManageListings),
+    typeof body.sellerId === "string" ? body.sellerId : null,
+  );
+  if (!access) {
     return shopJson(
-      { error: "Bạn cần được duyệt hồ sơ người bán trước khi đăng tin." },
+      { error: "Bạn cần được duyệt hồ sơ người bán, hoặc được mời làm CTV, trước khi đăng tin." },
+      { status: 403 },
+    );
+  }
+  const seller = access.seller;
+  if (seller.status !== "approved") {
+    return shopJson(
+      { error: "Gian hàng chưa được duyệt nên chưa đăng tin được." },
       { status: 403 },
     );
   }
@@ -88,7 +104,6 @@ export async function POST(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return shopJson({ error: "DB unavailable" }, { status: 503 });
 
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 120) : "";
   const description = typeof body.description === "string" ? body.description.trim().slice(0, 4000) : "";
   const price = Number(body.price);

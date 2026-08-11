@@ -5,6 +5,7 @@ import type {
   OrderParty,
   OrderStatus,
   SellerStatus,
+  StaffStatus,
 } from "@/lib/constants/shop";
 
 export type ShopSeller = {
@@ -48,6 +49,47 @@ export type PublicSeller = {
   rating: number | null;
   rating_count: number;
   created_at: string;
+};
+
+// ── CTV của gian hàng ──────────────────────────────────────────────────────
+export type ShopStaff = {
+  id: string;
+  seller_id: string;
+  user_id: string;
+  invited_by: string | null;
+  can_manage_listings: boolean;
+  can_handle_orders: boolean;
+  status: StaffStatus;
+  note: string | null;
+  created_at: string;
+  accepted_at: string | null;
+  revoked_at: string | null;
+};
+
+/** Một dòng CTV trong bảng của chủ shop — kèm tên người được mời. */
+export type ShopStaffRow = ShopStaff & {
+  member: { display_name: string; handle: string | null; avatar_url: string | null } | null;
+};
+
+/** Lời mời / chỗ làm của chính người đang xem — kèm tên gian hàng. */
+export type ShopStaffMembership = ShopStaff & {
+  shop: { id: string; display_name: string; status: SellerStatus } | null;
+};
+
+/**
+ * Quyền của một người trên một gian hàng cụ thể.
+ *
+ * Chủ shop luôn có đủ hai quyền; CTV chỉ có phần chủ shop bật. Mọi chỗ trong
+ * API cần hỏi "người này được làm gì với shop kia" đều đi qua kiểu này thay vì
+ * tự so `seller.user_id === userId`.
+ */
+export type SellerAccess = {
+  seller: ShopSeller;
+  isOwner: boolean;
+  /** Dòng trong `shop_staff` — null nếu là chủ shop. */
+  staffId: string | null;
+  canManageListings: boolean;
+  canHandleOrders: boolean;
 };
 
 export type ShopListing = {

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Settings2,
   Store,
+  Users,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
@@ -180,10 +181,28 @@ export default async function ShopPage({
             </Link>
           )}
 
-          {/* Khu của người bán — có hồ sơ là quản lý được tin, dù đang chờ duyệt. */}
-          {viewer.seller && (
+          {/* Khu của người bán — có hồ sơ là quản lý được tin, dù đang chờ duyệt.
+              CTV được mời cũng vào đúng lối này, chỉ khác là chỉ thấy tin của
+              gian hàng đã mời họ. */}
+          {viewer.shops.some((s) => s.canManageListings) && (
             <Link href="/shop/tin-cua-toi" className={pill}>
               <ClipboardList className="size-3.5" /> Tin của tôi
+            </Link>
+          )}
+
+          {/* Nhân sự gian hàng — hiện cả với người chưa bán gì nhưng đang được
+              mời làm CTV, nếu không lời mời sẽ không có đường nào tới. */}
+          {(viewer.seller || viewer.shops.some((s) => !s.isOwner) || viewer.invites.length > 0) && (
+            <Link
+              href="/shop/nhan-su"
+              className={
+                viewer.invites.length > 0
+                  ? "inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-600 transition hover:bg-amber-500/20 dark:text-amber-400"
+                  : pill
+              }
+            >
+              <Users className="size-3.5" />
+              {viewer.invites.length > 0 ? `Lời mời làm CTV (${viewer.invites.length})` : "CTV gian hàng"}
             </Link>
           )}
           {viewer.seller?.status === "approved" && (

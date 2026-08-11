@@ -16,6 +16,36 @@ export const SELLER_STATUS_LABEL: Record<SellerStatus, string> = {
   suspended: "Tạm khoá",
 };
 
+// ── CTV của gian hàng ──────────────────────────────────────────────────────
+/**
+ * Nhân sự do chính người bán mời về phụ gian hàng — khác hẳn `agent` (giao
+ * dịch viên toàn sàn, do admin gán vai). CTV chỉ làm được việc trong đúng gian
+ * hàng đã mời mình, và chỉ những nhóm việc chủ shop bật.
+ */
+export type StaffStatus = "invited" | "active" | "declined" | "revoked";
+
+export const STAFF_STATUS_LABEL: Record<StaffStatus, string> = {
+  invited: "Chờ đồng ý",
+  active: "Đang làm",
+  declined: "Đã từ chối",
+  revoked: "Đã gỡ",
+};
+
+export type StaffPermission = "manage_listings" | "handle_orders";
+
+export const STAFF_PERMISSION_LABEL: Record<StaffPermission, string> = {
+  manage_listings: "Quản lý tin đăng",
+  handle_orders: "Xử lý đơn hàng",
+};
+
+export const STAFF_PERMISSION_HINT: Record<StaffPermission, string> = {
+  manage_listings: "Đăng tin mới, sửa/ẩn tin, đẩy tin và xin đẩy nổi bật.",
+  handle_orders: "Xem đơn của shop, bàn giao acc/vật phẩm và nhắn với người mua.",
+};
+
+/** Trần số CTV mỗi gian hàng — đủ cho shop lớn, không đủ để làm chợ con. */
+export const MAX_STAFF_PER_SHOP = 5;
+
 // ── Tin đăng ───────────────────────────────────────────────────────────────
 export type ListingKind = "account" | "item";
 export type ListingStatus = "pending" | "active" | "reserved" | "sold" | "rejected" | "hidden";

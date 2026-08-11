@@ -11,14 +11,21 @@ import {
   type ListingStatus,
   type OrderStatus,
 } from "@/lib/constants/shop";
+import {
+  accessForSeller,
+  listAccessibleShops,
+  listStaffMemberships,
+} from "@/lib/server/shop-staff";
 import type {
   PublicSeller,
+  SellerAccess,
   ShopDispute,
   ShopListing,
   ShopOrder,
   ShopOrderEvent,
   ShopReview,
   ShopSeller,
+  ShopStaffMembership,
   ViewerParty,
 } from "@/lib/types/shop";
 
@@ -359,7 +366,8 @@ async function hydrateOrder(order: ShopOrder): Promise<ShopOrder> {
 
 type OrderFilter = {
   buyerId?: string;
-  sellerId?: string;
+  /** Một hoặc nhiều gian hàng — CTV có thể phụ nhiều shop cùng lúc. */
+  sellerId?: string | string[];
   agentId?: string;
   status?: OrderStatus | OrderStatus[];
   onlyActive?: boolean;
@@ -377,7 +385,15 @@ export async function listOrders(filter: OrderFilter = {}): Promise<ShopOrder[]>
     .limit(filter.limit ?? 100);
 
   if (filter.buyerId) q = q.eq("buyer_id", filter.buyerId);
-  if (filter.sellerId) q = q.eq("seller_id", filter.sellerId);
+  if (filter.sellerId) {
+    if (Array.isArray(filter.sellerId)) {
+      // Mảng rỗng nghĩa là "không gian hàng nào" — để lọt sẽ thành xem hết đơn.
+      if (filter.sellerId.length === 0) return [];
+      q = q.in("seller_id", filter.sellerId);
+    } else {
+      q = q.eq("seller_id", filter.sellerId);
+    }
+  }
   if (filter.agentId) q = q.eq("agent_id", filter.agentId);
   if (filter.unclaimed) q = q.is("agent_id", null);
   if (filter.status) {
@@ -409,7 +425,13 @@ export async function listOrders(filter: OrderFilter = {}): Promise<ShopOrder[]>
   }));
 }
 
-/** Người xem đang đóng vai gì trong đơn này. `null` = không liên quan. */
+/**
+ * Người xem đang đóng vai gì trong đơn này. `null` = không liên quan.
+ *
+ * CTV được chủ shop bật quyền xử lý đơn đứng đúng vai "seller": họ làm thay
+ * gian hàng, nên thấy và làm được đúng những gì chủ shop thấy và làm — không
+ * hơn. Ai bấm thì `actor_id` trong nhật ký vẫn ghi đúng người đó.
+ */
 export async function partyForOrder(
   order: ShopOrder,
   userId: string | null,
@@ -418,8 +440,9 @@ export async function partyForOrder(
   if (!userId) return null;
   if (order.buyer_id === userId) return "buyer";
   if (order.agent_id === userId) return "agent";
-  const seller = await getSellerById(order.seller_id);
-  if (seller?.user_id === userId) return "seller";
+  const access = await accessForSeller(userId, order.seller_id);
+  if (access?.isOwner) return "seller";
+  if (access?.canHandleOrders) return "seller";
   if (isShopAdminRole(role)) return "admin";
   if (isAgentRole(role)) return "agent";
   return null;
@@ -522,19 +545,56 @@ export async function listDisputes(status?: string): Promise<ShopDispute[]> {
 export type ShopViewer = {
   userId: string | null;
   role: string;
+  /** Gian hàng của chính người này (nếu đã nộp hồ sơ bán). */
   seller: ShopSeller | null;
+  /** Mọi gian hàng làm việc được: shop của mình + shop đang làm CTV. */
+  shops: SellerAccess[];
+  /** Lời mời làm CTV chưa trả lời. */
+  invites: ShopStaffMembership[];
   isAgent: boolean;
   isAdmin: boolean;
 };
 
 export async function getShopViewer(): Promise<ShopViewer> {
   const auth = await getAuthContext();
-  const seller = auth.userId ? await getSellerByUser(auth.userId) : null;
+  if (!auth.userId) {
+    return {
+      userId: null,
+      role: auth.role,
+      seller: null,
+      shops: [],
+      invites: [],
+      isAgent: false,
+      isAdmin: false,
+    };
+  }
+
+  const [shops, invites] = await Promise.all([
+    listAccessibleShops(auth.userId),
+    listStaffMemberships(auth.userId, ["invited"]),
+  ]);
+
   return {
     userId: auth.userId,
     role: auth.role,
-    seller,
+    seller: shops.find((s) => s.isOwner)?.seller ?? null,
+    shops,
+    invites,
     isAgent: isAgentRole(auth.role),
     isAdmin: isShopAdminRole(auth.role),
   };
+}
+
+/**
+ * Gian hàng đang được thao tác trên các trang của người bán.
+ *
+ * Người vừa có shop riêng vừa làm CTV chỗ khác thì cần chọn; `?shop=<id>` trên
+ * URL quyết định, không hợp lệ thì rơi về shop đầu tiên (shop của chính mình).
+ */
+export function pickShop(
+  shops: SellerAccess[],
+  sellerId: string | null | undefined,
+): SellerAccess | null {
+  if (shops.length === 0) return null;
+  return shops.find((s) => s.seller.id === sellerId) ?? shops[0];
 }

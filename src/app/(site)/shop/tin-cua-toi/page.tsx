@@ -8,8 +8,9 @@ import { PageHero } from "@/components/common/page-hero";
 import { BumpButton } from "@/components/shop/bump-button";
 import { FeatureRequestButton } from "@/components/shop/feature-request-button";
 import { ListingCard } from "@/components/shop/listing-card";
-import { getShopViewer, listListings } from "@/lib/server/shop";
+import { getShopViewer, listListings, pickShop } from "@/lib/server/shop";
 import { LISTING_STATUS_LABEL } from "@/lib/constants/shop";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,22 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function MyListingsPage() {
-  const viewer = await getShopViewer();
+export default async function MyListingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ shop?: string }>;
+}) {
+  const [{ shop: wantedShop }, viewer] = await Promise.all([searchParams, getShopViewer()]);
   if (!viewer.userId) redirect("/login?next=/shop/tin-cua-toi");
-  if (!viewer.seller) redirect("/shop/dang-ky-ban");
+
+  // CTV được bật quyền quản lý tin cũng vào đây, nhưng chỉ thấy tin của những
+  // gian hàng đã mời họ.
+  const manageable = viewer.shops.filter((s) => s.canManageListings);
+  if (manageable.length === 0) redirect("/shop/dang-ky-ban");
+  const active = pickShop(manageable, wantedShop)!;
 
   const listings = await listListings({
-    sellerId: viewer.seller.id,
+    sellerId: active.seller.id,
     status: ["pending", "active", "reserved", "sold", "rejected", "hidden"],
     limit: 100,
   });
@@ -34,6 +44,10 @@ export default async function MyListingsPage() {
     acc[l.status] = (acc[l.status] ?? 0) + 1;
     return acc;
   }, {});
+
+  const createHref = active.isOwner
+    ? "/shop/dang-tin"
+    : `/shop/dang-tin?shop=${active.seller.id}`;
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 py-8">
@@ -45,10 +59,30 @@ export default async function MyListingsPage() {
       />
       <PageHero
         icon={Store}
-        eyebrow="Người bán"
-        title="Tin của tôi"
-        subtitle={`${listings.length} tin · ${viewer.seller.orders_done} đơn thành công`}
+        eyebrow={active.isOwner ? "Người bán" : "CTV gian hàng"}
+        title={active.isOwner ? "Tin của tôi" : `Tin của ${active.seller.display_name}`}
+        subtitle={`${listings.length} tin · ${active.seller.orders_done} đơn thành công`}
       />
+
+      {/* Chọn gian hàng — chỉ hiện khi người này làm việc cho nhiều shop. */}
+      {manageable.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {manageable.map((s) => (
+            <Link
+              key={s.seller.id}
+              href={`/shop/tin-cua-toi?shop=${s.seller.id}`}
+              className={cn(
+                "rounded-full border px-3 py-1 text-[11px] font-bold transition",
+                s.seller.id === active.seller.id
+                  ? "border-primary/40 bg-primary/10 text-primary dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300"
+                  : "border-border bg-muted/40 text-muted-foreground hover:border-primary/30",
+              )}
+            >
+              {s.isOwner ? `${s.seller.display_name} (của tôi)` : s.seller.display_name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {Object.entries(counts).map(([status, n]) => (
@@ -57,7 +91,7 @@ export default async function MyListingsPage() {
           </span>
         ))}
         <Link
-          href="/shop/dang-tin"
+          href={createHref}
           className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 dark:bg-amber-500"
         >
           <Plus className="size-3.5" /> Đăng tin mới
@@ -66,7 +100,7 @@ export default async function MyListingsPage() {
 
       {listings.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/20 py-16 text-center text-sm text-muted-foreground">
-          Bạn chưa đăng tin nào.
+          {active.isOwner ? "Bạn chưa đăng tin nào." : "Gian hàng này chưa có tin nào."}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">

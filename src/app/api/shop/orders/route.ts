@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
-import { getSellerByUser, isAgentRole, isShopAdminRole, listOrders } from "@/lib/server/shop";
+import { isAgentRole, isShopAdminRole, listOrders } from "@/lib/server/shop";
+import { sellerIdsForOrders } from "@/lib/server/shop-staff";
 import { createOrder } from "@/lib/server/shop-actions";
 import { anonymizeUnclaimed, redactOrders, shopJson } from "@/lib/server/shop-privacy";
 import { unreadCounts } from "@/lib/server/shop-messages";
@@ -36,10 +37,12 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(500, Math.max(1, Number(sp.get("limit")) || 100));
 
   if (scope === "selling") {
-    const seller = await getSellerByUser(auth.userId);
-    if (!seller) return shopJson({ orders: [] });
+    // Gồm cả đơn của những gian hàng người này đang làm CTV (nếu được bật quyền
+    // xử lý đơn) — CTV mở đúng một tab "Tôi bán" như chủ shop.
+    const sellerIds = await sellerIdsForOrders(auth.userId);
+    if (sellerIds.length === 0) return shopJson({ orders: [] });
     // Người bán không nhận được SĐT / STK / kênh chat của người mua.
-    const orders = await listOrders({ sellerId: seller.id, status, limit });
+    const orders = await listOrders({ sellerId: sellerIds, status, limit });
     return withUnread(redactOrders(orders, { userId: auth.userId, party: "seller" }), auth.userId);
   }
 

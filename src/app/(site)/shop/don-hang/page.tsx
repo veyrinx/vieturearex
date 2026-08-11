@@ -22,7 +22,11 @@ export default async function MyOrdersPage() {
   const scopes: { key: "buying" | "selling" | "agent"; label: string }[] = [
     { key: "buying", label: "Tôi mua" },
   ];
-  if (viewer.seller) scopes.push({ key: "selling", label: "Tôi bán" });
+  // CTV được bật quyền xử lý đơn cũng có tab này — đơn của gian hàng họ phụ.
+  const sellSide = viewer.shops.filter((s) => s.isOwner || s.canHandleOrders);
+  if (sellSide.length > 0) {
+    scopes.push({ key: "selling", label: sellSide.some((s) => s.isOwner) ? "Tôi bán" : "Shop tôi phụ" });
+  }
   if (viewer.isAgent) scopes.push({ key: "agent", label: "Trung gian" });
 
   return (

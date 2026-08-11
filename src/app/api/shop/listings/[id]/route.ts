@@ -3,7 +3,8 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { getListing, getSellerByUser, isAgentRole, isShopAdminRole } from "@/lib/server/shop";
+import { getListing, isAgentRole, isShopAdminRole } from "@/lib/server/shop";
+import { accessForSeller } from "@/lib/server/shop-staff";
 import type { ListingStatus } from "@/lib/constants/shop";
 import { shopJson } from "@/lib/server/shop-privacy";
 import {
@@ -42,8 +43,10 @@ export async function PATCH(
   const listing = await getListing(id);
   if (!listing) return shopJson({ error: "Không tìm thấy tin." }, { status: 404 });
 
-  const seller = await getSellerByUser(auth.userId);
-  const isOwner = !!seller && seller.id === listing.seller_id;
+  // "Chủ tin" giờ gồm cả CTV được chủ shop bật quyền quản lý tin đăng — họ làm
+  // thay gian hàng nên đụng được đúng những gì chủ shop đụng được.
+  const access = await accessForSeller(auth.userId, listing.seller_id);
+  const isOwner = !!access?.canManageListings;
   const isStaff = isShopAdminRole(auth.role) || isAgentRole(auth.role);
   if (!isOwner && !isStaff) return shopJson({ error: "Không có quyền." }, { status: 403 });
 
@@ -181,9 +184,8 @@ export async function DELETE(
   const listing = await getListing(id);
   if (!listing) return shopJson({ error: "Không tìm thấy tin." }, { status: 404 });
 
-  const seller = await getSellerByUser(auth.userId);
-  const isOwner = !!seller && seller.id === listing.seller_id;
-  if (!isOwner && !isShopAdminRole(auth.role)) {
+  const access = await accessForSeller(auth.userId, listing.seller_id);
+  if (!access?.canManageListings && !isShopAdminRole(auth.role)) {
     return shopJson({ error: "Không có quyền." }, { status: 403 });
   }
   if (["reserved", "sold"].includes(listing.status)) {
