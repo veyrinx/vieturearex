@@ -1,0 +1,33 @@
+name: Quét đơn chợ đang treo
+
+# Gói Hobby của Vercel chỉ cho cron chạy một lần mỗi ngày, mà ngưỡng treo của
+# bước "chưa ai nhận" chỉ có 2 tiếng — quét mỗi ngày một lần thì lúc phát hiện
+# ra khách đã bỏ đi rồi. Nên nhịp thật nằm ở đây, còn cron trong vercel.json
+# giữ lại làm lưới đỡ cho trường hợp workflow này hỏng hoặc thiếu secret.
+#
+# Cần secret CRON_SECRET (Settings → Secrets and variables → Actions), đặt
+# đúng bằng biến môi trường CRON_SECRET trên Vercel.
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gọi endpoint quét
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Thiếu secret CRON_SECRET — endpoint sẽ trả 401."
+            exit 1
+          fi
+          CODE=$(curl -sS -o body.txt -w '%{http_code}' \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "https://arexnetwork.site/api/cron/shop-stale-orders")
+          echo "HTTP $CODE"
+          cat body.txt
+          echo
+          [ "$CODE" = "200" ]
