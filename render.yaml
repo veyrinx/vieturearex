@@ -1,0 +1,115 @@
+# Bản dự phòng chạy trên Render, dùng khi Vercel sập.
+# Deploy: Render Dashboard → New → Blueprint → chọn repo này (đọc file này).
+#
+# Khác biệt so với Vercel cần nhớ:
+#   - cron trong vercel.json KHÔNG chạy ở đây. Lịch dự phòng nằm ở
+#     .github/workflows/cron-fallback.yml (bật bằng biến CRON_BASE_URL).
+#   - header x-vercel-ip-country không có → CookieConsent nhận country = null.
+#   - @vercel/analytics và speed-insights im lặng không gửi số liệu.
+services:
+  - type: web
+    name: arex-web
+    runtime: node
+    # free = ngủ sau 15 phút không ai vào, tỉnh dậy mất ~1 phút. Đã là bản dự
+    # phòng thì nên starter trở lên để lúc cần là có ngay.
+    plan: starter
+    region: singapore
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/health
+    buildCommand: npm ci && npm run build
+    # next start tự đọc $PORT của Render.
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: "22.11.0"
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=4096"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+
+      # Điền sẵn được (không phải bí mật)
+      - key: NEXT_PUBLIC_SITE_URL
+        value: "https://arexnetwork.site"
+      - key: ADMIN_EMAIL_DOMAIN
+        value: "arexnetwork.site"
+      - key: NEXT_PUBLIC_ADMIN_EMAIL_DOMAIN
+        value: "arexnetwork.site"
+      - key: DISABLE_SUPABASE_RUNTIME
+        value: "false"
+      - key: SUPABASE_QUERY_TIMEOUT_MS
+        value: "8000"
+      - key: HLFF_USER_UID
+        value: "arex"
+      - key: HLFF_REGION
+        value: "vn"
+      - key: FF_INFO_REGION
+        value: "VN"
+
+      # sync: false = Render hỏi/để trống, mình dán tay trong Dashboard.
+      # Lấy đúng giá trị đang chạy trên Vercel (Settings → Environment Variables).
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: APP_SECRET
+        sync: false
+      - key: NEXT_REDIRECT_SECRET
+        sync: false
+      # ĐỪNG đổi giá trị này — đổi là mọi bản ghi bàn giao cũ hết giải mã được.
+      - key: SHOP_SECRET_KEY
+        sync: false
+      - key: SITEMAP_ACCESS_TOKEN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ADMIN_INVITE_FROM_EMAIL
+        sync: false
+      - key: ADMIN_INVITE_REPLY_TO_EMAIL
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: GOOGLE_SHEET_ID
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_EMAIL
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+        sync: false
+      - key: HLFF_API_KEY
+        sync: false
+      - key: FF_INFO_API_URL
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        sync: false
+      - key: DISCORD_APP_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_PUBLIC_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: LARK_APP_ID
+        sync: false
+      - key: LARK_APP_SECRET
+        sync: false

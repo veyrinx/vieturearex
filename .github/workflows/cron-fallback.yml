@@ -1,0 +1,80 @@
+name: Cron dự phòng (khi Vercel sập)
+
+# Cron trong vercel.json chỉ chạy khi app còn ở Vercel. Nếu Vercel sập và site
+# chuyển sang Render, lịch chạy nằm ở đây — cùng giờ (UTC) với vercel.json.
+#
+# BẬT: Settings → Secrets and variables → Actions → Variables → tạo biến
+#   CRON_BASE_URL = https://arexnetwork.site      (nếu DNS đã trỏ về Render)
+#   CRON_BASE_URL = https://arex-web.onrender.com (nếu DNS chưa kịp đổi)
+# TẮT: xoá biến đó đi. Không có biến thì mọi lần chạy đều tự thoát,
+# nên KHÔNG sợ gọi trùng với cron Vercel khi mọi thứ vẫn bình thường.
+#
+# Cần thêm secret CRON_SECRET, đặt đúng bằng biến CRON_SECRET trên Render.
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # bxh-rank-notify
+    - cron: "0 2 * * *"   # ff-version-check
+    - cron: "0 3 * * *"   # hide-expired
+    - cron: "30 3 * * *"  # purge-expired
+    - cron: "0 6 * * *"   # publish-scheduled
+    - cron: "0 7 * * *"   # event-reminders
+    - cron: "0 8 * * *"   # daily-report
+    - cron: "0 9 * * *"   # digest
+    - cron: "0 13 * * *"  # checkin-reminder
+    - cron: "0 17 * * *"  # event-status
+    - cron: "0 23 * * *"  # shop-stale-orders
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "Tên endpoint dưới /api/cron (VD: digest). Để trống = chạy hết."
+        required: false
+        default: ""
+
+jobs:
+  run:
+    # Không đặt CRON_BASE_URL = coi như Vercel vẫn sống → bỏ qua, khỏi gọi trùng.
+    if: vars.CRON_BASE_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chọn endpoint theo lịch
+        id: pick
+        run: |
+          case "${{ github.event.schedule }}" in
+            "0 1 * * *")  EP=bxh-rank-notify ;;
+            "0 2 * * *")  EP=ff-version-check ;;
+            "0 3 * * *")  EP=hide-expired ;;
+            "30 3 * * *") EP=purge-expired ;;
+            "0 6 * * *")  EP=publish-scheduled ;;
+            "0 7 * * *")  EP=event-reminders ;;
+            "0 8 * * *")  EP=daily-report ;;
+            "0 9 * * *")  EP=digest ;;
+            "0 13 * * *") EP=checkin-reminder ;;
+            "0 17 * * *") EP=event-status ;;
+            "0 23 * * *") EP=shop-stale-orders ;;
+            *)            EP="${{ inputs.endpoint }}" ;;
+          esac
+          if [ -z "$EP" ]; then
+            EP="bxh-rank-notify ff-version-check hide-expired purge-expired publish-scheduled event-reminders daily-report digest checkin-reminder event-status shop-stale-orders"
+          fi
+          echo "endpoints=$EP" >> "$GITHUB_OUTPUT"
+
+      - name: Gọi endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE_URL: ${{ vars.CRON_BASE_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Thiếu secret CRON_SECRET — endpoint sẽ trả 401."
+            exit 1
+          fi
+          FAILED=0
+          for EP in ${{ steps.pick.outputs.endpoints }}; do
+            CODE=$(curl -sS -o body.txt -w '%{http_code}' --max-time 120 \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "${BASE_URL%/}/api/cron/$EP")
+            echo "--- $EP → HTTP $CODE"
+            cat body.txt; echo
+            [ "$CODE" = "200" ] || FAILED=1
+          done
+          exit $FAILED
