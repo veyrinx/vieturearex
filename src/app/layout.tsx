@@ -19,6 +19,18 @@ import { getSiteConfig, getCurrentUrl } from "@/lib/server/get-site-config";
 // Heading: --font-heading (GFF Latin ExtraBold)
 // Body: --font-body (GFF Latin Regular)
 
+// Tỉ lệ lấy mẫu Speed Insights: 0.1 = 10% lượt xem mới gửi số đo.
+// Đang ở mức 100% thì tháng vừa rồi chạm 41k data point trong khi gói cho 10k.
+// 10% ước còn ~4.1k, vẫn thừa mẫu để p75 của LCP/CLS/INP có ý nghĩa.
+// Chỉnh bằng biến môi trường NEXT_PUBLIC_SPEED_INSIGHTS_SAMPLE_RATE trên Vercel
+// (nhớ deploy lại, vì biến NEXT_PUBLIC_ được nhúng cứng lúc build).
+// Gõ sai giá trị thì @vercel/speed-insights nhận NaN và im lặng tắt hẳn — nên
+// giá trị ngoài khoảng (0, 1] đều bị bỏ, quay về mặc định.
+const SPEED_INSIGHTS_SAMPLE_RATE = (() => {
+  const raw = Number(process.env.NEXT_PUBLIC_SPEED_INSIGHTS_SAMPLE_RATE);
+  return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.1;
+})();
+
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
@@ -249,13 +261,9 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         <CookieConsent country={country} />
         <PageViewTracker />
         <Analytics />
-        {/* sampleRate 0.2 = chỉ 20% lượt xem gửi số đo Web Vitals. Gói Hobby cho
-            10k data point/tháng, để mặc định (100%) thì đang chạm 41k → vượt hạn
-            mức. 20% vẫn đủ mẫu để p75 có ý nghĩa. Chỉnh qua biến môi trường
-            NEXT_PUBLIC_SPEED_INSIGHTS_SAMPLE_RATE nếu muốn siết/nới thêm. */}
-        <SpeedInsights
-          sampleRate={Number(process.env.NEXT_PUBLIC_SPEED_INSIGHTS_SAMPLE_RATE ?? "0.2")}
-        />
+        {/* Chỉ một phần lượt xem gửi số đo Web Vitals — xem
+            SPEED_INSIGHTS_SAMPLE_RATE ở đầu file. */}
+        <SpeedInsights sampleRate={SPEED_INSIGHTS_SAMPLE_RATE} />
       </body>
     </html>
   );
