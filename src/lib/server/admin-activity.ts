@@ -13,11 +13,14 @@ type AdminActivityInput = {
   request?: NextRequest;
 };
 
+// Không có phiên đăng nhập nghĩa là chẳng có quản trị viên nào đứng sau — ví dụ
+// người dùng tự đăng ký, hay việc định kỳ chạy nền. Trước đây những dòng đó ghi
+// "unknown-admin@arex.tech", đọc nhanh cứ tưởng có admin thật thao tác tay.
 export async function resolveCurrentAdminEmail() {
   const supabase = createServerSupabaseClient();
   if (!supabase) return "system@arex.tech";
   const { data: { user } } = await supabase.auth.getUser();
-  return user?.email?.trim().toLowerCase() || "unknown-admin@arex.tech";
+  return user?.email?.trim().toLowerCase() || "system@arex.tech";
 }
 
 async function resolveIp(request?: NextRequest): Promise<string | null> {

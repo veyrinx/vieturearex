@@ -10,12 +10,16 @@ import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  USER_LOG_ACTIONS,
+  VISITOR_LOG_ACTIONS,
+  type ActivityLogType,
+} from "@/lib/constants/activity-log-types";
 import { cn } from "@/lib/utils";
 import type { AdminActivityLogItem } from "@/lib/types/content";
 
-const USER_ACTIONS = new Set(["USER_REGISTERED", "USER_COMMENTED"]);
-const VISITOR_ACTIONS = new Set(["VISITOR_PAGE_VIEW"]);
-type TypeFilter = "all" | "admin" | "user" | "visitor";
+const USER_ACTIONS = new Set<string>(USER_LOG_ACTIONS);
+const VISITOR_ACTIONS = new Set<string>(VISITOR_LOG_ACTIONS);
 
 function exportLogsCSV(logs: AdminActivityLogItem[]) {
   const headers = ["Thời gian", "Tài khoản", "Hành động", "Đối tượng", "ID đối tượng", "Chi tiết"];
@@ -64,19 +68,30 @@ export function ActivityLogsPanel() {
   const [dateTo, setDateTo] = useState("");
   const [showDateFilter, setShowDateFilter] = useState(false);
 
-  const { data: logs = [], isLoading, refetch } = useAdminLogsQuery(dateFrom || undefined, dateTo || undefined);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<ActivityLogType>("all");
+
+  // Lọc theo loại chạy dưới CSDL: bảng này 98% là lượt xem của khách, lấy về
+  // rồi mới lọc thì việc quản trị thật bị đẩy ra ngoài số dòng máy chủ trả về.
+  const { data, isLoading, refetch } = useAdminLogsQuery(
+    dateFrom || undefined,
+    dateTo || undefined,
+    typeFilter,
+  );
+  const logs = data?.logs ?? [];
+  const counts = data?.counts ?? null;
+  const limit = data?.limit ?? null;
 
   const clearDates = useCallback(() => { setDateFrom(""); setDateTo(""); }, []);
 
-  const typeFiltered = typeFilter === "admin"
-    ? logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action))
-    : typeFilter === "user"
-      ? logs.filter((l) => USER_ACTIONS.has(l.action))
-      : typeFilter === "visitor"
-        ? logs.filter((l) => VISITOR_ACTIONS.has(l.action))
-        : logs;
+  // Máy chủ đã lọc sẵn; giữ lại nhánh này cho chế độ demo (counts = null).
+  const typeFiltered = counts || typeFilter === "all"
+    ? logs
+    : typeFilter === "admin"
+      ? logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action))
+      : typeFilter === "user"
+        ? logs.filter((l) => USER_ACTIONS.has(l.action))
+        : logs.filter((l) => VISITOR_ACTIONS.has(l.action));
 
   const filtered = search
     ? typeFiltered.filter((l) =>
@@ -87,9 +102,13 @@ export function ActivityLogsPanel() {
       )
     : typeFiltered;
 
-  const adminCount = logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action)).length;
-  const userCount = logs.filter((l) => USER_ACTIONS.has(l.action)).length;
-  const visitorCount = logs.filter((l) => VISITOR_ACTIONS.has(l.action)).length;
+  // Số trên nút là tổng thật của cả khoảng thời gian, không phải tổng của trang
+  // đang xem — nên "Quản trị 18" vẫn đúng khi bảng chỉ trả về 500 dòng mới nhất.
+  const allCount = counts?.all ?? logs.length;
+  const adminCount = counts?.admin ?? logs.filter((l) => !USER_ACTIONS.has(l.action) && !VISITOR_ACTIONS.has(l.action)).length;
+  const userCount = counts?.user ?? logs.filter((l) => USER_ACTIONS.has(l.action)).length;
+  const visitorCount = counts?.visitor ?? logs.filter((l) => VISITOR_ACTIONS.has(l.action)).length;
+  const truncated = limit !== null && logs.length >= limit;
 
   return (
     <section className="space-y-4">
@@ -163,11 +182,11 @@ export function ActivityLogsPanel() {
       )}
 
       {/* Type filter + Search */}
-      {logs.length > 0 && (
+      {(logs.length > 0 || typeFilter !== "all") && (
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
-              { id: "all",     label: "Tất cả",         count: logs.length,   icon: ShieldCheck },
+              { id: "all",     label: "Tất cả",         count: allCount,      icon: ShieldCheck },
               { id: "admin",   label: "Quản trị",       count: adminCount,    icon: Shield },
               { id: "user",    label: "Người dùng",     count: userCount,     icon: Users },
               { id: "visitor", label: "Khách truy cập", count: visitorCount,  icon: Search },
@@ -206,11 +225,20 @@ export function ActivityLogsPanel() {
       ) : filtered.length === 0 ? (
         <EmptyState
           title={search ? "KHÔNG TÌM THẤY KẾT QUẢ" : "CHƯA CÓ BẢN GHI NHẬT KÝ"}
-          description={search ? "Thử tìm kiếm với từ khoá khác." : "CÁC HOẠT ĐỘNG QUẢN TRỊ MỚI SẼ XUẤT HIỆN Ở ĐÂY TRONG VÒNG 48 GIỜ."}
+          description={
+            search
+              ? "Thử tìm kiếm với từ khoá khác."
+              : typeFilter !== "all"
+                ? "Không có bản ghi nào thuộc loại này trong khoảng thời gian đang xem."
+                : "CÁC HOẠT ĐỘNG QUẢN TRỊ MỚI SẼ XUẤT HIỆN Ở ĐÂY TRONG VÒNG 48 GIỜ."
+          }
         />
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">{filtered.length}/{logs.length} bản ghi</p>
+          <p className="text-xs text-muted-foreground">
+            {filtered.length}/{logs.length} bản ghi
+            {truncated && ` — máy chủ trả về tối đa ${limit} dòng mới nhất, lọc theo loại hoặc theo ngày để xem phần còn lại`}
+          </p>
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">

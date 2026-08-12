@@ -90,5 +90,20 @@ export async function GET(req: NextRequest) {
     /* bảng chưa migrate — bỏ qua */
   }
 
-  return NextResponse.json({ ok: true, deleted, graceDays, secretsPurged });
+  // ── Dọn bộ đếm đăng nhập sai ──
+  // Đăng nhập được thì dòng tự bị xoá; còn lại là IP gõ sai vài lần rồi bỏ đi,
+  // và những lệnh khoá đã hết hạn. Không dọn thì bảng chỉ có phình.
+  let loginAttemptsPurged = 0;
+  try {
+    const staleCutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const { data } = (await untypedFrom(db, "login_attempts")
+      .delete()
+      .or(`and(banned_until.is.null,last_attempt.lt.${staleCutoff}),banned_until.lt.${new Date().toISOString()}`)
+      .select("ip")) as { data: Array<{ ip: string }> | null };
+    loginAttemptsPurged = data?.length ?? 0;
+  } catch {
+    /* bảng chưa migrate — bỏ qua */
+  }
+
+  return NextResponse.json({ ok: true, deleted, graceDays, secretsPurged, loginAttemptsPurged });
 }
