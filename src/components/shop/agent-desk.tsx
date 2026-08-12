@@ -8,6 +8,7 @@ import {
   PackageOpen, RefreshCw, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePolling } from "@/hooks/use-polling";
 import {
   ORDER_STATUS_COLOR,
   ORDER_STATUS_HINT,
@@ -55,9 +56,10 @@ export function AgentDesk({ userId }: { userId: string }) {
 
   useEffect(() => {
     void load();
-    const t = setInterval(() => void load(true), 20_000);
-    return () => clearInterval(t);
   }, [load]);
+
+  const reload = useCallback(() => void load(true), [load]);
+  usePolling(reload, 45_000, { immediate: false });
 
   const groups = useMemo(() => {
     const done = (o: ShopOrder) => ["completed", "cancelled"].includes(o.status);

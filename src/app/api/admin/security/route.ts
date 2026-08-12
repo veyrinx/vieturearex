@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enforceAdminApiAuth, enforceRateLimit, getClientKey } from "@/lib/server/api-guard";
-import { getSettings, updateSetting } from "@/lib/data/content-service";
+import { getSettings, getSettingsByKeys, updateSetting } from "@/lib/data/content-service";
 import { unblockInMemory, getInMemoryBlockedIps, getFailureCount } from "@/lib/server/ip-blocker";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { VISITOR_IPS_KEY, type VisitorEntry } from "@/lib/server/visitor-logger";
@@ -10,7 +10,8 @@ const BLOCKED_IPS_KEY = "security.blocked_ips";
 const WHITELIST_KEY = "security.admin_ip_whitelist";
 
 async function getVisitorLog(): Promise<VisitorEntry[]> {
-  const settings = await getSettings();
+  // Key này bị loại khỏi getSettings() vì quá nặng — phải lấy riêng.
+  const settings = await getSettingsByKeys([VISITOR_IPS_KEY]);
   const raw = settings.find((s) => s.key === VISITOR_IPS_KEY)?.value ?? "{}";
   try {
     const map = JSON.parse(raw) as Record<string, VisitorEntry>;

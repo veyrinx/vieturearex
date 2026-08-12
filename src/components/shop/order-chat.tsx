@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ImagePicker } from "@/components/shop/image-picker";
 import type { ViewerParty } from "@/lib/types/shop";
 import { cn } from "@/lib/utils";
+import { usePolling } from "@/hooks/use-polling";
 
 type ChatMessage = {
   id: string;
@@ -71,10 +72,10 @@ export function OrderChat({
 
   useEffect(() => {
     void load();
-    if (closed) return;
-    const t = setInterval(() => void load(), 15_000);
-    return () => clearInterval(t);
-  }, [load, closed]);
+  }, [load]);
+
+  // Đơn đã đóng thì không hỏi lại nữa; tab ẩn cũng ngừng.
+  usePolling(load, closed ? null : 30_000, { immediate: false });
 
   // Chỉ tự cuộn khi người dùng đang ở đáy — đang đọc lại lịch sử thì để yên.
   useEffect(() => {

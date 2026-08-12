@@ -249,7 +249,13 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         <CookieConsent country={country} />
         <PageViewTracker />
         <Analytics />
-        <SpeedInsights />
+        {/* sampleRate 0.2 = chỉ 20% lượt xem gửi số đo Web Vitals. Gói Hobby cho
+            10k data point/tháng, để mặc định (100%) thì đang chạm 41k → vượt hạn
+            mức. 20% vẫn đủ mẫu để p75 có ý nghĩa. Chỉnh qua biến môi trường
+            NEXT_PUBLIC_SPEED_INSIGHTS_SAMPLE_RATE nếu muốn siết/nới thêm. */}
+        <SpeedInsights
+          sampleRate={Number(process.env.NEXT_PUBLIC_SPEED_INSIGHTS_SAMPLE_RATE ?? "0.2")}
+        />
       </body>
     </html>
   );

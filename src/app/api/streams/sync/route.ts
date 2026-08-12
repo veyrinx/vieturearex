@@ -6,9 +6,11 @@ import type { StreamStatus } from "@/lib/types/content";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-// Server-side cache — tránh spam khi nhiều user cùng lúc
+// Server-side cache — tránh spam khi nhiều user cùng lúc.
+// Route này bị MỌI khách xem trang /esports gọi, nên khoảng nghỉ càng dài càng
+// đỡ tốn: trạng thái live đổi chậm, 60s là quá đủ nhạy.
 let lastSyncAt = 0;
-const SYNC_COOLDOWN_MS = 15_000; // 15 giây minimum giữa các lần sync
+const SYNC_COOLDOWN_MS = 60_000;
 
 async function detectYouTubeStatus(videoId: string): Promise<StreamStatus | null> {
   if (!YOUTUBE_API_KEY) return null;

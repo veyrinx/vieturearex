@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getSettings } from "@/lib/data/content-service";
+import { getSettingsByKeys } from "@/lib/data/content-service";
 
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-stats", limit: 60, windowMs: 60_000 });
@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminSupabaseClient() ?? createServerSupabaseClient();
 
   // Daily views (last 30 days)
-  const settings = await getSettings();
+  const settings = await getSettingsByKeys([
+    "analytics.daily_views",
+    "analytics.views",
+    "analytics.lifetime_views",
+  ]);
   const dailyRaw = settings.find((s) => s.key === "analytics.daily_views")?.value ?? "{}";
   const archived = Number(settings.find((s) => s.key === "analytics.views")?.value ?? 0) || 0;
   const lifetime = Number(settings.find((s) => s.key === "analytics.lifetime_views")?.value ?? 0) || 0;

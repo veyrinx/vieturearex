@@ -19,7 +19,9 @@ export function useActiveAdminsQuery() {
   return useQuery({
     queryKey: ["active-admins"],
     queryFn: fetchActiveAdmins,
-    refetchInterval: 5_000,
+    // Cửa sổ online phía server là 90s — hỏi lại mỗi 5s chỉ đốt lượt chạy
+    // function chứ không làm dữ liệu chính xác hơn.
+    refetchInterval: 45_000,
     refetchOnWindowFocus: true,
   });
 }

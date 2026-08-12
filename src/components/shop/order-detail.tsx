@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { ImagePicker } from "@/components/shop/image-picker";
 import { OrderChat } from "@/components/shop/order-chat";
+import { usePolling } from "@/hooks/use-polling";
 import {
   CANCELLABLE_STATUSES,
   DISPUTABLE_STATUSES,
@@ -57,13 +58,14 @@ export function OrderDetail({ initial }: { initial: Payload }) {
   const { order, events, dispute, review, party } = data;
   const actions = useMemo(() => (party ? actionsFor(order.status, party) : []), [order.status, party]);
 
-  // Đơn đang chạy thì tự làm mới để hai bên thấy nhau thao tác
-  useEffect(() => {
-    if (["completed", "cancelled"].includes(order.status)) return;
-    const t = setInterval(() => void refresh(true), 20_000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order.status]);
+  // Đơn đang chạy thì tự làm mới để hai bên thấy nhau thao tác. Đơn đã xong
+  // hoặc tab đang ẩn thì thôi.
+  const done = ["completed", "cancelled"].includes(order.status);
+  usePolling(
+    () => void refresh(true),
+    done ? null : 45_000,
+    { immediate: false },
+  );
 
   const refresh = async (quiet = false) => {
     try {

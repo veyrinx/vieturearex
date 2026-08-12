@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { usePolling } from "@/hooks/use-polling";
 
 // ── Types ──────────────────────────────────────────────
 type SupportMessage = {
@@ -112,7 +113,6 @@ export function CskhChat() {
   const [chatLoading, setChatLoading] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const msgCountOnSend = useRef(0);
 
@@ -182,12 +182,16 @@ export function CskhChat() {
   }, []);
 
   useEffect(() => {
-    if (panel === "chat" && sessionId) {
-      void fetchMessages(sessionId);
-      pollRef.current = setInterval(() => { void fetchMessages(sessionId); }, 5000);
-    }
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    if (panel === "chat" && sessionId) void fetchMessages(sessionId);
   }, [panel, sessionId, fetchMessages]);
+
+  // Chỉ hỏi khi khung chat đang mở VÀ tab đang hiện. Nhịp 5s cũ chạy cả khi
+  // người dùng đã chuyển tab đi chỗ khác.
+  const active = panel === "chat" && Boolean(sessionId);
+  const pollMessages = useCallback(() => {
+    if (sessionId) void fetchMessages(sessionId);
+  }, [sessionId, fetchMessages]);
+  usePolling(pollMessages, active ? 12_000 : null, { immediate: false });
 
   // ── Open handler ───────────────────────────────────
   const handleOpen = () => {

@@ -1,27 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Shield } from "lucide-react";
+import { usePolling } from "@/hooks/use-polling";
+
+// Huy hiệu này nằm ở trang chủ nên MỌI khách vào đều gọi API. Nhịp 60s cũ nhân
+// với lượng truy cập là một trong những nguồn edge request lớn nhất. 3 phút là
+// đủ cho một chỉ báo "đang trực", và tab ẩn thì ngừng hẳn.
+const REFRESH_MS = 180_000;
 
 export function AdminOnlineBadge() {
   const [admins, setAdmins] = useState<string[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchAdmins() {
-      try {
-        const res = await fetch("/api/public/active-admins");
-        if (!res.ok || cancelled) return;
-        const data = await res.json() as { admins?: string[] };
-        if (!cancelled) setAdmins(data.admins ?? []);
-      } catch { /* ignore */ }
-    }
-
-    void fetchAdmins();
-    const interval = setInterval(() => void fetchAdmins(), 60_000);
-    return () => { cancelled = true; clearInterval(interval); };
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const res = await fetch("/api/public/active-admins");
+      if (!res.ok) return;
+      const data = await res.json() as { admins?: string[] };
+      setAdmins(data.admins ?? []);
+    } catch { /* ignore */ }
   }, []);
+
+  usePolling(fetchAdmins, REFRESH_MS);
 
   if (admins.length === 0) return null;
 

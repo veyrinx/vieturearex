@@ -139,12 +139,12 @@ export function ShopAdminPanel({ canReview }: { canReview: boolean }) {
         orders: d.orders ?? [],
         unread: d.unread ?? {},
       })),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   });
   const disputes = useQuery({
     queryKey: ["admin-shop", "disputes"],
     queryFn: () => getJson<{ disputes: DisputeRow[] }>("/api/shop/disputes").then((d) => d.disputes ?? []),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     enabled: canReview,
   });
   const accessLogs = useQuery({

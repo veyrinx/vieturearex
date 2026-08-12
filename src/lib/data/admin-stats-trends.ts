@@ -1,4 +1,4 @@
-import { getUsers, getNews, getSettings } from "@/lib/data/content-service";
+import { getUsers, getNews, getSettingsByKeys } from "@/lib/data/content-service";
 
 export type StatsTrends = {
   users: number | null;
@@ -30,7 +30,8 @@ export async function getStatsTrends(): Promise<StatsTrends> {
   const [users, news, settings] = await Promise.all([
     getUsers().catch(() => []),
     getNews("all").catch(() => []),
-    getSettings().catch(() => []),
+    // analytics.daily_views nằm ngoài getSettings() (blob nặng), lấy riêng.
+    getSettingsByKeys(["analytics.daily_views"]).catch(() => []),
   ]);
 
   const now = Date.now();

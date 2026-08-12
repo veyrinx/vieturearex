@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCheck, Star, Newspaper, MessageCircle, BookOpen, Users, Lock, ShieldAlert, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { usePolling } from "@/hooks/use-polling";
 
 type Notification = {
   id: string;
@@ -70,13 +71,9 @@ export function NotificationBell({ className }: { className?: string }) {
       .catch(() => {});
   }, []);
 
-  // Only poll when logged in
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    fetchCount();
-    const interval = setInterval(fetchCount, 30_000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn, fetchCount]);
+  // Chỉ hỏi khi đã đăng nhập, và chỉ khi tab đang mở. 30s là quá dày cho một
+  // cái chuông đếm số — 2 phút vẫn đủ nhanh mà giảm 4 lần số lần chạy function.
+  usePolling(fetchCount, isLoggedIn ? 120_000 : null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

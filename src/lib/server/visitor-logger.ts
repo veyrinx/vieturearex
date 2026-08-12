@@ -18,11 +18,27 @@ const MAX_ENTRIES = 500;
 
 // Per-process dedup map: ip → last logged timestamp
 const recentLog = new Map<string, number>();
+// Máy Fluid được dùng lại giữa nhiều request nên map này sống rất lâu. Không
+// dọn thì nó phình theo số IP đã ghé — càng chạy lâu càng ngốn bộ nhớ.
+const RECENT_LOG_MAX = 5_000;
+let lastPrune = Date.now();
+const PRUNE_INTERVAL_MS = 5 * 60 * 1000;
+
+function pruneRecentLog(now: number) {
+  if (now - lastPrune < PRUNE_INTERVAL_MS && recentLog.size < RECENT_LOG_MAX) return;
+  lastPrune = now;
+  for (const [ip, at] of Array.from(recentLog.entries())) {
+    if (now - at >= LOG_INTERVAL_MS) recentLog.delete(ip);
+  }
+  // Vẫn quá đông (bị quét hàng loạt) thì bỏ hẳn, xây lại từ đầu.
+  if (recentLog.size > RECENT_LOG_MAX) recentLog.clear();
+}
 
 /** Returns true if this IP should be persisted right now. */
 export function shouldLogVisitor(ip: string): boolean {
   if (!ip || ip === "unknown") return false;
   const now = Date.now();
+  pruneRecentLog(now);
   const last = recentLog.get(ip);
   if (last && now - last < LOG_INTERVAL_MS) return false;
   recentLog.set(ip, now);

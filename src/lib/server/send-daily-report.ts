@@ -1,5 +1,5 @@
 import "server-only";
-import { getSettings, getDashboardStats } from "@/lib/data/content-service";
+import { getSettings, getSettingsByKeys, getDashboardStats } from "@/lib/data/content-service";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification } from "@/lib/server/discord-notify";
@@ -116,7 +116,10 @@ export async function runDailyReport(force = false): Promise<DailyReportResult> 
     return { ok: true, sent: false, telegram: false, discord: false, lark: false, reason: "not_scheduled_or_disabled", hour: vnHourNow() };
   }
 
-  const dailyRaw = settings.find((s) => s.key === DAILY_KEY)?.value ?? "{}";
+  // DAILY_KEY nằm ngoài getSettings() (blob nặng) — lấy riêng, và chỉ lấy khi
+  // thật sự sắp gửi báo cáo.
+  const dailySettings = await getSettingsByKeys([DAILY_KEY]).catch(() => []);
+  const dailyRaw = dailySettings.find((s) => s.key === DAILY_KEY)?.value ?? "{}";
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }
 

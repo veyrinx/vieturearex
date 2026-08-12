@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSettings } from "@/lib/data/content-service";
+import { getSettingsByKeys } from "@/lib/data/content-service";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 
 const DAILY_KEY = "analytics.daily_views";
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "support" });
   if (denied) return denied;
 
-  const settings = await getSettings();
+  const settings = await getSettingsByKeys([DAILY_KEY]);
   const dailyRaw = settings.find((s) => s.key === DAILY_KEY)?.value ?? "{}";
   let daily: Record<string, number> = {};
   try { daily = JSON.parse(dailyRaw); } catch { daily = {}; }

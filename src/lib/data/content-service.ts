@@ -60,12 +60,16 @@ async function withSupabaseReadFallback<T>(
     return fallback();
   }
 
+  // Timer phải được dọn trong finally. Nếu để treo, Fluid Compute vẫn tính tiền
+  // provisioned memory cho tới khi timer nổ (mặc định 8s) SAU KHI request xong —
+  // mỗi lần đọc dữ liệu lại giữ máy sống thêm 8 giây vô ích.
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const timeoutMs = getSupabaseQueryTimeoutMs();
     return await Promise.race([
       operation(),
       new Promise<T>((_, reject) => {
-        setTimeout(() => {
+        timer = setTimeout(() => {
           reject(new Error(`Supabase read timed out after ${timeoutMs}ms.`));
         }, timeoutMs);
       }),
@@ -74,6 +78,8 @@ async function withSupabaseReadFallback<T>(
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[content-service] ${label} fallback activated: ${message}`);
     return fallback();
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -950,12 +956,39 @@ export async function resetUserPassword(id: string): Promise<{ tempPassword: str
   return { tempPassword };
 }
 
+// Các key là JSON blob phình to theo thời gian (nhật ký lượt xem, danh sách IP
+// khách). Trang công khai không bao giờ đọc chúng, nhưng select("*") vẫn kéo cả
+// megabyte về mỗi lần render → tốn CPU parse + băng thông. Ai cần thì gọi
+// getSettingsByKeys() để lấy đúng key đó.
+export const BULKY_SETTING_KEYS = [
+  "security.visitor_ips",
+  "analytics.daily_views",
+] as const;
+
+// Cache sống xuyên request trong cùng một máy Fluid. React cache() chỉ gộp được
+// các lời gọi trong CÙNG một request; settings thì gần như không đổi nên đọc lại
+// từ Supabase mỗi request là lãng phí lớn nhất của Active CPU.
+const SETTINGS_TTL_MS = 60_000;
+let settingsMemo: { rows: SiteSetting[]; expires: number } | null = null;
+
+export function invalidateSettingsCache() {
+  settingsMemo = null;
+}
+
 // Wrapped in React cache() so multiple callers within one request/render
 // (e.g. the homepage's own getSettings() + getStreams()/getStreamCategories()
 // which call it internally) share a single fetch + decrypt pass instead of
 // hitting Supabase and decrypting sensitive keys once per call.
 export const getSettings = cache(async function getSettings(): Promise<SiteSetting[]> {
-  return withSupabaseReadFallback(
+  const now = Date.now();
+  if (settingsMemo && now < settingsMemo.expires) {
+    return settingsMemo.rows;
+  }
+
+  // Chỉ ghi nhớ khi đọc THẬT SỰ thành công. Nếu Supabase lỗi/timeout mà vẫn
+  // cache bản dự phòng thì cả site hiển thị cấu hình mặc định suốt 60 giây.
+  let ok = false;
+  const rows = await withSupabaseReadFallback(
     "getSettings",
     () => getDemoStore().settings,
     async () => {
@@ -964,10 +997,41 @@ export const getSettings = cache(async function getSettings(): Promise<SiteSetti
       const { data, error } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
         .from("settings")
         .select("*")
+        .not("key", "in", `(${BULKY_SETTING_KEYS.join(",")})`)
         .order("key");
       if (error) {
         throw new Error(error.message);
       }
+      const rows = (data ?? []) as SiteSetting[];
+      const decrypted = await Promise.all(
+        rows.map(async (row) =>
+          isSensitiveKey(row.key)
+            ? { ...row, value: await decryptSetting(row.value) }
+            : row,
+        ),
+      );
+      ok = true;
+      return decrypted;
+    },
+  );
+
+  if (ok) settingsMemo = { rows, expires: Date.now() + SETTINGS_TTL_MS };
+  return rows;
+});
+
+// Lấy đúng vài key cần dùng — dành cho route ghi đếm/nhật ký, khỏi kéo cả bảng.
+export async function getSettingsByKeys(keys: string[]): Promise<SiteSetting[]> {
+  if (keys.length === 0) return [];
+  return withSupabaseReadFallback(
+    "getSettingsByKeys",
+    () => getDemoStore().settings.filter((s) => keys.includes(s.key)),
+    async () => {
+      const supabase = createAdminSupabaseClient() ?? getSupabaseReadClientOrThrow();
+      const { data, error } = await (supabase as ReturnType<typeof getSupabaseReadClientOrThrow>)
+        .from("settings")
+        .select("*")
+        .in("key", keys);
+      if (error) throw new Error(error.message);
       const rows = (data ?? []) as SiteSetting[];
       return Promise.all(
         rows.map(async (row) =>
@@ -978,7 +1042,7 @@ export const getSettings = cache(async function getSettings(): Promise<SiteSetti
       );
     },
   );
-});
+}
 
 export async function getInvitedEmails(): Promise<InvitedEmailItem[]> {
   const settings = await getSettings();
@@ -1225,22 +1289,20 @@ export async function updateSetting(key: string, value: string) {
 
   const supabase = getSupabaseAdminOrThrow();
   const storedValue = isSensitiveKey(key) && value ? await encryptSetting(value) : value;
-  // Dùng upsert không có .single() để tránh lỗi "Cannot coerce result to single JSON object"
-  const { error } = await supabase
+  // upsert().select() lấy luôn row vừa ghi trong MỘT lượt đi — trước đây upsert
+  // xong còn select lại, tức mỗi lần ghi settings tốn 2 vòng mạng.
+  const { data: fetched, error } = await supabase
     .from("settings")
     .upsert(
       ({ key, value: storedValue, updated_at: new Date().toISOString() } as never),
       { onConflict: "key" },
-    );
+    )
+    .select()
+    .maybeSingle();
   if (error) {
     throw new Error(error.message);
   }
-  // Fetch lại row sau upsert
-  const { data: fetched } = await supabase
-    .from("settings")
-    .select("*")
-    .eq("key", key)
-    .maybeSingle();
+  invalidateSettingsCache();
   return (fetched ?? null) as SiteSetting | null;
 }
 
@@ -1333,7 +1395,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     getUsers(),
     getEvents(),
     getNews("all"),
-    getSettings(),
+    // analytics.daily_views bị loại khỏi getSettings() nên phải hỏi thẳng.
+    getSettingsByKeys(["analytics.views", "analytics.daily_views", "analytics.lifetime_views"]),
   ]);
 
   const viewsSetting = settings.find((item) => item.key === "analytics.views");

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
+import { usePolling } from "@/hooks/use-polling";
 import {
   Card,
   CardContent,
@@ -47,7 +48,6 @@ export function CskhAdminPanel() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const selected = sessions.find((s) => s.id === selectedId) ?? null;
 
@@ -75,10 +75,14 @@ export function CskhAdminPanel() {
 
   useEffect(() => {
     if (!selectedId) return;
-    fetchMessages(selectedId);
-    pollRef.current = setInterval(() => { void fetchMessages(selectedId); }, 10000); // Increased polling interval
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    void fetchMessages(selectedId);
   }, [selectedId, fetchMessages]);
+
+  // Chỉ hỏi tin nhắn khi đang mở một phiên VÀ tab đang hiện.
+  const pollMessages = useCallback(() => {
+    if (selectedId) void fetchMessages(selectedId);
+  }, [selectedId, fetchMessages]);
+  usePolling(pollMessages, selectedId ? 15_000 : null, { immediate: false });
 
   useEffect(() => {
     if (scrollRef.current) {

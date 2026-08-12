@@ -65,9 +65,10 @@ export async function GET(request: NextRequest) {
       return new NextResponse("Not an image", { status: 400 });
     }
 
-    const buffer = await upstream.arrayBuffer();
-
-    return new NextResponse(buffer, {
+    // Chuyển thẳng luồng byte thay vì arrayBuffer(): ảnh không bị nạp trọn vào
+    // RAM của function, nên mức bộ nhớ cấp phát (Vercel tính tiền theo đó) không
+    // nhảy vọt mỗi khi có ảnh lớn.
+    return new NextResponse(upstream.body, {
       status: 200,
       headers: {
         "Content-Type": contentType,

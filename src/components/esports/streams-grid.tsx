@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { Radio } from "lucide-react";
 import { StreamModal } from "@/components/esports/stream-modal";
 import { EmptyState } from "@/components/common/empty-state";
@@ -11,6 +11,12 @@ import { cn } from "@/lib/utils";
 import type { StreamItem, StreamStatus } from "@/lib/types/content";
 import { useQuery } from "@tanstack/react-query";
 import { buildEmbedUrl } from "@/lib/utils/stream-utils";
+import { usePolling } from "@/hooks/use-polling";
+
+// Khoảng nghỉ tối thiểu giữa 2 lần gọi sync, dùng chung cho mọi tab của cùng
+// một trình duyệt. Khớp với cooldown 60s phía server.
+const SYNC_STAMP_KEY = "arex_streams_sync_at";
+const SYNC_MIN_GAP_MS = 60_000;
 
 async function fetchStreams(): Promise<StreamItem[]> {
   const res = await fetch("/api/streams", { cache: "no-store" });
@@ -48,35 +54,28 @@ export function StreamsGrid({ initialStreams, categories = [] }: StreamsGridProp
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("TẤT CẢ");
 
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    const getNextInterval = (): number | null => {
-      const now = Date.now();
-      let minMs: number | null = null;
-      for (const s of (streams ?? [])) {
-        if (s.status === "ended") continue;
-        if (s.status === "live") return 60_000;
-        if (s.status === "upcoming") {
-          const diff = new Date(s.scheduled_at).getTime() - now;
-          if (diff <= 0) return 20_000;
-          if (diff <= 5 * 60 * 1000) { minMs = minMs === null ? 20_000 : Math.min(minMs, 20_000); }
-        }
-      }
-      return minMs;
-    };
-    const scheduleNext = () => {
-      if (interval) clearInterval(interval);
-      const ms = getNextInterval();
-      if (!ms) return;
-      interval = setInterval(async () => {
-        await fetch("/api/streams/sync", { method: "POST" }).catch(() => null);
-        scheduleNext();
-      }, ms);
-    };
-    fetch("/api/streams/sync", { method: "POST" }).catch(() => null);
-    scheduleNext();
-    return () => { if (interval) clearInterval(interval); };
-  }, [streams]);
+  // Đồng bộ trạng thái live với YouTube. Đây là trang công khai nên MỌI khách
+  // đều chạy đoạn này — trước đây mỗi người tự bắn /api/streams/sync ngay khi
+  // mở trang rồi lặp mỗi 20s, nhân với lượng truy cập thành rất nhiều lần chạy
+  // function. Nay: chỉ bắn khi tab đang hiện, nhịp thưa hơn, và mỗi trình duyệt
+  // tự giữ khoảng nghỉ riêng để mở nhiều tab cũng không nhân lên.
+  const syncStreams = useCallback(async () => {
+    const now = Date.now();
+    try {
+      const last = Number(sessionStorage.getItem(SYNC_STAMP_KEY) ?? 0);
+      if (now - last < SYNC_MIN_GAP_MS) return;
+      sessionStorage.setItem(SYNC_STAMP_KEY, String(now));
+    } catch { /* sessionStorage bị chặn — cứ chạy tiếp */ }
+    await fetch("/api/streams/sync", { method: "POST" }).catch(() => null);
+  }, []);
+
+  // Chỉ chạy khi thật sự có stream đang live hoặc sắp lên sóng.
+  const needsSync = (streams ?? []).some(
+    (s) => s.status === "live"
+      || (s.status === "upcoming"
+        && new Date(s.scheduled_at).getTime() - Date.now() <= 5 * 60 * 1000),
+  );
+  usePolling(syncStreams, needsSync ? SYNC_MIN_GAP_MS : null);
 
   const safeStreams = streams ?? [];
   const allCategories = ["TẤT CẢ", ...categories];
