@@ -61,17 +61,20 @@ export function SqlEditor() {
           <Info className="mt-0.5 size-4 shrink-0 text-amber-500" />
           <div className="space-y-2 text-xs text-amber-600 dark:text-amber-400">
             <p className="font-semibold">Yêu cầu hàm Postgres <code className="rounded bg-amber-500/15 px-1">exec_sql</code></p>
-            <p>Nếu chưa có, chạy lệnh sau một lần trong Supabase SQL Editor:</p>
-            <pre className="overflow-x-auto rounded-lg bg-black/20 px-3 py-2 font-mono text-[10px] leading-relaxed">
-{`CREATE OR REPLACE FUNCTION exec_sql(query text)
-RETURNS json LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE result json;
-BEGIN
-  EXECUTE 'SELECT json_agg(t) FROM (' || query || ') t' INTO result;
-  RETURN COALESCE(result, '[]'::json);
-END;
-$$;`}
-            </pre>
+            <p>
+              Báo lỗi không tìm thấy hàm thì mở{" "}
+              <code className="rounded bg-amber-500/15 px-1">supabase/migration-exec-sql.sql</code>{" "}
+              trong repo, dán vào Supabase SQL Editor và chạy một lần.
+            </p>
+            <p>
+              Đừng chép bản <code className="rounded bg-amber-500/15 px-1">SECURITY DEFINER</code> hay
+              gặp trên mạng: thiếu lệnh thu hồi quyền là mọi khách vãng lai đều gọi được RPC này và
+              chạy SQL tuỳ ý. Bản trong repo chạy bằng quyền người gọi và chỉ mở cho service_role.
+            </p>
+            <p>
+              Câu không phải SELECT vẫn chạy, kết quả trả về một hàng tóm tắt gồm loại câu lệnh và
+              số hàng bị đụng tới.
+            </p>
           </div>
         </div>
       </div>
