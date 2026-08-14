@@ -202,7 +202,10 @@ export type SensitiveAccessKind =
   | "seller_documents"
   | "seller_bank"
   | "order_secret"
-  | "private_file";
+  | "private_file"
+  /** Chủ shop (hoặc admin) đổi thông tin hồ sơ — nhất là số tài khoản nhận tiền. */
+  | "seller_profile_edit"
+  | "listing_edit";
 
 /**
  * Ghi lại việc ai đó mở dữ liệu nhạy cảm. Ghi hỏng thì im lặng bỏ qua — log là

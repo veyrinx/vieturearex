@@ -325,6 +325,59 @@ export function calcPayout(amount: number): number {
   return Math.max(0, amount - calcFee(amount));
 }
 
+// ── Giảm giá ───────────────────────────────────────────────────────────────
+/**
+ * Đợt giảm giá của một tin.
+ *
+ * `price` luôn là giá gốc — không bao giờ bị ghi đè. `sale_price` là giá đang
+ * bán, `sale_until` là hạn (NULL = tới khi chủ shop tự tắt). Nhờ vậy tin tự về
+ * giá cũ khi hết đợt, và người mua luôn đối chiếu được mình bớt bao nhiêu.
+ *
+ * Nhận kiểu rút gọn thay vì `ShopListing` để file hằng số này không phụ thuộc
+ * ngược vào tầng kiểu dữ liệu — và để chỗ nào chỉ có giá cũng dùng được.
+ */
+export type PricedListing = {
+  price: number;
+  sale_price?: number | null;
+  sale_until?: string | null;
+};
+
+/** Giảm ít hơn 5% thì không đáng gọi là giảm; quá 90% thường là gõ nhầm số. */
+export const MIN_DISCOUNT_PERCENT = 5;
+export const MAX_DISCOUNT_PERCENT = 90;
+/** Hạn dài nhất cho một đợt giảm — quá mức này thì nên hạ hẳn giá gốc. */
+export const MAX_SALE_DAYS = 60;
+
+/** Đợt giảm còn hiệu lực ngay lúc này hay không. */
+export function isSaleLive(l: PricedListing): boolean {
+  const sale = l.sale_price;
+  if (sale == null || sale <= 0 || sale >= l.price) return false;
+  if (!l.sale_until) return true;
+  const end = Date.parse(l.sale_until);
+  // Mốc hỏng (chuỗi rác trong DB) thì coi như không hạn, đừng vì thế mà tắt giảm.
+  return !Number.isFinite(end) || end > Date.now();
+}
+
+/** Giá người mua thực trả. Mọi chỗ tính tiền phải đi qua hàm này, không đọc `price`. */
+export function effectivePrice(l: PricedListing): number {
+  return isSaleLive(l) ? (l.sale_price as number) : l.price;
+}
+
+/** Phần trăm đang bớt (đã làm tròn). 0 = không có đợt giảm nào đang chạy. */
+export function discountPercent(l: PricedListing): number {
+  if (!isSaleLive(l)) return 0;
+  return Math.round(((l.price - (l.sale_price as number)) / l.price) * 100);
+}
+
+/**
+ * Giá sau khi bớt `percent`% — làm tròn xuống bội số 1.000đ cho dễ đọc.
+ * Dùng khi chủ shop giảm giá cả gian hàng một lượt.
+ */
+export function priceAfterPercent(price: number, percent: number): number {
+  const p = Math.min(MAX_DISCOUNT_PERCENT, Math.max(MIN_DISCOUNT_PERCENT, Math.round(percent)));
+  return Math.max(1_000, Math.floor((price * (100 - p)) / 100_000) * 1_000);
+}
+
 export function formatVnd(amount: number): string {
   return `${amount.toLocaleString("vi-VN")}đ`;
 }

@@ -20,6 +20,10 @@ export type ShopSeller = {
   bank_holder: string;
   id_images: string[];
   note: string | null;
+  /** Giới thiệu gian hàng do chủ shop tự viết — công khai. */
+  bio: string | null;
+  /** Ảnh đại diện gian hàng — công khai. */
+  avatar_url: string | null;
   status: SellerStatus;
   reject_reason: string | null;
   orders_done: number;
@@ -45,6 +49,8 @@ export type PublicSeller = {
   display_name: string;
   /** Chỉ có mặt trong ngữ cảnh một đơn hàng — xem toPublicSeller(). */
   contact?: string;
+  bio: string | null;
+  avatar_url: string | null;
   orders_done: number;
   rating: number | null;
   rating_count: number;
@@ -99,6 +105,10 @@ export type ShopListing = {
   title: string;
   description: string;
   price: number;
+  /** Giá đang bán trong đợt giảm. NULL = không giảm. Xem effectivePrice(). */
+  sale_price: number | null;
+  /** Hạn của đợt giảm. NULL = giảm tới khi chủ shop tự tắt. */
+  sale_until: string | null;
   negotiable: boolean;
   images: string[];
   details: Record<string, string | number | boolean>;

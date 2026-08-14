@@ -5,7 +5,13 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getListing, isAgentRole, isShopAdminRole } from "@/lib/server/shop";
 import { accessForSeller } from "@/lib/server/shop-staff";
-import type { ListingStatus } from "@/lib/constants/shop";
+import {
+  MAX_DISCOUNT_PERCENT,
+  MAX_LISTING_IMAGES,
+  MAX_SALE_DAYS,
+  MIN_DISCOUNT_PERCENT,
+  type ListingStatus,
+} from "@/lib/constants/shop";
 import { shopJson } from "@/lib/server/shop-privacy";
 import {
   notifyFeatureRejected,
@@ -136,18 +142,71 @@ export async function PATCH(
     patch.reject_reason = next === "rejected" ? String(body.reason ?? "").slice(0, 300) : null;
   }
 
-  if (isOwner) {
+  // Admin cũng sửa được nội dung tin (gỡ số điện thoại lộ trong mô tả, sửa giá
+  // gõ nhầm) — trước đây họ chỉ đổi được trạng thái, muốn sửa một chữ cũng phải
+  // từ chối tin rồi bảo người bán đăng lại.
+  const isShopAdmin = isShopAdminRole(auth.role);
+  const canEditContent = isOwner || isShopAdmin;
+
+  if (canEditContent) {
     if (typeof body.title === "string") patch.title = body.title.trim().slice(0, 120);
     if (typeof body.description === "string") patch.description = body.description.trim().slice(0, 4000);
     if (body.price != null && Number.isFinite(Number(body.price))) patch.price = Math.round(Number(body.price));
+    if (typeof body.gameUid === "string") patch.game_uid = body.gameUid.trim().slice(0, 20) || null;
+    if (typeof body.negotiable === "boolean") patch.negotiable = body.negotiable;
     if (Array.isArray(body.images)) {
       patch.images = (body.images as unknown[])
         .filter((u): u is string => typeof u === "string" && u.startsWith("http"))
-        .slice(0, 8);
+        .slice(0, MAX_LISTING_IMAGES);
     }
-    // Sửa nội dung ⇒ về hàng chờ duyệt lại
-    const touchedContent = ["title", "description", "price", "images"].some((k) => k in patch);
-    if (touchedContent && patch.status == null) patch.status = "pending";
+    if (body.details && typeof body.details === "object" && !Array.isArray(body.details)) {
+      const details: Record<string, string> = {};
+      for (const [k, v] of Object.entries(body.details as Record<string, unknown>).slice(0, 20)) {
+        if (typeof v === "string" || typeof v === "number") details[k.slice(0, 30)] = String(v).slice(0, 120);
+      }
+      patch.details = details;
+    }
+
+    // Giảm giá. Cố ý KHÔNG nằm trong nhóm "sửa nội dung": bắt duyệt lại thì mọi
+    // đợt giảm đều biến mất khỏi chợ đúng lúc nó cần được nhìn thấy nhất, mà
+    // giá gốc — thứ admin đã duyệt — vẫn nguyên vẹn.
+    if ("salePrice" in body) {
+      const base = patch.price != null ? Number(patch.price) : listing.price;
+      const raw = body.salePrice;
+      if (raw == null || raw === "" || Number(raw) === 0) {
+        patch.sale_price = null;
+        patch.sale_until = null;
+      } else {
+        const sale = Math.round(Number(raw));
+        if (!Number.isFinite(sale) || sale <= 0 || sale >= base) {
+          return shopJson({ error: "Giá giảm phải nhỏ hơn giá gốc." }, { status: 400 });
+        }
+        const percent = Math.round(((base - sale) / base) * 100);
+        if (percent < MIN_DISCOUNT_PERCENT) {
+          return shopJson(
+            { error: `Giảm ít nhất ${MIN_DISCOUNT_PERCENT}% mới đáng gắn nhãn giảm giá.` },
+            { status: 400 },
+          );
+        }
+        if (percent > MAX_DISCOUNT_PERCENT) {
+          return shopJson(
+            { error: `Không giảm quá ${MAX_DISCOUNT_PERCENT}% — kiểm tra lại số bạn vừa nhập.` },
+            { status: 400 },
+          );
+        }
+        patch.sale_price = sale;
+        // `saleDays` không gửi ⇒ giảm không thời hạn tới khi chủ shop tự tắt.
+        const days = Math.min(MAX_SALE_DAYS, Math.max(0, Number(body.saleDays ?? 0) || 0));
+        patch.sale_until = days > 0 ? new Date(Date.now() + days * 86_400_000).toISOString() : null;
+      }
+    }
+
+    // Sửa nội dung ⇒ về hàng chờ duyệt lại. Admin sửa thì không: họ chính là
+    // người duyệt, đẩy tin về hàng chờ chỉ tạo thêm việc cho chính mình.
+    const touchedContent = ["title", "description", "price", "images", "details", "game_uid"].some(
+      (k) => k in patch,
+    );
+    if (touchedContent && patch.status == null && !isShopAdmin) patch.status = "pending";
   }
 
   if (Object.keys(patch).length === 0) {
@@ -156,7 +215,15 @@ export async function PATCH(
 
   const { error } = (await untypedFrom(db, "shop_listings")
     .update(patch as never)
-    .eq("id", id)) as { error: { message: string } | null };
+    .eq("id", id)) as { error: { message: string; code?: string } | null };
+  // 42703 = undefined_column: gần như luôn là chưa chạy migration giảm giá. Nói
+  // thẳng ra tên file thay vì ném thông báo của PostgREST vào mặt người bán.
+  if (error?.code === "42703" && ("sale_price" in patch || "sale_until" in patch)) {
+    return shopJson(
+      { error: "Chưa bật tính năng giảm giá — cần chạy supabase/migration-shop-sale.sql." },
+      { status: 503 },
+    );
+  }
   if (error) return shopJson({ error: error.message }, { status: 500 });
 
   // Vừa được duyệt lên sàn: đăng ra kênh chợ Discord + đánh thức người theo dõi.

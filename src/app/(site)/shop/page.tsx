@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Settings2,
   Store,
+  TicketPercent,
   Users,
 } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
@@ -25,6 +26,7 @@ import {
   getShopViewer,
   listFeaturedListings,
   listListings,
+  listSaleListings,
   type ListingSort,
 } from "@/lib/server/shop";
 import {
@@ -55,9 +57,17 @@ export const metadata: Metadata = {
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; q?: string; min?: string; max?: string; sort?: string }>;
+  searchParams: Promise<{
+    kind?: string;
+    q?: string;
+    min?: string;
+    max?: string;
+    sort?: string;
+    sale?: string;
+  }>;
 }) {
-  const { kind, q, min, max, sort } = await searchParams;
+  const { kind, q, min, max, sort, sale } = await searchParams;
+  const onSaleOnly = sale === "1";
   const activeKind: ListingKind | undefined =
     kind === "account" || kind === "item" ? kind : undefined;
   const activeSort = (LISTING_SORTS as string[]).includes(sort ?? "")
@@ -69,30 +79,33 @@ export default async function ShopPage({
     return Number.isFinite(n) && n > 0 ? n : undefined;
   };
 
-  const hasFilter = !!(activeKind || q || min || max);
+  const hasFilter = !!(activeKind || q || min || max || onSaleOnly);
 
-  const [listings, featured, viewer] = await Promise.all([
+  const [listings, featured, onSale, viewer] = await Promise.all([
     listListings({
       kind: activeKind,
       search: q,
       minPrice: num(min),
       maxPrice: num(max),
       sort: activeSort,
+      onSaleOnly,
       limit: 60,
     }),
     // Dải nổi bật chỉ hiện ở trang gốc — đang lọc thì người dùng muốn đúng thứ
     // họ tìm, không phải thứ được trả tiền để đẩy lên.
     hasFilter ? Promise.resolve([]) : listFeaturedListings(8),
+    hasFilter ? Promise.resolve([]) : listSaleListings(8),
     getShopViewer(),
   ]);
 
-  const featuredIds = new Set(featured.map((l) => l.id));
-  const rest = listings.filter((l) => !featuredIds.has(l.id));
+  const pinnedIds = new Set([...featured, ...onSale].map((l) => l.id));
+  const rest = listings.filter((l) => !pinnedIds.has(l.id));
 
   // Nhắc lại bộ lọc đang áp bằng chữ. Chip lọc nằm tít trên đầu, cuộn xuống
   // giữa lưới tin là không còn thấy vì sao danh sách lại ngắn đến thế.
   const filterSummary = [
     activeKind && LISTING_KIND_LABEL[activeKind],
+    onSaleOnly && "đang giảm giá",
     q && `từ khoá "${q}"`,
     num(min) && num(max)
       ? `${formatVnd(num(min)!)} – ${formatVnd(num(max)!)}`
@@ -185,9 +198,15 @@ export default async function ShopPage({
               CTV được mời cũng vào đúng lối này, chỉ khác là chỉ thấy tin của
               gian hàng đã mời họ. */}
           {viewer.shops.some((s) => s.canManageListings) && (
-            <Link href="/shop/tin-cua-toi" className={pill}>
-              <ClipboardList className="size-3.5" /> Tin của tôi
-            </Link>
+            <>
+              <Link href="/shop/tin-cua-toi" className={pill}>
+                <ClipboardList className="size-3.5" /> Tin của tôi
+              </Link>
+              {/* Sửa thông tin gian hàng + chạy đợt giảm giá toàn shop. */}
+              <Link href="/shop/gian-hang" className={pill}>
+                <TicketPercent className="size-3.5" /> Quản lý gian hàng
+              </Link>
+            </>
           )}
 
           {/* Nhân sự gian hàng — hiện cả với người chưa bán gì nhưng đang được
@@ -263,6 +282,25 @@ export default async function ShopPage({
           </h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
             {featured.map((l) => (
+              <ListingCard key={l.id} listing={l} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Đang giảm giá */}
+      {onSale.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="flex items-center gap-1.5 font-heading text-sm font-black uppercase tracking-wide text-foreground">
+              <TicketPercent className="size-4 text-red-500" /> Đang giảm giá
+            </h2>
+            <Link href="/shop?sale=1" className="text-[11px] font-bold text-red-500 hover:underline">
+              Xem tất cả tin giảm giá →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {onSale.map((l) => (
               <ListingCard key={l.id} listing={l} />
             ))}
           </div>

@@ -2,12 +2,20 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, ChevronRight, Eye, Star } from "lucide-react";
+import { BadgeCheck, ChevronRight, Eye, Pencil, Star, TicketPercent } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { BuyPanel } from "@/components/shop/buy-panel";
 import { bumpListingViews, getListing, getShopViewer } from "@/lib/server/shop";
-import { LISTING_KIND_LABEL, LISTING_STATUS_LABEL, formatVnd } from "@/lib/constants/shop";
+import {
+  LISTING_KIND_LABEL,
+  LISTING_STATUS_LABEL,
+  discountPercent,
+  effectivePrice,
+  formatVnd,
+  isSaleLive,
+  timeLeft,
+} from "@/lib/constants/shop";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +28,7 @@ export async function generateMetadata({
   const listing = await getListing(id);
   if (!listing) return { title: "Không tìm thấy tin" };
   return {
-    title: `${listing.title} — ${formatVnd(listing.price)}`,
+    title: `${listing.title} — ${formatVnd(effectivePrice(listing))}`,
     description: listing.description.slice(0, 160),
     alternates: { canonical: `${siteConfig.url}/shop/${listing.id}` },
     openGraph: {
@@ -46,6 +54,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   void bumpListingViews(listing.id);
 
   const details = Object.entries(listing.details ?? {});
+  const onSale = isSaleLive(listing);
+  const saleEnds = onSale ? timeLeft(listing.sale_until) : "";
+  // Lối sửa nhanh cho người có quyền — kể cả CTV được bật quyền quản lý tin.
+  const canEdit =
+    viewer.isAdmin ||
+    viewer.shops.some((s) => s.seller.id === listing.seller_id && s.canManageListings);
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 py-8">
@@ -103,9 +117,29 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <h1 className="mt-2 font-heading text-xl font-black leading-tight text-foreground">
               {listing.title}
             </h1>
-            <p className="mt-1 font-heading text-3xl font-black text-primary dark:text-amber-400">
-              {formatVnd(listing.price)}
-            </p>
+            {onSale ? (
+              <>
+                <p className="mt-1 flex flex-wrap items-baseline gap-2">
+                  <span className="font-heading text-3xl font-black text-red-500">
+                    {formatVnd(effectivePrice(listing))}
+                  </span>
+                  <span className="text-sm font-semibold text-muted-foreground line-through">
+                    {formatVnd(listing.price)}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-black text-white">
+                    <TicketPercent className="size-3" /> -{discountPercent(listing)}%
+                  </span>
+                </p>
+                <p className="mt-1 text-[11px] font-semibold text-red-500">
+                  Tiết kiệm {formatVnd(listing.price - effectivePrice(listing))}
+                  {saleEnds ? ` · đợt giảm ${saleEnds}` : " · chưa hẹn ngày kết thúc"}
+                </p>
+              </>
+            ) : (
+              <p className="mt-1 font-heading text-3xl font-black text-primary dark:text-amber-400">
+                {formatVnd(listing.price)}
+              </p>
+            )}
             <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1"><Eye className="size-3" /> {listing.views} lượt xem</span>
               <span>{LISTING_STATUS_LABEL[listing.status]}</span>
@@ -135,6 +169,15 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               </Link>
             )}
           </div>
+
+          {canEdit && (
+            <Link
+              href={`/shop/tin-cua-toi/${listing.id}`}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-muted/30 py-2.5 text-xs font-bold text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+            >
+              <Pencil className="size-3.5" /> Sửa tin & đặt giảm giá
+            </Link>
+          )}
 
           <BuyPanel listing={listing} signedIn={!!viewer.userId} isOwnListing={isOwn} />
         </div>

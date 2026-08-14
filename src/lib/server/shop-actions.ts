@@ -7,6 +7,7 @@ import {
   ORDER_FLOW,
   calcFee,
   calcPayout,
+  effectivePrice,
   type OrderEventType,
   type OrderParty,
   type OrderStatus,
@@ -119,7 +120,9 @@ export async function createOrder(input: {
     return { ok: false, error: "Không thể tự mua tin của chính mình.", code: 400 };
   }
 
-  const amount = listing.price;
+  // Giá đang giảm mới là giá người mua thấy trên chợ — chốt đơn theo `price`
+  // thì đơn đội lên so với con số họ vừa bấm mua.
+  const amount = effectivePrice(listing);
   const fee = calcFee(amount);
   const code = generateOrderCode();
 

@@ -2,7 +2,16 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BellPlus, BellRing, Loader2, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import {
+  BellPlus,
+  BellRing,
+  Loader2,
+  Search,
+  SlidersHorizontal,
+  TicketPercent,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { LISTING_KIND_LABEL, MIN_PRICE, formatVnd, type ListingKind } from "@/lib/constants/shop";
 import { cn } from "@/lib/utils";
@@ -46,6 +55,7 @@ export function ShopFilters({ signedIn }: { signedIn: boolean }) {
   const q = sp.get("q") ?? "";
   const min = sp.get("min") ?? "";
   const max = sp.get("max") ?? "";
+  const onSale = sp.get("sale") === "1";
 
   const [search, setSearch] = useState(q);
   const [open, setOpen] = useState(false);
@@ -71,7 +81,7 @@ export function ShopFilters({ signedIn }: { signedIn: boolean }) {
     startTransition(() => router.replace(next.toString() ? `/shop?${next}` : "/shop"));
   };
 
-  const hasFilter = !!(kind || q || min || max || sort !== "new");
+  const hasFilter = !!(kind || q || min || max || onSale || sort !== "new");
 
   const saveWatch = async () => {
     setSavingWatch(true);
@@ -157,6 +167,20 @@ export function ShopFilters({ signedIn }: { signedIn: boolean }) {
             {k === "" ? "Tất cả" : LISTING_KIND_LABEL[k as ListingKind]}
           </button>
         ))}
+
+        {/* Lọc nhanh tin đang giảm — nằm cùng hàng với loại hàng vì đây là thứ
+            người mua bấm nhiều nhất, không đáng phải mở bảng lọc mới thấy. */}
+        <button
+          onClick={() => apply({ sale: onSale ? undefined : "1" })}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full border px-3.5 py-1.5 text-xs font-bold transition",
+            onSale
+              ? "border-red-500/50 bg-red-500/10 text-red-500"
+              : "border-border bg-muted/40 text-muted-foreground hover:border-red-500/40 hover:text-red-500",
+          )}
+        >
+          <TicketPercent className="size-3.5" /> Đang giảm
+        </button>
 
         <button
           onClick={() => setOpen((v) => !v)}

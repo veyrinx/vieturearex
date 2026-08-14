@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Store } from "lucide-react";
+import { Pencil, Plus, Store, TicketPercent } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -91,8 +91,14 @@ export default async function MyListingsPage({
           </span>
         ))}
         <Link
+          href={`/shop/gian-hang?shop=${active.seller.id}`}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition hover:border-red-500/40 hover:text-red-500"
+        >
+          <TicketPercent className="size-3.5" /> Giảm giá & thông tin shop
+        </Link>
+        <Link
           href={createHref}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 dark:bg-amber-500"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 dark:bg-amber-500"
         >
           <Plus className="size-3.5" /> Đăng tin mới
         </Link>
@@ -107,6 +113,14 @@ export default async function MyListingsPage({
           {listings.map((l) => (
             <div key={l.id} className="space-y-1">
               <ListingCard listing={l} />
+              {/* Sửa được ở mọi trạng thái trừ lúc tin đang có đơn — trang sửa
+                  tự chặn nốt trường hợp đó. */}
+              <Link
+                href={`/shop/tin-cua-toi/${l.id}`}
+                className="flex w-full items-center justify-center gap-1 rounded-lg border border-border bg-muted/40 py-1.5 text-[11px] font-bold text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+              >
+                <Pencil className="size-3" /> Sửa tin & giảm giá
+              </Link>
               {l.status === "active" && (
                 <>
                   <BumpButton id={l.id} bumpedAt={l.bumped_at} />

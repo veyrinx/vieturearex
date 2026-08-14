@@ -1,11 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Clock, Eye, Flame, ShieldCheck, Star } from "lucide-react";
+import { BadgeCheck, Clock, Eye, Flame, ShieldCheck, Star, TicketPercent } from "lucide-react";
 import {
   LISTING_KIND_LABEL,
   LISTING_STATUS_LABEL,
+  discountPercent,
+  effectivePrice,
   formatVnd,
+  isSaleLive,
   timeAgo,
+  timeLeft,
   type ListingStatus,
 } from "@/lib/constants/shop";
 import type { ShopListing } from "@/lib/types/shop";
@@ -28,6 +32,9 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
   // Tin được đẩy thì mốc "mới" là lần đẩy, đúng với thứ tự đang sắp trên chợ —
   // nếu hiện ngày đăng thì tin đầu trang lại ghi "3 tháng trước", trông như lỗi.
   const freshness = timeAgo(listing.bumped_at ?? listing.created_at);
+  const onSale = isSaleLive(listing);
+  const price = effectivePrice(listing);
+  const saleEnds = onSale ? timeLeft(listing.sale_until) : "";
 
   return (
     <Link
@@ -62,6 +69,13 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
               <Flame className="size-2.5" /> Nổi bật
             </span>
           )}
+          {/* Nhãn giảm giá đặt cạnh loại hàng, không đè lên nhãn trạng thái bên
+              phải — tin vừa giảm vừa đang giao dịch là chuyện thường. */}
+          {onSale && (
+            <span className="flex items-center gap-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
+              <TicketPercent className="size-2.5" /> -{discountPercent(listing)}%
+            </span>
+          )}
         </span>
         {listing.status !== "active" && (
           <span
@@ -79,12 +93,25 @@ export function ListingCard({ listing }: { listing: ShopListing }) {
         <h3 className="line-clamp-2 min-h-[2.4rem] text-sm font-bold leading-tight text-foreground">
           {listing.title}
         </h3>
-        <p className="font-heading text-lg font-black text-primary dark:text-amber-400">
-          {formatVnd(listing.price)}
+        <p
+          className={cn(
+            "font-heading text-lg font-black",
+            onSale ? "text-red-500" : "text-primary dark:text-amber-400",
+          )}
+        >
+          {formatVnd(price)}
+          {onSale && (
+            <span className="ml-1.5 text-[11px] font-semibold text-muted-foreground line-through">
+              {formatVnd(listing.price)}
+            </span>
+          )}
           {listing.negotiable && (
             <span className="ml-1 text-[10px] font-semibold text-muted-foreground">có thương lượng</span>
           )}
         </p>
+        {saleEnds && (
+          <p className="text-[10px] font-semibold text-red-500">Giảm giá {saleEnds}</p>
+        )}
 
         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-1.5 text-[11px] text-muted-foreground">
           <span className="flex min-w-0 items-center gap-1">

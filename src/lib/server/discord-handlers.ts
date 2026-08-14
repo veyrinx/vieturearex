@@ -40,7 +40,13 @@ import {
   listOrders,
   partyForOrder,
 } from "@/lib/server/shop";
-import { ORDER_STATUS_HINT, ORDER_STATUS_LABEL } from "@/lib/constants/shop";
+import {
+  ORDER_STATUS_HINT,
+  ORDER_STATUS_LABEL,
+  discountPercent,
+  effectivePrice,
+  isSaleLive,
+} from "@/lib/constants/shop";
 
 /**
  * Xử lý mọi tương tác Discord: slash command, nút bấm, menu, modal.
@@ -236,7 +242,8 @@ async function shopSearch(opts: Record<string, string | number | boolean>): Prom
   const lines = listings.map(
     (l, n) =>
       `**${n + 1}. [${l.title}](${SITE_URL}/shop/${l.id})**\n` +
-      `${vnd(l.price)}${l.negotiable ? " · thương lượng" : ""} · ${l.kind === "account" ? "Tài khoản" : "Vật phẩm"} · ` +
+      `${vnd(effectivePrice(l))}${isSaleLive(l) ? ` ~~${vnd(l.price)}~~ **-${discountPercent(l)}%**` : ""}` +
+      `${l.negotiable ? " · thương lượng" : ""} · ${l.kind === "account" ? "Tài khoản" : "Vật phẩm"} · ` +
       `${l.seller?.display_name ?? "Người bán"}${l.seller?.rating != null ? ` ${l.seller.rating}★` : ""}`,
   );
 
@@ -256,7 +263,7 @@ async function shopSearch(opts: Record<string, string | number | boolean>): Prom
         listings.map((l) => ({
           label: l.title.slice(0, 90),
           value: l.id,
-          description: `${vnd(l.price)} · ${l.seller?.display_name ?? ""}`.slice(0, 90),
+          description: `${vnd(effectivePrice(l))}${isSaleLive(l) ? ` (-${discountPercent(l)}%)` : ""} · ${l.seller?.display_name ?? ""}`.slice(0, 90),
           emoji: l.kind === "account" ? "🎮" : "🎁",
         })),
       ),
@@ -287,7 +294,13 @@ async function shopListing(raw: string): Promise<InteractionResponse> {
         color: listing.status === "active" ? BRAND.gold : BRAND.slate,
         author: { name: `🏪 ${listing.seller?.display_name ?? "Người bán Arex"}` },
         fields: [
-          { name: "💰 Giá", value: vnd(listing.price), inline: true },
+          {
+            name: "💰 Giá",
+            value:
+              vnd(effectivePrice(listing)) +
+              (isSaleLive(listing) ? ` (giảm ${discountPercent(listing)}%, gốc ${vnd(listing.price)})` : ""),
+            inline: true,
+          },
           { name: "📦 Loại", value: listing.kind === "account" ? "Tài khoản" : "Vật phẩm", inline: true },
           { name: "👀 Lượt xem", value: String(listing.views), inline: true },
           ...details.map(([k, v]) => ({ name: k, value: String(v), inline: true })),

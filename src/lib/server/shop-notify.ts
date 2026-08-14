@@ -19,7 +19,10 @@ import {
   ORDER_STATUS_LABEL,
   ORDER_WAITING_ON,
   STALE_ORDER_HOURS,
+  discountPercent,
+  effectivePrice,
   hoursSince,
+  isSaleLive,
   orderLastMoved,
   type OrderParty,
   type OrderStatus,
@@ -425,7 +428,14 @@ export async function notifyListingApproved(listing: ShopListing): Promise<void>
       color: BRAND.gold,
       author: { name: `🏪 ${seller?.display_name ?? "Người bán Arex"}` },
       fields: [
-        { name: "💰 Giá", value: vnd(listing.price) + (listing.negotiable ? " (thương lượng)" : ""), inline: true },
+        {
+          name: "💰 Giá",
+          value:
+            vnd(effectivePrice(listing)) +
+            (isSaleLive(listing) ? ` (giảm ${discountPercent(listing)}%, gốc ${vnd(listing.price)})` : "") +
+            (listing.negotiable ? " (thương lượng)" : ""),
+          inline: true,
+        },
         { name: "📦 Loại", value: listing.kind === "account" ? "Tài khoản" : "Vật phẩm", inline: true },
         {
           name: "🛡 Uy tín người bán",
@@ -645,8 +655,11 @@ type WatchRow = {
 
 function matchesWatch(listing: ShopListing, w: WatchRow): boolean {
   if (w.kind && w.kind !== listing.kind) return false;
-  if (w.min_price != null && listing.price < w.min_price) return false;
-  if (w.max_price != null && listing.price > w.max_price) return false;
+  // So theo giá đang bán: người đặt trần 500k muốn được báo cả khi một tin 600k
+  // hạ xuống 450k — đó đúng là lúc bộ lọc của họ trở nên có ích.
+  const price = effectivePrice(listing);
+  if (w.min_price != null && price < w.min_price) return false;
+  if (w.max_price != null && price > w.max_price) return false;
   if (w.keyword) {
     const haystack = `${listing.title} ${listing.description}`.toLowerCase();
     const needle = w.keyword.toLowerCase().trim();
@@ -683,7 +696,9 @@ async function notifyWatchlistMatches(listing: ShopListing): Promise<void> {
 
   const userIds = [...hit.keys()];
   const title = "Có tin mới khớp bộ lọc của bạn";
-  const body = `${listing.title} — ${vnd(listing.price)}`;
+  const body =
+    `${listing.title} — ${vnd(effectivePrice(listing))}` +
+    (isSaleLive(listing) ? ` (giảm ${discountPercent(listing)}%)` : "");
 
   await Promise.allSettled([
     createNotifications(

@@ -110,6 +110,9 @@ export function toPublicSeller(
     user_id: s.user_id,
     display_name: s.display_name,
     ...(options.withContact ? { contact: s.contact } : {}),
+    // Hai trường trang trí gian hàng — chủ shop tự viết nên vốn đã là công khai.
+    bio: s.bio ?? null,
+    avatar_url: s.avatar_url ?? null,
     orders_done: s.orders_done,
     rating: s.rating_count > 0 ? Math.round((s.rating_sum / s.rating_count) * 10) / 10 : null,
     rating_count: s.rating_count,
@@ -167,6 +170,8 @@ type ListingFilter = {
   featuredOnly?: boolean;
   /** Chỉ lấy tin người bán đang xin đẩy nổi bật (hàng chờ của admin). */
   featureRequestedOnly?: boolean;
+  /** Chỉ lấy tin đang có đợt giảm giá còn hiệu lực. */
+  onSaleOnly?: boolean;
   limit?: number;
 };
 
@@ -219,6 +224,12 @@ function buildListingQuery(
   // Cột này đến từ migration-shop-featured-request.sql, muộn hơn nhóm v2 — nên
   // không gộp vào cờ `v2`. Thiếu cột thì listListings bắt 42703 và trả rỗng.
   if (filter.featureRequestedOnly) q = q.not("featured_requested_at", "is", null);
+  // Đang giảm giá = có giá giảm và (không hạn, hoặc hạn còn ở tương lai). Lọc
+  // ngay dưới CSDL chứ không lấy hết rồi lọc bằng isSaleLive() — nếu không thì
+  // `limit` cắt trước, và trang chỉ hiện được vài tin giảm nằm lẫn trong mẻ đầu.
+  if (filter.onSaleOnly) {
+    q = q.not("sale_price", "is", null).or(`sale_until.is.null,sale_until.gt.${new Date().toISOString()}`);
+  }
 
   return q;
 }
@@ -246,6 +257,16 @@ export async function listListings(filter: ListingFilter = {}): Promise<ShopList
     return [];
   }
 
+  // Cột giảm giá đến từ migration-shop-sale.sql, cũng muộn hơn nhóm v2 — hạ cấp
+  // v2 không cứu được vì bộ lọc vẫn còn đó.
+  if (filter.onSaleOnly && isUndefinedColumn(error)) {
+    console.warn(
+      "[shop] Thiếu cột sale_price/sale_until trên shop_listings — hãy chạy " +
+        "supabase/migration-shop-sale.sql. Tạm coi như chưa tin nào giảm giá.",
+    );
+    return [];
+  }
+
   if (usedV2 && isUndefinedColumn(error)) {
     listingV2Columns = { present: false, checkedAt: Date.now() };
     console.warn(
@@ -269,6 +290,11 @@ export async function listListings(filter: ListingFilter = {}): Promise<ShopList
 /** Dải tin nổi bật đầu trang chợ. */
 export function listFeaturedListings(limit = 8): Promise<ShopListing[]> {
   return listListings({ status: "active", featuredOnly: true, limit });
+}
+
+/** Dải "đang giảm giá" đầu trang chợ. */
+export function listSaleListings(limit = 8): Promise<ShopListing[]> {
+  return listListings({ status: "active", onSaleOnly: true, limit });
 }
 
 /** Gắn hồ sơ người bán (rút gọn) vào danh sách tin — tránh N+1. */

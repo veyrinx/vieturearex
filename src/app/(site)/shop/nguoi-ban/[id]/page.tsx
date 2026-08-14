@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, CalendarDays, PackageCheck, ShieldCheck, Star, Store } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarDays,
+  PackageCheck,
+  ShieldCheck,
+  Star,
+  Store,
+  TicketPercent,
+} from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { ListingCard } from "@/components/shop/listing-card";
@@ -11,7 +20,7 @@ import {
   listSellerReviews,
   toPublicSeller,
 } from "@/lib/server/shop";
-import { formatVnd } from "@/lib/constants/shop";
+import { effectivePrice, formatVnd, isSaleLive } from "@/lib/constants/shop";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +81,7 @@ export default async function SellerStorefrontPage({
   const { seller, publicSeller, listings, reviews } = data;
   const active = listings.filter((l) => l.status === "active");
   const sold = listings.filter((l) => l.status === "sold");
+  const onSaleCount = active.filter(isSaleLive).length;
   const rating = publicSeller.rating;
   const joined = new Date(seller.created_at).toLocaleDateString("vi-VN", {
     month: "2-digit",
@@ -91,9 +101,22 @@ export default async function SellerStorefrontPage({
       <div className="overflow-hidden rounded-3xl border border-border bg-card">
         <div className="h-20 bg-gradient-to-r from-primary/20 via-amber-400/20 to-transparent dark:from-amber-500/20" />
         <div className="-mt-10 space-y-3 p-5">
-          <div className="flex size-20 items-center justify-center rounded-2xl border-4 border-card bg-primary text-white dark:bg-amber-500">
-            <Store className="size-9" />
-          </div>
+          {seller.avatar_url ? (
+            <div className="relative size-20 overflow-hidden rounded-2xl border-4 border-card bg-muted">
+              <Image
+                src={seller.avatar_url}
+                alt={seller.display_name}
+                fill
+                sizes="80px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="flex size-20 items-center justify-center rounded-2xl border-4 border-card bg-primary text-white dark:bg-amber-500">
+              <Store className="size-9" />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="font-heading text-2xl font-black text-foreground">
@@ -102,7 +125,18 @@ export default async function SellerStorefrontPage({
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               <BadgeCheck className="size-3.5" /> Đã xác minh
             </span>
+            {onSaleCount > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[11px] font-bold text-red-500">
+                <TicketPercent className="size-3.5" /> {onSaleCount} tin đang giảm giá
+              </span>
+            )}
           </div>
+
+          {seller.bio && (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+              {seller.bio}
+            </p>
+          )}
 
           <div className="grid gap-2 sm:grid-cols-4">
             <Stat
@@ -196,7 +230,7 @@ export default async function SellerStorefrontPage({
                 href={`/shop/${l.id}`}
                 className="rounded-xl border border-border bg-muted/30 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition hover:border-primary/40 hover:text-primary"
               >
-                {l.title.slice(0, 40)} · {formatVnd(l.price)}
+                {l.title.slice(0, 40)} · {formatVnd(effectivePrice(l))}
               </Link>
             ))}
           </div>

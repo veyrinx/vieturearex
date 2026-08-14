@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ShieldCheck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
-import { calcFee, formatVnd } from "@/lib/constants/shop";
+import { calcFee, effectivePrice, formatVnd, isSaleLive } from "@/lib/constants/shop";
 import type { ShopListing } from "@/lib/types/shop";
 
 /**
@@ -26,7 +26,11 @@ export function BuyPanel({
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", contact: "", bank: "" });
 
-  const fee = calcFee(listing.price);
+  // Đơn chốt theo giá đang giảm (server tính lại y hệt), nên phí và số tiền
+  // hiện ở đây cũng phải bám giá đó — không phải giá gốc gạch ngang.
+  const price = effectivePrice(listing);
+  const onSale = isSaleLive(listing);
+  const fee = calcFee(price);
 
   if (isOwnListing) {
     return (
@@ -99,7 +103,15 @@ export function BuyPanel({
         </p>
         <p className="mt-1">
           Phí trung gian <b>{formatVnd(fee)}</b> trừ vào tiền người bán nhận — bạn trả đúng{" "}
-          <b>{formatVnd(listing.price)}</b>.
+          <b>{formatVnd(price)}</b>
+          {onSale && (
+            <>
+              {" "}
+              (giá gốc <span className="line-through">{formatVnd(listing.price)}</span>, đã bớt{" "}
+              <b className="text-red-500">{formatVnd(listing.price - price)}</b>)
+            </>
+          )}
+          .
         </p>
       </div>
 

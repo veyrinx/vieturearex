@@ -6,12 +6,13 @@ import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle, Ban, BadgeCheck, BellRing, Check, Clock, ExternalLink, Eye, Flame, HandCoins,
-  Inbox, MessageSquare, RefreshCw, Search, ShieldAlert, Sparkles, Star, Store, Tag, TimerReset,
-  Users, Wallet, X,
+  Inbox, MessageSquare, Pencil, RefreshCw, Search, ShieldAlert, Sparkles, Star, Store, Tag,
+  TimerReset, Users, Wallet, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
+import { ShopProfileForm } from "@/components/shop/shop-profile-form";
 import {
   LISTING_KIND_LABEL,
   LISTING_STATUS_LABEL,
@@ -22,10 +23,13 @@ import {
   ORDER_WAITING_ON,
   SELLER_STATUS_LABEL,
   STALE_ORDER_HOURS,
+  discountPercent,
+  effectivePrice,
   formatVnd,
   formatVndShort,
   hoursSince,
   isOrderStale,
+  isSaleLive,
   orderLastMoved,
   orderStep,
   timeAgo,
@@ -61,7 +65,13 @@ type AccessLogRow = {
   actor_id: string | null;
   actor_name: string | null;
   actor_role: string;
-  kind: "seller_documents" | "seller_bank" | "order_secret" | "private_file";
+  kind:
+    | "seller_documents"
+    | "seller_bank"
+    | "order_secret"
+    | "private_file"
+    | "seller_profile_edit"
+    | "listing_edit";
   target: string;
   ip: string | null;
   created_at: string;
@@ -72,6 +82,8 @@ const ACCESS_KIND_LABEL: Record<AccessLogRow["kind"], string> = {
   seller_bank: "Xem số tài khoản người bán",
   order_secret: "Mở thông tin đăng nhập acc",
   private_file: "Xem ảnh bằng chứng",
+  seller_profile_edit: "Đổi thông tin gian hàng",
+  listing_edit: "Sửa nội dung tin đăng",
 };
 
 /** Danh sách đơn kèm số tin nhắn chưa đọc — API trả cả hai trong một lần gọi. */
@@ -512,6 +524,9 @@ function SellersTab({
 function SellerDetails({ row }: { row: AdminSellerRow }) {
   const [full, setFull] = useState<ShopSeller | null>(null);
   const [loading, setLoading] = useState(false);
+  // Sửa hộ chỉ mở được sau khi đã bấm xem đủ hồ sơ: form cần bản đầy đủ, và
+  // lần mở đó đã được ghi log rồi.
+  const [editing, setEditing] = useState(false);
 
   const s = full ?? row;
   const idImages = full?.id_images ?? [];
@@ -558,6 +573,28 @@ function SellerDetails({ row }: { row: AdminSellerRow }) {
               <Image src={url} alt="" fill sizes="80px" className="object-cover" unoptimized />
             </a>
           ))}
+        </div>
+      )}
+
+      {full && (
+        <button
+          onClick={() => setEditing((v) => !v)}
+          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+        >
+          <Pencil className="size-3.5" /> {editing ? "Đóng form sửa" : "Sửa thông tin gian hàng"}
+        </button>
+      )}
+
+      {full && editing && (
+        <div className="mt-3 border-t border-border pt-3">
+          <ShopProfileForm
+            seller={full}
+            isAdmin
+            onSaved={() => {
+              setEditing(false);
+              void reveal();
+            }}
+          />
         </div>
       )}
     </>
@@ -669,7 +706,16 @@ function ListingsTab({ onDone }: { onDone: () => void }) {
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm font-bold text-foreground">{l.title}</p>
                     <p className="font-heading text-base font-black text-primary">
-                      {formatVnd(l.price)}
+                      {formatVnd(effectivePrice(l))}
+                      {isSaleLive(l) && (
+                        <span className="ml-1.5 text-[11px] font-bold text-red-500">
+                          <span className="mr-1 font-semibold text-muted-foreground line-through">
+                            {formatVnd(l.price)}
+                          </span>
+                          -{discountPercent(l)}%
+                          {timeLeft(l.sale_until) ? ` · ${timeLeft(l.sale_until)}` : ""}
+                        </span>
+                      )}
                       {l.negotiable && (
                         <span className="ml-1.5 text-[10px] font-semibold text-muted-foreground">có thương lượng</span>
                       )}
@@ -689,13 +735,26 @@ function ListingsTab({ onDone }: { onDone: () => void }) {
                       )}
                     </p>
                   </div>
-                  <Link
-                    href={`/shop/${l.id}`}
-                    target="_blank"
-                    className="shrink-0 self-start text-[11px] font-semibold text-muted-foreground hover:text-primary"
-                  >
-                    <ExternalLink className="size-4" />
-                  </Link>
+                  <div className="flex shrink-0 flex-col items-center gap-2 self-start">
+                    <Link
+                      href={`/shop/${l.id}`}
+                      target="_blank"
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-primary"
+                      title="Xem trên chợ"
+                    >
+                      <ExternalLink className="size-4" />
+                    </Link>
+                    {/* Sửa thẳng nội dung tin — không phải từ chối rồi bắt người
+                        bán đăng lại chỉ vì một dòng mô tả có số điện thoại. */}
+                    <Link
+                      href={`/shop/tin-cua-toi/${l.id}`}
+                      target="_blank"
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-primary"
+                      title="Sửa tin"
+                    >
+                      <Pencil className="size-4" />
+                    </Link>
+                  </div>
                 </div>
 
                 <p className="mt-2 whitespace-pre-wrap border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
