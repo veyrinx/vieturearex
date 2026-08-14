@@ -54,6 +54,18 @@ export function getSiteConfigByHostname(hostname: string): typeof siteConfig | t
   return SITE_CONFIGS[clean] ?? siteConfig;
 }
 
+// Tra cứu theo mã site thay vì tên miền. Dùng khi một bản triển khai chỉ phục vụ
+// đúng một site và biết trước mình là ai (xem NEXT_PUBLIC_SITE_ID trong
+// lib/server/get-site-config.ts) — nhờ vậy khỏi phải đọc header của request.
+const SITE_CONFIGS_BY_ID: Record<string, SiteConfig> = {
+  [siteConfig.id]: siteConfig,
+  [iscConfig.id]: iscConfig,
+};
+
+export function getSiteConfigById(id: string): SiteConfig | null {
+  return SITE_CONFIGS_BY_ID[id.trim().toLowerCase()] ?? null;
+}
+
 export const navItems = [
   { title: "TRANG CHỦ", href: "/" },
   { title: "LỊCH", href: "/calendar" },

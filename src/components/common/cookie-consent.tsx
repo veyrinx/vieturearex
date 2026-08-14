@@ -25,12 +25,26 @@ const EU_COUNTRIES = new Set([
  *  · Từ chối → giữ denied (chỉ cookie thiết yếu)
  * Lựa chọn lưu ở localStorage nên lần sau không hỏi lại.
  */
+// Bản dự phòng khi server không biết người dùng ở đâu: suy từ múi giờ của trình
+// duyệt. Xảy ra khi thiếu header x-vercel-ip-country — chạy trên Render, hoặc
+// bản triển khai đã ghim site nên không đọc header nữa (xem NEXT_PUBLIC_SITE_ID).
+// Cố ý rộng hơn danh sách EU thật (dính cả Moscow, Istanbul): thà hiện banner
+// cho người ngoài EU còn hơn bỏ sót người trong EU.
+function looksEuropeanByTimezone(): boolean {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone?.startsWith("Europe/") ?? false;
+  } catch {
+    return false;
+  }
+}
+
 export function CookieConsent({ country }: { country: string | null }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
     // Nếu không phải người dùng EU, không làm gì cả.
-    if (!country || !EU_COUNTRIES.has(country)) {
+    const inScope = country ? EU_COUNTRIES.has(country) : looksEuropeanByTimezone();
+    if (!inScope) {
       return;
     }
 
@@ -38,7 +52,7 @@ export function CookieConsent({ country }: { country: string | null }) {
       // Chỉ hiển thị nếu người dùng chưa đưa ra lựa chọn.
       if (!localStorage.getItem(KEY)) setShow(true);
     } catch { /* ignore */ }
-  }, []);
+  }, [country]);
 
   const decide = (choice: "accepted" | "rejected") => {
     try { localStorage.setItem(KEY, choice); } catch { /* ignore */ }

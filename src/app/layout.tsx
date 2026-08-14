@@ -13,7 +13,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { getSettings } from "@/lib/data/content-service";
 import { buildSettingsMap } from "@/lib/utils/site-settings";
-import { getSiteConfig, getCurrentUrl } from "@/lib/server/get-site-config";
+import { getSiteConfig, getCurrentUrl, isSitePinned } from "@/lib/server/get-site-config";
+import { AdsenseLoader } from "@/components/common/adsense-loader";
 
 // GFF Fonts are loaded from fonts.css
 // Heading: --font-heading (GFF Latin ExtraBold)
@@ -140,11 +141,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const activeSite = await getSiteConfig();
-  const requestHeaders = await headers();
-  const country = requestHeaders.get("x-vercel-ip-country");
+  // Đã ghim site thì TUYỆT ĐỐI không đụng headers() ở đây: chỉ cần đọc một
+  // header là cả cây trang phải render động, mất sạch cache CDN — đúng thứ việc
+  // ghim site sinh ra để tránh. Hai giá trị dưới đây có bản dự phòng phía client:
+  // CookieConsent suy vùng theo múi giờ, AdsenseLoader tự nhận diện app native.
+  const requestHeaders = isSitePinned ? null : await headers();
+  const country = requestHeaders?.get("x-vercel-ip-country") ?? null;
   // App native (vỏ Capacitor) gắn "ArexApp/" vào User-Agent. Chính sách AdSense
   // cấm hiển thị quảng cáo trong WebView của app → không nạp loader luôn.
-  const isNativeApp = /ArexApp\//.test(requestHeaders.get("user-agent") ?? "");
+  const isNativeApp = /ArexApp\//.test(requestHeaders?.get("user-agent") ?? "");
   // Publisher ID lấy từ Cài đặt → Quảng cáo (fallback về id mặc định của site).
   const adsenseId =
     buildSettingsMap(await getSettings())["ads.google_adsense_id"]?.trim() || "ca-pub-6400047965945515";
@@ -190,16 +195,12 @@ gtag('js',new Date());gtag('config','G-GJCSBSTY7Y');`}
         </Script>
         {/* Google AdSense — meta xác minh + loader (Publisher ID từ settings).
             Bỏ hẳn trong app native: AdSense không cho chạy trong WebView app. */}
-        {!isNativeApp && (
-          <>
-            <meta name="google-adsense-account" content={adsenseId} />
-            <Script
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
-              strategy="afterInteractive"
-              crossOrigin="anonymous"
-            />
-          </>
-        )}
+        {/* Thẻ meta xác minh chỉ là siêu dữ liệu, để lại cũng không nạp quảng
+            cáo. Riêng loader thì AdsenseLoader quyết định: server biết chắc là
+            app native thì chặn ngay, còn lại để client tự nhận diện (cần thiết
+            khi đã ghim site vì lúc đó không đọc được User-Agent). */}
+        <meta name="google-adsense-account" content={adsenseId} />
+        <AdsenseLoader adsenseId={adsenseId} serverKnownNative={isNativeApp} />
         {/* JSON-LD structured data for SEO */}
         <script
           type="application/ld+json"

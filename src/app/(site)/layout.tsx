@@ -14,8 +14,16 @@ import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getSiteConfig } from "@/lib/server/get-site-config";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// KHÔNG đặt force-dynamic ở đây. Layout này bọc toàn bộ trang công khai, nên
+// force-dynamic sẽ đè lên `export const revalidate` của MỌI trang con — mọi
+// trang đều phải render lại từng lượt xem dù đã tự khai muốn được cache.
+//
+// Khi chưa ghim site (NEXT_PUBLIC_SITE_ID trống), getSiteConfig() vẫn đọc header
+// nên các trang vẫn động y như trước — bỏ dòng này không đổi gì. Ghim site rồi
+// thì mỗi trang mới được cache theo `revalidate` của chính nó.
+//
+// Lưu ý khi đã ghim: bật chế độ bảo trì có thể mất tới `revalidate` giây mới
+// chặn được các trang đang nằm sẵn trong bộ nhớ đệm.
 
 type SiteLayoutProps = {
   children: ReactNode;
