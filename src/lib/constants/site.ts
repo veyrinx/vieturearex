@@ -45,6 +45,8 @@ export type SiteConfig = typeof siteConfig | typeof iscConfig;
 const SITE_CONFIGS: Record<string, SiteConfig> = {
   "arexnetwork.site": siteConfig,
   "www.arexnetwork.site": siteConfig,
+  "arexnetwork.vn": siteConfig,
+  "www.arexnetwork.vn": siteConfig,
   "iscnetwork.site": iscConfig,
   "www.iscnetwork.site": iscConfig,
 };
@@ -52,6 +54,19 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
 export function getSiteConfigByHostname(hostname: string): typeof siteConfig | typeof iscConfig {
   const clean = hostname.split(":")[0].toLowerCase();
   return SITE_CONFIGS[clean] ?? siteConfig;
+}
+
+/**
+ * Các tên miền gốc do Arex vận hành. Site chạy song song nhiều tên miền
+ * (`arexnetwork.site` và `arexnetwork.vn`), nên mọi chỗ hỏi "link này có phải
+ * của mình không" đều phải hỏi ở đây — viết tay một tên miền là chỗ đó lệch:
+ * app native sẽ đá link nhà mình ra trình duyệt ngoài, deep link thì rơi mất.
+ */
+export const AREX_DOMAINS = ["arexnetwork.site", "arexnetwork.vn"] as const;
+
+export function isArexHost(hostname: string): boolean {
+  const clean = hostname.split(":")[0].toLowerCase();
+  return AREX_DOMAINS.some((d) => clean === d || clean.endsWith(`.${d}`));
 }
 
 // Tra cứu theo mã site thay vì tên miền. Dùng khi một bản triển khai chỉ phục vụ

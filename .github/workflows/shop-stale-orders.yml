@@ -19,14 +19,35 @@ jobs:
       - name: Gọi endpoint quét
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          # Site chạy nhiều tên miền và tên miền này có lúc chỉ còn 30x sang tên
+          # miền kia. Đổi tên miền chính thì đặt biến CRON_BASE_URL
+          # (Settings → Secrets and variables → Actions → Variables).
+          BASE_URL: ${{ vars.CRON_BASE_URL || 'https://arexnetwork.site' }}
         run: |
           if [ -z "$CRON_SECRET" ]; then
             echo "::error::Thiếu secret CRON_SECRET — endpoint sẽ trả 401."
             exit 1
           fi
-          CODE=$(curl -sS -o body.txt -w '%{http_code}' \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            "https://arexnetwork.site/api/cron/shop-stale-orders")
+          URL="${BASE_URL%/}/api/cron/shop-stale-orders"
+
+          # Đi theo chuyển hướng TRƯỚC, không kèm secret: curl tự bỏ header
+          # Authorization khi nhảy sang host khác, nên gọi thẳng kèm -L sẽ ăn 401.
+          FINAL=$(curl -sS -L -o /dev/null -w '%{url_effective}' --max-time 60 "$URL")
+          if [ "$FINAL" != "$URL" ]; then
+            echo "::warning::$URL chuyển hướng sang $FINAL — cập nhật biến CRON_BASE_URL."
+          fi
+          # Chỉ giao secret cho tên miền nhà mình. Cắt lấy đúng phần host —
+          # so khớp cả chuỗi URL thì dấu * ăn luôn qua "/", một địa chỉ như
+          # https://ke-gian.com/?x=.arexnetwork.vn/ cũng lọt.
+          case "$FINAL" in https://*) ;; *) echo "::error::Đích cuối không phải https ($FINAL)."; exit 1 ;; esac
+          HOST=${FINAL#https://}; HOST=${HOST%%/*}; HOST=${HOST%%:*}
+          case "$HOST" in
+            arexnetwork.site|*.arexnetwork.site|arexnetwork.vn|*.arexnetwork.vn) ;;
+            *) echo "::error::Đích cuối lạ ($HOST) — không gửi CRON_SECRET."; exit 1 ;;
+          esac
+
+          CODE=$(curl -sS -o body.txt -w '%{http_code}' --max-time 120 \
+            -H "Authorization: Bearer $CRON_SECRET" "$FINAL")
           echo "HTTP $CODE"
           cat body.txt
           echo

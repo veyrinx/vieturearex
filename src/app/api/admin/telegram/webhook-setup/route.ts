@@ -4,6 +4,26 @@ import { getSettings } from "@/lib/data/content-service";
 
 const TOKEN_KEY = "integrations.telegram_bot_token";
 
+/**
+ * Telegram gọi webhook mà KHÔNG đi theo chuyển hướng: đăng ký một địa chỉ trả
+ * 308 là bot chết lặng — setWebhook vẫn báo thành công, chỉ getWebhookInfo mới
+ * lộ lỗi. Site chạy nhiều tên miền và có lúc tên miền cũ chỉ còn trỏ sang tên
+ * miền mới, nên phải thử trước khi giao cho Telegram.
+ */
+async function redirectsAway(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: "HEAD",
+      redirect: "manual",
+      signal: AbortSignal.timeout(5_000),
+    });
+    return res.status >= 300 && res.status < 400;
+  } catch {
+    // Không thử được thì đừng tự ý đổi — thà giữ đúng cấu hình admin đã đặt.
+    return false;
+  }
+}
+
 // Register or remove the Telegram bot webhook
 // POST { action: "set" | "delete" }
 export async function POST(request: NextRequest) {
@@ -17,8 +37,20 @@ export async function POST(request: NextRequest) {
   const token = settings.find((s) => s.key === TOKEN_KEY)?.value ?? "";
   if (!token) return NextResponse.json({ ok: false, reason: "bot_token_not_configured" }, { status: 400 });
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
-  const webhookUrl = `${siteUrl}/api/telegram/webhook`;
+  // Tên miền lấy từ NEXT_PUBLIC_SITE_URL, không có thì lấy chính nơi admin đang
+  // đứng (chỗ mở được trang này chắc chắn phục vụ trực tiếp).
+  const origin = new URL(request.url).origin;
+  // Bỏ dấu / cuối: người đặt biến môi trường hay dán kèm, thành "…//api/…".
+  const configured = (process.env.NEXT_PUBLIC_SITE_URL || origin).replace(/\/+$/, "");
+  let webhookUrl = `${configured}/api/telegram/webhook`;
+  let switchedFrom: string | null = null;
+
+  // Địa chỉ đã chọn mà trả 3xx thì đổi sang tên miền admin đang đứng. Nơi admin
+  // mở được trang này chắc chắn là nơi phục vụ trực tiếp.
+  if (configured !== origin && (await redirectsAway(webhookUrl))) {
+    switchedFrom = webhookUrl;
+    webhookUrl = `${origin}/api/telegram/webhook`;
+  }
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
 
   let tgEndpoint: string;
@@ -52,7 +84,9 @@ export async function POST(request: NextRequest) {
 
   // Khi bật webhook: đăng ký thêm menu lệnh cố định + nút Menu mở Mini App (best-effort).
   if (action === "set" && data.ok) {
-    const miniAppUrl = `${siteUrl}/tg`;
+    // Cùng gốc với webhook đã chốt ở trên — Mini App mở qua tên miền chuyển
+    // hướng thì Telegram báo lỗi tên miền không khớp với bot.
+    const miniAppUrl = `${new URL(webhookUrl).origin}/tg`;
     const api = (method: string, payload: Record<string, unknown>) =>
       fetch(`https://api.telegram.org/bot${token}/${method}`, {
         method: "POST",
@@ -83,7 +117,14 @@ export async function POST(request: NextRequest) {
     ]);
   }
 
-  return NextResponse.json({ ok: data.ok, action, webhook_url: action === "set" ? webhookUrl : null });
+  return NextResponse.json({
+    ok: data.ok,
+    action,
+    webhook_url: action === "set" ? webhookUrl : null,
+    // Có giá trị = địa chỉ trong NEXT_PUBLIC_SITE_URL đang bị chuyển hướng, đã
+    // tự đổi. Sửa lại biến môi trường cho khớp, đừng để lệ thuộc chốt chặn này.
+    ...(switchedFrom ? { switched_from: switchedFrom } : {}),
+  });
 }
 
 // GET — check current webhook info

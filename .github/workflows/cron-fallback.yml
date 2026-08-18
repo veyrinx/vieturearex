@@ -70,9 +70,15 @@ jobs:
           fi
           FAILED=0
           for EP in ${{ steps.pick.outputs.endpoints }}; do
+            URL="${BASE_URL%/}/api/cron/$EP"
+            # curl bỏ header Authorization khi chuyển hướng sang host khác, nên
+            # đừng gọi thẳng kèm -L: sẽ ăn 401. Đặt CRON_BASE_URL đúng tên miền
+            # đang phục vụ trực tiếp (xem cảnh báo dưới).
             CODE=$(curl -sS -o body.txt -w '%{http_code}' --max-time 120 \
-              -H "Authorization: Bearer $CRON_SECRET" \
-              "${BASE_URL%/}/api/cron/$EP")
+              -H "Authorization: Bearer $CRON_SECRET" "$URL")
+            case "$CODE" in
+              30*) echo "::warning::$URL trả $CODE (chuyển hướng) — cập nhật biến CRON_BASE_URL." ;;
+            esac
             echo "--- $EP → HTTP $CODE"
             cat body.txt; echo
             [ "$CODE" = "200" ] || FAILED=1

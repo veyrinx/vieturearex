@@ -12,6 +12,7 @@ import {
   onPluginEvent,
   openExternal,
 } from "@/lib/native/bridge";
+import { isArexHost } from "@/lib/constants/site";
 
 /**
  * Đăng ký listener plugin an toàn với vòng đời effect: nếu effect bị huỷ trước
@@ -157,7 +158,7 @@ export function NativeAppShell() {
         return;
       }
 
-      if (target.hostname.endsWith("arexnetwork.site")) {
+      if (isArexHost(target.hostname)) {
         router.push(`${target.pathname}${target.search}${target.hash}` || "/");
       }
     });
@@ -187,8 +188,7 @@ export function NativeAppShell() {
       if (!/^https?:$/.test(url.protocol)) return;
 
       const isInternal =
-        url.hostname === window.location.hostname ||
-        url.hostname.endsWith("arexnetwork.site");
+        url.hostname === window.location.hostname || isArexHost(url.hostname);
       if (isInternal && anchor.target !== "_blank") return;
 
       event.preventDefault();

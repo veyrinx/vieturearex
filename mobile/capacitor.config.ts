@@ -25,10 +25,20 @@ const config: CapacitorConfig = {
     // "Webpage not available" xấu xí của WebView.
     errorPath: "error.html",
     // Chỉ những host này được mở TRONG app; còn lại đẩy ra trình duyệt hệ thống.
+    //
+    // ⚠️ Site chạy song song hai tên miền và tên miền này có thể 30x sang tên
+    // miền kia. Thiếu một cái trong danh sách là WebView coi đích đến của lần
+    // chuyển hướng là "web lạ" và đá thẳng ra Safari/Chrome — người dùng mở app
+    // ra thấy trình duyệt bật lên, tưởng app hỏng. Thêm tên miền mới cho site
+    // thì phải thêm cả ở đây (đối chiếu AREX_DOMAINS trong
+    // src/lib/constants/site.ts) rồi chạy lại `npx cap sync`.
     allowNavigation: [
       "arexnetwork.site",
       "www.arexnetwork.site",
       "*.arexnetwork.site",
+      "arexnetwork.vn",
+      "www.arexnetwork.vn",
+      "*.arexnetwork.vn",
       "*.supabase.co",
     ],
   },
