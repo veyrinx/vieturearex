@@ -24,6 +24,29 @@ export const LOCK_LABELS: Record<FeatureLockStatus, string> = {
 
 const norm = (p: string) => (p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p);
 
+/**
+ * Những nhánh không bao giờ bị khóa chức năng chặn:
+ * - /api, /_next: dữ liệu và tài nguyên, chặn ở đây là vỡ cả trang đang mở.
+ * - /admin: người trực phải vào được để mở khóa lại.
+ * - /updating, /maintenance: chính là trang báo khóa, chặn nữa là lặp vô hạn.
+ * - /login, /register, /auth: khóa mất đường đăng nhập thì admin cũng kẹt ngoài.
+ */
+export const LOCK_SKIP_PREFIXES = [
+  "/api",
+  "/_next",
+  "/admin",
+  "/updating",
+  "/maintenance",
+  "/login",
+  "/register",
+  "/auth",
+];
+
+export function shouldSkipFeatureLock(pathname: string): boolean {
+  const path = norm(pathname);
+  return LOCK_SKIP_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+}
+
 // Trả về lock khớp cụ thể nhất (path dài nhất) hoặc null.
 export function findFeatureLock(pathname: string, locks: FeatureLock[]): FeatureLock | null {
   if (!pathname || !Array.isArray(locks) || locks.length === 0) return null;

@@ -59,6 +59,8 @@ export const SITE_ROUTES: string[] = [
   "/server-status",
   "/countdown",
   "/safe-topup",
+  "/check-scam",
+  "/phone-lookup",
   "/players/compare",
   "/search",
 
@@ -77,8 +79,17 @@ export const SITE_ROUTES: string[] = [
 
   // ── Cửa hàng / tích hợp ─────────────────────────────────────────────────
   "/prime-store",
+  "/shop",
+  "/shop/dang-ky-ban",
+  "/shop/dang-tin",
+  "/shop/tin-cua-toi",
+  "/shop/don-hang",
+  "/shop/gian-hang",
+  "/shop/nhan-su",
+  "/shop/ctv",
   "/tiktok",
   "/telegram-link",
+  "/discord-link",
   "/partnership",
 
   // ── Tài khoản / hệ thống ────────────────────────────────────────────────
@@ -86,6 +97,7 @@ export const SITE_ROUTES: string[] = [
   "/register",
   "/join",
   "/setup",
+  "/tai-app",
   "/coming-soon",
   "/updating",
 
