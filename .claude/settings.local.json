@@ -642,7 +642,28 @@
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F 'C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\85ccbcd0-f090-45e7-8017-71adfcddf234\\\\scratchpad\\\\msg1.txt')",
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -- 'src/middleware.ts' 'src/lib/constants/failover.ts' 'src/app/admin/chuyen-huong' 'src/app/api/admin/failover' 'src/components/admin/failover-panel.tsx' 'src/lib/constants/admin-nav.ts'; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F 'C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\85ccbcd0-f090-45e7-8017-71adfcddf234\\\\scratchpad\\\\msg2.txt')",
       "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' diff -- src/app/layout.tsx 'src/app/\\(site\\)/layout.tsx' src/lib/server/get-site-config.ts .claude/settings.local.json)",
-      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F 'C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\85ccbcd0-f090-45e7-8017-71adfcddf234\\\\scratchpad\\\\msg3.txt')"
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' add -A; & 'D:\\\\Git\\\\cmd\\\\git.exe' commit -F 'C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\85ccbcd0-f090-45e7-8017-71adfcddf234\\\\scratchpad\\\\msg3.txt')",
+      "PowerShell(& 'D:\\\\Git\\\\cmd\\\\git.exe' push origin main; & 'D:\\\\Git\\\\cmd\\\\git.exe' log --oneline -4; & 'D:\\\\Git\\\\cmd\\\\git.exe' status --short)",
+      "PowerShell(cd D:\\\\vieture-arex; if \\(Test-Path vercel.json\\) { Get-Content vercel.json -Raw }; if \\(Test-Path vercel.ts\\) { Get-Content vercel.ts -Raw }; try { $r = Invoke-WebRequest http://localhost:3000 -UseBasicParsing -TimeoutSec 3; \"DEV RUNNING: $\\($r.StatusCode\\)\" } catch { \"dev server khong chay\" })",
+      "PowerShell($os = Get-CimInstance Win32_OperatingSystem; \"TotalRAM_MB: {0:N0}\" -f \\($os.TotalVisibleMemorySize/1KB\\); \"FreeRAM_MB: {0:N0}\" -f \\($os.FreePhysicalMemory/1KB\\); $pf = Get-CimInstance Win32_PageFileUsage; if\\($pf\\){\"PageFile_MB: $\\($pf.AllocatedBaseSize\\)\"} else {\"PageFile: system-managed/none\"})",
+      "PowerShell(node \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\b6411313-7eb8-4758-b62f-87cdce7390f4\\\\scratchpad\\\\probe.mjs\")",
+      "PowerShell(node \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\b6411313-7eb8-4758-b62f-87cdce7390f4\\\\scratchpad\\\\probe2.mjs\")",
+      "PowerShell(node \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\b6411313-7eb8-4758-b62f-87cdce7390f4\\\\scratchpad\\\\sql.mjs\" \"select json_agg\\(x\\) from \\(select column_name, data_type from information_schema.columns where table_schema='public' and table_name='users_role_check'\\) x\"; node \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\b6411313-7eb8-4758-b62f-87cdce7390f4\\\\scratchpad\\\\sql.mjs\" \"select json_agg\\(x\\) from \\(select relrowsecurity, \\(select count\\(*\\) from public.users_role_check\\) n from pg_class where oid='public.users_role_check'::regclass\\) x\")",
+      "PowerShell(node \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\b6411313-7eb8-4758-b62f-87cdce7390f4\\\\scratchpad\\\\sql.mjs\" \"select json_agg\\(x\\) from \\(select key, left\\(value, 4000\\) as value from public.settings where key in \\('admin.projects','feature.locks','featureLocks'\\) \\) x\")",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 30; \"tsc exit=$LASTEXITCODE\")",
+      "PowerShell(Get-Item D:\\\\vieture-arex\\\\.next -Force | Select-Object Name, LinkType, Target, Mode; echo \"---\"; if \\(Test-Path \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\arex-next-build\"\\) { \"size: {0:N2} GB\" -f \\(\\(Get-ChildItem \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\arex-next-build\" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object Length -Sum\\).Sum/1GB\\) })",
+      "Bash(echo \"eslint exit=$?\")",
+      "PowerShell(node \"C:\\\\Users\\\\WIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--vieture-arex\\\\b6411313-7eb8-4758-b62f-87cdce7390f4\\\\scratchpad\\\\tg.mjs\")",
+      "Bash(echo \"cap tsc exit=$?\")",
+      "Bash(bash \"C:/Users/WIN/AppData/Local/Temp/claude/D--vieture-arex/b6411313-7eb8-4758-b62f-87cdce7390f4/scratchpad/hostcheck.sh\")",
+      "Bash(D:/Git/cmd/git.exe --no-pager diff --stat -- .claude/settings.local.json)",
+      "Bash(D:/Git/cmd/git.exe --no-pager diff -- mobile-hub/src/App.tsx)",
+      "Bash(D:/Git/cmd/git.exe restore *)",
+      "Bash(D:/Git/cmd/git.exe --no-pager log --oneline origin/main..HEAD)",
+      "Bash(D:/Git/cmd/git.exe --no-pager show --stat 22acb91 05a00a0)",
+      "Bash(D:/Git/cmd/git.exe rebase *)",
+      "Bash(D:/Git/cmd/git.exe --no-pager log --oneline -6)",
+      "Bash(D:/Git/cmd/git.exe stash *)"
     ]
   }
 }
