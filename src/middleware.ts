@@ -18,7 +18,8 @@ import { hasSupabaseEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env
 
 /**
  * Middleware duy nhất đang chạy. Hai việc:
- *  1. Đẩy khách sang máy chủ dự phòng khi công tắc /admin/chuyen-huong bật.
+ *  1. Đẩy khách sang máy chủ dự phòng khi công tắc site.failover bật
+ *     (POST /api/admin/failover — trang admin cho công tắc này đã bị gỡ).
  *  2. Chặn các chức năng đang khóa (/admin/feature-locks) → /updating.
  *
  * Việc (2) bắt buộc phải nằm ở đây: layout của (site) không biết đường dẫn hiện

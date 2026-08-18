@@ -3,8 +3,10 @@
  *
  * Site chạy song song hai nơi: bản trên Vercel và bản tự dựng. Khi một bên
  * hỏng, đổi DNS mất hàng chục phút tới vài giờ mới lan hết. Công tắc này đẩy
- * khách sang bên còn sống ngay lập tức, bật/tắt trong /admin/chuyen-huong,
- * không cần build lại.
+ * khách sang bên còn sống ngay lập tức, không cần build lại.
+ *
+ * Trang /admin/chuyen-huong đã bị gỡ, giờ bật/tắt bằng cách gọi thẳng
+ * `POST /api/admin/failover` (cần quyền admin).
  *
  * File chỉ chứa kiểu và hàm thuần để middleware, API và giao diện dùng chung
  * một bộ luật — lệch nhau một chỗ là sinh vòng lặp chuyển hướng.
