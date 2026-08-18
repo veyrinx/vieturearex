@@ -663,7 +663,11 @@
       "Bash(D:/Git/cmd/git.exe --no-pager show --stat 22acb91 05a00a0)",
       "Bash(D:/Git/cmd/git.exe rebase *)",
       "Bash(D:/Git/cmd/git.exe --no-pager log --oneline -6)",
-      "Bash(D:/Git/cmd/git.exe stash *)"
+      "Bash(D:/Git/cmd/git.exe stash *)",
+      "Bash(echo \"--- exit $?\")",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 10; \"tsc=$LASTEXITCODE\")",
+      "Bash(D:/Git/cmd/git.exe *)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 10; \"tsc=$LASTEXITCODE\"; npx eslint src/lib/constants/admin-nav.ts src/lib/constants/failover.ts src/middleware.ts 2>&1 | Select-Object -Last 5; \"eslint=$LASTEXITCODE\")"
     ]
   }
 }
