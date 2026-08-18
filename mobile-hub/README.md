@@ -186,22 +186,28 @@ bản phát hành app, nhật ký hoạt động. Giao diện tự ẩn thao tá
 
 ## Việc cần làm khi phát hành thật
 
-1. **Thông báo đẩy.** Cả hai nền tảng đi qua **Firebase Cloud Messaging** bằng
-   `@capacitor-firebase/messaging`; server gửi ở `src/lib/server/native-push.ts`.
-   Cần đúng hai file cấu hình (đều nằm trong `.gitignore`, CI lấy từ secret):
+1. **Thông báo đẩy — chỉ Android.** Đi qua **Firebase Cloud Messaging** bằng
+   `@capacitor/push-notifications`; server gửi ở `src/lib/server/native-push.ts`.
 
    | Nền tảng | File | Đặt ở đâu | Secret cho CI | Thiếu thì sao |
    |---|---|---|---|---|
    | Android | `google-services.json` | `android/app/` | `GOOGLE_SERVICES_JSON` | Không build được |
-   | iOS | `GoogleService-Info.plist` | `ios/App/App/` | — (build tay) | Không build được |
+   | iOS | — | — | — | Không có thông báo đẩy (cố ý) |
 
    Lấy file: Firebase Console → Project settings → **Your apps** → thêm app với
    bundle id `site.arexnetwork.hub` (đúng id này, khác app Arex Network — app
-   iOS `site.arexnetwork.app` là của `mobile/`, plist của nó **không** dùng thay
-   được) → tải file cấu hình về. Cả hai file đã được khai sẵn trong dự án nên
-   **chỉ cần thả đúng thư mục**, không phải kéo thả trong Xcode.
+   `site.arexnetwork.app` là của `mobile/`, file của nó **không** dùng thay
+   được) → tải về. File đã khai sẵn trong dự án nên **chỉ cần thả đúng thư mục**.
 
    Secret cho CI dán **nguyên nội dung** file (không base64).
+
+   **Vì sao iOS không có push:** bản iOS phân phối bằng sideload, ký lại bằng
+   Apple ID thường — Apple không cấp quyền *Push Notifications* cho tài khoản
+   miễn phí nên thông báo đẩy không có đường nào chạy. Trước đây bản iOS dùng
+   `@capacitor-firebase/messaging`, plugin đó gọi `FirebaseApp.configure()` ngay
+   lúc nạp nên **thiếu `GoogleService-Info.plist` là app chết ngay khi mở**, đổi
+   lại chẳng được gì. Muốn bật lại push cho iOS thì phải có tài khoản Apple
+   Developer trả phí + chứng chỉ ký, lúc đó mới quay lại plugin Firebase.
 
    iOS **không còn workflow CI** (`hub-ios.yml` và `hub-testflight.yml` đã gỡ vì
    secret `GOOGLE_SERVICE_INFO_PLIST` chưa bao giờ được tạo nên chạy lần nào đỏ

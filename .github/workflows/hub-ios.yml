@@ -6,10 +6,10 @@ name: Build Arex Hub iOS
 # CHƯA KÝ. File đó KHÔNG cài thẳng lên iPhone được — phải ký lại bằng Apple ID
 # qua Sideloadly/AltStore (app sống 7 ngày, hết hạn thì cắm máy ký lại).
 #
-# Bản này từng bị gỡ ở d46bb7c vì chạy 14 lần đỏ hết: thiếu secret
-# GOOGLE_SERVICE_INFO_PLIST thì bước ghi plist tự exit 1, mà secret đó tới giờ
-# vẫn chưa có. Nên khi khôi phục, thiếu secret = BỎ QUA trong êm đẹp chứ không
-# báo đỏ; có secret là tự khớp lại và build như cũ, khỏi sửa file này lần nữa.
+# Workflow này từng bị gỡ ở d46bb7c vì luôn dừng ở bước ghi GoogleService-Info.plist
+# lấy từ secret. Nay bản iOS đã bỏ hẳn thông báo đẩy (Apple không cấp quyền Push
+# cho tài khoản miễn phí, mà Hub iOS thì sideload) nên không còn Firebase, không
+# còn plist, không cần secret nào cả.
 on:
   workflow_dispatch:
   push:
@@ -18,29 +18,7 @@ on:
       - ".github/workflows/hub-ios.yml"
 
 jobs:
-  # Tách riêng và chạy trên ubuntu: runner macOS tính giá gấp 10, đừng dựng nó
-  # lên chỉ để in một dòng cảnh báo. `secrets` không dùng được trong `if` cấp
-  # job nên phải mượn một output để chuyển tiếp.
-  kiem-tra:
-    runs-on: ubuntu-latest
-    outputs:
-      co-plist: ${{ steps.plist.outputs.co }}
-    steps:
-      - name: Có secret plist chưa?
-        id: plist
-        env:
-          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
-        run: |
-          if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
-            echo "::warning::Chưa có secret GOOGLE_SERVICE_INFO_PLIST → bỏ qua build iOS. Tạo secret rồi chạy lại là ra IPA."
-            echo "co=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "co=true" >> "$GITHUB_OUTPUT"
-          fi
-
   build:
-    needs: kiem-tra
-    if: needs.kiem-tra.outputs.co-plist == 'true'
     runs-on: macos-15
     defaults:
       run:
@@ -67,24 +45,6 @@ jobs:
 
       - name: Đồng bộ Capacitor
         run: npx cap sync ios
-
-      # project.pbxproj khai GoogleService-Info.plist trong Resources, mà file bị
-      # .gitignore chặn → phải dựng lại từ secret, nếu không xcodebuild dừng với
-      # "Build input file cannot be found". Tạo secret: Settings → Secrets and
-      # variables → Actions → New secret, tên GOOGLE_SERVICE_INFO_PLIST, dán
-      # nguyên nội dung file tải từ Firebase Console (bundle site.arexnetwork.hub).
-      - name: Ghi GoogleService-Info.plist
-        env:
-          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
-        run: |
-          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > ios/App/App/GoogleService-Info.plist
-          plutil -lint ios/App/App/GoogleService-Info.plist \
-            || { echo "::error::Secret GOOGLE_SERVICE_INFO_PLIST không phải plist hợp lệ."; exit 1; }
-          BUNDLE=$(plutil -extract BUNDLE_ID raw ios/App/App/GoogleService-Info.plist)
-          if [ "$BUNDLE" != "site.arexnetwork.hub" ]; then
-            echo "::error::Plist khai BUNDLE_ID=$BUNDLE, phải là site.arexnetwork.hub — tải nhầm app trong Firebase Console."
-            exit 1
-          fi
 
       # Số phiên bản trong Info.plist lấy theo package.json, trùng với số app
       # hiển thị ở màn Hệ thống. project.pbxproj vẫn để nguyên MARKETING_VERSION.

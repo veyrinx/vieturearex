@@ -6,7 +6,7 @@ import { Network } from "@capacitor/network";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Browser } from "@capacitor/browser";
-import { FirebaseMessaging } from "@capacitor-firebase/messaging";
+import { PushNotifications } from "@capacitor/push-notifications";
 // Nhập thẳng plugin (không qua lib/updater) để tránh vòng import: updater cần
 // `isNative` từ chính file này.
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
@@ -109,24 +109,33 @@ async function savePushToken(value: string) {
 }
 
 /**
- * Xin quyền + đăng ký token đẩy cho CẢ iOS lẫn Android.
+ * Xin quyền + đăng ký token đẩy. **Chỉ Android.**
  *
- * Dùng `@capacitor-firebase/messaging` thay cho `@capacitor/push-notifications`:
- * server gửi thông báo qua FCM (xem src/lib/server/native-push.ts), mà plugin
- * cũ trên iOS chỉ trả token APNs thô — FCM coi là token rác nên iOS không bao
- * giờ nhận được gì. Plugin này nhúng Firebase SDK ở cả hai nền tảng nên token
- * lấy ra luôn là token FCM, một đường gửi duy nhất cho cả hai.
+ * Trước đây dùng `@capacitor-firebase/messaging` cho cả hai nền tảng, vì trên
+ * iOS `@capacitor/push-notifications` chỉ trả token APNs thô mà server lại gửi
+ * qua FCM (xem src/lib/server/native-push.ts) nên iOS không nhận được gì.
+ * Nhưng plugin Firebase nhúng SDK Firebase vào bản iOS, và nó gọi
+ * `FirebaseApp.configure()` ngay lúc nạp plugin — thiếu `GoogleService-Info.plist`
+ * là app CHẾT ngay khi mở, chứ không phải chỉ mất thông báo.
  *
- * Token FCM có thể bị Firebase cấp lại (cài lại app, khôi phục máy, hết hạn),
- * nên nghe luôn `tokenReceived` chứ không chỉ lấy một lần lúc mở app.
+ * Hub bản iOS phân phối bằng sideload, ký lại bằng Apple ID thường. Apple KHÔNG
+ * cấp quyền Push Notifications cho tài khoản miễn phí, nên thông báo đẩy trên
+ * iOS không có đường nào chạy được — giữ Firebase ở đó chỉ để đổi lấy nguy cơ
+ * crash và một file bí mật phải quản. Nên gỡ hẳn: iOS im lặng bỏ qua.
+ *
+ * Android giữ nguyên đường cũ: `@capacitor/push-notifications` trên Android đọc
+ * `google-services.json` và trả đúng token FCM, khớp với thứ server đang gửi.
+ *
+ * Token có thể bị cấp lại (cài lại app, khôi phục máy, hết hạn) nên nghe sự kiện
+ * `registration` chứ không chỉ lấy một lần lúc mở app.
  */
 export async function registerPush(onError?: (message: string) => void) {
-  if (!isNative) return;
+  if (!isNative || platform !== "android") return;
 
   try {
-    let permission = await FirebaseMessaging.checkPermissions();
+    let permission = await PushNotifications.checkPermissions();
     if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") {
-      permission = await FirebaseMessaging.requestPermissions();
+      permission = await PushNotifications.requestPermissions();
     }
     if (permission.receive !== "granted") return;
 
@@ -134,16 +143,19 @@ export async function registerPush(onError?: (message: string) => void) {
     // một lần, nếu không mỗi lần cấp token lại là mấy lời gọi API trùng nhau.
     if (!tokenListenerBound) {
       tokenListenerBound = true;
-      await FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
-        if (token) void savePushToken(token);
+      await PushNotifications.addListener("registration", ({ value }) => {
+        if (value) void savePushToken(value);
+      });
+      await PushNotifications.addListener("registrationError", (error) => {
+        onError?.(String(error?.error ?? "Không đăng ký được thông báo đẩy."));
       });
     }
 
-    const { token } = await FirebaseMessaging.getToken();
-    if (token) await savePushToken(token);
+    // Không có getToken(): plugin trả token qua sự kiện `registration` ở trên.
+    await PushNotifications.register();
   } catch (error) {
-    // Thiếu GoogleService-Info.plist / google-services.json, hoặc máy không có
-    // Google Play services — app vẫn chạy, chỉ là không có thông báo đẩy.
+    // Máy không có Google Play services, hoặc thiếu google-services.json —
+    // app vẫn chạy, chỉ là không có thông báo đẩy.
     onError?.(error instanceof Error ? error.message : "Không đăng ký được thông báo đẩy.");
   }
 }
@@ -155,12 +167,13 @@ export async function registerPush(onError?: (message: string) => void) {
  * về hộp thông báo; ở đó bấm từng mục sẽ được dẫn tiếp đúng nơi.
  */
 export function onPushOpened(handler: (url: string | null) => void) {
-  if (!isNative) return () => {};
+  // iOS không đăng ký push (xem registerPush) nên cũng không bao giờ có cú chạm.
+  if (!isNative || platform !== "android") return () => {};
 
   let remove: (() => void) | null = null;
   let disposed = false;
 
-  void FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
+  void PushNotifications.addListener("pushNotificationActionPerformed", (event) => {
     const url = (event.notification?.data as { url?: string } | undefined)?.url ?? null;
     handler(url);
   })

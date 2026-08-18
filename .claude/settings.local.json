@@ -667,7 +667,9 @@
       "Bash(echo \"--- exit $?\")",
       "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 10; \"tsc=$LASTEXITCODE\")",
       "Bash(D:/Git/cmd/git.exe *)",
-      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 10; \"tsc=$LASTEXITCODE\"; npx eslint src/lib/constants/admin-nav.ts src/lib/constants/failover.ts src/middleware.ts 2>&1 | Select-Object -Last 5; \"eslint=$LASTEXITCODE\")"
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 10; \"tsc=$LASTEXITCODE\"; npx eslint src/lib/constants/admin-nav.ts src/lib/constants/failover.ts src/middleware.ts 2>&1 | Select-Object -Last 5; \"eslint=$LASTEXITCODE\")",
+      "Bash(npm pkg *)",
+      "Bash(echo \"build=$?\")"
     ]
   }
 }

@@ -277,7 +277,7 @@ dependencies {
 }
 ```
 
-**`firebase-messaging` không khai ở đây** — `@capacitor-firebase/messaging` đã
+**`firebase-messaging` không khai ở đây** — `@capacitor/push-notifications` đã
 kéo sẵn bản riêng trong module của nó. Khai thêm chỉ tạo xung đột version. BOM
 chỉ khoá version cho những thư viện Firebase khai **không kèm số**.
 

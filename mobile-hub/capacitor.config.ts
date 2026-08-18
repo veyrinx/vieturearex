@@ -66,17 +66,17 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     /**
-     * Thông báo đẩy đi qua Firebase ở CẢ hai nền tảng (@capacitor-firebase/messaging).
+     * Thông báo đẩy: **chỉ Android**. Cần android/app/google-services.json —
+     * @capacitor/push-notifications trên Android trả đúng token FCM, khớp với
+     * thứ server đang gửi.
      *
-     * Trước đây dùng @capacitor/push-notifications: trên Android thì ổn vì có
-     * google-services.json, nhưng iOS chỉ trả token APNs thô trong khi server
-     * gửi qua FCM — token đó FCM không nhận. Plugin này nhúng Firebase SDK cho
-     * iOS nên hai bên dùng chung một loại token.
-     *
-     * Bắt buộc có: android/app/google-services.json và
-     * ios/App/App/GoogleService-Info.plist (xem README mục Thông báo đẩy).
+     * iOS đã gỡ hẳn (xem registerPush trong src/lib/native.ts): bản iOS phân
+     * phối bằng sideload, mà Apple không cấp quyền Push Notifications cho tài
+     * khoản miễn phí nên thông báo đẩy không có đường nào chạy. Đổi lại, không
+     * còn phải nhúng Firebase SDK và giữ GoogleService-Info.plist cho iOS —
+     * thiếu file đó là app chết ngay lúc mở.
      */
-    FirebaseMessaging: {
+    PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
     },
   },
