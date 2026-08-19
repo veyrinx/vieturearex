@@ -1,5 +1,6 @@
 "use client";
 
+import { SITE_URL } from "@/lib/constants/site";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -226,6 +227,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [miniAppStats, setMiniAppStats] = useState<{ active: number; total: number } | null>(null);
   const [miniAppBroadcast, setMiniAppBroadcast] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const [webhookStatus, setWebhookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
+  type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
+  const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const dirtyRef = useRef<Set<string>>(new Set());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -271,6 +275,25 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
     setTimeout(() => setMiniAppBroadcast("idle"), 4000);
   }
 
+  /** Soi một lượt: email, bot Telegram, webhook, Discord. Không gửi thư/tin nào. */
+  async function checkIntegrations() {
+    setHealthLoading(true);
+    try {
+      const res = await fetch("/api/admin/integrations-health");
+      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; checks?: HealthCheck[] };
+      if (!res.ok || !d.checks) {
+        toast.error("Không kiểm tra được — thử lại sau.");
+      } else {
+        setHealth({ ok: Boolean(d.ok), checks: d.checks });
+        if (d.ok) toast.success("Tất cả tích hợp đều ổn.");
+        else toast.warning(`${d.checks.filter((c) => !c.ok).length} mục đang có vấn đề.`);
+      }
+    } catch {
+      toast.error("Lỗi kết nối");
+    }
+    setHealthLoading(false);
+  }
+
   async function setupWebhook() {
     setWebhookStatus("loading");
     try {
@@ -279,10 +302,27 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set" }),
       });
-      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; webhook_url?: string; reason?: string };
+      const d = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        webhook_url?: string;
+        reason?: string;
+        switched_from?: string;
+        secret_configured?: boolean;
+      };
       setWebhookStatus(res.ok && d.ok ? "ok" : "err");
-      if (res.ok && d.ok) toast.success(`Webhook đã được set: ${d.webhook_url}`);
-      else toast.error(`Set webhook thất bại: ${d.reason ?? "kiểm tra bot token"}`);
+      if (res.ok && d.ok) {
+        toast.success(`Webhook đã được set: ${d.webhook_url}`);
+        // Địa chỉ cấu hình bị chuyển hướng — vẫn chạy nhờ tự đổi, nhưng phải sửa
+        // NEXT_PUBLIC_SITE_URL, không thì lần sau lại lệch chỗ khác.
+        if (d.switched_from) toast.warning(`NEXT_PUBLIC_SITE_URL đang trỏ vào địa chỉ bị chuyển hướng (${d.switched_from}) — sửa lại trên Vercel.`);
+        if (d.secret_configured === false) toast.warning("Chưa đặt TELEGRAM_WEBHOOK_SECRET — ai cũng giả được cập nhật gửi tới webhook.");
+      } else {
+        toast.error(
+          d.reason === "bot_token_decrypt_failed"
+            ? "Không giải mã được bot token — APP_SECRET trên Vercel khác lúc lưu. Nhập lại token rồi thử lại."
+            : `Set webhook thất bại: ${d.reason ?? "kiểm tra bot token"}`,
+        );
+      }
     } catch {
       setWebhookStatus("err");
       toast.error("Lỗi kết nối");
@@ -1666,20 +1706,55 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           <Field label="URL Mini App" hint="Trỏ URL này trong BotFather → /newapp" icon={Globe}>
             <div className="flex items-center gap-2">
               <Input
-                value={`${process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site"}/tg`}
+                value={`${SITE_URL}/tg`}
                 readOnly
                 className="font-mono text-xs bg-muted/40 cursor-default"
               />
               <button
                 type="button"
                 onClick={() => {
-                  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site"}/tg`;
+                  const url = `${SITE_URL}/tg`;
                   navigator.clipboard.writeText(url).then(() => toast.success("Đã copy URL!")).catch(() => {});
                 }}
                 className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs font-medium transition hover:bg-muted"
               >
                 Copy
               </button>
+            </div>
+          </Field>
+
+          {/* Soi sức khoẻ mọi đường liên lạc ra ngoài — mấy thứ này hỏng đều
+              hỏng lặng lẽ, không ai biết cho tới lúc người dùng kêu. */}
+          <Field label="Kiểm tra tích hợp" hint="Email, bot Telegram, webhook, Discord — chỉ bắt tay để dò, không gửi thư hay tin nhắn nào" icon={Plug}>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={checkIntegrations}
+                  disabled={healthLoading}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+                >
+                  {healthLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Plug className="size-3.5" />}
+                  {healthLoading ? "Đang kiểm tra…" : "Kiểm tra ngay"}
+                </button>
+                {health && (
+                  <span className={`text-[11px] font-semibold ${health.ok ? "text-emerald-500" : "text-amber-500"}`}>
+                    {health.ok ? "Tất cả đều ổn" : `${health.checks.filter((c) => !c.ok).length}/${health.checks.length} mục có vấn đề`}
+                  </span>
+                )}
+              </div>
+              {health && (
+                <ul className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-3">
+                  {health.checks.map((c) => (
+                    <li key={c.name} className="text-[11px] leading-relaxed">
+                      <span className={c.ok ? "text-emerald-500" : "text-red-500"}>{c.ok ? "✅" : "❌"}</span>{" "}
+                      <span className="font-semibold">{c.name}:</span>{" "}
+                      <span className="text-muted-foreground">{c.detail}</span>
+                      {c.fix && <div className="pl-5 text-amber-500">→ {c.fix}</div>}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </Field>
 

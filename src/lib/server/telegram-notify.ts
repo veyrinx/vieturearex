@@ -155,12 +155,21 @@ async function sendToBot(token: string, chatId: string, payload: NotifyPayload) 
 
 // ── Exports ───────────────────────────────────────────────────────────────────
 
+/**
+ * Giá trị còn nguyên tiền tố "enc:" = giải mã hỏng (APP_SECRET khác lúc lưu).
+ * Đem chuỗi đó đi gọi Telegram thì chỉ nhận 404 khó hiểu — chặn sớm và nói rõ.
+ */
+function decryptFailed(...values: string[]) {
+  return values.some((v) => v.startsWith("enc:"));
+}
+
 /** Bot Admin → gửi vào group/channel nội bộ */
 export async function sendTelegramNotification(payload: NotifyPayload) {
   const settings = await getSettings();
   const token  = settings.find((s) => s.key === TOKEN_KEY)?.value || "";
   const chatId = settings.find((s) => s.key === CHAT_KEY)?.value || "";
   if (!token || !chatId) return { sent: false, reason: "not_configured" };
+  if (decryptFailed(token, chatId)) return { sent: false, reason: "decrypt_failed" };
   try { return await sendToBot(token, chatId, payload); }
   catch (err) { console.error("[tg-admin]", err); return { sent: false, reason: "fetch_error" }; }
 }
@@ -174,6 +183,7 @@ export async function sendUserTelegramNotification(payload: NotifyPayload) {
   const token  = userToken || adminToken;
   const chatId = settings.find((s) => s.key === USER_CHAT_KEY)?.value || "";
   if (!token || !chatId) return { sent: false, reason: "not_configured" };
+  if (decryptFailed(token, chatId)) return { sent: false, reason: "decrypt_failed" };
   try { return await sendToBot(token, chatId, payload); }
   catch (err) { console.error("[tg-user]", err); return { sent: false, reason: "fetch_error" }; }
 }

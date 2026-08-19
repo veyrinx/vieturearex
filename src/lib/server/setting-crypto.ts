@@ -90,6 +90,11 @@ export async function decryptSetting(stored: string): Promise<string> {
     const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
     return new TextDecoder().decode(plain);
   } catch {
+    // Giải mã hỏng gần như luôn là APP_SECRET khác lúc lưu (thiếu biến môi
+    // trường, hoặc vừa đổi). Trả lại nguyên chuỗi "enc:…" thì bên gọi cứ thế
+    // đem đi làm token — Telegram/Discord im lặng trả lỗi, không ai biết vì sao.
+    // Kêu ra log để còn lần được.
+    console.warn("[settings] Không giải mã được một giá trị nhạy cảm — kiểm tra APP_SECRET.");
     return stored;
   }
 }

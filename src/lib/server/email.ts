@@ -58,6 +58,47 @@ export async function isEmailConfigured(): Promise<boolean> {
   return (await resolveSmtpConfig()) !== null;
 }
 
+/**
+ * Bắt tay + đăng nhập máy chủ SMTP nhưng KHÔNG gửi thư. Dùng cho trang kiểm tra
+ * sức khoẻ: biết ngay "email gửi được không" mà không làm phiền hộp thư ai.
+ */
+export async function verifySmtp(): Promise<{
+  configured: boolean;
+  ok: boolean;
+  host?: string;
+  port?: number;
+  from?: string;
+  error?: string;
+}> {
+  const config = await resolveSmtpConfig();
+  if (!config) return { configured: false, ok: false };
+  try {
+    const nodemailer = await import("nodemailer");
+    const isSecure = config.port === 465;
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: isSecure,
+      auth: { user: config.user, pass: config.pass },
+      requireTLS: !isSecure,
+      tls: { servername: config.host, rejectUnauthorized: false },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+    });
+    await transporter.verify();
+    return { configured: true, ok: true, host: config.host, port: config.port, from: config.fromEmail };
+  } catch (err) {
+    return {
+      configured: true,
+      ok: false,
+      host: config.host,
+      port: config.port,
+      from: config.fromEmail,
+      error: String((err as Error)?.message ?? err),
+    };
+  }
+}
+
 /** Bật/tắt từng loại email trong settings (mặc định theo defaultOn). */
 export async function isMailTypeEnabled(key: string, defaultOn = true): Promise<boolean> {
   try {

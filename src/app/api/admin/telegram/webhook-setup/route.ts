@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { getSettings } from "@/lib/data/content-service";
+import { SITE_URL } from "@/lib/constants/site";
+import { resolveServingOrigin } from "@/lib/server/serving-origin";
 
 const TOKEN_KEY = "integrations.telegram_bot_token";
-
-/**
- * Telegram gọi webhook mà KHÔNG đi theo chuyển hướng: đăng ký một địa chỉ trả
- * 308 là bot chết lặng — setWebhook vẫn báo thành công, chỉ getWebhookInfo mới
- * lộ lỗi. Site chạy nhiều tên miền và có lúc tên miền cũ chỉ còn trỏ sang tên
- * miền mới, nên phải thử trước khi giao cho Telegram.
- */
-async function redirectsAway(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, {
-      method: "HEAD",
-      redirect: "manual",
-      signal: AbortSignal.timeout(5_000),
-    });
-    return res.status >= 300 && res.status < 400;
-  } catch {
-    // Không thử được thì đừng tự ý đổi — thà giữ đúng cấu hình admin đã đặt.
-    return false;
-  }
-}
 
 // Register or remove the Telegram bot webhook
 // POST { action: "set" | "delete" }
@@ -36,21 +18,19 @@ export async function POST(request: NextRequest) {
   const settings = await getSettings();
   const token = settings.find((s) => s.key === TOKEN_KEY)?.value ?? "";
   if (!token) return NextResponse.json({ ok: false, reason: "bot_token_not_configured" }, { status: 400 });
-
-  // Tên miền lấy từ NEXT_PUBLIC_SITE_URL, không có thì lấy chính nơi admin đang
-  // đứng (chỗ mở được trang này chắc chắn phục vụ trực tiếp).
-  const origin = new URL(request.url).origin;
-  // Bỏ dấu / cuối: người đặt biến môi trường hay dán kèm, thành "…//api/…".
-  const configured = (process.env.NEXT_PUBLIC_SITE_URL || origin).replace(/\/+$/, "");
-  let webhookUrl = `${configured}/api/telegram/webhook`;
-  let switchedFrom: string | null = null;
-
-  // Địa chỉ đã chọn mà trả 3xx thì đổi sang tên miền admin đang đứng. Nơi admin
-  // mở được trang này chắc chắn là nơi phục vụ trực tiếp.
-  if (configured !== origin && (await redirectsAway(webhookUrl))) {
-    switchedFrom = webhookUrl;
-    webhookUrl = `${origin}/api/telegram/webhook`;
+  // Còn nguyên "enc:" = APP_SECRET không mở được token; gửi đi chỉ nhận 404.
+  if (token.startsWith("enc:")) {
+    return NextResponse.json({ ok: false, reason: "bot_token_decrypt_failed" }, { status: 400 });
   }
+
+  // Tên miền chuẩn (SITE_URL đã tự kéo tên miền Arex cũ về tên miền chính), rồi
+  // đi theo chuyển hướng để chắc chắn đăng ký đúng nơi trả 2xx. Không tới được
+  // thì lấy chính nơi admin đang đứng.
+  const origin = new URL(request.url).origin;
+  const configured = SITE_URL;
+  const serving = await resolveServingOrigin(configured, origin);
+  const webhookUrl = `${serving}/api/telegram/webhook`;
+  const switchedFrom = serving === configured ? null : `${configured}/api/telegram/webhook`;
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
 
   let tgEndpoint: string;
@@ -117,10 +97,21 @@ export async function POST(request: NextRequest) {
     ]);
   }
 
+  // Hỏi lại Telegram xem nó thấy gì: setWebhook báo ok vẫn có thể kèm lỗi giao
+  // hàng của lần trước (sai chứng chỉ, 404, timeout). Trả luôn cho admin thay vì
+  // để họ tưởng xong việc.
+  const info = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`)
+    .then((r) => r.json())
+    .then((j) => (j as { result?: Record<string, unknown> }).result ?? null)
+    .catch(() => null);
+
   return NextResponse.json({
     ok: data.ok,
     action,
     webhook_url: action === "set" ? webhookUrl : null,
+    // Không có secret thì bất kỳ ai cũng giả được cập nhật Telegram gửi tới.
+    secret_configured: Boolean(secret),
+    info,
     // Có giá trị = địa chỉ trong NEXT_PUBLIC_SITE_URL đang bị chuyển hướng, đã
     // tự đổi. Sửa lại biến môi trường cho khớp, đừng để lệ thuộc chốt chặn này.
     ...(switchedFrom ? { switched_from: switchedFrom } : {}),
@@ -128,17 +119,33 @@ export async function POST(request: NextRequest) {
 }
 
 // GET — check current webhook info
-export async function GET() {
+export async function GET(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (denied) return denied;
 
   const settings = await getSettings();
   const token = settings.find((s) => s.key === TOKEN_KEY)?.value ?? "";
   if (!token) return NextResponse.json({ ok: false, reason: "bot_token_not_configured" });
+  // Token mã hoá bằng APP_SECRET khác lúc lưu thì getSettings trả lại nguyên
+  // chuỗi "enc:…" — gọi Telegram sẽ 404 khó hiểu, nói thẳng ra cho nhanh.
+  if (token.startsWith("enc:")) {
+    return NextResponse.json({ ok: false, reason: "bot_token_decrypt_failed" });
+  }
 
   const res = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`).catch(() => null);
   if (!res?.ok) return NextResponse.json({ ok: false, reason: "telegram_error" });
 
-  const data = (await res.json()) as { ok: boolean; result?: unknown };
-  return NextResponse.json({ ok: data.ok, info: data.result });
+  const data = (await res.json()) as { ok: boolean; result?: { url?: string } };
+  const origin = new URL(request.url).origin;
+  const expected = `${await resolveServingOrigin(SITE_URL, origin)}/api/telegram/webhook`;
+  const current = data.result?.url ?? "";
+  return NextResponse.json({
+    ok: data.ok,
+    info: data.result,
+    expected_url: expected,
+    // false = webhook đang trỏ sai chỗ (tên miền cũ / bản deploy khác) → bấm
+    // "Đăng ký webhook" lại là xong.
+    url_matches: current === expected,
+    secret_configured: Boolean(process.env.TELEGRAM_WEBHOOK_SECRET || process.env.CRON_SECRET),
+  });
 }
