@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import { Swords, Filter, Sparkles } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { CharacterTierList } from "@/components/tools/character-tier-list";
-import { FF_CHARACTERS, charSlug } from "@/lib/data/ff-characters";
-import { supabaseUrl } from "@/lib/supabase/env";
+import { FF_CHARACTERS, characterImage } from "@/lib/data/ff-characters";
 
-// Ảnh chân dung nạp từ bụ­c ff-items, thư mục con characters/<slug>.png (thiếu -> fallback chữ cái)
-const IMG_BASE = supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/ff-items/characters/` : null;
+// Ảnh chân dung lấy từ kho icon chính chủ (proxy /api/ff-icon), thiếu -> fallback chữ cái.
 const CHARACTERS = FF_CHARACTERS.map((c) => ({
   ...c,
-  image: IMG_BASE ? `${IMG_BASE}${charSlug(c.name)}.png` : undefined,
+  image: characterImage(c.itemId, c.image) ?? undefined,
 }));
 
 export const metadata: Metadata = {

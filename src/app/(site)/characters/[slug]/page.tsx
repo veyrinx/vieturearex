@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Zap, Circle } from "lucide-react";
+import { Zap, Circle, Vote, Sparkles } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { SectionHeading } from "@/components/common/section-heading";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
@@ -14,6 +14,7 @@ import {
   ROLE_META,
   TIER_META,
 } from "@/lib/data/ff-characters";
+import { getCharacterVotes } from "@/lib/data/character-votes";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -52,9 +53,17 @@ export default async function CharacterDetailPage({ params }: Props) {
   if (!char) notFound();
 
   const skill = splitSkill(char.skill);
-  const related = getAllCharacters()
+  const all = getAllCharacters();
+  const related = all
     .filter((c) => c.role === char.role && c.slug !== char.slug)
     .slice(0, 6);
+
+  // Bản thức tỉnh <-> bản gốc: nối hai chiều để người xem nhảy qua lại được.
+  const awakenedBase = char.awakenedOf ? all.find((c) => c.name === char.awakenedOf) ?? null : null;
+  const awakenedForm = all.find((c) => c.awakenedOf === char.name) ?? null;
+
+  const votes = await getCharacterVotes();
+  const vote = votes.bySlug[char.slug] ?? null;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -122,6 +131,70 @@ export default async function CharacterDetailPage({ params }: Props) {
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">{skill.desc || "Chưa có mô tả."}</p>
       </div>
+
+      {/* Bản thức tỉnh <-> bản gốc */}
+      {(awakenedBase || awakenedForm) && (
+        <Link
+          href={`/characters/${(awakenedBase ?? awakenedForm)!.slug}`}
+          className="flex items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 transition-colors hover:border-primary/60"
+        >
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted/40">
+            {(awakenedBase ?? awakenedForm)!.image ? (
+              <Image
+                src={(awakenedBase ?? awakenedForm)!.image!}
+                alt={(awakenedBase ?? awakenedForm)!.name}
+                width={56}
+                height={56}
+                className="size-full object-cover"
+              />
+            ) : (
+              <div className="flex size-full items-center justify-center text-xl font-black text-muted-foreground">
+                {(awakenedBase ?? awakenedForm)!.name.slice(0, 1)}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+              <Sparkles className="size-3" />
+              {awakenedBase ? "Bản gốc" : "Bản thức tỉnh"}
+            </p>
+            <p className="truncate font-heading text-base font-bold uppercase tracking-wide text-foreground">
+              {(awakenedBase ?? awakenedForm)!.name}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {splitSkill((awakenedBase ?? awakenedForm)!.skill).name}
+            </p>
+          </div>
+        </Link>
+      )}
+
+      {/* Bình chọn cộng đồng */}
+      {vote && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Vote className="size-4 text-amber-500" />
+              <h2 className="font-heading text-lg font-bold uppercase tracking-wider">Cộng đồng chấm</h2>
+            </div>
+            <Link
+              href="/character-poll"
+              className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              Bình chọn ngay
+            </Link>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            <span className="font-black text-foreground">{vote.votes.toLocaleString("vi-VN")}</span> phiếu
+            {votes.total > 0 && <> · chiếm <span className="font-black text-foreground">{vote.percent}%</span> tổng số phiếu mùa {votes.season}</>}
+          </p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+              style={{ width: `${Math.min(100, vote.percent)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Related */}
       {related.length > 0 && (
