@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendPasswordResetEmail } from "@/lib/server/send-password-reset-email";
 import { supabaseUrl, supabaseAnonKey } from "@/lib/supabase/env";
+import { SITE_URL } from "@/lib/constants/site";
 
 const schema = z.object({
   email: z.string().email(),
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   const email = parsed.data.email.trim().toLowerCase();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
 
   const adminClient = createAdminSupabaseClient();
   if (!adminClient) {

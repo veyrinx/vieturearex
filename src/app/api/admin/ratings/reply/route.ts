@@ -4,6 +4,7 @@ import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { createNotification } from "@/lib/server/notifications";
+import { SITE_URL } from "@/lib/constants/site";
 
 const replySchema = z.object({
   rating_id: z.string().uuid(),
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle() as { data: { user_id: string | null; title: string | null } | null };
 
   if (rating?.user_id) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     void createNotification({
       user_id: rating.user_id,
       type: "rating_reply",

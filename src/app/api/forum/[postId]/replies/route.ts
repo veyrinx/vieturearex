@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enforceRateLimit } from "@/lib/server/api-guard";
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const post = target;
 
   if (post?.user_id && post.user_id !== user.id) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     const preview = plainTextOf(parsed.data.content).slice(0, 120) || "[Hình ảnh]";
     void import("@/lib/server/notifications").then(({ createNotification }) =>
       createNotification({

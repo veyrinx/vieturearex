@@ -5,7 +5,7 @@ import { getGlobalPlayerLeaderboard } from "@/lib/tms/data";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { performCheckin } from "@/lib/server/checkin";
 import { sanitizePlainText } from "@/lib/server/sanitize";
-import { siteConfig } from "@/lib/constants/site";
+import { siteConfig, SITE_URL } from "@/lib/constants/site";
 import { subscribeUser, unsubscribeUser } from "@/lib/server/telegram-broadcast";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getPrimeStoreLive } from "@/lib/server/prime-store-live";
@@ -16,9 +16,9 @@ const TOKEN_KEY = "integrations.telegram_bot_token";
 const CHAT_KEY  = "integrations.telegram_chat_id";
 
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Arex";
-const MINI_APP_URL = process.env.NEXT_PUBLIC_SITE_URL
-  ? `${process.env.NEXT_PUBLIC_SITE_URL}/tg`
-  : `${siteConfig.url}/tg`;
+// Mini App phải mở đúng tên miền đang phục vụ trực tiếp: Telegram mở WebApp ở
+// tên miền 308 là initData rơi mất, người dùng bấm nút chỉ thấy trang trắng.
+const MINI_APP_URL = `${SITE_URL}/tg`;
 
 // Extracts a UUID session ID from Supabase Realtime notification text
 // Notifications embed: "┗ Session: <uuid>" in HTML or plain text

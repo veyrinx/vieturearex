@@ -4,8 +4,9 @@ import { getAuthContext } from "@/lib/server/auth";
 import { getTmsTournaments, createTmsTournament } from "@/lib/tms/data";
 import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import type { TmsTournament } from "@/lib/tms/types";
+import { SITE_URL } from "@/lib/constants/site";
 
-const SITEURL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+const SITEURL = SITE_URL;
 
 const MODE_LABEL: Record<string, string> = {
   "1v1": "1v1", "2v2": "2v2", "4v4": "4v4", "squad": "Squad",

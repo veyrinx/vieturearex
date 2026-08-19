@@ -3,6 +3,7 @@ import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { getTmsTournamentById, updateTmsTournament } from "@/lib/tms/data";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { notifyUserTournamentStart } from "@/lib/server/user-notify";
+import { SITE_URL } from "@/lib/constants/site";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const limited = enforceRateLimit(req, { name: "tms-tournament-detail", limit: 60, windowMs: 60_000 });
@@ -22,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const t = await updateTmsTournament(id, body);
 
     if (body.status === "ongoing") {
-      void notifyUserTournamentStart(t, process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site");
+      void notifyUserTournamentStart(t, SITE_URL);
     }
 
     return NextResponse.json(t);

@@ -10,6 +10,7 @@ import {
 } from "@/lib/server/stream-service";
 import { sendTelegramNotification, sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { SITE_URL } from "@/lib/constants/site";
 
 const streamSchema = z.object({
   id: z.string().optional(),
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   await logAdminActivity({ action: "STREAM_CREATED", targetType: "STREAM", targetId: stream.id, summary: `Tạo stream ${stream.title}` });
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
   const isLive = stream.status === "live";
   const notifyPayload = {
     title: isLive ? "🔴 ĐANG PHÁT TRỰC TIẾP!" : "📅 Lịch phát trực tiếp mới",
@@ -117,7 +118,7 @@ export async function PATCH(request: NextRequest) {
 
   // Notify all channels when stream goes live
   if (stream.status === "live") {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     const livePayload = {
       title: "🔴 ĐANG PHÁT TRỰC TIẾP!",
       subtitle: vnNow(),

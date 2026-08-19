@@ -3,6 +3,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
 import { runBxhRankNotify } from "@/lib/server/bxh-rank-notify";
+import { SITE_URL } from "@/lib/constants/site";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
 
   const subSet = new Set((subs ?? []).map((s) => s.telegram_user_id));
   const today = todayInVN();
-  const miniApp = `${process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site"}/tg/profile`;
+  const miniApp = `${SITE_URL}/tg/profile`;
 
   let sent = 0;
   for (const l of links ?? []) {

@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { z } from "zod";
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         { label: "Session", value: sessionId, mono: true },
       ],
     }],
-    actions: [{ label: "💬 Trả lời ngay", url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site"}/admin/cskh` }],
+    actions: [{ label: "💬 Trả lời ngay", url: `${SITE_URL}/admin/cskh` }],
     footer: "💬 Arex CSKH",
   }).catch(() => null);
 

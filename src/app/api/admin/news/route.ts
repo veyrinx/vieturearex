@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { newsSchema } from "@/lib/validators/news";
@@ -51,7 +52,7 @@ function notifyNewsChange(
   action: "created" | "updated",
   adminName: string,
 ) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
   const articleUrl = `${siteUrl}/news/${article.slug}`;
   const image = article.image_url || article.cover || undefined;
   const excerpt = (article.excerpt ?? "").replace(/\s+/g, " ").trim();
@@ -160,19 +161,19 @@ export async function POST(request: NextRequest) {
 
     // In-app: notify users who follow this category
     if (article.category && article.status === "published") {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+      const siteUrl = SITE_URL;
       void notifyCategoryFollowers(article.category, article, siteUrl).catch(() => null);
     }
 
     if (autoNewsEnabled) {
       void sendPushNotification("📰 Tin tức mới", article.title, `/news/${article.slug}`).catch(() => null);
       import("@/lib/server/user-notify").then(({ notifyUserNewArticle }) => {
-        notifyUserNewArticle(article, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
+        notifyUserNewArticle(article, SITE_URL);
       });
     }
 
     if (autoBroadcastEnabled) {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+      const siteUrl = SITE_URL;
       import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
         const text = `📰 <b>BÀI VIẾT MỚI</b>\n\n<b>${article.title}</b>${article.category ? `\n🏷 ${article.category}` : ""}\n\n<a href="${siteUrl}/news/${article.slug}">👉 Đọc ngay</a>  ·  <a href="${siteUrl}/tg">🎮 Mini App</a>`;
         broadcastToSubscribers(text).catch(() => null);

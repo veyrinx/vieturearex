@@ -7,6 +7,7 @@ import {
   vnNow,
 } from "@/lib/server/telegram-notify";
 import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
+import { SITE_URL } from "@/lib/constants/site";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
   const windowEnd = new Date(now.getTime() + WINDOW_HOURS * 60 * 60 * 1000);
   const nowIso = now.toISOString();
   const windowIso = windowEnd.toISOString();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
 
   const results: { type: string; id: string; name: string }[] = [];
 

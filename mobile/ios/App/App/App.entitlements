@@ -5,11 +5,17 @@
 	<!-- Thông báo đẩy (APNs). Dùng "production" khi phát hành lên App Store. -->
 	<key>aps-environment</key>
 	<string>development</string>
-	<!-- Universal Links: mở link arexnetwork.site thẳng trong app.
+	<!-- Universal Links: mở link Arex thẳng trong app.
 	     Cần file /.well-known/apple-app-site-association trên site (đã có route
-	     trong Next.js) khai đúng TEAM_ID.site.arexnetwork.app -->
+	     trong Next.js) khai đúng TEAM_ID.site.arexnetwork.app.
+	     Site giờ phát link ở www.arexnetwork.vn — thiếu tên miền này thì link
+	     mới chia sẻ ra sẽ mở bằng Safari chứ không vào app. Giữ cả .site cho
+	     link cũ đã trôi ngoài kia. Lưu ý Apple KHÔNG đi theo chuyển hướng khi
+	     lấy AASA, nên tên miền nào đang 308 thì coi như không xác thực được. -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>applinks:www.arexnetwork.vn</string>
+		<string>applinks:arexnetwork.vn</string>
 		<string>applinks:arexnetwork.site</string>
 		<string>applinks:www.arexnetwork.site</string>
 	</array>

@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }).catch(() => {});
 
   if (verdict === "pending") {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     const payload = {
       title: "💬 Bình luận chờ duyệt — Sự kiện",
       subtitle: vnNow(),

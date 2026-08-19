@@ -9,6 +9,7 @@ import {
   Play, FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/constants/site";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Method = "GET" | "POST" | "PATCH" | "DELETE" | "PUT";
@@ -45,7 +46,7 @@ const METHOD_STYLE: Record<Method, string> = {
   PUT:    "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/25",
 };
 
-const BASE_URL = "https://arexnetwork.site";
+const BASE_URL = SITE_URL;
 
 const SECTIONS: Section[] = [
   // ── AUTH ────────────────────────────────────────────────────────────────────

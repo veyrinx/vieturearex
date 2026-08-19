@@ -3,6 +3,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
+import { SITE_URL } from "@/lib/constants/site";
 
 type NewsRow   = { slug: string; title: string; category: string | null };
 type EventRow  = { id: string; title: string; start_date: string };
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1 hour ago
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
 
   const [newsRes, eventsRes, wikiRes, forumRes] = await Promise.all([
     untypedFrom(db, "news")

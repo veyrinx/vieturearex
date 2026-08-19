@@ -4,8 +4,14 @@ export const siteConfig = {
   shortName: "Arex",
   description:
     "Arex – Cổng thông tin cộng đồng Free Fire hàng đầu. Cập nhật nhanh nhất các sự kiện in-game, tin tức Esports chuyên sâu và các hoạt động cộng đồng nổi bật. Trang độc lập, khách quan, được vận hành và phát triển bởi đội ngũ Arex.",
-  url: "https://arexnetwork.site",
-  productionUrl: "https://arexnetwork.site",
+  // ⚠️ Đây phải là tên miền Vercel PHỤC VỤ TRỰC TIẾP (Primary Domain), không
+  // phải tên miền alias. Mọi tên miền còn lại (arexnetwork.site, .vn trần,
+  // www.arexnetwork.site) đang trả 308 về đây; ai không chịu đi theo chuyển
+  // hướng — Telegram setWebhook, endpoint Discord, webhook Zalo — sẽ chết lặng
+  // nếu chỗ này ghi tên miền alias. Đổi Primary Domain trên Vercel thì sửa lại
+  // đúng một dòng này.
+  url: "https://www.arexnetwork.vn",
+  productionUrl: "https://www.arexnetwork.vn",
   ogImage: "/og-image.png",
   favicon: "https://ik.imagekit.io/VieTureImg/d4c92801-d332-448f-8b28-460fa3ded272.jfif",
   sidebarIcon: "https://ik.imagekit.io/VieTureImg/d4c92801-d332-448f-8b28-460fa3ded272.jfif",
@@ -68,6 +74,38 @@ export function isArexHost(hostname: string): boolean {
   const clean = hostname.split(":")[0].toLowerCase();
   return AREX_DOMAINS.some((d) => clean === d || clean.endsWith(`.${d}`));
 }
+
+/**
+ * Chuẩn hoá một gốc URL: bỏ dấu `/` thừa cuối, và nếu nó trỏ vào một tên miền
+ * Arex KHÔNG phải tên miền đang phục vụ trực tiếp thì kéo về `siteConfig.url`.
+ *
+ * Vì sao cần: NEXT_PUBLIC_SITE_URL trên Vercel dễ bị bỏ quên ở tên miền cũ, mà
+ * tên miền cũ giờ trả 308. Trình duyệt đi theo chuyển hướng nên không ai thấy
+ * gì, nhưng máy gọi máy thì không: Telegram/Discord/Zalo đăng ký webhook vào
+ * địa chỉ 308 là im lặng chết. Hàm này để một biến môi trường đặt sai không kéo
+ * sập cả đám tích hợp.
+ *
+ * Tên miền ngoài Arex (localhost, *.vercel.app khi xem thử) giữ nguyên.
+ */
+export function normalizeSiteUrl(raw?: string | null): string {
+  const trimmed = raw?.trim().replace(/\/+$/, "");
+  if (!trimmed) return siteConfig.url;
+  try {
+    const host = new URL(trimmed).host.toLowerCase();
+    if (isArexHost(host) && host !== new URL(siteConfig.url).host) return siteConfig.url;
+    return trimmed;
+  } catch {
+    return siteConfig.url;
+  }
+}
+
+/**
+ * Gốc URL công khai của site — dùng cho link trong email, thông báo Telegram/
+ * Discord, deep link app. Luôn dùng hằng này thay vì tự viết
+ * `process.env.NEXT_PUBLIC_SITE_URL ?? "https://…"` ở từng file: viết tay là
+ * mỗi chỗ lệch một kiểu khi đổi tên miền.
+ */
+export const SITE_URL = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
 // Tra cứu theo mã site thay vì tên miền. Dùng khi một bản triển khai chỉ phục vụ
 // đúng một site và biết trước mình là ai (xem NEXT_PUBLIC_SITE_ID trong

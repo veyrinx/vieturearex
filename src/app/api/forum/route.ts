@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enforceRateLimit } from "@/lib/server/api-guard";
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Không thể tạo bài." }, { status: 500 });
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
   void import("@/lib/server/user-notify").then(({ notifyUserNewForumPost }) =>
     notifyUserNewForumPost({
       id: post.id,

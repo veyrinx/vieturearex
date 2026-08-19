@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     // Notify parent comment author on reply
     if (parsed.data.parent_id) {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+      const siteUrl = SITE_URL;
       void (async () => {
         const db = createAdminSupabaseClient() ?? supabase;
         if (!db) return;
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   if (verdict === "pending") {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     const payload = {
       title: "💬 Bình luận chờ duyệt — Bài viết",
       subtitle: vnNow(),

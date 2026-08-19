@@ -3,6 +3,7 @@ import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { broadcastToSubscribers } from "@/lib/server/telegram-broadcast";
+import { SITE_URL } from "@/lib/constants/site";
 
 // GET — subscriber stats
 export async function GET() {
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { action?: string };
 
   if (body.action === "broadcast_test") {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     await broadcastToSubscribers(
       `🔔 <b>Test thông báo từ Mini App</b>\n\nĐây là tin nhắn thử nghiệm từ admin. Hệ thống thông báo đang hoạt động!\n\n<a href="${siteUrl}/tg">🎮 Mở Mini App</a>`,
     );

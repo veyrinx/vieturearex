@@ -1,7 +1,10 @@
 /** Cấu hình build (Vite thay thế lúc bundle — xem `.env.example`). */
 
 const fallback = {
-  apiBaseUrl: "https://arexnetwork.site",
+  // Phải là tên miền phục vụ trực tiếp. Tên miền cũ giờ trả 308: gọi API kèm
+  // header Authorization mà dính chuyển hướng là preflight CORS gãy, app chỉ
+  // thấy "Failed to fetch" chứ không thấy lý do.
+  apiBaseUrl: "https://www.arexnetwork.vn",
   supabaseUrl: "https://kjqqukageltvdohkakxb.supabase.co",
   supabaseAnonKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqcXF1a2FnZWx0dmRvaGtha3hiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjM0NzIsImV4cCI6MjA5MTgzOTQ3Mn0.y2jzYUxGQJ955S8IxjC0-Xjtf3FVGhcu7E9aglbfe98",

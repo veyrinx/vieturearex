@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Mi } from "../_components/mi";
+import { SITE_URL } from "@/lib/constants/site";
 
 type TgUser = { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string };
 
@@ -118,7 +119,7 @@ export default function TgProfilePage() {
     }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-20">

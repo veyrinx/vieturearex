@@ -1,9 +1,11 @@
 // Nguồn dữ liệu: dùng lại API công khai + đã bật CORS của site Arex.
 // LƯU Ý: phải khai báo domain này trong Zalo Mini App Developer Console
 // (mục "Domain cho phép") — xem README.
-export const API_BASE = "https://arexnetwork.site";
+// Bắt buộc là tên miền phục vụ trực tiếp: tên miền cũ trả 308, mà request kèm
+// header (Authorization) dính chuyển hướng thì CORS gãy trong WebView Zalo.
+export const API_BASE = "https://www.arexnetwork.vn";
 
-export const SITE_URL = "https://arexnetwork.site";
+export const SITE_URL = "https://www.arexnetwork.vn";
 
 // Supabase (khoá công khai — an toàn để nhúng client). Trùng với site để dùng
 // chung tài khoản: đăng nhập trên mini app = đăng nhập trên web.

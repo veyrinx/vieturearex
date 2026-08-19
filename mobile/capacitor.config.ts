@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * Vỏ native cho arexnetwork.site.
+ * Vỏ native cho www.arexnetwork.vn (tên miền Vercel phục vụ trực tiếp).
  *
  * App nạp thẳng site production trong WebView nên giao diện native trùng khít
  * 100% với web (cùng CSS, cùng component, cùng dữ liệu). Phần "native" nằm ở
@@ -9,7 +9,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  *
  * Đổi domain: sửa SITE_URL (hoặc set env AREX_APP_URL trước khi chạy `cap sync`).
  */
-const SITE_URL = process.env.AREX_APP_URL ?? "https://arexnetwork.site";
+const SITE_URL = process.env.AREX_APP_URL ?? "https://www.arexnetwork.vn";
 
 const config: CapacitorConfig = {
   appId: "site.arexnetwork.app",

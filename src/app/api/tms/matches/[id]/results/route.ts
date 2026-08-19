@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { getAuthContext } from "@/lib/server/auth";
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await submitTmsResults({ ...body, match_id: id }, auth.userId);
 
     // In-app notifications for all players in this match
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     const playerUserIds = (body.players ?? []).map((p) => p.user_id).filter(Boolean);
     if (playerUserIds.length > 0) {
       void createNotifications(

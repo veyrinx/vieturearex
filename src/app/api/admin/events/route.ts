@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { eventSchema } from "@/lib/validators/event";
@@ -40,7 +41,7 @@ function notifyEventChange(
   action: "created" | "updated" | "deleted",
   adminName: string,
 ) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
   const fmtDateTime = (d: string) => {
     const t = new Date(d);
     return Number.isNaN(t.getTime()) ? "—" : t.toLocaleString("vi-VN", {
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
     notifyEventChange(event, "created", adminName);
 
     if (autoEventsEnabled) {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site";
+      const siteUrl = SITE_URL;
       if (autoBroadcastEnabled) {
         import("@/lib/server/telegram-broadcast").then(({ broadcastToSubscribers }) => {
           const start = new Date(event.start_date).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
         sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
       });
       import("@/lib/server/user-notify").then(({ notifyUserNewEvent }) => {
-        notifyUserNewEvent(event, process.env.NEXT_PUBLIC_SITE_URL || "https://arexnetwork.site");
+        notifyUserNewEvent(event, SITE_URL);
       });
     }
     revalidatePath("/events", "layout");

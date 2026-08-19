@@ -8,6 +8,7 @@ import { sendDiscordInternalNotification, sendDiscordPublicNotification, DISCORD
 import { sendPushNotification } from "@/lib/server/push-notify";
 import { notifyUserNewArticle } from "@/lib/server/user-notify";
 import { broadcastToSubscribers } from "@/lib/server/telegram-broadcast";
+import { SITE_URL } from "@/lib/constants/site";
 
 type DueArticle = { id: string; title: string; slug: string; category?: string | null; excerpt?: string | null };
 
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
   const autoEnabled = settingsMap["integrations.tg_auto_scheduled"] !== "false";
 
   if (autoEnabled) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
 
     for (const article of due) {
       const articleUrl = `${siteUrl}/news/${article.slug}`;

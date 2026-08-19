@@ -34,13 +34,17 @@
                 <data android:scheme="arex" />
             </intent-filter>
 
-            <!-- App Links: mở link arexnetwork.site thẳng trong app.
+            <!-- App Links: mở link Arex thẳng trong app.
                  Cần /.well-known/assetlinks.json trên site khớp SHA-256 của
-                 keystore ký bản phát hành (xem mobile/README.md). -->
+                 keystore ký bản phát hành (xem mobile/README.md).
+                 Site phát link ở www.arexnetwork.vn — thiếu tên miền này thì
+                 link mới mở bằng trình duyệt. Giữ .site cho link cũ. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.arexnetwork.vn" />
+                <data android:scheme="https" android:host="arexnetwork.vn" />
                 <data android:scheme="https" android:host="arexnetwork.site" />
                 <data android:scheme="https" android:host="www.arexnetwork.site" />
             </intent-filter>

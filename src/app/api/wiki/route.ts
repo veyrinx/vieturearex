@@ -5,6 +5,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { sanitizePlainText, sanitizeRichText } from "@/lib/server/sanitize";
+import { SITE_URL } from "@/lib/constants/site";
 
 const createSchema = z.object({
   slug:      z.string().min(3).max(80).regex(/^[a-z0-9-]+$/, "Slug chỉ gồm chữ thường, số và dấu gạch ngang"),
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
     updated_at:    new Date().toISOString(),
   } as never);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+  const siteUrl = SITE_URL;
 
   // 1. Notify public Telegram + Discord (article is auto-published)
   void import("@/lib/server/user-notify").then(({ notifyUserNewWikiArticle }) =>

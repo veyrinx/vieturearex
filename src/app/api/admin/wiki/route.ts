@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/constants/site";
 import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -108,7 +109,7 @@ export async function PATCH(request: NextRequest) {
             .rpc("increment_user_points", { uid: article.user_id, amount: 30 });
           void evaluateAutoAchievements(article.user_id).catch(() => null);
           // In-app notification to author
-          const siteUrlNotify = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+          const siteUrlNotify = SITE_URL;
           await createNotification({
             user_id: article.user_id,
             type: "wiki_approved",
@@ -121,7 +122,7 @@ export async function PATCH(request: NextRequest) {
         }
       } catch { /* non-critical */ }
     })();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arexnetwork.site";
+    const siteUrl = SITE_URL;
     const payload = {
       title: "📖 WIKI MỚI ĐƯỢC XUẤT BẢN!",
       sections: [{
