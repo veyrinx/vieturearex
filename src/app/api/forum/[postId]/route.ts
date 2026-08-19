@@ -5,6 +5,7 @@ import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { hasImage, plainTextOf } from "@/lib/utils/forum-content";
+import { getVoteState, toggleVote } from "@/lib/server/forum-votes";
 
 // Cap the HTML payload; the readable minimum is measured on the visible text.
 const editPostSchema = z.object({
@@ -93,17 +94,49 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
   const { data: post } = await untypedFrom(db, "forum_posts")
-    .select("helpful_count, user_id")
+    .select("user_id, status")
     .eq("id", postId)
-    .single() as { data: { helpful_count: number; user_id: string } | null };
+    .single() as { data: { user_id: string; status: string } | null };
 
-  if (!post) return NextResponse.json({ error: "Không tìm thấy." }, { status: 404 });
-  if (post.user_id === user.id) return NextResponse.json({ error: "Không thể vote bài của mình." }, { status: 400 });
+  if (!post || post.status !== "active") {
+    return NextResponse.json({ error: "Không tìm thấy." }, { status: 404 });
+  }
+  if (post.user_id === user.id) {
+    return NextResponse.json({ error: "Không thể vote bài của mình." }, { status: 400 });
+  }
 
-  const newCount = (post.helpful_count ?? 0) + 1;
-  await untypedFrom(db, "forum_posts")
-    .update({ helpful_count: newCount } as never)
-    .eq("id", postId);
+  // Một phiếu một người, giữ bằng khoá chính (post_id, user_id) chứ không phải
+  // bằng cờ trong localStorage như bản cũ. Bấm lại là bỏ phiếu.
+  try {
+    const state = await toggleVote("post", postId, user.id);
+    return NextResponse.json({ helpful_count: state.count, voted: state.voted });
+  } catch {
+    return NextResponse.json({ error: "Không ghi được phiếu." }, { status: 503 });
+  }
+}
 
-  return NextResponse.json({ helpful_count: newCount });
+// Trạng thái phiếu của người đang xem. Trang bài viết được cache nên không nhúng
+// sẵn được, phía client tự hỏi khi gắn nút.
+export async function POST(req: NextRequest, { params }: Ctx) {
+  const limited = enforceRateLimit(req, { name: "forum-helpful-state", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
+  const { postId } = await params;
+
+  const body = await req.json().catch(() => ({})) as { action?: string };
+  if (body.action !== "helpful-state") {
+    return NextResponse.json({ error: "Invalid action." }, { status: 400 });
+  }
+
+  const supabase = createServerSupabaseClient();
+  const user = supabase
+    ? (await supabase.auth.getUser().catch(() => ({ data: { user: null } }))).data.user
+    : null;
+
+  try {
+    const state = await getVoteState("post", postId, user?.id ?? null);
+    return NextResponse.json({ helpful_count: state.count, voted: state.voted });
+  } catch {
+    return NextResponse.json({ helpful_count: 0, voted: false });
+  }
 }

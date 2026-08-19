@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   MessageSquare, Eye, Pin, Lock, Plus, ChevronRight,
   Send, Loader2, AlertCircle, Reply, Clock, Flame, TrendingUp, Trash2, ThumbsUp, Pencil, X,
@@ -512,43 +513,63 @@ function ReplyCard({ r, postId, currentUserId, onReply, onDeleted, onEdited }: {
 }
 
 // ─── Helpful Button ───────────────────────────────────────────────────────────
+// Trạng thái phiếu nằm ở server (bảng forum_post_votes). Bản cũ chỉ nhớ trong
+// localStorage nên xoá đi là bấm lại được vô hạn.
 export function ForumHelpfulButton({ postId, initialCount }: { postId: string; initialCount: number }) {
-  const storageKey = `helpful_${postId}`;
   const [count, setCount] = useState(initialCount);
   const [voted, setVoted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setVoted(localStorage.getItem(storageKey) === "1");
-  }, [storageKey]);
+    let alive = true;
+    fetch(`/api/forum/${postId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "helpful-state" }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { helpful_count?: number; voted?: boolean } | null) => {
+        if (!alive || !d) return;
+        if (typeof d.helpful_count === "number") setCount(d.helpful_count);
+        setVoted(Boolean(d.voted));
+      })
+      .catch(() => { /* im lặng — nút vẫn bấm được, server chốt lần cuối */ });
+    return () => { alive = false; };
+  }, [postId]);
 
   const handleVote = async () => {
-    if (voted || loading) return;
+    if (loading) return;
     setLoading(true);
-    const res = await fetch(`/api/forum/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "helpful" }),
-    });
-    if (res.ok) {
-      const data = await res.json() as { helpful_count: number };
-      setCount(data.helpful_count);
-      setVoted(true);
-      localStorage.setItem(storageKey, "1");
+    try {
+      const res = await fetch(`/api/forum/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "helpful" }),
+      });
+      const data = await res.json().catch(() => null) as
+        { helpful_count?: number; voted?: boolean; error?: string } | null;
+      if (!res.ok) {
+        toast.error(data?.error ?? "Không ghi được phiếu.");
+        return;
+      }
+      if (typeof data?.helpful_count === "number") setCount(data.helpful_count);
+      setVoted(Boolean(data?.voted));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <button
       onClick={handleVote}
-      disabled={voted || loading}
+      disabled={loading}
       className={[
-        "inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all",
+        "inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all disabled:opacity-60",
         voted
-          ? "border-primary/30 bg-primary/10 text-primary dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400 cursor-default"
+          ? "border-primary/30 bg-primary/10 text-primary dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400"
           : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary dark:hover:border-amber-400/40 dark:hover:text-amber-400",
       ].join(" ")}
+      title={voted ? "Bấm lần nữa để bỏ phiếu" : undefined}
     >
       <ThumbsUp className={`size-4 ${voted ? "fill-current" : ""}`} />
       {voted ? "Đã vote hữu ích" : "Hữu ích"}
