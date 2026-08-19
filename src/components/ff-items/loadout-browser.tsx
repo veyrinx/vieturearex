@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Layers, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLAYSTYLES, playstyleLabel, weaponTypeLabel } from "@/lib/constants/weapon-types";
 import type { Loadout, LoadoutWeaponRef } from "@/lib/data/ff-data";
+import { WeaponThumb } from "@/components/ff-items/weapon-thumb";
 
 const ALL = "all";
 
@@ -27,7 +27,7 @@ function WeaponSlot({ weapon }: { weapon: LoadoutWeaponRef }) {
       className="group flex flex-1 flex-col items-center gap-1 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:border-primary/50"
     >
       <div className="flex size-12 items-center justify-center rounded-lg bg-muted/40">
-        <Image src={weapon.image_url} alt={weapon.name} width={48} height={48} className="size-full object-contain p-1 transition-transform group-hover:scale-105" />
+        <WeaponThumb src={weapon.image_url} alt={weapon.name} size={48} weaponType={weapon.weapon_type} className="transition-transform group-hover:scale-105" />
       </div>
       <p className="truncate text-xs font-bold uppercase tracking-wide text-foreground">{weapon.name}</p>
       {weaponTypeLabel(weapon.weapon_type) && (

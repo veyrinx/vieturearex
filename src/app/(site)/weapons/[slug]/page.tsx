@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { SectionHeading } from "@/components/common/section-heading";
 import { Breadcrumbs, type Crumb } from "@/components/common/breadcrumbs";
@@ -10,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { weaponTypeLabel, attachmentSlotLabel, playstyleLabel } from "@/lib/constants/weapon-types";
 import { ItemInteractions } from "@/components/ff-items/item-interactions";
 import { Gauge, Box, Calendar, Crosshair, Tag, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { WeaponThumb } from "@/components/ff-items/weapon-thumb";
 
 const TIER_RANK: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
 
@@ -90,14 +90,15 @@ export default async function WeaponDetailPage({ params }: Props) {
       <Breadcrumbs items={crumbs} />
       {/* Header */}
       <div className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
-        <Image
-          src={weapon.image_url}
-          alt={weapon.name}
-          width={128}
-          height={128}
-          className="size-32 rounded-3xl border border-border bg-muted/40 object-contain p-2"
-          priority
-        />
+        <div className="size-32 shrink-0 rounded-3xl border border-border bg-muted/40 p-2">
+          <WeaponThumb
+            src={weapon.image_url}
+            alt={weapon.name}
+            size={128}
+            weaponType={weapon.weapon_type}
+            priority
+          />
+        </div>
         <div className="space-y-2">
           <h1 className="font-heading text-3xl font-black uppercase tracking-wide text-foreground md:text-4xl">
             {weapon.name}
@@ -230,7 +231,7 @@ export default async function WeaponDetailPage({ params }: Props) {
                 <div className="flex -space-x-2">
                   {[l.primary_weapon, l.secondary_weapon].filter(Boolean).map((w, i) => (
                     <div key={i} className="size-11 shrink-0 overflow-hidden rounded-xl border border-border bg-muted/40">
-                      <Image src={w!.image_url} alt={w!.name} width={44} height={44} className="size-full object-contain p-1" />
+                      <WeaponThumb src={w!.image_url} alt={w!.name} size={44} weaponType={w!.weapon_type} />
                     </div>
                   ))}
                 </div>
@@ -262,12 +263,12 @@ export default async function WeaponDetailPage({ params }: Props) {
                 className="group flex flex-col rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/50"
               >
                 <div className="mx-auto flex size-16 items-center justify-center rounded-xl bg-muted/40">
-                  <Image
+                  <WeaponThumb
                     src={w.image_url}
                     alt={w.name}
-                    width={64}
-                    height={64}
-                    className="size-full object-contain p-1 transition-transform group-hover:scale-105"
+                    size={64}
+                    weaponType={w.weapon_type}
+                    className="transition-transform group-hover:scale-105"
                   />
                 </div>
                 <p className="mt-2 truncate text-center text-xs font-bold uppercase tracking-wide text-foreground">

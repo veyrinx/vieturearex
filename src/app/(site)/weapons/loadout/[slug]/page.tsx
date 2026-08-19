@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { Plus, Layers } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { getLoadoutBySlug, type LoadoutWeaponFull } from "@/lib/data/ff-data";
 import { playstyleLabel, weaponTypeLabel } from "@/lib/constants/weapon-types";
 import { cn } from "@/lib/utils";
+import { WeaponThumb } from "@/components/ff-items/weapon-thumb";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -54,7 +54,7 @@ function WeaponCard({ weapon }: { weapon: LoadoutWeaponFull }) {
       className="group flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-6 text-center transition-colors hover:border-primary/50"
     >
       <div className="flex size-20 items-center justify-center rounded-2xl bg-muted/40">
-        <Image src={weapon.image_url} alt={weapon.name} width={80} height={80} className="size-full object-contain p-1 transition-transform group-hover:scale-105" />
+        <WeaponThumb src={weapon.image_url} alt={weapon.name} size={80} weaponType={weapon.weapon_type} className="transition-transform group-hover:scale-105" />
       </div>
       <p className="font-heading text-base font-bold uppercase tracking-wide text-foreground">{weapon.name}</p>
       {weaponTypeLabel(weapon.weapon_type) && (

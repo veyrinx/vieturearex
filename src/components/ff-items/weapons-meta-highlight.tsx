@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Flame, Layers } from "lucide-react";
 import { weaponTypeLabel, playstyleLabel } from "@/lib/constants/weapon-types";
 import type { WeaponListItem, Loadout } from "@/lib/data/ff-data";
+import { WeaponThumb } from "@/components/ff-items/weapon-thumb";
 
 const TIER_BG: Record<string, string> = {
   S: "bg-[#ff7f7f]",
@@ -48,7 +48,7 @@ export function WeaponsMetaHighlight({
                   <span className={`absolute left-1 top-1 flex size-5 items-center justify-center rounded-md text-[11px] font-black text-background ${TIER_BG[w.tier ?? "S"] ?? "bg-muted"}`}>
                     {w.tier}
                   </span>
-                  <Image src={w.image_url} alt={w.name} width={64} height={64} className="size-full object-contain p-1 transition-transform group-hover:scale-105" />
+                  <WeaponThumb src={w.image_url} alt={w.name} size={64} weaponType={w.weapon_type} className="transition-transform group-hover:scale-105" />
                 </div>
                 <p className="truncate text-center text-[11px] font-bold uppercase tracking-wide text-foreground">{w.name}</p>
                 {weaponTypeLabel(w.weapon_type) && (
@@ -73,7 +73,7 @@ export function WeaponsMetaHighlight({
                 <div className="flex -space-x-2">
                   {[l.primary_weapon, l.secondary_weapon].filter(Boolean).map((w, i) => (
                     <div key={i} className="size-10 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/40">
-                      <Image src={w!.image_url} alt={w!.name} width={40} height={40} className="size-full object-contain p-1" />
+                      <WeaponThumb src={w!.image_url} alt={w!.name} size={40} weaponType={w!.weapon_type} />
                     </div>
                   ))}
                   {!l.primary_weapon && !l.secondary_weapon && (

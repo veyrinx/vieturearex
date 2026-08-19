@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Search, Target, ArrowDownUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { WEAPON_TYPES, weaponTypeLabel } from "@/lib/constants/weapon-types";
 import type { WeaponListItem } from "@/lib/data/ff-data";
+import { WeaponThumb } from "@/components/ff-items/weapon-thumb";
 
 type SortKey = "name" | "damage" | "range";
 
@@ -154,12 +154,12 @@ export function WeaponsBrowser({ weapons }: { weapons: WeaponListItem[] }) {
                     {w.ob}
                   </span>
                 )}
-                <Image
+                <WeaponThumb
                   src={w.image_url}
                   alt={w.name}
-                  width={96}
-                  height={96}
-                  className="size-full object-contain p-2 transition-transform group-hover:scale-105"
+                  size={96}
+                  weaponType={w.weapon_type}
+                  className="p-2 transition-transform group-hover:scale-105"
                 />
               </div>
               <p className="mt-3 truncate text-center font-heading text-sm font-bold uppercase tracking-wide text-foreground">

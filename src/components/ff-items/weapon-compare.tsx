@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Swords } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { weaponTypeLabel } from "@/lib/constants/weapon-types";
 import type { WeaponCompareItem } from "@/lib/data/ff-data";
+import { WeaponThumb } from "@/components/ff-items/weapon-thumb";
 
 // Tất cả chỉ số: cao hơn = tốt hơn.
 const STAT_ROWS: { key: keyof WeaponCompareItem; label: string }[] = [
@@ -66,7 +66,7 @@ function WeaponHead({ weapon }: { weapon: WeaponCompareItem | null }) {
       className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 text-center transition-colors hover:border-primary/50"
     >
       <div className="flex size-16 items-center justify-center rounded-2xl bg-muted/40">
-        <Image src={weapon.image_url} alt={weapon.name} width={64} height={64} className="size-full object-contain p-1" />
+        <WeaponThumb src={weapon.image_url} alt={weapon.name} size={64} weaponType={weapon.weapon_type} />
       </div>
       <p className="font-heading text-sm font-bold uppercase tracking-wide text-foreground">{weapon.name}</p>
       {weaponTypeLabel(weapon.weapon_type) && (
