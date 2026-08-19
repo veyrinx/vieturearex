@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarDays, Users } from "lucide-react";
+import { Activity, CalendarDays, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PublicUserProfile } from "@/lib/types/content";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
@@ -46,8 +46,11 @@ export function TeamGrid({ profiles }: Props) {
     return () => clearInterval(id);
   }, []);
 
+  // team_order do admin đặt tay đứng trước; hoà thì theo cấp bậc như cũ.
   const sorted = [...profiles].sort(
-    (a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role),
+    (a, b) =>
+      (a.team_order ?? 0) - (b.team_order ?? 0) ||
+      ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role),
   );
 
   if (sorted.length === 0) {
@@ -71,6 +74,8 @@ export function TeamGrid({ profiles }: Props) {
         const joinYear = profile.created_at
           ? format(new Date(profile.created_at), "dd/MM/yyyy", { locale: vi })
           : null;
+
+        const duties = profile.team_duties ?? [];
 
         const profileRecord = profile as unknown as Record<string, string | null | undefined>;
         const socials = SOCIAL_DEFS
@@ -145,6 +150,12 @@ export function TeamGrid({ profiles }: Props) {
               {/* Role badge */}
               <RoleBadge role={profile.role} size="md" bordered showMember className="px-3 tracking-[0.1em]" />
 
+              {/* Chức danh cụ thể — cái người ngoài thật sự muốn biết, còn role
+                  chỉ nói cấp bậc kỹ thuật. */}
+              {profile.team_title && (
+                <p className="text-[0.8rem] font-semibold text-foreground/90">{profile.team_title}</p>
+              )}
+
               {/* Online status text */}
               {online ? (
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-green-500">
@@ -154,6 +165,29 @@ export function TeamGrid({ profiles }: Props) {
                 <p className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.06em]">
                   Ngoại tuyến
                 </p>
+              )}
+
+              {/* Đang làm gì — ưu tiên hơn tiểu sử vì đây là thứ thay đổi theo
+                  tuần và là thông tin người đọc hỏi nhiều nhất. */}
+              {profile.team_focus && (
+                <p className="mt-1 flex items-start gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-left text-[0.76rem] leading-relaxed text-foreground/80 dark:border-amber-400/20 dark:bg-amber-400/5">
+                  <Activity className="mt-0.5 size-3 shrink-0 text-primary dark:text-amber-400" />
+                  <span className="line-clamp-2">{profile.team_focus}</span>
+                </p>
+              )}
+
+              {/* Mảng phụ trách */}
+              {duties.length > 0 && (
+                <ul className="mt-1 flex flex-wrap justify-center gap-1">
+                  {duties.map((duty) => (
+                    <li
+                      key={duty}
+                      className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    >
+                      {duty}
+                    </li>
+                  ))}
+                </ul>
               )}
 
               {/* Bio */}

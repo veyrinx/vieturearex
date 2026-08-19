@@ -152,6 +152,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     },
     {
+      // Trang đội ngũ: tín hiệu E-E-A-T (ai đứng sau nội dung), Google chấm khá
+      // nặng cho site tin tức. Đổi thường xuyên vì mục "đang làm gì" cập nhật
+      // theo tuần.
+      url: `${BASE}/team`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.60,
+    },
+    {
       url: `${BASE}/partnership`,
       lastModified: now,
       changeFrequency: "monthly",

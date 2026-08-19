@@ -29,6 +29,7 @@ import type {
 } from "@/lib/types/content";
 import { getEventStatusInVietnam } from "@/lib/utils/vietnam-time";
 import { normalizeBadges } from "@/lib/constants/user-badges";
+import { normalizeDuties } from "@/lib/constants/team-duties";
 
 type EventQuery = {
   search?: string;
@@ -827,7 +828,7 @@ export async function updateUserIsVerified(id: string, is_verified: boolean): Pr
 }
 
 const ADMIN_PROFILE_ROLES: UserRole[] = ["super_admin", "admin", "it", "manager", "support"];
-const PROFILE_SELECT_FULL = "id, display_name, avatar_url, role, badges, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank";
+const PROFILE_SELECT_FULL = "id, display_name, avatar_url, role, badges, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url, last_seen_at, show_in_team, points, rank, team_title, team_duties, team_focus, team_order";
 const PROFILE_SELECT_SAFE = "id, display_name, avatar_url, role, is_verified, created_at, bio, facebook_url, tiktok_url, instagram_url, youtube_url, website_url";
 
 export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
@@ -870,6 +871,7 @@ export async function getAdminProfiles(): Promise<PublicUserProfile[]> {
     ...row,
     role: normalizeRole(row.role),
     badges: normalizeBadges((row as { badges?: unknown }).badges),
+    team_duties: normalizeDuties((row as { team_duties?: unknown }).team_duties),
     is_verified: Boolean(row.is_verified),
   }));
 }
@@ -899,6 +901,7 @@ export async function getAllStaffProfiles(): Promise<PublicUserProfile[]> {
     ...row,
     role: normalizeRole(row.role),
     badges: normalizeBadges((row as { badges?: unknown }).badges),
+    team_duties: normalizeDuties((row as { team_duties?: unknown }).team_duties),
     is_verified: Boolean(row.is_verified),
   }));
 }

@@ -192,6 +192,14 @@ export type PublicUserProfile = {
   game_profiles?: GameProfile[] | null;
   last_seen_at?: string | null;
   show_in_team?: boolean;
+  /** Chức danh cụ thể trên trang đội ngũ ("Trưởng ban Nội dung"). */
+  team_title?: string | null;
+  /** Mảng phụ trách — xem TEAM_DUTY_PRESETS. */
+  team_duties?: string[] | null;
+  /** Đang làm gì — một dòng, admin tự cập nhật. */
+  team_focus?: string | null;
+  /** Thứ tự hiển thị trên /team; nhỏ hơn đứng trước. */
+  team_order?: number | null;
   points?: number;
   rank?: string;
   views?: number;
