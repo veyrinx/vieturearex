@@ -4,7 +4,7 @@ import {
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser,
-  FileText, Users2, SlidersHorizontal, Eye, Download,
+  FileText, FileSignature, Users2, SlidersHorizontal, Eye, Download,
   ShoppingBag, Share2, Handshake, Store,
   type LucideIcon,
 } from "lucide-react";
@@ -83,6 +83,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Cosmetics",    href: "/admin/cosmetics",    icon: Palette },
       { title: "Contributors", href: "/admin/contributors", icon: HandHeart },
       { title: "Hợp tác",      href: "/admin/partners",      icon: Handshake },
+      { title: "Hợp đồng",     href: "/admin/partnership-contracts", icon: FileSignature },
       { title: "Phân quyền",   href: "/admin/permissions",  icon: ShieldCheck },
     ],
   },

@@ -91,6 +91,7 @@ export const SITE_ROUTES: string[] = [
   "/telegram-link",
   "/discord-link",
   "/partnership",
+  "/partnership/hop-dong",
 
   // ── Tài khoản / hệ thống ────────────────────────────────────────────────
   "/login",

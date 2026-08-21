@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Handshake, ExternalLink, Mail, Star } from "lucide-react";
+import {
+  Handshake, ExternalLink, Mail, Star, FileSignature, ShieldCheck, XCircle, CheckCircle2, ArrowRight,
+} from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -9,18 +11,24 @@ import { ContactInfo } from "@/components/common/contact-info";
 import { getPartners } from "@/lib/server/partners";
 import { SOCIAL_DEFS } from "@/lib/constants/social-links";
 import { PARTNER_TIERS, TIER_LABEL, isPartnerLive, type Partner } from "@/lib/constants/partners";
+import {
+  AREX_CAPABILITIES, NOT_ACCEPTED, PACKAGE_BENEFITS, PACKAGE_FEE_NOTE, PACKAGE_TAGLINE,
+  PARTNERSHIP_FAQ, PARTNERSHIP_PROCESS,
+} from "@/lib/constants/partnership";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+const DESC =
+  "Hợp tác cùng Arex: gói nhà tài trợ, đối tác truyền thông và cộng đồng đồng hành. Xem quyền lợi từng gói, quy trình 4 bước và ký hợp đồng điện tử đúng pháp luật Việt Nam ngay trên website.";
+
 export const metadata: Metadata = {
   title: "Hợp tác & Đối tác",
-  description:
-    "Nhà tài trợ, đối tác truyền thông và cộng đồng đồng hành cùng Arex. Liên hệ để hợp tác quảng bá, tài trợ giải đấu Free Fire.",
+  description: DESC,
   alternates: { canonical: `${siteConfig.url}/partnership` },
   openGraph: {
     title: "Hợp tác & Đối tác | Arex",
-    description: "Nhà tài trợ, đối tác truyền thông và cộng đồng đồng hành cùng Arex. Liên hệ để hợp tác quảng bá, tài trợ giải đấu Free Fire.",
+    description: DESC,
     url: `${siteConfig.url}/partnership`,
     type: "website",
     siteName: siteConfig.name,
@@ -109,6 +117,18 @@ function PartnerCard({ p }: { p: Partner }) {
   );
 }
 
+function SectionTitle({ eyebrow, title, desc }: { eyebrow: string; title: string; desc?: string }) {
+  return (
+    <div className="text-center">
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-amber-400">{eyebrow}</p>
+      <h2 className="mt-1 font-heading text-lg font-black uppercase tracking-tight text-foreground md:text-xl">
+        {title}
+      </h2>
+      {desc && <p className="mx-auto mt-1.5 max-w-2xl text-sm text-muted-foreground">{desc}</p>}
+    </div>
+  );
+}
+
 export default async function HopTacPage() {
   // Ẩn thủ công (enabled) hoặc tự ẩn khi quá ngày hết hợp tác.
   const partners = (await getPartners()).filter((p) => isPartnerLive(p));
@@ -121,55 +141,212 @@ export default async function HopTacPage() {
       .sort((a, b) => Number(!!b.featured) - Number(!!a.featured)),
   })).filter((g) => g.items.length > 0);
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: PARTNERSHIP_FAQ.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
-    <main className="container-main my-8 max-w-3xl space-y-8">
-      <Breadcrumbs items={[{ name: "Hợp tác", href: "/partnership" }]} />
+    <main className="container-main my-8 max-w-4xl space-y-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
-      <PageHero
-        icon={Handshake}
-        eyebrow="Đồng hành cùng Arex"
-        title="Hợp tác & Đối tác"
-        subtitle="Nhà tài trợ, đối tác truyền thông và cộng đồng đang đồng hành cùng Arex."
-      />
+      <div className="space-y-8">
+        <Breadcrumbs items={[{ name: "Hợp tác", href: "/partnership" }]} />
 
-      {byTier.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
-          <Handshake className="mx-auto mb-3 size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            Chưa có đối tác nào được công bố. Bạn muốn đồng hành cùng Arex?{" "}
-            <Link href="/lien-he" className="text-primary underline dark:text-amber-400">Liên hệ với chúng tôi</Link>.
-          </p>
-        </div>
-      ) : (
-        byTier.map((g) => (
-          <section key={g.tier} className="space-y-3">
-            <h2 className="font-heading text-sm font-black uppercase tracking-widest text-muted-foreground">
-              {TIER_LABEL[g.tier]}
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {g.items.map((p) => <PartnerCard key={p.id} p={p} />)}
+        <PageHero
+          icon={Handshake}
+          eyebrow="Đồng hành cùng Arex"
+          title="Hợp tác & Đối tác"
+          subtitle="Chọn gói hợp tác, đọc điều khoản và ký hợp đồng điện tử ngay trên website — đúng pháp luật Việt Nam."
+        />
+
+        {/* Lời mời ký hợp đồng — đặt ngay đầu vì đây là việc chính của trang */}
+        <section className="rounded-2xl border border-primary/30 bg-primary/[0.04] p-5 md:p-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-amber-400/10 dark:text-amber-400">
+              <FileSignature className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-black uppercase tracking-tight text-foreground">
+                Ký hợp đồng hợp tác trực tuyến
+              </h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Điền thông tin hai bên, đọc toàn văn điều khoản rồi ký điện tử. Không cần in, không cần gặp mặt —
+                hợp đồng có giá trị pháp lý theo Luật Giao dịch điện tử 2023.
+              </p>
             </div>
-          </section>
-        ))
-      )}
+            <Link
+              href="/partnership/hop-dong"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Bắt đầu ký <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </section>
+      </div>
+
+      {/* ── Đối tác hiện tại ─────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionTitle eyebrow="Đang đồng hành" title="Đối tác của Arex" />
+        {byTier.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+            <Handshake className="mx-auto mb-3 size-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              Chưa có đối tác nào được công bố. Bạn có thể là người đầu tiên —{" "}
+              <Link href="/partnership/hop-dong" className="text-primary underline dark:text-amber-400">
+                ký hợp đồng hợp tác
+              </Link>
+              .
+            </p>
+          </div>
+        ) : (
+          byTier.map((g) => (
+            <div key={g.tier} className="space-y-3">
+              <h3 className="font-heading text-sm font-black uppercase tracking-widest text-muted-foreground">
+                {TIER_LABEL[g.tier]}
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {g.items.map((p) => (
+                  <PartnerCard key={p.id} p={p} />
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </section>
+
+      {/* ── Arex mang lại gì ─────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionTitle
+          eyebrow="Vì sao hợp tác"
+          title="Arex mang lại gì cho đối tác"
+          desc="Không phải một trang tin đơn lẻ — Arex là hệ kênh nội dung, cộng đồng và công cụ xoay quanh người chơi Free Fire Việt Nam."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {AREX_CAPABILITIES.map((c) => (
+            <div key={c.title} className="rounded-2xl border border-border bg-card p-4">
+              <p className="font-heading text-sm font-black uppercase tracking-tight text-foreground">{c.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{c.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Gói hợp tác ──────────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionTitle
+          eyebrow="Chọn gói"
+          title="Ba gói hợp tác"
+          desc="Quyền lợi dưới đây được ghi thẳng vào Điều 3 của hợp đồng — không phải lời hứa miệng."
+        />
+        <div className="grid gap-3 lg:grid-cols-3">
+          {PARTNER_TIERS.map((t) => (
+            <div key={t} className="flex flex-col rounded-2xl border border-border bg-card p-5">
+              <p className="font-heading text-base font-black uppercase tracking-tight text-foreground">
+                {TIER_LABEL[t]}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{PACKAGE_TAGLINE[t]}</p>
+              <p className="mt-2 inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary dark:bg-amber-400/10 dark:text-amber-400">
+                {PACKAGE_FEE_NOTE[t]}
+              </p>
+              <ul className="mt-3 flex-1 space-y-1.5">
+                {PACKAGE_BENEFITS[t].map((b) => (
+                  <li key={b} className="flex gap-1.5 text-xs text-muted-foreground">
+                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/partnership/hop-dong"
+                className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+              >
+                Ký gói này <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Quy trình ────────────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionTitle eyebrow="Quy trình" title="Bốn bước là xong" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {PARTNERSHIP_PROCESS.map((s) => (
+            <div key={s.step} className="rounded-2xl border border-border bg-card p-4">
+              <span className="font-heading text-2xl font-black text-primary/30 dark:text-amber-400/30">{s.step}</span>
+              <p className="mt-1 font-heading text-sm font-black uppercase tracking-tight text-foreground">{s.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Không nhận ───────────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionTitle
+          eyebrow="Ranh giới"
+          title="Những nội dung Arex không nhận"
+          desc="Nói trước cho đỡ mất thời gian hai bên. Danh sách này cũng là Điều 7 của hợp đồng."
+        />
+        <ul className="grid gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/[0.03] p-5 sm:grid-cols-2">
+          {NOT_ACCEPTED.map((n) => (
+            <li key={n} className="flex gap-2 text-xs text-muted-foreground">
+              <XCircle className="mt-0.5 size-3.5 shrink-0 text-rose-500" />
+              <span>{n}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionTitle eyebrow="Hỏi & đáp" title="Câu hỏi thường gặp" />
+        <div className="space-y-2">
+          {PARTNERSHIP_FAQ.map((f) => (
+            <details key={f.q} className="group rounded-2xl border border-border bg-card p-4">
+              <summary className="cursor-pointer list-none text-sm font-bold text-foreground marker:hidden">
+                <span className="inline-flex items-start gap-2">
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary dark:text-amber-400" />
+                  {f.q}
+                </span>
+              </summary>
+              <p className="mt-2 pl-6 text-xs leading-relaxed text-muted-foreground">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
 
       {/* CTA hợp tác — admin đè được ở /admin/page-content */}
       <PageContentOverride pageKey="hop-tac">
-      <section className="rounded-2xl border border-primary/30 bg-primary/[0.04] p-6 text-center">
-        <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">
-          Muốn hợp tác với Arex?
-        </h2>
-        <p className="mx-auto mt-1.5 max-w-lg text-sm text-muted-foreground">
-          Chúng tôi nhận tài trợ giải đấu, hợp tác truyền thông và trao đổi cộng đồng Free Fire.
-          Gửi thông tin để đội ngũ liên hệ lại.
-        </p>
-        <Link
-          href="/lien-he"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          <Mail className="size-4" /> Liên hệ hợp tác
-        </Link>
-      </section>
+        <section className="rounded-2xl border border-primary/30 bg-primary/[0.04] p-6 text-center">
+          <h2 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">
+            Muốn hợp tác với Arex?
+          </h2>
+          <p className="mx-auto mt-1.5 max-w-lg text-sm text-muted-foreground">
+            Chúng tôi nhận tài trợ giải đấu, hợp tác truyền thông và trao đổi cộng đồng Free Fire. Ký hợp đồng trực
+            tuyến, hoặc nhắn cho đội ngũ nếu bạn muốn trao đổi trước.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/partnership/hop-dong"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <FileSignature className="size-4" /> Ký hợp đồng hợp tác
+            </Link>
+            <Link
+              href="/lien-he"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              <Mail className="size-4" /> Trao đổi trước
+            </Link>
+          </div>
+        </section>
       </PageContentOverride>
 
       {/* Thông tin liên hệ trực tiếp — luôn hiển thị trên trang, ngoài phần override */}

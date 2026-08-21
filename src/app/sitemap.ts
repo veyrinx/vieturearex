@@ -167,6 +167,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
+      // Biểu mẫu ký hợp đồng hợp tác — trang đích cho truy vấn "hợp tác với Arex".
+      // Bản hợp đồng của từng đối tác (/partnership/hop-dong/[id]) thì noindex.
+      url: `${BASE}/partnership/hop-dong`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.45,
+    },
+    {
       url: `${BASE}/changelog`,
       lastModified: now,
       changeFrequency: "weekly",
