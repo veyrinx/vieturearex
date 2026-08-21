@@ -97,7 +97,8 @@ export async function getContractById(id: string): Promise<(ContractRecord & { a
 
 /**
  * Bên B mở lại hợp đồng bằng link: cần đúng cả id lẫn token. Không có token thì
- * coi như không tìm thấy — hợp đồng có CCCD, địa chỉ, chữ ký nên không đoán mò được.
+ * coi như không tìm thấy — hợp đồng có liên lạc, chữ ký, thỏa thuận riêng của
+ * hai bên nên không để ai đoán id mà xem được.
  */
 export async function getContractByToken(id: string, token: string): Promise<ContractRecord | null> {
   if (!token) return null;

@@ -6,11 +6,21 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { siteConfig } from "@/lib/constants/site";
 import { PARTNER_TIERS, TIER_LABEL } from "@/lib/constants/partners";
+import { normalizeDuties } from "@/lib/constants/team-duties";
+import { IP_OWNERSHIP_OPTIONS } from "@/lib/constants/partnership";
 import {
   buildContractDocument,
   contractToPlainText,
   isMinor,
+  normalizeExtraTerms,
+  partyBName,
+  partyTypeFor,
+  CONTRACT_KINDS,
   CONTRACT_TERMS_VERSION,
+  EXTRA_TERMS_MAX,
+  EXTRA_TERM_BODY_MAX,
+  EXTRA_TERM_TITLE_MAX,
+  KIND_LABEL,
   PARTY_TYPES,
   type ContractInput,
 } from "@/lib/constants/partnership-contract";
@@ -45,33 +55,47 @@ const signature = z
   .max(300_000);
 
 const schema = z.object({
+  kind: z.enum(CONTRACT_KINDS),
   party_type: z.enum(PARTY_TYPES),
-  full_name: required(2, 100),
-  date_of_birth: optionalDate,
-  id_number: required(6, 20),
-  id_issued_date: optionalDate,
-  id_issued_by: text(150),
-  address: required(5, 250),
-  phone: required(8, 20),
-  email: z.string().trim().email().max(150),
 
-  org_name: text(150),
-  org_tax_code: text(30),
-  org_reg_no: text(50),
-  rep_title: text(100),
+  full_name: required(2, 100),
+  display_name: text(60),
+  date_of_birth: optionalDate,
+  game_uid: text(20),
+  email: z.string().trim().email().max(150),
+  phone: text(20),
+  contact_link: required(3, 200),
+  area: text(120),
+
+  team_name: text(120),
+  team_tag: text(20),
+  team_size: text(60),
+  rep_title: text(80),
+  channels: text(500),
 
   guardian_name: text(100),
   guardian_relation: text(50),
-  guardian_id_number: text(20),
   guardian_phone: text(20),
 
   tier: z.enum(PARTNER_TIERS),
+  member_role: text(100),
+  duties: z.array(z.string().max(60)).max(12).optional().default([]),
+  commitment: text(500),
+  deliverables: text(1000),
+  sla: text(500),
+  ip_ownership: z.enum(IP_OWNERSHIP_OPTIONS),
+
   scope: required(20, 2000),
-  channels: text(500),
   term_start: date,
   term_end: date,
   consideration: text(1000),
   payment_terms: text(1000),
+
+  extra_terms: z
+    .array(z.object({ title: z.string().max(EXTRA_TERM_TITLE_MAX), body: z.string().max(EXTRA_TERM_BODY_MAX) }))
+    .max(EXTRA_TERMS_MAX)
+    .optional()
+    .default([]),
 
   b_signature: signature,
   b_signed_name: required(2, 100),
@@ -100,25 +124,38 @@ export async function POST(request: NextRequest) {
   }
   const d = parsed.data;
 
-  // ── Kiểm tra ràng buộc pháp lý mà zod không nói hộ được ────────────────────
+  // Tư cách Bên B do hình thức quyết định — client gửi gì cũng chuẩn hóa lại.
+  const partyType = partyTypeFor(d.kind, d.party_type);
+  const asTeam = partyType === "team";
+
+  // ── Ràng buộc theo hình thức mà zod không nói hộ được ──────────────────────
   if (d.term_end <= d.term_start) return fail("Ngày kết thúc phải sau ngày bắt đầu.");
 
   const todayVN = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   if (d.term_end < todayVN) return fail("Thời hạn hợp tác đã kết thúc trong quá khứ.");
 
-  if (d.party_type === "organization" && !d.org_name) {
-    return fail("Bên B là tổ chức thì phải điền tên tổ chức.");
+  if (asTeam) {
+    if (!d.team_name) return fail("Bên B là đội, nhóm thì phải điền tên đội.");
+    if (!d.rep_title) return fail("Điền vai trò của người ký trong đội (đội trưởng, quản lý…).");
+  } else if (!d.display_name) {
+    return fail("Điền biệt danh hoặc tên bạn dùng trong cộng đồng.");
   }
 
-  if (!d.date_of_birth) {
-    return fail("Vui lòng điền ngày sinh của người ký — hợp đồng cần xác định năng lực hành vi dân sự.");
+  if (d.kind === "member") {
+    if (!d.member_role) return fail("Điền vai trò bạn tham gia đội ngũ.");
+    if (!d.date_of_birth) return fail("Điền ngày sinh — đội ngũ cần biết để giao việc đúng độ tuổi.");
+    if (d.game_uid && !/^\d{6,15}$/.test(d.game_uid)) return fail("UID Free Fire chỉ gồm chữ số.");
+  }
+
+  if (d.kind === "tech" && !d.deliverables) {
+    return fail("Ghi rõ sản phẩm bàn giao và mốc thời gian của hạng mục kỹ thuật.");
   }
 
   // Chưa đủ 18 tuổi: bắt buộc có người đại diện theo pháp luật (Điều 21 BLDS 2015).
   const minor = isMinor(d.date_of_birth);
-  if (minor && (!d.guardian_name || !d.guardian_id_number || !d.guardian_phone || !d.guardian_relation)) {
+  if (minor && (!d.guardian_name || !d.guardian_relation || !d.guardian_phone)) {
     return fail(
-      "Người ký chưa đủ 18 tuổi. Theo Điều 21 Bộ luật Dân sự 2015, cần điền đầy đủ thông tin người đại diện theo pháp luật.",
+      "Người ký chưa đủ 18 tuổi. Theo Điều 21 Bộ luật Dân sự 2015, cần điền họ tên, quan hệ và số liên lạc của người đại diện theo pháp luật.",
     );
   }
 
@@ -128,34 +165,46 @@ export async function POST(request: NextRequest) {
     return fail("Họ tên xác nhận ở ô ký phải trùng khớp với họ tên người ký đã khai.");
   }
 
+  const extraTerms = normalizeExtraTerms(d.extra_terms);
+  if (d.extra_terms.length > 0 && extraTerms.length !== d.extra_terms.length) {
+    return fail("Điều khoản riêng phải có đủ cả tiêu đề và nội dung.");
+  }
+
   // ── Dựng toàn văn + băm ────────────────────────────────────────────────────
   const partyA = await getPartyA();
 
   const input: ContractInput = {
-    party_type: d.party_type,
+    kind: d.kind,
+    party_type: partyType,
     full_name: d.full_name,
+    display_name: d.display_name,
     date_of_birth: d.date_of_birth,
-    id_number: d.id_number,
-    id_issued_date: d.id_issued_date,
-    id_issued_by: d.id_issued_by,
-    address: d.address,
-    phone: d.phone,
+    game_uid: d.game_uid,
     email: d.email,
-    org_name: d.org_name,
-    org_tax_code: d.org_tax_code,
-    org_reg_no: d.org_reg_no,
-    rep_title: d.rep_title,
+    phone: d.phone,
+    contact_link: d.contact_link,
+    area: d.area,
+    team_name: asTeam ? d.team_name : "",
+    team_tag: asTeam ? d.team_tag : "",
+    team_size: asTeam ? d.team_size : "",
+    rep_title: asTeam ? d.rep_title : "",
+    channels: d.channels,
     guardian_name: d.guardian_name,
     guardian_relation: d.guardian_relation,
-    guardian_id_number: d.guardian_id_number,
     guardian_phone: d.guardian_phone,
     tier: d.tier,
+    member_role: d.kind === "member" ? d.member_role : "",
+    duties: d.kind === "member" ? normalizeDuties(d.duties) : [],
+    commitment: d.kind === "member" ? d.commitment : "",
+    deliverables: d.kind === "tech" ? d.deliverables : "",
+    sla: d.kind === "tech" ? d.sla : "",
+    ip_ownership: d.ip_ownership,
     scope: d.scope,
-    channels: d.channels,
     term_start: d.term_start,
     term_end: d.term_end,
     consideration: d.consideration,
     payment_terms: d.payment_terms,
+    extra_terms: extraTerms,
   };
 
   // Số hợp đồng do DB cấp (sequence). Toàn văn chụp lúc này chưa có số nên chừa
@@ -180,7 +229,9 @@ export async function POST(request: NextRequest) {
   const { row, error } = await insertContract({
     ...input,
     date_of_birth: d.date_of_birth || null,
-    id_issued_date: d.id_issued_date || null,
+    // tier chỉ có nghĩa với hợp tác đội nhóm — hình thức khác để trống cho khỏi hiểu nhầm.
+    tier: d.kind === "team" ? d.tier : null,
+    ip_ownership: d.kind === "tech" ? d.ip_ownership : null,
     status: "pending",
     party_a: partyA,
     terms_version: CONTRACT_TERMS_VERSION,
@@ -211,11 +262,14 @@ export async function POST(request: NextRequest) {
 
   await updateContract(row.id, { terms_text: finalText, terms_hash: finalHash });
 
+  const bName = partyBName(input);
+  const kindLine = d.kind === "team" ? `${KIND_LABEL.team} · ${TIER_LABEL[d.tier]}` : KIND_LABEL[d.kind];
+
   await logContractEvent({
     contractId: row.id,
     event: "created",
     actor: "Bên B",
-    detail: `${d.full_name} — gói ${TIER_LABEL[d.tier]}`,
+    detail: `${bName} — ${kindLine}`,
     ip: net.ip,
     userAgent: net.ua,
   });
@@ -231,24 +285,39 @@ export async function POST(request: NextRequest) {
   const viewUrl = `${siteConfig.url}/partnership/hop-dong/${row.id}?token=${accessToken}`;
 
   void sendTelegramNotification({
-    title: "Hợp đồng hợp tác mới chờ ký",
-    subtitle: `${row.code} · ${TIER_LABEL[d.tier]}`,
+    title: "Hợp đồng mới chờ Arex ký",
+    subtitle: `${row.code} · ${kindLine}`,
     sections: [
       {
         heading: "Bên B",
         rows: [
-          { label: "Người ký", value: d.full_name, bold: true },
-          { label: "Tư cách", value: d.party_type === "organization" ? d.org_name || "Tổ chức" : "Cá nhân" },
-          { label: "Điện thoại", value: d.phone, mono: true },
+          { label: asTeam ? "Đội / nhóm" : "Người ký", value: bName, bold: true },
+          { label: "Người ký", value: `${d.full_name}${asTeam ? ` — ${d.rep_title}` : ""}` },
+          { label: "Liên lạc", value: d.contact_link, mono: true },
           { label: "Email", value: d.email, mono: true },
-          ...(minor ? [{ label: "Người đại diện", value: `${d.guardian_name} (${d.guardian_relation})`, status: "warn" as const }] : []),
+          ...(d.phone ? [{ label: "Điện thoại", value: d.phone, mono: true }] : []),
+          ...(minor
+            ? [
+                {
+                  label: "Người đại diện",
+                  value: `${d.guardian_name} (${d.guardian_relation})`,
+                  status: "warn" as const,
+                },
+              ]
+            : []),
         ],
       },
       {
         heading: "Nội dung",
         rows: [
           { label: "Thời hạn", value: `${d.term_start} → ${d.term_end}` },
-          { label: "Giá trị", value: d.consideration || "Trao đổi quyền lợi" },
+          ...(d.kind === "member" ? [{ label: "Vai trò", value: d.member_role }] : []),
+          { label: "Giá trị", value: d.consideration || "Không phát sinh tiền" },
+          {
+            label: "Điều khoản riêng",
+            value: extraTerms.length > 0 ? `${extraTerms.length} điều khoản Bên B thêm` : "Không có",
+            status: extraTerms.length > 0 ? ("warn" as const) : undefined,
+          },
           { label: "Ký lúc", value: vnNow() },
           { label: "IP", value: net.ip, mono: true },
         ],

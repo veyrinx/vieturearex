@@ -6,7 +6,7 @@ import { logAdminActivity } from "@/lib/server/admin-activity";
 import { buildEmailHtml, getEmailBranding, sendMail } from "@/lib/server/email";
 import { siteConfig } from "@/lib/constants/site";
 import { TIER_LABEL } from "@/lib/constants/partners";
-import { CONTRACT_STATUS_LABEL } from "@/lib/constants/partnership-contract";
+import { CONTRACT_STATUS_LABEL, KIND_LABEL, partyBName } from "@/lib/constants/partnership-contract";
 import {
   getContractById,
   listContractEvents,
@@ -155,6 +155,8 @@ async function notifyPartner(
   if (!row?.email) return;
 
   const url = `${siteConfig.url}/partnership/hop-dong/${row.id}?token=${row.access_token}`;
+  const who = partyBName(row);
+  const kindLine = row.kind === "team" && row.tier ? `${KIND_LABEL.team} — gói ${TIER_LABEL[row.tier]}` : KIND_LABEL[row.kind];
   const title =
     action === "sign"
       ? `Hợp đồng ${row.code} đã được Arex ký`
@@ -164,19 +166,19 @@ async function notifyPartner(
 
   const bodyHtml =
     action === "sign"
-      ? `Xin chào <strong>${row.full_name}</strong>,<br><br>
-         Hợp đồng hợp tác <strong>${row.code}</strong> (gói ${TIER_LABEL[row.tier]}) đã được người đại diện Arex ký và
+      ? `Xin chào <strong>${who}</strong>,<br><br>
+         Hợp đồng <strong>${row.code}</strong> (${kindLine}) đã được người đại diện Arex ký và
          <strong>chính thức có hiệu lực</strong> từ ${row.term_start} đến ${row.term_end}.<br><br>
          Bạn xem và lưu bản hợp đồng điện tử đầy đủ (kèm chữ ký hai bên và mã kiểm tra toàn vẹn SHA-256) tại liên kết bên dưới.`
       : action === "reject"
-        ? `Xin chào <strong>${row.full_name}</strong>,<br><br>
-           Rất tiếc, đề nghị hợp tác <strong>${row.code}</strong> chưa được Arex chấp nhận.<br><br>
+        ? `Xin chào <strong>${who}</strong>,<br><br>
+           Rất tiếc, đề nghị <strong>${row.code}</strong> (${kindLine}) chưa được Arex chấp nhận.<br><br>
            <strong>Lý do:</strong> ${reason}<br><br>
-           Bạn có thể điều chỉnh nội dung và gửi lại đề nghị mới bất cứ lúc nào.`
-        : `Xin chào <strong>${row.full_name}</strong>,<br><br>
-           Hợp đồng <strong>${row.code}</strong> đã chấm dứt theo Điều 10.<br><br>
+           Bạn có thể điều chỉnh nội dung, sửa lại điều khoản riêng và gửi đề nghị mới bất cứ lúc nào.`
+        : `Xin chào <strong>${who}</strong>,<br><br>
+           Hợp đồng <strong>${row.code}</strong> đã chấm dứt theo điều khoản về chấm dứt hợp đồng.<br><br>
            <strong>Lý do:</strong> ${reason}<br><br>
-           Arex sẽ gỡ logo và các nội dung liên quan khỏi trang công khai trong 05 ngày làm việc.`;
+           Arex sẽ gỡ tên, logo và các nội dung liên quan khỏi trang công khai trong 05 ngày làm việc và thu hồi các quyền đã cấp.`;
 
   try {
     const branding = await getEmailBranding();
@@ -189,7 +191,7 @@ async function notifyPartner(
         bodyHtml,
         cta: { label: "Xem hợp đồng", url },
         footnote:
-          "Liên kết này là bản hợp đồng điện tử của riêng bạn — vui lòng không chia sẻ cho người khác. Hợp đồng lưu tại Arex theo Điều 8.4.",
+          "Liên kết này là bản hợp đồng điện tử của riêng bạn — vui lòng không chia sẻ cho người khác. Arex lưu hợp đồng theo điều khoản về bảo vệ dữ liệu cá nhân.",
       }),
     });
   } catch {

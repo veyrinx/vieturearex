@@ -129,8 +129,8 @@ export function ContractDocumentView({
           </h3>
           <Lines lines={doc.guardian.lines} />
           <p className="mt-2 text-[11px] italic text-muted-foreground">
-            Người đại diện theo pháp luật đồng ý cho Bên B giao kết hợp đồng này theo Điều 21 Bộ luật Dân sự 2015 và
-            cùng chịu trách nhiệm về việc thực hiện hợp đồng.
+            Người đại diện theo pháp luật đồng ý cho người ký của Bên B giao kết hợp đồng này theo Điều 21 Bộ luật Dân
+            sự 2015 và cùng chịu trách nhiệm về việc thực hiện hợp đồng.
           </p>
         </section>
       )}

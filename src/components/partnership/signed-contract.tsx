@@ -2,7 +2,9 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import {
   CONTRACT_STATUS_LABEL,
   CONTRACT_STATUS_TONE,
+  partyBName,
   vnDateTime,
+  KIND_LABEL,
   type ContractDocument,
   type ContractRecord,
 } from "@/lib/constants/partnership-contract";
@@ -46,7 +48,7 @@ export function SignedContractView({
   const blockB: SignatureBlock = {
     heading: "Đại diện Bên B",
     name: row.b_signed_name || row.full_name,
-    title: row.party_type === "organization" ? row.rep_title || null : null,
+    title: row.party_type === "team" ? row.rep_title || null : row.display_name || null,
     image: row.b_signature,
     signedAt: row.b_signed_at ? vnDateTime(row.b_signed_at) : null,
     meta: showAudit
@@ -71,7 +73,11 @@ export function SignedContractView({
           {CONTRACT_STATUS_LABEL[row.status]}
         </span>
         <span className="font-mono text-xs text-muted-foreground">{row.code}</span>
-        <span className="text-xs text-muted-foreground">· {TIER_LABEL[row.tier]}</span>
+        <span className="text-xs text-muted-foreground">
+          · {KIND_LABEL[row.kind]}
+          {row.kind === "team" && row.tier ? ` · ${TIER_LABEL[row.tier]}` : ""}
+        </span>
+        <span className="text-xs text-muted-foreground">· {partyBName(row)}</span>
         <span className="text-xs text-muted-foreground">
           · {row.term_start} → {row.term_end}
         </span>

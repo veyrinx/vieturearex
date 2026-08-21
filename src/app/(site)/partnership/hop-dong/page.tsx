@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FileSignature, ShieldCheck, Clock, Scale } from "lucide-react";
+import { FileSignature, ShieldCheck, Clock, IdCard, PenLine } from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { PageHero } from "@/components/common/page-hero";
@@ -11,14 +11,14 @@ import { LEGAL_BASES } from "@/lib/constants/partnership-contract";
 export const dynamic = "force-dynamic";
 
 const DESC =
-  "Ký hợp đồng hợp tác với Arex ngay trên website: điền thông tin hai bên, đọc toàn văn điều khoản và ký điện tử theo Luật Giao dịch điện tử 2023.";
+  "Ký hợp đồng điện tử với Arex ngay trên website: hợp tác đội nhóm, tham gia đội ngũ hoặc đối tác kỹ thuật. Tự thêm điều khoản của bạn, đọc toàn văn rồi ký theo Luật Giao dịch điện tử 2023.";
 
 export const metadata: Metadata = {
-  title: "Ký hợp đồng hợp tác trực tuyến",
+  title: "Ký hợp đồng điện tử",
   description: DESC,
   alternates: { canonical: `${siteConfig.url}/partnership/hop-dong` },
   openGraph: {
-    title: "Ký hợp đồng hợp tác trực tuyến | Arex",
+    title: "Ký hợp đồng điện tử | Arex",
     description: DESC,
     url: `${siteConfig.url}/partnership/hop-dong`,
     type: "website",
@@ -28,6 +28,16 @@ export const metadata: Metadata = {
 
 const NOTES = [
   {
+    icon: IdCard,
+    title: "Không hỏi giấy tờ",
+    desc: "Đội với đội, thành viên với đội ngũ, đối tác kỹ thuật — không cần căn cước, mã số thuế hay ĐKKD.",
+  },
+  {
+    icon: PenLine,
+    title: "Thêm điều khoản của bạn",
+    desc: "Bạn tự đưa điều khoản riêng vào hợp đồng, giá trị ngang các điều khoản mẫu. Arex đọc rồi mới ký.",
+  },
+  {
     icon: ShieldCheck,
     title: "Có giá trị pháp lý",
     desc: "Hợp đồng điện tử theo Luật Giao dịch điện tử 2023, lưu kèm mã kiểm tra toàn vẹn SHA-256.",
@@ -36,11 +46,6 @@ const NOTES = [
     icon: Clock,
     title: "Phản hồi trong 3 ngày",
     desc: "Bạn ký trước, Arex thẩm định rồi ký lại. Kết quả gửi về email bạn khai trong hợp đồng.",
-  },
-  {
-    icon: Scale,
-    title: "Đúng luật Việt Nam",
-    desc: "Mẫu điều khoản soạn theo Bộ luật Dân sự 2015, Luật Thương mại 2005 và các văn bản liên quan.",
   },
 ];
 
@@ -52,18 +57,18 @@ export default async function KyHopDongPage() {
       <Breadcrumbs
         items={[
           { name: "Hợp tác", href: "/partnership" },
-          { name: "Ký hợp đồng", href: "/partnership/hop-dong" },
+          { name: "Hợp đồng", href: "/partnership/hop-dong" },
         ]}
       />
 
       <PageHero
         icon={FileSignature}
         eyebrow="Hợp đồng điện tử"
-        title="Ký hợp đồng hợp tác"
-        subtitle="Điền thông tin hai bên, đọc toàn văn điều khoản rồi ký trực tiếp trên trình duyệt."
+        title="Ký hợp đồng"
+        subtitle="Chọn hình thức, điền nội dung, thêm điều khoản của riêng bạn rồi ký trực tiếp trên trình duyệt."
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {NOTES.map((n) => {
           const Icon = n.icon;
           return (

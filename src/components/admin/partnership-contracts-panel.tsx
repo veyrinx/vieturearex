@@ -10,8 +10,8 @@ import {
 import { TIER_LABEL } from "@/lib/constants/partners";
 import {
   CONTRACT_EVENT_LABEL, CONTRACT_STATUSES, CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE,
-  PARTY_TYPE_LABEL, vnDateTime,
-  type ContractEventKind, type ContractRecord, type ContractStatus, type PartyA,
+  KIND_LABEL, PARTY_TYPE_LABEL, partyBName, vnDateTime,
+  type ContractEventKind, type ContractKind, type ContractRecord, type ContractStatus, type PartyA,
 } from "@/lib/constants/partnership-contract";
 import { SignedContractView, type RenderedContractProps } from "@/components/partnership/signed-contract";
 import { SignaturePad } from "@/components/partnership/signature-pad";
@@ -162,7 +162,7 @@ export function PartnershipContractsPanel({
           </div>
           <div>
             <h1 className="font-heading text-xl font-black uppercase tracking-tight text-foreground">
-              Hợp Đồng Hợp Tác
+              Hợp Đồng Điện Tử
             </h1>
             <p className="text-xs text-muted-foreground">
               {pendingCount > 0 ? `${pendingCount} hợp đồng đang chờ Arex ký.` : "Không có hợp đồng nào đang chờ ký."}{" "}
@@ -207,16 +207,14 @@ export function PartnershipContractsPanel({
             <div className="grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  ["name", "Tên tổ chức"],
-                  ["legalForm", "Tư cách pháp lý"],
-                  ["address", "Địa chỉ"],
-                  ["taxCode", "Mã số thuế"],
-                  ["regNo", "Số ĐKKD"],
+                  ["name", "Tên đội ngũ"],
+                  ["legalForm", "Tư cách"],
+                  ["address", "Khu vực hoạt động"],
                   ["phone", "Điện thoại"],
                   ["email", "Email"],
                   ["website", "Website"],
                   ["repName", "Người đại diện *"],
-                  ["repTitle", "Chức vụ"],
+                  ["repTitle", "Vai trò"],
                 ] as Array<[keyof PartyA, string]>
               ).map(([key, label]) => (
                 <label key={key} className="space-y-1">
@@ -284,11 +282,10 @@ export function PartnershipContractsPanel({
               {CONTRACT_STATUS_LABEL[c.status]}
             </span>
             <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
-            <span className="text-sm font-bold text-foreground">
-              {c.party_type === "organization" ? c.org_name || c.full_name : c.full_name}
-            </span>
+            <span className="text-sm font-bold text-foreground">{partyBName(c)}</span>
             <span className="text-xs text-muted-foreground">
-              {PARTY_TYPE_LABEL[c.party_type]} · {TIER_LABEL[c.tier]}
+              {KIND_LABEL[c.kind as ContractKind] ?? c.kind} · {PARTY_TYPE_LABEL[c.party_type]}
+              {c.kind === "team" && c.tier ? ` · ${TIER_LABEL[c.tier]}` : ""}
             </span>
             <span className="ml-auto text-xs text-muted-foreground">
               {c.term_start} → {c.term_end}
@@ -321,16 +318,21 @@ export function PartnershipContractsPanel({
             </div>
 
             {/* Liên hệ Bên B — không nằm trong thân hợp đồng nên để riêng cho dễ gọi */}
-            <div className="grid gap-2 rounded-2xl border border-border bg-card p-4 text-xs sm:grid-cols-3">
+            <div className="grid gap-2 rounded-2xl border border-border bg-card p-4 text-xs sm:grid-cols-4">
+              <p>
+                <span className={LABEL}>Kênh liên lạc</span>
+                <br />
+                <span className="break-all font-mono text-foreground">{detail.item.contact_link || "—"}</span>
+              </p>
               <p>
                 <span className={LABEL}>Điện thoại</span>
                 <br />
-                <span className="font-mono text-foreground">{detail.item.phone}</span>
+                <span className="font-mono text-foreground">{detail.item.phone || "—"}</span>
               </p>
               <p>
                 <span className={LABEL}>Email</span>
                 <br />
-                <span className="font-mono text-foreground">{detail.item.email}</span>
+                <span className="break-all font-mono text-foreground">{detail.item.email}</span>
               </p>
               <p className="sm:col-span-1">
                 <span className={LABEL}>Link của đối tác</span>
@@ -381,7 +383,7 @@ export function PartnershipContractsPanel({
                     <input
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      placeholder="Ví dụ: nội dung hợp tác thuộc nhóm không nhận theo Điều 7."
+                      placeholder="Ví dụ: nội dung thuộc nhóm Arex không nhận, hoặc không đồng ý điều khoản riêng Bên B thêm."
                       className={INPUT}
                     />
                   </label>
@@ -399,7 +401,7 @@ export function PartnershipContractsPanel({
 
             {canEdit && detail.item.status === "signed" && (
               <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
-                <p className="text-sm font-bold text-foreground">Chấm dứt hợp đồng (Điều 10)</p>
+                <p className="text-sm font-bold text-foreground">Chấm dứt hợp đồng</p>
                 <input
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
