@@ -56,6 +56,11 @@ function generateRandomPassword() {
   return crypto.randomBytes(18).toString("base64url");
 }
 
+/** Đơn cũ còn treo — nộp lại chỉ tổ nhân bản, không phải lỗi của người nộp. */
+const PENDING_STATUSES = new Set(["pending_it", "pending_admin", "pending"]);
+/** Đã là người của team rồi thì không nộp đơn nữa. */
+const STAFF_ROLES = new Set(["super_admin", "admin", "it", "manager", "support", "team_member"]);
+
 export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "team-join", limit: 5, windowMs: 60_000 });
   if (limited) return limited;
@@ -104,24 +109,56 @@ export async function POST(request: NextRequest) {
   const email = parsed.data.email.toLowerCase();
   const displayName = parsed.data.display_name;
 
-  // Create auth user with random password (IT/super_admin will trigger reset
-  // on approval so the user sets their own password via email link).
+  // Tài khoản mới: tạo auth user với mật khẩu ngẫu nhiên (duyệt xong IT bấm gửi
+  // email đặt lại mật khẩu, không bắt người nộp đơn đặt mật khẩu ngay tại đây).
   const tempPassword = generateRandomPassword();
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password: tempPassword,
     email_confirm: true,
   });
+
+  // Đã có tài khoản Arex thì KHÔNG được chặn — phần lớn người ứng tuyển là thành
+  // viên cộng đồng sẵn, chặn là đơn không bao giờ về tới web. Gắn đơn vào chính
+  // tài khoản đó (giữ nguyên mật khẩu, lịch sử, điểm) thay vì bắt tạo email khác.
+  let userId: string;
+  let existingAccount = false;
   if (authError) {
     const msg = authError.message?.toLowerCase() ?? "";
-    if (msg.includes("already") || msg.includes("registered")) {
-      return NextResponse.json({ error: "Email này đã được đăng ký. Hãy dùng email khác hoặc liên hệ admin." }, { status: 409 });
-    }
-    return NextResponse.json({ error: authError.message }, { status: 400 });
-  }
+    const taken = msg.includes("already") || msg.includes("registered") || msg.includes("exists");
+    if (!taken) return NextResponse.json({ error: authError.message }, { status: 400 });
 
-  const authUser = authData.user;
-  await ensureUserAccount({ id: authUser.id, email, role: "team_member" });
+    const { data: current } = await admin
+      .from("users")
+      .select("id, role, team_status, is_banned")
+      .eq("email", email)
+      .maybeSingle() as { data: { id: string; role: string | null; team_status: string | null; is_banned: boolean | null } | null };
+
+    if (!current) {
+      return NextResponse.json(
+        { error: "Email này đã đăng ký nhưng không tìm thấy hồ sơ — liên hệ admin để được xử lý." },
+        { status: 409 },
+      );
+    }
+    if (current.is_banned) {
+      return NextResponse.json({ error: "Tài khoản này đang bị khoá, không nộp đơn được." }, { status: 403 });
+    }
+    // Đơn cũ còn đang chờ: báo đã nhận, không ăn thêm một lượt mã mời.
+    if (current.team_status && PENDING_STATUSES.has(current.team_status)) {
+      return NextResponse.json({ ok: true, status: "pending", already: true });
+    }
+    if (STAFF_ROLES.has(current.role ?? "") || current.team_status === "approved") {
+      return NextResponse.json(
+        { error: "Tài khoản này đã thuộc đội ngũ Arex — đăng nhập để dùng, không cần nộp lại đơn." },
+        { status: 409 },
+      );
+    }
+    userId = current.id;
+    existingAccount = true;
+  } else {
+    userId = authData.user.id;
+    await ensureUserAccount({ id: userId, email, role: "team_member" });
+  }
 
   // Core fields BẮT BUỘC thành công. Nếu fail (vd. constraint users_role_check
   // thiếu 'team_member', hoặc team_status không hợp lệ) → xoá auth user vừa tạo
@@ -134,9 +171,10 @@ export async function POST(request: NextRequest) {
       display_name: displayName,
       team_terms_accepted_at: new Date().toISOString(),
     } as never)
-    .eq("id", authUser.id);
+    .eq("id", userId);
   if (coreErr) {
-    await admin.auth.admin.deleteUser(authUser.id).catch(() => {});
+    // Chỉ dọn thứ mình vừa tạo. Tài khoản có sẵn của người ta thì tuyệt đối không đụng vào.
+    if (!existingAccount) await admin.auth.admin.deleteUser(userId).catch(() => {});
     return NextResponse.json(
       {
         error:
@@ -167,11 +205,20 @@ export async function POST(request: NextRequest) {
       .filter((g) => g.game && g.uid),
   };
 
+  // Tài khoản có sẵn: chỉ ghi đè ô người ta vừa điền. Ghi cả null là xoá trắng
+  // link mạng xã hội / SĐT họ khai từ trước — đơn ứng tuyển không được phép làm thế.
+  if (existingAccount) {
+    for (const [key, value] of Object.entries(extras)) {
+      const empty = value === null || (Array.isArray(value) && value.length === 0);
+      if (empty) delete extras[key];
+    }
+  }
+
   const COLUMN_ERR = /column ["']?([a-z0-9_]+)["']? .*does not exist|could not find the ['"]?([a-z0-9_]+)['"]? column/i;
   let attempts = 0;
   let working = { ...extras };
   while (Object.keys(working).length > 0 && attempts < 16) {
-    const { error } = await admin.from("users").update(working as never).eq("id", authUser.id);
+    const { error } = await admin.from("users").update(working as never).eq("id", userId);
     if (!error) break;
     const match = COLUMN_ERR.exec(error.message ?? "");
     const missing = match?.[1] ?? match?.[2];
@@ -188,7 +235,7 @@ export async function POST(request: NextRequest) {
   const consumed = newCount >= maxUses;
   const inviteUpdate: Record<string, unknown> = {
     uses_count: newCount,
-    used_by: authUser.id,
+    used_by: userId,
   };
   if (consumed) inviteUpdate.used_at = new Date().toISOString();
   // First try with new columns; fall back to legacy schema if cols are missing.
@@ -201,7 +248,7 @@ export async function POST(request: NextRequest) {
       await admin
         .from("team_invites")
         .update({
-          used_by: authUser.id,
+          used_by: userId,
           ...(consumed ? { used_at: new Date().toISOString() } : {}),
         } as never)
         .eq("id", invite.id);
@@ -212,7 +259,7 @@ export async function POST(request: NextRequest) {
     actorEmail: email,
     action: "TEAM_JOIN_REQUEST",
     targetType: "USER",
-    targetId: authUser.id,
+    targetId: userId,
     summary: `Yêu cầu gia nhập team từ ${email} (${displayName}) — chờ IT duyệt`,
   }).catch(() => {});
 
@@ -233,7 +280,8 @@ export async function POST(request: NextRequest) {
 
   const joinPayload = {
     title: "🆕 YÊU CẦU GIA NHẬP TEAM",
-    subtitle: `${invite.label ? `[${invite.label}] ` : ""}Nộp lúc ${vnNow()} (ICT) — chờ IT duyệt`,
+    subtitle: `${invite.label ? `[${invite.label}] ` : ""}Nộp lúc ${vnNow()} (ICT) — chờ IT duyệt`
+      + (existingAccount ? " · tài khoản Arex có sẵn" : ""),
     sections: [
       {
         icon: "👤",
@@ -276,7 +324,7 @@ export async function POST(request: NextRequest) {
   void appendTeamJoinToLarkSheet({
     email,
     display_name:     displayName,
-    user_id:          authUser.id,
+    user_id:          userId,
     phone:            parsed.data.phone,
     applied_role:     parsed.data.applied_role,
     application_note: parsed.data.application_note,
@@ -292,16 +340,20 @@ export async function POST(request: NextRequest) {
     device:           net.device,
     browser:          net.browser,
   });
-  void appendUserToLarkSheet({
-    email,
-    display_name: displayName,
-    user_id:      authUser.id,
-    role:         "team_member",
-    source:       `Mã mời team${invite.label ? ` [${invite.label}]` : ""}`,
-    ip:           net.ip,
-    device:       net.device,
-    browser:      net.browser,
-  });
+  // Tài khoản có sẵn đã nằm ở tab "Đăng ký" từ lần lập tài khoản — ghi lại lần
+  // nữa là sổ thành viên đếm trùng một người.
+  if (!existingAccount) {
+    void appendUserToLarkSheet({
+      email,
+      display_name: displayName,
+      user_id:      userId,
+      role:         "team_member",
+      source:       `Mã mời team${invite.label ? ` [${invite.label}]` : ""}`,
+      ip:           net.ip,
+      device:       net.device,
+      browser:      net.browser,
+    });
+  }
 
   return NextResponse.json({ ok: true, status: "pending" });
 }
