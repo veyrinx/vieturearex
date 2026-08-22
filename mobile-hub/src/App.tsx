@@ -8,6 +8,7 @@ import { useAuth } from "@/auth/auth-context";
 import { bootNativeChrome, onPushOpened, registerPush, watchNetwork } from "@/lib/native";
 import { startNotificationPolling } from "@/lib/notify";
 import { ROLE_LABEL } from "@/types";
+import { ADMIN_ROUTES } from "@/admin/registry";
 import { LoginScreen } from "@/screens/login";
 import { DashboardScreen } from "@/screens/dashboard";
 
@@ -125,6 +126,14 @@ export function App() {
         <Route path="/he-thong/cap-nhat" element={<UpdateScreen />} />
         <Route path="/he-thong/cai-dat" element={<SettingsScreen />} />
         <Route path="/he-thong/nhat-ky" element={<LogsScreen />} />
+
+        {/* Các mục quản trị còn lại khai ở admin/registry.tsx — thêm mục mới
+            chỉ cần thêm một dòng ở đó, không phải sửa file này. */}
+        {ADMIN_ROUTES.map((entry) => {
+          const Screen = entry.component;
+          return <Route key={entry.id} path={entry.path} element={<Screen />} />;
+        })}
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

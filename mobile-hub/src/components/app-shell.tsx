@@ -19,6 +19,7 @@ import { PullToRefresh } from "@/components/pull-to-refresh";
 import { useAuth, useHasRole } from "@/auth/auth-context";
 import { useUnreadCount } from "@/lib/queries";
 import { ROLE_LABEL } from "@/types";
+import { ADMIN_ENTRIES } from "@/admin/registry";
 import { bindAndroidBack, haptic, openExternal } from "@/lib/native";
 import { env } from "@/env";
 
@@ -36,7 +37,7 @@ const ALL_TABS: (Tab & { managerOnly?: boolean })[] = [
   // API chợ chỉ mở cho manager trở lên — hiện tab cho người không vào được
   // thì chỉ dẫn tới một màn hình toàn lỗi 403.
   { to: "/cho", label: "Chợ", icon: Store, managerOnly: true },
-  { to: "/he-thong", label: "Hệ thống", icon: SlidersHorizontal },
+  { to: "/he-thong", label: "Quản trị", icon: SlidersHorizontal },
 ];
 
 /** Tab bên trái nút giữa; phần còn lại nằm bên phải. */
@@ -49,11 +50,15 @@ const TITLES: Record<string, string> = {
   "/duyet": "Kiểm duyệt",
   "/cho": "Chợ Arex",
   "/thong-bao": "Thông báo",
-  "/he-thong": "Hệ thống",
+  "/he-thong": "Quản trị",
+  "/quan-tri": "Quản trị",
 };
 
 function pageTitle(pathname: string) {
   if (TITLES[pathname]) return TITLES[pathname];
+  // Màn hình con của danh bạ quản trị lấy tên ngay trong bản khai báo.
+  const entry = ADMIN_ENTRIES.find((item) => item.path === pathname);
+  if (entry) return entry.title;
   const base = `/${pathname.split("/")[1] ?? ""}`;
   return TITLES[base] ?? "Arex Hub";
 }
