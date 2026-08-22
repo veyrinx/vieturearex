@@ -71,11 +71,15 @@ ALTER TABLE public.partnership_contracts
   CHECK (ip_ownership IS NULL OR ip_ownership IN ('arex','partner','shared'));
 
 -- ── party_type: individual/organization → person/team ──────
+-- Gỡ ràng buộc cũ TRƯỚC khi đổi giá trị: constraint bản 1.0 chỉ cho
+-- 'individual'/'organization', UPDATE thẳng sang 'person' là nó chặn ngay
+-- (new row for relation ... violates check constraint) và cả migration dừng.
+ALTER TABLE public.partnership_contracts
+  DROP CONSTRAINT IF EXISTS partnership_contracts_party_type_check;
+
 UPDATE public.partnership_contracts SET party_type = 'person' WHERE party_type = 'individual';
 UPDATE public.partnership_contracts SET party_type = 'team'   WHERE party_type = 'organization';
 
-ALTER TABLE public.partnership_contracts
-  DROP CONSTRAINT IF EXISTS partnership_contracts_party_type_check;
 ALTER TABLE public.partnership_contracts
   ADD CONSTRAINT partnership_contracts_party_type_check CHECK (party_type IN ('person','team'));
 ALTER TABLE public.partnership_contracts ALTER COLUMN party_type SET DEFAULT 'person';
