@@ -3,6 +3,16 @@ import { siteConfig, iscConfig } from "@/lib/constants/site";
 
 export const SENSITIVE_CONFIGURED_MASK = "__configured__";
 
+/**
+ * `true` khi giá trị vẫn còn nguyên tiền tố "enc:" — tức getSettings() KHÔNG mở
+ * được nó (APP_SECRET trên Vercel khác lúc lưu). Đừng bao giờ đem chuỗi đó đi
+ * dùng: gọi API thì nhận 404 khó hiểu, in ra trang thì lộ ciphertext giữa HTML
+ * công khai (đã xảy ra với ads.google_adsense_id).
+ */
+export function isUndecryptedSetting(value: string | null | undefined): boolean {
+  return typeof value === "string" && value.startsWith("enc:");
+}
+
 // Keys that are per-site (each domain has its own value stored with "isc:" prefix)
 export const SITE_SPECIFIC_SETTING_KEYS = new Set([
   "branding.site_name", "branding.favicon_url", "branding.logo_light_url", "branding.logo_dark_url",
@@ -381,12 +391,15 @@ export function buildSettingsMap(settings: SiteSetting[], siteId?: string) {
   for (const item of settings) {
     if (item.key.includes(":")) continue;
     if (siteId === "isc" && SITE_SPECIFIC_SETTING_KEYS.has(item.key)) continue;
+    // Giải mã hỏng thì coi như chưa cấu hình, để giá trị mặc định gánh — hơn là
+    // đổ nguyên "enc:…" ra trang hoặc ném vào API bên thứ ba.
+    if (isUndecryptedSetting(item.value)) continue;
     base[item.key] = item.value;
   }
 
   if (siteId === "isc") {
     for (const item of settings) {
-      if (item.key.startsWith("isc:")) {
+      if (item.key.startsWith("isc:") && !isUndecryptedSetting(item.value)) {
         base[item.key.slice(4)] = item.value;
       }
     }

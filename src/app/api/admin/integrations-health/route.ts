@@ -50,6 +50,25 @@ export async function GET(request: NextRequest) {
   const get = (key: string) => settings.find((s) => s.key === key)?.value?.trim() ?? "";
   const checks: Check[] = [];
 
+  // ── Giải mã cài đặt ───────────────────────────────────────────────────────
+  // Đặt đầu tiên vì nó giải thích luôn mọi mục đỏ bên dưới: một khi APP_SECRET
+  // lệch thì token Telegram, webhook Discord, mật khẩu SMTP… đều thành chuỗi
+  // "enc:…" và mọi tích hợp chết cùng lúc.
+  const locked = settings.filter((s) => undecrypted(s.value?.trim() ?? "")).map((s) => s.key);
+  checks.push({
+    name: "Giải mã cài đặt",
+    ok: locked.length === 0,
+    detail:
+      locked.length === 0
+        ? "Mọi giá trị nhạy cảm đều mở được"
+        : `${locked.length} giá trị không mở được: ${locked.join(", ")}`,
+    fix:
+      locked.length === 0
+        ? undefined
+        : "APP_SECRET trên Vercel khác lúc lưu. Đặt lại đúng APP_SECRET cũ rồi redeploy; "
+          + "nếu mất hẳn thì vào Admin → Cài đặt nhập lại từng giá trị trên (chúng sẽ được mã hoá lại bằng khoá hiện tại).",
+  });
+
   // ── Tên miền ──────────────────────────────────────────────────────────────
   const origin = new URL(request.url).origin;
   const serving = await resolveServingOrigin(SITE_URL, origin);
