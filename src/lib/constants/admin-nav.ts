@@ -49,6 +49,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Mạng xã hội", href: "/admin/social", icon: Share2 },
       { title: "Đếm ngược",  href: "/admin/countdowns", icon: CalendarClock },
       { title: "Nội dung trang", href: "/admin/page-content", icon: FileText },
+      { title: "Verified Content", href: "/admin/verified-content", icon: ShieldCheck },
     ],
   },
   {

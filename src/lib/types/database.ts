@@ -255,6 +255,79 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["support_messages"]["Insert"]>;
       };
+      contents: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          content_body: string;
+          verification_status: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED" | "EXPIRED";
+          is_deleted: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string;
+          content_body: string;
+          verification_status?: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED" | "EXPIRED";
+          is_deleted?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["contents"]["Insert"]>;
+      };
+      content_verifications: {
+        Row: {
+          id: string;
+          content_id: string;
+          verified_at: string;
+          verified_by: string;
+          verification_note: string | null;
+          verification_source: string | null;
+          content_hash: string;
+          verification_expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          content_id: string;
+          verified_at?: string;
+          verified_by: string;
+          verification_note?: string | null;
+          verification_source?: string | null;
+          content_hash: string;
+          verification_expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["content_verifications"]["Insert"]>;
+      };
+      content_audit_logs: {
+        Row: {
+          id: string;
+          content_id: string;
+          actor_id: string;
+          action: "CREATE" | "UPDATE" | "SUBMIT_VERIFY" | "VERIFY" | "REJECT" | "EXPIRE" | "SOFT_DELETE";
+          old_data: Json | null;
+          new_data: Json | null;
+          ip_address: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          content_id: string;
+          actor_id: string;
+          action: "CREATE" | "UPDATE" | "SUBMIT_VERIFY" | "VERIFY" | "REJECT" | "EXPIRE" | "SOFT_DELETE";
+          old_data?: Json | null;
+          new_data?: Json | null;
+          ip_address?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["content_audit_logs"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

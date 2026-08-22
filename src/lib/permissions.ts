@@ -170,6 +170,9 @@ export const CAPABILITIES = [
   { key: "shop.dispute.resolve", group: "Shop",      label: "Xử lý tranh chấp" },
   // Analytics
   { key: "analytics.view",     group: "Thống kê",   label: "Xem thống kê & lượt xem" },
+  // Verified Content
+  { key: "verified_content.verify", group: "Xác minh",  label: "Duyệt / từ chối xác minh nội dung" },
+  { key: "verified_content.audit",  group: "Xác minh",  label: "Xem Nhật ký Lưu vết Audit Trail" },
   // System
   { key: "settings.edit",      group: "Hệ thống",   label: "Sửa cấu hình site" },
   { key: "permissions.edit",   group: "Hệ thống",   label: "Sửa ma trận phân quyền" },
