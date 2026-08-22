@@ -19,7 +19,7 @@ export async function GET(
         .eq("id", user.id)
         .single();
       const role = userProfile?.role;
-      isModerator = ["super_admin", "admin", "manager", "it"].includes(role || "");
+      isModerator = ["super_admin", "admin", "it"].includes(role || "");
     }
 
     const result = await VerifiedContentService.getContentById(id, {
@@ -77,7 +77,7 @@ export async function PUT(
       .eq("id", user.id)
       .single();
 
-    const isMod = ["super_admin", "admin", "manager", "it"].includes(userProfile?.role || "");
+    const isMod = ["super_admin", "admin", "it"].includes(userProfile?.role || "");
     if (contentItem.user_id !== user.id && !isMod) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
@@ -148,7 +148,7 @@ export async function DELETE(
       .eq("id", user.id)
       .single();
 
-    const isMod = ["super_admin", "admin", "manager", "it"].includes(userProfile?.role || "");
+    const isMod = ["super_admin", "admin", "it"].includes(userProfile?.role || "");
     if (contentItem.user_id !== user.id && !isMod) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }

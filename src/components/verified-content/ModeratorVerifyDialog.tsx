@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ShieldCheck, ShieldX, AlertTriangle, CheckSquare, Square, FileText, Calendar, Link as LinkIcon, Lock } from "lucide-react";
-import type { ModeratorVerificationChecklist } from "@/lib/types/verified-content";
+import { ShieldCheck, CheckSquare, Square, AlertCircle, X, Check, XCircle } from "lucide-react";
 
 interface ModeratorVerifyDialogProps {
   contentId: string;
@@ -21,12 +20,12 @@ export const ModeratorVerifyDialog: React.FC<ModeratorVerifyDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [checklist, setChecklist] = useState<ModeratorVerificationChecklist>({
-    sourceChecked: false,
-    accuracyChecked: false,
-    updatedTimeChecked: false,
-    integrityChecked: false,
-    complianceChecked: false,
+  const [checklist, setChecklist] = useState({
+    sourceVerified: false,
+    accuracyVerified: false,
+    updatedVerified: false,
+    noTamperVerified: false,
+    policyCompliant: false,
   });
 
   const [verificationSource, setVerificationSource] = useState("");
@@ -37,20 +36,19 @@ export const ModeratorVerifyDialog: React.FC<ModeratorVerifyDialogProps> = ({
 
   if (!isOpen) return null;
 
-  const allChecklistPassed =
-    checklist.sourceChecked &&
-    checklist.accuracyChecked &&
-    checklist.updatedTimeChecked &&
-    checklist.integrityChecked &&
-    checklist.complianceChecked;
+  const allChecked = Object.values(checklist).every(Boolean);
 
-  const handleToggleCheck = (key: keyof ModeratorVerificationChecklist) => {
+  const toggleCheck = (key: keyof typeof checklist) => {
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleDecision = async (decision: "VERIFY" | "REJECT") => {
-    if (decision === "VERIFY" && !allChecklistPassed) {
-      setErrorMsg("Vui lòng hoàn thành 5 bước kiểm tra quy trình trước khi duyệt VERIFIED!");
+    if (decision === "VERIFY" && !allChecked) {
+      setErrorMsg("Bạn phải hoàn thành đủ 5 bước kiểm duyệt bắt buộc trước khi phê duyệt VERIFIED.");
+      return;
+    }
+    if (decision === "VERIFY" && !verificationSource.trim()) {
+      setErrorMsg("Vui lòng nhập nguồn thông tin xác minh (Verification Source).");
       return;
     }
 
@@ -65,173 +63,164 @@ export const ModeratorVerifyDialog: React.FC<ModeratorVerifyDialogProps> = ({
           decision,
           verification_source: verificationSource.trim() || undefined,
           verification_note: verificationNote.trim() || undefined,
-          verification_expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+          verification_expires_at: expiresAt || undefined,
         }),
       });
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "Thao tác thất bại");
+        throw new Error(json.error || "Xử lý thất bại");
       }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || "Đã xảy ra lỗi khi duyệt xác minh");
+      setErrorMsg(err.message || "Đã xảy ra lỗi hệ thống");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-border bg-card shadow-2xl p-6 space-y-5 text-foreground animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-5 border-b border-gray-800 bg-gray-950/60 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <ShieldCheck className="w-6 h-6" />
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-100">Quy trình Kiểm duyệt Content — Arex Moderator</h3>
-              <p className="text-xs text-gray-400">Kiểm tra các tiêu chuẩn an toàn và tính chính xác trước khi duyệt badge</p>
+              <h3 className="text-base font-bold text-foreground">QUY TRÌNH KIỂM DUYỆT VERIFIED CONTENT</h3>
+              <p className="text-xs text-muted-foreground">Arex Network Verification Protocol & Safety Standards</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-200 text-xl font-bold p-1 rounded-lg hover:bg-gray-800"
+            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-all"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Preview */}
-        <div className="p-5 overflow-y-auto space-y-5 flex-1">
-          {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
+        <div className="p-3.5 rounded-xl border border-border bg-muted/40 space-y-1 text-xs">
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[10px]">Đang kiểm duyệt:</span>
+          <p className="font-semibold text-foreground">{contentTitle}</p>
+          <p className="text-muted-foreground line-clamp-2 italic">"{contentBody}"</p>
+        </div>
 
-          <div className="p-4 rounded-xl bg-gray-950/80 border border-gray-800">
-            <h4 className="text-sm font-semibold text-amber-400">{contentTitle}</h4>
-            <p className="mt-1 text-xs text-gray-300 line-clamp-3 font-mono bg-gray-900/60 p-2.5 rounded-lg border border-gray-800/60">
-              {contentBody}
-            </p>
+        {/* 5-Point Checklist */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <AlertCircle className="w-4 h-4 text-emerald-500" />
+            Checklist 5 Bước Kiểm Duyệt Bắt Buộc:
+          </h4>
+
+          <div className="grid grid-cols-1 gap-2.5 text-xs">
+            {[
+              { key: "sourceVerified" as const, label: "1. Kiểm tra Nguồn thông tin (Verification Source chính thống, rõ ràng)" },
+              { key: "accuracyVerified" as const, label: "2. Kiểm tra Độ chính xác (Đã đối chiếu với tài liệu/dữ liệu Arex)" },
+              { key: "updatedVerified" as const, label: "3. Kiểm tra Thời điểm cập nhật (Nội dung mới nhất, không lỗi thời)" },
+              { key: "noTamperVerified" as const, label: "4. Kiểm tra Dấu hiệu bất thường (Không có mã độc, link lạ, sai lệch)" },
+              { key: "policyCompliant" as const, label: "5. Kiểm tra Quy định Arex Network (Tuân thủ Điều khoản & Tiêu chuẩn)" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => toggleCheck(key)}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                  checklist[key]
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium"
+                    : "border-border bg-card text-muted-foreground hover:border-emerald-500/30"
+                }`}
+              >
+                {checklist[key] ? (
+                  <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />
+                ) : (
+                  <Square className="w-4 h-4 shrink-0" />
+                )}
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Inputs */}
+        <div className="space-y-3 pt-2">
+          <div>
+            <label className="block text-xs font-bold text-foreground mb-1">
+              Nguồn thông tin xác minh (Verification Source) <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="VD: Arex Official Announcement #2026, Thông cáo báo chí, ..."
+              value={verificationSource}
+              onChange={(e) => setVerificationSource(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+            />
           </div>
 
-          {/* Section 3 Checklist Mandate */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-              <CheckSquare className="w-4 h-4" /> Checklist Moderator Bắt buộc (Mục 3 Spec):
-            </h4>
-
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              {[
-                { key: "sourceChecked", label: "1. Kiểm tra Nguồn thông tin (Verification Source có căn cứ rõ ràng)" },
-                { key: "accuracyChecked", label: "2. Kiểm tra Độ chính xác của dữ liệu / tuyên bố" },
-                { key: "updatedTimeChecked", label: "3. Kiểm tra Thời điểm cập nhật (Thông tin mới, không bị cũ/lạc hậu)" },
-                { key: "integrityChecked", label: "4. Kiểm tra Nội dung có dấu hiệu bị chỉnh sửa hay bất thường không" },
-                { key: "complianceChecked", label: "5. Kiểm tra Không vi phạm bất kỳ quy định nào của Arex Network" },
-              ].map(({ key, label }) => {
-                const checked = checklist[key as keyof ModeratorVerificationChecklist];
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleToggleCheck(key as keyof ModeratorVerificationChecklist)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                      checked
-                        ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-medium"
-                        : "bg-gray-950/50 border-gray-800 text-gray-400 hover:border-gray-700"
-                    }`}
-                  >
-                    {checked ? (
-                      <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />
-                    ) : (
-                      <Square className="w-4 h-4 text-gray-500 shrink-0" />
-                    )}
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Additional Input Fields */}
-          <div className="space-y-4 pt-2 border-t border-gray-800/80">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center gap-1.5">
-                <LinkIcon className="w-3.5 h-3.5 text-emerald-400" /> Nguồn đối chiếu kiểm chứng (Verification Source)
+              <label className="block text-xs font-bold text-foreground mb-1">
+                Ghi chú kiểm duyệt nội bộ (Verification Note - Ẩn công khai)
               </label>
-              <input
-                type="text"
-                placeholder="VD: https://official-announcement.com hoặc Tài liệu nội bộ #104"
-                value={verificationSource}
-                onChange={(e) => setVerificationSource(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+              <textarea
+                rows={2}
+                placeholder="Lý do duyệt / từ chối, bằng chứng đối chiếu..."
+                value={verificationNote}
+                onChange={(e) => setVerificationNote(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-amber-400" /> Ngày hết hạn xác minh (verification_expires_at)
+              <label className="block text-xs font-bold text-foreground mb-1">
+                Ngày hết hạn xác minh (Để trống nếu vĩnh viễn)
               </label>
               <input
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
-              />
-              <p className="text-[10px] text-gray-500 mt-1">
-                Để trống nếu xác minh vô thời hạn. Sau ngày này, trạng thái sẽ tự chuyển sang EXPIRED.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-rose-400" /> Ghi chú nội bộ Moderator (verification_note - BẢO MẬT)
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Ghi chú thẩm định dành riêng cho Admin/Moderator. Tuyệt đối không hiển thị công khai cho user."
-                value={verificationNote}
-                onChange={(e) => setVerificationNote(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-200 focus:outline-none focus:border-rose-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-800 bg-gray-950/80 flex items-center justify-between gap-3">
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-medium">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Footer Decision Buttons */}
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
           <button
             type="button"
             onClick={() => handleDecision("REJECT")}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 text-xs font-bold transition-all"
           >
-            <ShieldX className="w-4 h-4" /> Từ chối (REJECT)
+            <XCircle className="w-4 h-4" />
+            <span>TỪ CHỐI (REJECT)</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-gray-400 hover:bg-gray-800 transition-all"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDecision("VERIFY")}
-              disabled={isSubmitting || !allChecklistPassed}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ShieldCheck className="w-4 h-4" /> Duyệt Xác Minh (VERIFIED)
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleDecision("VERIFY")}
+            disabled={isSubmitting || !allChecked}
+            className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all ${
+              allChecked
+                ? "bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow-emerald-500/20 cursor-pointer"
+                : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60"
+            }`}
+          >
+            <Check className="w-4 h-4" />
+            <span>XÁC MINH (VERIFY)</span>
+          </button>
         </div>
       </div>
     </div>

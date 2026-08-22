@@ -71,21 +71,21 @@ export const VerifiedContentCard: React.FC<VerifiedContentCardProps> = ({
 
   return (
     <>
-      <div className="p-5 rounded-2xl bg-gray-900/90 border border-gray-800 hover:border-gray-700/80 shadow-xl transition-all space-y-4">
+      <div className="p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/40 transition-all space-y-4 text-foreground">
         {/* Card Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
               {item.author_avatar ? (
-                <img src={item.author_avatar} alt="Author" className="w-full h-full rounded-full object-cover" />
+                <img src={item.author_avatar} alt="Author" className="w-full h-full object-cover" />
               ) : (
                 <User className="w-5 h-5" />
               )}
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-gray-200">{item.author_name || "Thành viên Arex"}</h4>
-              <p className="text-[10px] text-gray-500 flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-gray-600" />
+              <h4 className="text-xs font-semibold text-foreground">{item.author_name || "Thành viên Arex"}</h4>
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-muted-foreground" />
                 {new Date(item.created_at).toLocaleString("vi-VN")}
               </p>
             </div>
@@ -98,34 +98,35 @@ export const VerifiedContentCard: React.FC<VerifiedContentCardProps> = ({
 
         {/* Card Content Body */}
         <div className="space-y-2">
-          <h3 className="text-base font-bold text-gray-100">{item.title}</h3>
-          <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line bg-gray-950/60 p-3.5 rounded-xl border border-gray-800/80">
+          <h3 className="text-base font-bold text-foreground">{item.title}</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line bg-muted/40 p-3.5 rounded-xl border border-border">
             {item.content_body}
           </p>
         </div>
 
         {/* Metadata & SHA-256 Hash */}
         {item.verification_info?.content_hash && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-950/90 border border-gray-800 text-[10px] font-mono text-gray-400">
-            <Hash className="w-3 h-3 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/60 border border-border text-[10px] font-mono text-muted-foreground">
+            <Hash className="w-3 h-3 text-emerald-500 shrink-0" />
             <span className="truncate">SHA-256 Hash: {item.verification_info.content_hash}</span>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+          <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
             {errorMsg}
           </div>
         )}
 
         {/* Card Action Bar */}
-        <div className="pt-3 border-t border-gray-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div className="pt-3 border-t border-border flex items-center justify-between flex-wrap gap-2 text-xs">
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setIsAuditDrawerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800/80 text-gray-300 hover:bg-gray-700 hover:text-white transition-all text-xs font-medium"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted/50 text-foreground hover:bg-muted transition-all text-xs font-medium"
             >
-              <History className="w-3.5 h-3.5 text-emerald-400" />
+              <History className="w-3.5 h-3.5 text-emerald-500" />
               <span>Audit Trail</span>
             </button>
           </div>
@@ -137,9 +138,10 @@ export const VerifiedContentCard: React.FC<VerifiedContentCardProps> = ({
                 item.verification_status === "REJECTED" ||
                 item.verification_status === "EXPIRED") && (
                 <button
+                  type="button"
                   onClick={handleSubmitVerification}
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition-all font-semibold"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all font-semibold"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Gửi xác minh</span>
@@ -149,8 +151,9 @@ export const VerifiedContentCard: React.FC<VerifiedContentCardProps> = ({
             {/* Moderator Verify Action Button */}
             {isModerator && item.verification_status === "PENDING" && (
               <button
+                type="button"
                 onClick={() => setIsVerifyDialogOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-lg shadow-emerald-500/20 transition-all"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-md shadow-emerald-500/20 transition-all"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>Duyệt Xác Minh</span>
@@ -160,8 +163,9 @@ export const VerifiedContentCard: React.FC<VerifiedContentCardProps> = ({
             {/* Edit Button */}
             {(isOwner || isModerator) && onEdit && (
               <button
+                type="button"
                 onClick={() => onEdit(item)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted transition-all"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Sửa</span>
@@ -171,9 +175,10 @@ export const VerifiedContentCard: React.FC<VerifiedContentCardProps> = ({
             {/* Soft Delete Button */}
             {(isOwner || isModerator) && (
               <button
+                type="button"
                 onClick={handleSoftDelete}
                 disabled={isSubmitting}
-                className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all"
+                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-all"
                 title="Xóa mềm (Soft Delete)"
               >
                 <Trash2 className="w-4 h-4" />

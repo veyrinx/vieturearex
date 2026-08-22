@@ -24,7 +24,7 @@ export async function GET(
       .eq("id", user.id)
       .single();
 
-    const isModerator = ["super_admin", "admin", "manager", "it"].includes(userProfile?.role || "");
+    const isModerator = ["super_admin", "admin", "it"].includes(userProfile?.role || "");
 
     const { data: contentItem } = await (supabase as any)
       .from("contents")

@@ -25,7 +25,7 @@ export async function POST(
       .eq("id", user.id)
       .single();
 
-    const isModerator = ["super_admin", "admin", "manager", "it"].includes(userProfile?.role || "");
+    const isModerator = ["super_admin", "admin", "it"].includes(userProfile?.role || "");
 
     if (!isModerator) {
       return NextResponse.json(

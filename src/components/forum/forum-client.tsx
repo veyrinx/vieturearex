@@ -27,6 +27,7 @@ import { UserAvatar, UserNameWithTitle } from "@/components/common/user-avatar";
 import { ForumEditor } from "@/components/forum/forum-editor";
 import { ForumContent } from "@/components/forum/forum-content";
 import { hasImage, plainTextOf, validateReplyContent } from "@/lib/utils/forum-content";
+import { VerifiedBadge } from "@/components/verified-content/VerifiedBadge";
 
 type Post = {
   id: string; title: string; category: string;
@@ -174,6 +175,7 @@ export function ForumList({ initialPosts, initialTotal }: { initialPosts: Post[]
                   {isNew && !isHot && (
                     <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-black text-emerald-500">MỚI</span>
                   )}
+                  {p.is_verified && <VerifiedBadge status="VERIFIED" />}
                   <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${catMeta.color} ${catMeta.bg}`}>{p.category}</span>
                 </div>
                 <p className="mt-1.5 font-heading text-sm font-bold text-foreground line-clamp-1 group-hover:text-primary dark:group-hover:text-amber-400 transition-colors md:text-base">{p.title}</p>

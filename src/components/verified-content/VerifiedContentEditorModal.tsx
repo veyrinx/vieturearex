@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { AlertCircle, FileText, Send, CheckCircle2, ShieldAlert } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, Save, ShieldAlert } from "lucide-react";
 import type { VerifiedContentItem } from "@/lib/types/verified-content";
 
 interface VerifiedContentEditorModalProps {
   isOpen: boolean;
-  itemToEdit?: VerifiedContentItem | null;
+  initialData?: VerifiedContentItem | null;
   onClose: () => void;
-  onSuccess: () => void;
+  onSaved: () => void;
 }
 
 export const VerifiedContentEditorModal: React.FC<VerifiedContentEditorModalProps> = ({
   isOpen,
-  itemToEdit,
+  initialData,
   onClose,
-  onSuccess,
+  onSaved,
 }) => {
   const [title, setTitle] = useState("");
   const [contentBody, setContentBody] = useState("");
@@ -23,24 +23,24 @@ export const VerifiedContentEditorModal: React.FC<VerifiedContentEditorModalProp
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (itemToEdit) {
-      setTitle(itemToEdit.title);
-      setContentBody(itemToEdit.content_body);
+    if (initialData) {
+      setTitle(initialData.title);
+      setContentBody(initialData.content_body);
     } else {
       setTitle("");
       setContentBody("");
     }
-    setErrorMsg(null);
-  }, [itemToEdit, isOpen]);
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
-  const isEditingVerified = itemToEdit && itemToEdit.verification_status === "VERIFIED";
+  const isEditing = Boolean(initialData);
+  const isVerified = initialData?.verification_status === "VERIFIED";
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !contentBody.trim()) {
-      setErrorMsg("Vui lòng điền đầy đủ tiêu đề và nội dung.");
+      setErrorMsg("Vui lòng nhập tiêu đề và nội dung.");
       return;
     }
 
@@ -48,10 +48,10 @@ export const VerifiedContentEditorModal: React.FC<VerifiedContentEditorModalProp
     setErrorMsg(null);
 
     try {
-      const url = itemToEdit
-        ? `/api/verified-content/${itemToEdit.id}`
+      const url = isEditing
+        ? `/api/verified-content/${initialData!.id}`
         : "/api/verified-content";
-      const method = itemToEdit ? "PUT" : "POST";
+      const method = isEditing ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
@@ -64,106 +64,98 @@ export const VerifiedContentEditorModal: React.FC<VerifiedContentEditorModalProp
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "Thao tác thất bại");
+        throw new Error(json.error || "Lưu thất bại");
       }
 
-      onSuccess();
+      onSaved();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || "Đã xảy ra lỗi khi lưu nội dung");
+      setErrorMsg(err.message || "Lỗi hệ thống");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="relative w-full max-w-xl rounded-2xl border border-border bg-card shadow-2xl p-6 space-y-4 text-foreground animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-5 border-b border-gray-800 bg-gray-950/80 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-100">
-                {itemToEdit ? "Chỉnh Sửa Nội Dung Verified Content" : "Tạo Nội Dung Mới"}
-              </h3>
-              <p className="text-xs text-gray-400">Hệ thống quản lý xác minh & lưu vết toàn bộ (Audit Trail)</p>
-            </div>
-          </div>
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <h3 className="text-base font-bold text-foreground">
+            {isEditing ? "CHỈNH SỬA NỘI DUNG" : "TẠO NỘI DUNG MỚI"}
+          </h3>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-200 text-lg font-bold p-1 rounded-lg hover:bg-gray-800"
+            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-all"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
+        {/* Warning Banner if Editing VERIFIED Content */}
+        {isVerified && (
+          <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5">
+            <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">CẢNH BÁO QUY TẮC IMMUTABLE:</p>
+              <p className="mt-0.5 text-[11px] opacity-90 leading-relaxed">
+                Nội dung này hiện tại đang đạt trạng thái <strong>VERIFIED</strong>. Nếu bạn chỉnh sửa nội dung, hệ thống sẽ <strong>TỰ ĐỘNG CHUYỂN VỀ UNVERIFIED</strong> để yêu cầu kiểm duyệt lại từ đầu!
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-          {isEditingVerified && (
-            <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
-              <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
-              <div>
-                <p className="font-bold text-amber-200">Quy định Khóa cứng Nội dung (Mục 4 Spec):</p>
-                <p className="mt-0.5 leading-relaxed text-amber-300/90">
-                  Nội dung này hiện đang ở trạng thái <strong className="text-emerald-400">VERIFIED</strong>. Lưu thay đổi sẽ tự động hạ trạng thái về <strong className="text-amber-400">UNVERIFIED</strong> và yêu cầu kiểm duyệt lại từ đầu (PENDING → VERIFIED) để chống gian lận.
-                </p>
-              </div>
-            </div>
-          )}
-
+        <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-              Tiêu đề nội dung *
+            <label className="block text-xs font-bold text-foreground mb-1">
+              Tiêu đề bài đăng <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
-              required
-              placeholder="Nhập tiêu đề thông tin hoặc bài đăng..."
+              placeholder="Nhập tiêu đề..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-              Nội dung chi tiết (content_body) *
+            <label className="block text-xs font-bold text-foreground mb-1">
+              Nội dung chính <span className="text-rose-500">*</span>
             </label>
             <textarea
-              required
               rows={6}
-              placeholder="Nhập nội dung văn bản / dữ liệu cần kiểm chứng..."
+              placeholder="Nhập nội dung bài đăng..."
               value={contentBody}
               onChange={(e) => setContentBody(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-100 focus:outline-none focus:border-emerald-500 font-sans leading-relaxed"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500 resize-y"
             />
           </div>
 
-          <div className="pt-3 border-t border-gray-800 flex items-center justify-end gap-3">
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-medium">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-gray-400 hover:bg-gray-800 transition-all"
+              className="px-4 py-2 rounded-xl border border-border bg-card text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
             >
               Hủy
             </button>
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all"
             >
-              <Send className="w-4 h-4" />
-              <span>{isSubmitting ? "Đang lưu..." : itemToEdit ? "Cập Nhật & Hạ Trạng Thái" : "Tạo Mới Content"}</span>
+              <Save className="w-4 h-4" />
+              <span>{isSubmitting ? "Đang lưu..." : "Lưu Bài Đăng"}</span>
             </button>
           </div>
         </form>
