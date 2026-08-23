@@ -6,6 +6,7 @@ import { BadgeCheck, ChevronRight, Eye, Pencil, Star, TicketPercent } from "luci
 import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { BuyPanel } from "@/components/shop/buy-panel";
+import { PriceGuide } from "@/components/shop/price-guide";
 import { bumpListingViews, getListing, getShopViewer } from "@/lib/server/shop";
 import {
   LISTING_KIND_LABEL,
@@ -143,6 +144,13 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1"><Eye className="size-3" /> {listing.views} lượt xem</span>
               <span>{LISTING_STATUS_LABEL[listing.status]}</span>
+            </div>
+
+            {/* Chỉ truyền `kind`: trang này đi qua shop-privacy nên không có
+                game_uid, và cũng không nên có — khoảng giá theo loại là đủ để
+                người mua biết mình đang trả cao hay thấp hơn mặt bằng. */}
+            <div className="mt-3">
+              <PriceGuide kind={listing.kind} currentPrice={effectivePrice(listing)} />
             </div>
 
             {listing.seller && (

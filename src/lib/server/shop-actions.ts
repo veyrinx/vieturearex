@@ -28,6 +28,8 @@ import {
   notifyOrderStep,
 } from "@/lib/server/shop-notify";
 import { appendOrderToLarkSheet } from "@/lib/server/lark-sheet";
+import { recordSoldPrice } from "@/lib/server/shop-price";
+import { recordDisputeScam } from "@/lib/server/scam-registry";
 import type { ShopOrder, ShopSeller } from "@/lib/types/shop";
 
 /**
@@ -256,6 +258,8 @@ export async function applyOrderAction(input: {
       type: "completed",
       message: "Đơn hoàn tất. Tiền đã chuyển cho người bán.",
     });
+    // Giá chốt vào lịch sử để định giá acc sau này (xem shop-price.ts).
+    void recordSoldPrice(order.id);
   }
 
   const updated = await getOrderById(order.id);
@@ -392,6 +396,16 @@ export async function resolveDispute(input: {
   const now = new Date().toISOString();
   const nextStatus: OrderStatus = input.outcome === "pay_seller" ? "completed" : "cancelled";
 
+  // Lấy id tranh chấp TRƯỚC khi đổi trạng thái: sau khi update, điều kiện
+  // `status in (open, resolving)` không còn khớp để tìm lại nó nữa.
+  const { data: disputeRow } = (await untypedFrom(client, "shop_disputes")
+    .select("id")
+    .eq("order_id", order.id)
+    .in("status", ["open", "resolving"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()) as { data: { id: string } | null };
+
   await untypedFrom(client, "shop_disputes")
     .update({
       status: input.outcome,
@@ -425,6 +439,21 @@ export async function resolveDispute(input: {
     message: `${input.outcome === "pay_seller" ? "Trả tiền người bán" : "Hoàn tiền người mua"} — ${input.resolution}`,
     images: input.images,
   });
+
+  if (input.outcome === "pay_seller") {
+    // Vẫn là một giao dịch thành công — giá vẫn có giá trị tham chiếu.
+    void recordSoldPrice(order.id);
+  } else {
+    // Hoàn tiền người mua = đội ngũ đã kết luận người bán sai. Đây là nguồn dữ
+    // liệu chính của /check-scam: có người thật mất tiền, không phải tố cáo suông.
+    void recordDisputeScam({
+      orderId: order.id,
+      disputeId: disputeRow?.id ?? null,
+      sellerId: order.seller_id,
+      listingId: order.listing_id,
+      resolution: input.resolution,
+    });
+  }
 
   const outcomeLabel = input.outcome === "pay_seller" ? "Trả tiền người bán" : "Hoàn tiền người mua";
   void notifyDisputeResolved(

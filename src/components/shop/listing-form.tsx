@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImagePicker } from "@/components/shop/image-picker";
+import { PriceGuide } from "@/components/shop/price-guide";
 import {
   LISTING_KIND_LABEL,
   MAX_LISTING_IMAGES,
@@ -160,6 +161,8 @@ export function ListingForm({
           />
           Có thể thương lượng giá
         </label>
+
+        <PriceGuide kind={kind} gameUid={form.gameUid} currentPrice={price} />
 
         {price >= MIN_PRICE && (
           <p className="rounded-xl border border-border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">

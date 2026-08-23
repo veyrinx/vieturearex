@@ -39,6 +39,7 @@ export const SITE_ROUTES: string[] = [
   "/notifications",
   "/favorites",
   "/profile",
+  "/nhiem-vu",
   "/gallery",
 
   // ── Công cụ / tra cứu ───────────────────────────────────────────────────
@@ -60,6 +61,7 @@ export const SITE_ROUTES: string[] = [
   "/countdown",
   "/safe-topup",
   "/check-scam",
+  "/theo-doi-nick",
   "/phone-lookup",
   "/players/compare",
   "/search",

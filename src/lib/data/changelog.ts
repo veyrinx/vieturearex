@@ -17,6 +17,19 @@ export const CHANGE_META: Record<ChangeType, { label: string; cls: string }> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.0",
+    date: "2026-08-23",
+    changes: [
+      { type: "feature", text: "Theo Dõi Nick Free Fire (/theo-doi-nick): ghim nick, nhận báo khi đổi tên, đổi guild, lên level hay đổi điểm rank — kèm lịch sử đổi tên để nhận ra acc đã qua nhiều chủ" },
+      { type: "feature", text: "Check Scam (/check-scam) chạy thật trở lại: tra SĐT, số tài khoản, UID game, Zalo/Facebook trong hồ sơ rủi ro sinh từ tranh chấp chợ Arex đã xử" },
+      { type: "feature", text: "Nhiệm Vụ Tuần (/nhiem-vu): đăng bài, bình luận, đóng góp wiki, điểm danh — làm xong nhận điểm đóng góp, làm mới mỗi thứ Hai" },
+      { type: "feature", text: "Bảng theo dõi giải trực tiếp (/tournaments/[slug]/live): tỉ số, lịch trận và bảng xếp hạng tự cập nhật trong ngày thi đấu" },
+      { type: "feature", text: "Khoảng giá tham chiếu trong chợ Arex: dựng từ đơn ĐÃ chốt (không phải giá rao), hiện khi đăng bán và ở trang chi tiết" },
+      { type: "feature", text: "Quản trị Hồ Sơ Rủi Ro (/admin/scam-reports) để rà soát, thêm và gỡ cảnh báo scam" },
+      { type: "improvement", text: "Báo Telegram khi một vòng đấu kết thúc — chỉ bắn 1 tin mỗi vòng, không spam từng trận" },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-07-15",
     changes: [

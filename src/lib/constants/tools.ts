@@ -60,17 +60,30 @@ export type Tool = {
  */
 export const TOOLS: Tool[] = [
   {
+    href: "/theo-doi-nick",
+    category: "tra-cuu",
+    keywords: ["theo dõi nick", "ghim nick", "đổi tên", "đổi guild", "lịch sử nick", "soi acc"],
+    title: "Theo Dõi Nick Free Fire",
+    desc: "Ghim nick để nhận báo khi đổi tên, đổi guild, lên level hay thay đổi điểm rank. Lịch sử đổi tên giúp nhận ra acc đã qua nhiều chủ.",
+    icon: Users,
+    accent: "text-sky-500 bg-sky-500/10",
+    gradient: "from-sky-600 to-cyan-600",
+    featured: true,
+    shortDesc: "Báo khi nick đổi tên, đổi guild hay lên rank.",
+    badge: "MỚI",
+  },
+  {
     href: "/check-scam",
     category: "tra-cuu",
     keywords: ["check scam", "lừa đảo", "tố cáo", "kiểm tra stk", "sđt lừa đảo", "checkscam"],
     title: "Check Scam — Kiểm Tra Lừa Đảo",
-    desc: "Tính năng đang trong quá trình nâng cấp và bảo trì hệ thống. Vui lòng quay lại sau!",
+    desc: "Tra SĐT, số tài khoản, UID game hay Zalo/Facebook trong hồ sơ rủi ro sinh từ tranh chấp chợ Arex đã xử.",
     icon: ShieldAlert,
     accent: "text-rose-500 bg-rose-500/10",
     gradient: "from-rose-600 to-pink-600",
     featured: true,
-    shortDesc: "[BẢO TRÌ] Tra cứu tố cáo scam, STK & SĐT lừa đảo.",
-    badge: "BẢO TRÌ",
+    shortDesc: "Tra cứu cảnh báo scam, STK & SĐT lừa đảo.",
+    badge: "MỚI",
   },
   {
     href: "/phone-lookup",

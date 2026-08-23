@@ -154,6 +154,7 @@ export const adminNavItems = [
   { title: "PHIÊN BẢN", href: "/admin/changelog" },
   { title: "ĐỘI NGŨ", href: "/admin/team" },
   { title: "BẢO MẬT", href: "/admin/security" },
+  { title: "HỒ SƠ RỦI RO", href: "/admin/scam-reports" },
   { title: "GIẢI ĐẤU", href: "/admin/tournaments" },
   { title: "CHỢ AREX", href: "/admin/shop" },
   { title: "PHÂN QUYỀN", href: "/admin/permissions" },

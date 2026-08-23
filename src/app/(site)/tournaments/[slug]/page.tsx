@@ -115,6 +115,14 @@ export default async function TournamentDetailPage({ params }: { params: Promise
         {/* Action buttons */}
         <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3">
           <RegisterButton tournamentId={tournament.id} tournamentStatus={tournament.status} slug={slug} />
+          <Link href={`/tournaments/${slug}/live`}
+            className="flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/8 px-3 py-2 text-xs font-semibold text-red-500 hover:border-red-500/60 transition-colors">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-red-500" />
+            </span>
+            Xem trực tiếp
+          </Link>
           <Link href={`/tournaments/${slug}/leaderboard`}
             className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:border-primary/40 transition-colors">
             <BarChart2 className="size-3.5" /> Bảng xếp hạng

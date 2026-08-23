@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { notifyRoundCompleted } from "@/lib/server/tms-live-notify";
 import type {
   TmsTeam, TmsTeamMember, TmsTournament, TmsRegistration,
   TmsMatch, TmsMatchResult, TmsPlayerLeaderboard, TmsTeamLeaderboard,
@@ -193,6 +194,11 @@ export async function submitTmsResults(input: SubmitResultInput, submittedBy: st
     .update({ status: "done", winner_id: input.winner_id, proof_url: input.proof_url ?? null })
     .eq("id", input.match_id);
   if (matchErr) throw matchErr;
+
+  // Vòng đấu vừa khép lại thì báo kênh Telegram cộng đồng (tự im nếu vòng còn
+  // trận dang dở). Không await: kết quả đã lưu xong, Telegram chậm hay lỗi
+  // không được giữ người nhập kết quả lại.
+  void notifyRoundCompleted(input.tournament_id, input.match_id);
 }
 
 // ── Leaderboards ──────────────────────────────────────────────────────────────
