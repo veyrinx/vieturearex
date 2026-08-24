@@ -1834,6 +1834,31 @@ function DiscordTestCard() {
 function LarkSheetTestCard() {
   const [status, setStatus] = useState<SetupStatus>("idle");
   const [msg, setMsg]       = useState("");
+  const [styling, setStyling] = useState(false);
+
+  // Áp lại định dạng cho tab dựng từ trước — tab mới đã tự đẹp lúc sinh ra.
+  const restyle = async () => {
+    setStyling(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/lark/restyle", { method: "POST" });
+      const data = (await res.json()) as { ok: boolean; styled?: number; reason?: string };
+      if (data.ok) {
+        setStatus("success");
+        setMsg(`Đã áp định dạng cho ${data.styled} tab — mở bảng tính xem lại.`);
+      } else {
+        setStatus("error");
+        setMsg(data.reason === "no_matching_tab"
+          ? "Chưa có tab nào để làm đẹp — bấm 'Ghi dòng test' để dựng tab trước."
+          : data.reason ?? "Thất bại — kiểm tra cấu hình Lark trong Settings.");
+      }
+    } catch {
+      setStatus("error");
+      setMsg("Lỗi kết nối.");
+    }
+    setStyling(false);
+    setTimeout(() => { setStatus("idle"); setMsg(""); }, 5000);
+  };
 
   const test = async () => {
     setStatus("loading");
@@ -1871,7 +1896,7 @@ function LarkSheetTestCard() {
         </p>
 
         <div className="flex flex-wrap gap-2">
-          {[["A", "Thời gian"], ["B", "Email"], ["C", "Tên"], ["D", "Role"], ["E", "FF ID"]].map(([col, label]) => (
+          {[["A", "Thời gian"], ["B", "Email"], ["C", "Tên hiển thị"], ["D", "User ID"], ["E", "Vai trò"]].map(([col, label]) => (
             <div key={col} className="flex items-center gap-1 rounded-md border border-border bg-background/70 px-2 py-1">
               <span className="font-mono text-[10px] font-black text-emerald-600 dark:text-emerald-400">{col}</span>
               <span className="text-[10px] text-muted-foreground">{label}</span>
@@ -1889,6 +1914,16 @@ function LarkSheetTestCard() {
           {status === "loading" ? "Đang ghi..." : "Ghi dòng test"}
         </button>
 
+        <button
+          type="button"
+          onClick={restyle}
+          disabled={styling}
+          className="flex items-center gap-1.5 rounded-xl border border-border bg-background/70 px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition hover:border-emerald-500/30 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-50"
+        >
+          {styling ? <Loader2 className="size-3.5 animate-spin" /> : <FileSpreadsheet className="size-3.5" />}
+          {styling ? "Đang định dạng..." : "Làm đẹp bảng cũ"}
+        </button>
+
         {msg && (
           <div className={cn(
             "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium",
@@ -1903,6 +1938,8 @@ function LarkSheetTestCard() {
 
         <p className="text-[10px] text-muted-foreground">
           Cần cấu hình Lark App ID + Secret + Spreadsheet Token trong Settings → Tích Hợp.
+          Tab mới tự có tiêu đề đậm, cột đúng độ rộng và cột tiền căn phải; bảng dựng từ
+          trước thì bấm <b>Làm đẹp bảng cũ</b> — nút này chỉ đổi trình bày, không đụng dữ liệu.
         </p>
       </div>
     </div>
