@@ -28,21 +28,55 @@ export async function getZaloBotToken(): Promise<string> {
 
 type ZaloBotResponse<T> = { ok?: boolean; result?: T; error_code?: number; description?: string };
 
+async function callOnce<T>(
+  token: string,
+  method: string,
+  verb: "GET" | "POST",
+  payload: Record<string, unknown>,
+): Promise<{ status: number; data: ZaloBotResponse<T> } | null> {
+  const base = `${API_BASE}/bot${token}/${method}`;
+  const url =
+    verb === "GET" && Object.keys(payload).length
+      ? `${base}?${new URLSearchParams(
+          Object.entries(payload).map(([k, v]) => [k, String(v)]),
+        ).toString()}`
+      : base;
+
+  const res = await fetch(url, {
+    method: verb,
+    ...(verb === "POST"
+      ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }
+      : {}),
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  if (!res) return null;
+  const data = (await res.json().catch(() => ({}))) as ZaloBotResponse<T>;
+  return { status: res.status, data };
+}
+
+/** Các method đọc — Zalo phục vụ bằng GET, POST vào là 404/405. */
+const GET_METHODS = new Set(["getme", "getupdates", "getwebhookinfo", "getfile"]);
+
 export async function zaloBotApi<T = unknown>(
   token: string,
   method: string,
   payload: Record<string, unknown> = {},
 ): Promise<ZaloBotResponse<T>> {
-  const res = await fetch(`${API_BASE}/bot${token}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  }).catch(() => null);
+  const primary: "GET" | "POST" = GET_METHODS.has(method.toLowerCase()) ? "GET" : "POST";
+
+  let res = await callOnce<T>(token, method, primary, payload);
+  // Tài liệu Zalo Bot còn nhảy nhót giữa GET/POST tuỳ method — sai động từ thì
+  // nhận 404/405 chứ không phải lỗi thật, nên thử nốt động từ kia rồi mới kêu.
+  if (!res || res.status === 404 || res.status === 405) {
+    const fallback = await callOnce<T>(token, method, primary === "GET" ? "POST" : "GET", payload);
+    if (fallback) res = fallback;
+  }
+
   if (!res) return { ok: false, description: "network_error" };
-  const data = (await res.json().catch(() => ({}))) as ZaloBotResponse<T>;
-  if (!res.ok && data.ok === undefined) {
-    return { ok: false, description: data.description ?? `http_${res.status}` };
+  const { status, data } = res;
+  if (status >= 400 && data.ok === undefined) {
+    return { ok: false, description: data.description ?? `http_${status}` };
   }
   return data;
 }
