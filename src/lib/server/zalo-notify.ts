@@ -37,7 +37,7 @@ export async function sendZaloNotification(title: string, body: string, url?: st
   }
 
   // ── Bot Zalo (bot.zapps.vn) — kênh chính thức, dùng khi có token + chat id ──
-  const botChatId = get("integrations.zalo_bot_chat_id");
+  const botChatId = get("integrations.zalo_bot_chat_id") || (process.env.ZALO_BOT_CHAT_ID?.trim() ?? "");
   if (botChatId) {
     const botToken = await getZaloBotToken();
     if (botToken && (await sendZaloBotMessage(botToken, botChatId, message))) {

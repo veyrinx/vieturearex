@@ -22,7 +22,9 @@ export const metadata: Metadata = {
 
 export default async function ZaloLinkPage() {
   const settings = await getSettings().catch(() => []);
-  const botLink = settings.find((s) => s.key === "integrations.zalo_bot_link")?.value?.trim() || "";
+  const botLink =
+    settings.find((s) => s.key === "integrations.zalo_bot_link")?.value?.trim() ||
+    (process.env.ZALO_BOT_LINK?.trim() ?? "");
 
   return (
     <main className="container-main my-8 max-w-lg space-y-8">
