@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   const serving = await resolveServingOrigin(SITE_URL, origin);
   const url = webhookPath(serving);
   const switchedFrom = serving === SITE_URL ? null : webhookPath(SITE_URL);
-  const secret = process.env.ZALO_BOT_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
+  // Chỉ dùng secret khai riêng cho Zalo — phải khớp đúng thứ /api/zalo/bot kiểm.
+  const secret = process.env.ZALO_BOT_WEBHOOK_SECRET || "";
 
   const res =
     action === "delete"
@@ -95,6 +96,6 @@ export async function GET(request: NextRequest) {
     expected_url: expected,
     // false = webhook đang trỏ sai chỗ → bấm "Đăng ký webhook" lại là xong.
     url_matches: current === expected,
-    secret_configured: Boolean(process.env.ZALO_BOT_WEBHOOK_SECRET || process.env.CRON_SECRET),
+    secret_configured: Boolean(process.env.ZALO_BOT_WEBHOOK_SECRET),
   });
 }

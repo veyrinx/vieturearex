@@ -19,7 +19,7 @@ import {
 } from "@/lib/server/zalo-bot";
 
 /**
- * Webhook bot Zalo (bot.zapps.vn).
+ * Webhook bot Zalo (bot.zapps.me).
  *
  * Zalo Bot không có nút bấm/inline keyboard nên toàn bộ điều hướng là lệnh chữ
  * + link. Người dùng cũng hiếm khi gõ "/", nên mọi lệnh đều nhận cả 3 dạng:
@@ -347,26 +347,41 @@ export async function POST(req: NextRequest) {
   const limited = enforceRateLimit(req, { name: "zalo-bot-webhook", limit: 120, windowMs: 60_000 });
   if (limited) return limited;
 
-  const secret = process.env.ZALO_BOT_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
+  // CHỈ nhận secret khai riêng cho Zalo. Trước đây còn tự lấy CRON_SECRET làm
+  // dự phòng: ai đăng ký webhook thẳng trên bot.zapps.me (không kèm secret_token)
+  // là mọi tin nhắn bị vứt lặng lẽ, không dấu vết nào để lần.
+  const secret = process.env.ZALO_BOT_WEBHOOK_SECRET || "";
   if (secret) {
     const received =
       req.headers.get("x-bot-api-secret-token") ??
       req.headers.get("x-zalo-bot-api-secret-token") ??
       req.headers.get("x-zalo-signature") ??
       "";
-    // Luôn trả 200 để Zalo khỏi gửi lại liên tục, chỉ lặng lẽ bỏ qua.
-    if (received !== secret) return NextResponse.json({ ok: true });
+    // Luôn trả 200 để Zalo khỏi gửi lại liên tục, nhưng phải ghi log.
+    if (received !== secret) {
+      console.warn("[zalo-bot] BỎ QUA update: secret không khớp.", received ? "Header có secret nhưng khác." : "Webhook đăng ký không kèm secret_token — đăng ký lại bằng nút Set Webhook trong Admin.");
+      return NextResponse.json({ ok: true });
+    }
   }
 
   const raw = await req.json().catch(() => null);
   const update: NormalizedUpdate | null = normalizeZaloUpdate(raw);
-  if (!update) return NextResponse.json({ ok: true });
+  if (!update) {
+    // Không đọc ra chat id = dạng payload lạ. In ra để còn biết Zalo gửi gì.
+    console.warn("[zalo-bot] Không đọc được update:", JSON.stringify(raw)?.slice(0, 600));
+    return NextResponse.json({ ok: true });
+  }
 
   // Bỏ qua chính tin bot vừa gửi (tránh vòng lặp tự trả lời).
   if (/sent|delivered|seen/i.test(update.eventName)) return NextResponse.json({ ok: true });
 
   const token = await getZaloBotToken();
-  if (!token) return NextResponse.json({ ok: true });
+  if (!token) {
+    console.warn("[zalo-bot] Có update nhưng CHƯA CẤU HÌNH TOKEN — lưu token ở Admin hoặc đặt ZALO_BOT_TOKEN.");
+    return NextResponse.json({ ok: true });
+  }
+
+  console.log(`[zalo-bot] update ${update.eventName || "?"} chat=${update.chatId} text=${JSON.stringify(update.text.slice(0, 80))}`);
 
   const ctx: Ctx = {
     token,
