@@ -1,5 +1,6 @@
 import "server-only";
 import { getSettings } from "@/lib/data/content-service";
+import { getZaloBotToken, sendZaloBotMessage } from "@/lib/server/zalo-bot";
 
 const ZALO_OA_MESSAGE_API = "https://openapi.zalo.me/v3.0/oa/message";
 
@@ -32,6 +33,15 @@ export async function sendZaloNotification(title: string, body: string, url?: st
       console.warn("[zalo-notify] Personal webhook returned", res.status);
     } catch (err) {
       console.error("[zalo-notify] Personal webhook failed:", err);
+    }
+  }
+
+  // ── Bot Zalo (bot.zapps.vn) — kênh chính thức, dùng khi có token + chat id ──
+  const botChatId = get("integrations.zalo_bot_chat_id");
+  if (botChatId) {
+    const botToken = await getZaloBotToken();
+    if (botToken && (await sendZaloBotMessage(botToken, botChatId, message))) {
+      return { sent: true, via: "bot" as const };
     }
   }
 

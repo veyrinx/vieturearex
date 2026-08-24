@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/data/content-service";
 import { verifySmtp } from "@/lib/server/email";
 import { SITE_URL, siteConfig } from "@/lib/constants/site";
 import { resolveServingOrigin } from "@/lib/server/serving-origin";
+import { zaloBotApi, ZALO_BOT_TOKEN_KEY } from "@/lib/server/zalo-bot";
 
 /**
  * Một cú gọi, ra hết trạng thái các đường liên lạc ra ngoài: email có gửi được
@@ -177,6 +178,42 @@ export async function GET(request: NextRequest) {
   const chatId = get(TG_CHAT);
   if (chatId && undecrypted(chatId)) {
     checks.push({ name: "Telegram chat nội bộ", ok: false, detail: "chat_id không giải mã được" });
+  }
+
+  // ── Bot Zalo (bot.zapps.vn) ───────────────────────────────────────────────
+  const zaloToken = get(ZALO_BOT_TOKEN_KEY) || (process.env.ZALO_BOT_TOKEN?.trim() ?? "");
+  if (zaloToken) {
+    if (undecrypted(zaloToken)) {
+      checks.push({
+        name: "Zalo bot",
+        ok: false,
+        detail: "Token trong DB không giải mã được",
+        fix: "APP_SECRET khác lúc lưu — nhập lại token trong Cài đặt → Bot Zalo.",
+      });
+    } else {
+      const me = await zaloBotApi<{ display_name?: string; account_name?: string }>(zaloToken, "getMe");
+      const okMe = me.ok !== false;
+      checks.push({
+        name: "Zalo bot",
+        ok: okMe,
+        detail: okMe
+          ? (me.result?.display_name ?? me.result?.account_name ?? "Token hợp lệ")
+          : (me.description ?? "Zalo từ chối token"),
+        fix: okMe ? undefined : "Kiểm tra lại token ở bot.zapps.vn.",
+      });
+
+      if (okMe) {
+        const info = await zaloBotApi<{ url?: string }>(zaloToken, "getWebhookInfo");
+        const url = info.result?.url ?? "";
+        const expected = `${serving}/api/zalo/bot`;
+        checks.push({
+          name: "Zalo webhook",
+          ok: url === expected,
+          detail: url ? `${url}${url === expected ? "" : ` (đáng lẽ phải là ${expected})`}` : "Chưa đăng ký webhook",
+          fix: url === expected ? undefined : "Admin → Cài đặt → Bot Zalo → bấm Set Webhook.",
+        });
+      }
+    }
   }
 
   // ── Discord ───────────────────────────────────────────────────────────────

@@ -227,6 +227,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [miniAppStats, setMiniAppStats] = useState<{ active: number; total: number } | null>(null);
   const [miniAppBroadcast, setMiniAppBroadcast] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const [webhookStatus, setWebhookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
+  const [zaloHookStatus, setZaloHookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
+  const [zaloTestStatus, setZaloTestStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
   type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
   const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -292,6 +294,65 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       toast.error("Lỗi kết nối");
     }
     setHealthLoading(false);
+  }
+
+  async function setupZaloWebhook() {
+    setZaloHookStatus("loading");
+    try {
+      const res = await fetch("/api/admin/zalo/webhook-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set" }),
+      });
+      const d = (await res.json().catch(() => ({}))) as {
+        ok?: boolean; webhook_url?: string; reason?: string;
+        switched_from?: string; secret_configured?: boolean;
+        bot?: { display_name?: string; account_name?: string } | null;
+      };
+      setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
+      if (res.ok && d.ok) {
+        toast.success(`Webhook Zalo đã set: ${d.webhook_url}`);
+        if (d.bot?.display_name || d.bot?.account_name) {
+          toast.info(`Bot: ${d.bot.display_name ?? d.bot.account_name}`);
+        }
+        if (d.switched_from) toast.warning(`NEXT_PUBLIC_SITE_URL đang trỏ vào địa chỉ bị chuyển hướng (${d.switched_from}) — sửa lại trên Vercel.`);
+        if (d.secret_configured === false) toast.warning("Chưa đặt ZALO_BOT_WEBHOOK_SECRET — ai cũng giả được cập nhật gửi tới webhook.");
+      } else {
+        toast.error(
+          d.reason === "bot_token_not_configured"
+            ? "Chưa có Zalo Bot Token — nhập token ở trên rồi Lưu trước."
+            : `Set webhook Zalo thất bại: ${d.reason ?? "kiểm tra token"}`,
+        );
+      }
+    } catch {
+      setZaloHookStatus("err");
+      toast.error("Lỗi kết nối");
+    }
+    setTimeout(() => setZaloHookStatus("idle"), 5000);
+  }
+
+  async function testZaloBot() {
+    const chatId = v("integrations.zalo_bot_chat_id").trim();
+    if (!chatId) {
+      toast.error("Nhập Chat ID nhận thông báo rồi Lưu trước đã.");
+      return;
+    }
+    setZaloTestStatus("loading");
+    try {
+      const res = await fetch("/api/admin/zalo/webhook-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test", chat_id: chatId }),
+      });
+      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; reason?: string };
+      setZaloTestStatus(res.ok && d.ok ? "ok" : "err");
+      if (res.ok && d.ok) toast.success("Đã gửi tin thử qua bot Zalo.");
+      else toast.error(`Gửi thử thất bại: ${d.reason ?? "kiểm tra token & chat id"}`);
+    } catch {
+      setZaloTestStatus("err");
+      toast.error("Lỗi kết nối");
+    }
+    setTimeout(() => setZaloTestStatus("idle"), 5000);
   }
 
   async function setupWebhook() {
@@ -1229,6 +1290,59 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
     // ── TÍCH HỢP ─────────────────────────────────────────────────────────────
     integrations: (
       <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={SendHorizonal} title="Bot Zalo" desc="Bot đăng ký tại bot.zapps.vn — trả lời lệnh, điểm danh, gửi thông báo vào chat/nhóm Zalo." />
+          </div>
+          <Field label="Zalo Bot Token" hint="Lấy ở bot.zapps.vn sau khi tạo bot. Dạng 1234567890:abcdef...">
+            <Input
+              value={v("integrations.zalo_bot_token")}
+              onChange={(e) => set("integrations.zalo_bot_token", e.target.value)}
+              placeholder="1234567890:xxxxxxxx"
+              className="font-mono text-xs"
+            />
+            <SensitiveHint hint={sensitiveHint("integrations.zalo_bot_token")} />
+          </Field>
+          <Field label="Chat ID nhận thông báo" hint="ID chat/nhóm bot sẽ đẩy tin sự kiện, bài mới. Nhắn bot một câu rồi xem log webhook để lấy ID.">
+            <Input
+              value={v("integrations.zalo_bot_chat_id")}
+              onChange={(e) => set("integrations.zalo_bot_chat_id", e.target.value)}
+              placeholder="chat id..."
+              className="font-mono text-xs"
+            />
+          </Field>
+          <Field label="Link mở bot" hint="Hiện nút “Mở bot Arex trên Zalo” ở trang /zalo-link. Bỏ trống thì ẩn nút.">
+            <Input
+              value={v("integrations.zalo_bot_link")}
+              onChange={(e) => set("integrations.zalo_bot_link", e.target.value)}
+              placeholder="https://zalo.me/..."
+            />
+          </Field>
+          <Field label="Webhook bot" hint="Đăng ký để bot nhận lệnh: diemdanh, hoso, bxh, tintuc, sukien… tại /api/zalo/bot" icon={Plug}>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={setupZaloWebhook}
+                disabled={zaloHookStatus === "loading"}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+              >
+                {zaloHookStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <SendHorizonal className="size-3.5" />}
+                {zaloHookStatus === "loading" ? "Đang set…" : zaloHookStatus === "ok" ? "✅ Đã set!" : zaloHookStatus === "err" ? "❌ Thất bại" : "Set Webhook"}
+              </button>
+              <button
+                type="button"
+                onClick={testZaloBot}
+                disabled={zaloTestStatus === "loading"}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
+              >
+                {zaloTestStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <BellRing className="size-3.5" />}
+                {zaloTestStatus === "loading" ? "Đang gửi…" : zaloTestStatus === "ok" ? "✅ Đã gửi!" : zaloTestStatus === "err" ? "❌ Lỗi" : "Gửi thử"}
+              </button>
+              <span className="text-[11px] text-muted-foreground">Nhập token &amp; bấm Lưu trước khi set webhook</span>
+            </div>
+          </Field>
+        </Card>
+
         <Card>
           <div className="py-4">
             <SectionHeader icon={Plug} title="Zalo" desc="Gửi thông báo tới Zalo cá nhân/nhóm qua webhook relay. OA API chỉ là dự phòng." />
