@@ -21,6 +21,8 @@ import {
   toPublicSeller,
 } from "@/lib/server/shop";
 import { effectivePrice, formatVnd, isSaleLive } from "@/lib/constants/shop";
+import { getSellerTrust } from "@/lib/server/scam-registry";
+import { TrustBadge } from "@/components/shop/trust-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -36,12 +38,13 @@ async function load(id: string) {
   const seller = await getSellerById(id);
   if (!seller || seller.status !== "approved") return null;
 
-  const [listings, reviews] = await Promise.all([
+  const [listings, reviews, trust] = await Promise.all([
     listListings({ sellerId: seller.id, limit: 60 }),
     listSellerReviews(seller.id, 20),
+    getSellerTrust(seller.id),
   ]);
 
-  return { seller, publicSeller: toPublicSeller(seller)!, listings, reviews };
+  return { seller, publicSeller: toPublicSeller(seller)!, listings, reviews, trust };
 }
 
 export async function generateMetadata({
@@ -78,7 +81,7 @@ export default async function SellerStorefrontPage({
   const data = await load(id);
   if (!data) notFound();
 
-  const { seller, publicSeller, listings, reviews } = data;
+  const { seller, publicSeller, listings, reviews, trust } = data;
   const active = listings.filter((l) => l.status === "active");
   const sold = listings.filter((l) => l.status === "sold");
   const onSaleCount = active.filter(isSaleLive).length;
@@ -131,6 +134,10 @@ export default async function SellerStorefrontPage({
               </span>
             )}
           </div>
+
+          {/* Uy tín đặt trước phần tự giới thiệu: người mua phải thấy cảnh báo
+              trước khi đọc lời chào hàng của người bán. */}
+          <TrustBadge trust={trust} />
 
           {seller.bio && (
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">

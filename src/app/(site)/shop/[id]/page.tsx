@@ -7,7 +7,9 @@ import { siteConfig } from "@/lib/constants/site";
 import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { BuyPanel } from "@/components/shop/buy-panel";
 import { PriceGuide } from "@/components/shop/price-guide";
+import { TrustBadge } from "@/components/shop/trust-badge";
 import { bumpListingViews, getListing, getShopViewer } from "@/lib/server/shop";
+import { getListingRisk } from "@/lib/server/scam-registry";
 import {
   LISTING_KIND_LABEL,
   LISTING_STATUS_LABEL,
@@ -53,6 +55,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   if (!visible) notFound();
 
   void bumpListingViews(listing.id);
+
+  // Rủi ro của tin: uy tín người bán + acc trong tin có dính tranh chấp cũ
+  // không. Người bán tự xem tin mình thì khỏi tra — cảnh báo là để cho người
+  // mua, còn tốn thêm hai lượt truy vấn.
+  const risk = isOwn ? null : await getListingRisk(listing.id, listing.seller_id);
 
   const details = Object.entries(listing.details ?? {});
   const onSale = isSaleLive(listing);
@@ -152,6 +159,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <div className="mt-3">
               <PriceGuide kind={listing.kind} currentPrice={effectivePrice(listing)} />
             </div>
+
+            {risk && (
+              <div className="mt-3">
+                <TrustBadge trust={risk.trust} uidFlagged={risk.uidFlagged} />
+              </div>
+            )}
 
             {listing.seller && (
               <Link

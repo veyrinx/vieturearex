@@ -269,3 +269,43 @@ export async function getSellerTrust(sellerId: string): Promise<SellerTrust | nu
 
   return { ordersDone, ratingAvg, ratingCount, scamFlags, level };
 }
+
+export interface ListingRisk {
+  trust: SellerTrust | null;
+  /** UID game của chính tin này từng dính một tranh chấp đã xử. */
+  uidFlagged: boolean;
+}
+
+/**
+ * Rủi ro của MỘT tin đăng: uy tín người bán, cộng thêm một lượt tra riêng cho
+ * UID game của tin.
+ *
+ * Vì sao phải tra UID riêng thay vì chỉ nhìn người bán: một acc từng bị tranh
+ * chấp hoàn toàn có thể được rao lại dưới tên người bán khác — lúc đó hồ sơ
+ * người bán sạch tinh nhưng chính cái acc mới là thứ có vấn đề.
+ *
+ * UID lấy ra chỉ để tra rồi bỏ, không trả ngược ra ngoài: trang chi tiết tin
+ * đi qua shop-privacy nên không được phép cầm UID thật.
+ */
+export async function getListingRisk(listingId: string, sellerId: string): Promise<ListingRisk> {
+  const trust = await getSellerTrust(sellerId);
+
+  const db = createAdminSupabaseClient();
+  if (!db) return { trust, uidFlagged: false };
+
+  const { data: listing } = (await untypedFrom(db, "shop_listings")
+    .select("game_uid")
+    .eq("id", listingId)
+    .maybeSingle()) as { data: { game_uid: string | null } | null };
+
+  const uid = listing?.game_uid ? normalizeSubject("uid", listing.game_uid) : null;
+  if (!uid) return { trust, uidFlagged: false };
+
+  const { count } = (await untypedFrom(db, "scam_reports")
+    .select("id", { count: "exact", head: true })
+    .eq("subject_type", "uid")
+    .eq("subject_value", uid)
+    .is("revoked_at", null)) as { count: number | null };
+
+  return { trust, uidFlagged: (count ?? 0) > 0 };
+}

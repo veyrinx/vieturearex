@@ -6,7 +6,7 @@ import { ForumList, CreatePostButton } from "@/components/forum/forum-client";
 import { fetchCosmetics } from "@/lib/server/forum-cosmetics";
 import { WeeklyVoteSection } from "@/components/community/weekly-vote-section";
 import Link from "next/link";
-import { MessageSquare, Users, TrendingUp, Trophy, Phone, ShieldAlert, ArrowRight } from "lucide-react";
+import { MessageSquare, Users, TrendingUp, Trophy, Phone, ShieldAlert, ArrowRight, Target } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Cộng Đồng — Diễn Đàn Free Fire",
@@ -114,7 +114,7 @@ export default async function CommunityPage() {
         {/* Check Scam Banner */}
         <Link
           href="/check-scam"
-          className="group flex items-center justify-between gap-4 rounded-3xl border border-rose-900/50 bg-gradient-to-r from-rose-950/50 via-card to-card p-5 shadow-md transition hover:border-rose-500/50 hover:shadow-rose-950/20 opacity-90 hover:opacity-100"
+          className="group flex items-center justify-between gap-4 rounded-3xl border border-rose-900/50 bg-gradient-to-r from-rose-950/50 via-card to-card p-5 shadow-md transition hover:border-rose-500/50 hover:shadow-rose-950/20"
         >
           <div className="flex items-center gap-3.5">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 group-hover:scale-105 transition-transform">
@@ -122,20 +122,20 @@ export default async function CommunityPage() {
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="rounded-md bg-amber-600/90 px-2 py-0.5 text-[9px] font-black uppercase text-white tracking-wider">
-                  ĐANG BẢO TRÌ
+                <span className="rounded-md bg-rose-600/90 px-2 py-0.5 text-[9px] font-black uppercase text-white tracking-wider">
+                  MỚI
                 </span>
                 <h3 className="font-heading text-sm font-black uppercase tracking-tight text-foreground group-hover:text-rose-400 transition-colors">
                   Check Scam Lừa Đảo
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Tính năng đang nâng cấp và bảo trì hệ thống.
+                Tra SĐT, số tài khoản, UID game trong hồ sơ rủi ro của chợ Arex.
               </p>
             </div>
           </div>
-          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[11px] font-bold shrink-0">
-            Bảo trì
+          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 text-[11px] font-bold shrink-0">
+            Tra ngay
           </span>
         </Link>
 
@@ -163,6 +163,34 @@ export default async function CommunityPage() {
             </div>
           </div>
           <span className="inline-flex items-center justify-center size-8 rounded-full border border-cyan-800/60 bg-cyan-950/50 text-cyan-300 transition group-hover:bg-cyan-900/60 group-hover:text-white shrink-0">
+            <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+          </span>
+        </Link>
+
+        {/* Nhiệm vụ tuần */}
+        <Link
+          href="/nhiem-vu"
+          className="group flex items-center justify-between gap-4 rounded-3xl border border-emerald-900/50 bg-gradient-to-r from-emerald-950/40 via-card to-card p-5 shadow-md transition hover:border-emerald-500/50 hover:shadow-emerald-950/20"
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 group-hover:scale-105 transition-transform">
+              <Target className="size-5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300">
+                  MỚI
+                </span>
+                <h3 className="font-heading text-sm font-black uppercase tracking-tight text-foreground group-hover:text-emerald-400 transition-colors">
+                  Nhiệm Vụ Tuần
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Đăng bài, bình luận, đóng góp wiki — nhận điểm đóng góp mỗi tuần.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center justify-center size-8 rounded-full border border-emerald-800/60 bg-emerald-950/50 text-emerald-300 transition group-hover:bg-emerald-900/60 group-hover:text-white shrink-0">
             <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </Link>

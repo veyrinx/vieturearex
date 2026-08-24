@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import {
   House, BookOpenText, MessageSquare, MonitorPlay, User, LayoutDashboard,
   TrendingUp, Trophy, Users, Palette, X, Grid2x2,
-  CalendarDays, Flame, BookOpen, Rss, Image as ImageIcon,
+  CalendarDays, Flame, BookOpen, Rss, Image as ImageIcon, Target,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ const COMMUNITY_ITEMS = [
   { title: "Feed",            href: "/feed",                  icon: Rss,           color: "orange"  },
   { title: "Wiki",            href: "/wiki",                  icon: BookOpen,      color: "emerald" },
   { title: "Icon FF",         href: "/items",                 icon: ImageIcon,     color: "yellow"  },
+  { title: "Nhiệm Vụ",       href: "/nhiem-vu",              icon: Target,        color: "emerald" },
   { title: "Xu Hướng",       href: "/community/trending",    icon: TrendingUp,    color: "orange"  },
   { title: "Bình Chọn",      href: "/character-poll",             icon: Trophy,        color: "yellow"  },
   { title: "Tuyển TV",       href: "/recruitment",      icon: Users,         color: "violet"  },

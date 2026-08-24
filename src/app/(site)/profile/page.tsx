@@ -8,6 +8,7 @@ import {
   Lock, KeyRound, CheckCircle2, QrCode, ShieldCheck,
   Smartphone, Camera, Trash2, Phone, Gamepad2, Plus, ImageIcon,
   Bookmark, Bell, X, Trophy, MessageSquare, BookOpen, ExternalLink,
+  Target,
 } from "lucide-react";
 import { getRoleMeta } from "@/lib/constants/roles";
 import { RoleBadge, UserBadgeList, VerifiedBadge } from "@/components/common/user-badges";
@@ -645,6 +646,31 @@ export default function ProfilePage() {
 
             {/* Điểm danh hằng ngày */}
             <DailyCheckin />
+
+            {/* Nhiệm vụ tuần — chỉ dẫn sang /nhiem-vu, không nhúng bảng nhiệm vụ
+                vì tiến độ phải đếm lại từ dữ liệu thật, nhúng ở đây là mỗi lần
+                mở hồ sơ lại tốn thêm một lượt đếm. */}
+            <Link
+              href="/nhiem-vu"
+              className="group flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-card p-5 transition hover:border-emerald-500/60"
+            >
+              <div className="flex items-center gap-3.5">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 transition-transform group-hover:scale-105 dark:text-emerald-400">
+                  <Target className="size-5" />
+                </span>
+                <div>
+                  <h2 className="font-heading text-sm font-black uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
+                    Nhiệm vụ tuần
+                  </h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Đăng bài, bình luận, đóng góp wiki — làm xong nhận điểm đóng góp.
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                Xem nhiệm vụ
+              </span>
+            </Link>
 
             {/* Thông tin cá nhân */}
             <div className="rounded-2xl border border-border bg-card p-6">
