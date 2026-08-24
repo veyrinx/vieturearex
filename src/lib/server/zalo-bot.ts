@@ -2,19 +2,24 @@ import "server-only";
 import { getSettings } from "@/lib/data/content-service";
 
 /**
- * Zalo Bot Platform (bot.zapps.vn) — KHÔNG phải OA.
+ * Zalo Bot Platform (bot.zapps.me) — KHÔNG phải OA.
  *
- * API bắt chước Telegram: gọi `https://bot-api.zapps.vn/bot<token>/<method>`,
+ * API bắt chước Telegram: gọi `https://bot-api.zaloplatforms.com/bot<token>/<method>`,
  * trả `{ ok, result }`. Khác Telegram ở 3 chỗ phải nhớ:
  *   1. chat_id / user id là CHUỖI, không phải số.
- *   2. Không có parse_mode → mọi tin phải là chữ trơn, link để trần.
- *   3. Không có inline keyboard → điều hướng bằng lệnh + link.
+ *   2. Không có inline keyboard → điều hướng bằng lệnh + link.
+ *   3. Tin nhắn tối đa 2000 ký tự.
  *
- * Token lấy ở bot.zapps.vn, lưu tại settings `integrations.zalo_bot_token`
+ * Token lấy ở bot.zapps.me, lưu tại settings `integrations.zalo_bot_token`
  * (hoặc biến môi trường ZALO_BOT_TOKEN).
  */
 
-const API_BASE = "https://bot-api.zapps.vn";
+// Tên miền trong tài liệu; bot-api.zapps.me là bí danh chạy song song — giữ làm
+// đường lui phòng khi tên miền chính không phân giải được.
+const API_BASES = [
+  process.env.ZALO_BOT_API_BASE?.trim() || "https://bot-api.zaloplatforms.com",
+  "https://bot-api.zapps.me",
+];
 
 export const ZALO_BOT_TOKEN_KEY = "integrations.zalo_bot_token";
 
@@ -33,8 +38,9 @@ async function callOnce<T>(
   method: string,
   verb: "GET" | "POST",
   payload: Record<string, unknown>,
+  apiBase: string,
 ): Promise<{ status: number; data: ZaloBotResponse<T> } | null> {
-  const base = `${API_BASE}/bot${token}/${method}`;
+  const base = `${apiBase}/bot${token}/${method}`;
   const url =
     verb === "GET" && Object.keys(payload).length
       ? `${base}?${new URLSearchParams(
@@ -65,12 +71,18 @@ export async function zaloBotApi<T = unknown>(
 ): Promise<ZaloBotResponse<T>> {
   const primary: "GET" | "POST" = GET_METHODS.has(method.toLowerCase()) ? "GET" : "POST";
 
-  let res = await callOnce<T>(token, method, primary, payload);
-  // Tài liệu Zalo Bot còn nhảy nhót giữa GET/POST tuỳ method — sai động từ thì
-  // nhận 404/405 chứ không phải lỗi thật, nên thử nốt động từ kia rồi mới kêu.
-  if (!res || res.status === 404 || res.status === 405) {
-    const fallback = await callOnce<T>(token, method, primary === "GET" ? "POST" : "GET", payload);
-    if (fallback) res = fallback;
+  let res: { status: number; data: ZaloBotResponse<T> } | null = null;
+  for (const base of API_BASES) {
+    res = await callOnce<T>(token, method, primary, payload, base);
+    // Tài liệu Zalo Bot còn nhảy nhót giữa GET/POST tuỳ method — sai động từ thì
+    // nhận 405 chứ không phải lỗi thật, nên thử nốt động từ kia rồi mới kêu.
+    if (res?.status === 405) {
+      const other = await callOnce<T>(token, method, primary === "GET" ? "POST" : "GET", payload, base);
+      if (other) res = other;
+    }
+    // Chỉ đổi sang tên miền dự phòng khi không nối được, còn API trả lời (kể cả
+    // 404 vì token sai) thì dừng — đổi tên miền cũng ra kết quả y hệt.
+    if (res) break;
   }
 
   if (!res) return { ok: false, description: "network_error" };
@@ -138,7 +150,9 @@ export type ZaloBotMessage = {
   chat?: { id?: string | number; chat_type?: string; type?: string };
   from?: { id?: string | number; display_name?: string; name?: string };
   photo?: { file_id?: string; url?: string } | { file_id?: string; url?: string }[];
+  image?: { file_id?: string; url?: string } | { file_id?: string; url?: string }[];
   photo_url?: string;
+  image_url?: string;
 };
 
 export type NormalizedUpdate = {
@@ -152,22 +166,30 @@ export type NormalizedUpdate = {
 };
 
 /**
- * Zalo Bot gửi update ở vài dạng tuỳ phiên bản: `{update_id, message}` kiểu
- * Telegram, `{event_name, message}` kiểu OA, hoặc bọc trong `result[]` khi lấy
- * bằng getUpdates. Nhận hết cho chắc, thiếu chat id thì bỏ qua.
+ * Zalo Bot bọc update trong `result`:
+ *   { ok, result: { event_name: "message.text.received", message: {...} } }
+ * getUpdates trả `result` là mảng, còn webhook trả object. Ngoài ra vẫn nhận
+ * dạng `{update_id, message}` kiểu Telegram cho chắc. Thiếu chat id thì bỏ qua.
  */
 export function normalizeZaloUpdate(raw: unknown): NormalizedUpdate | null {
   if (!raw || typeof raw !== "object") return null;
   const body = raw as Record<string, unknown>;
 
-  const container = (Array.isArray(body.result) ? body.result[0] : body) as Record<string, unknown> | undefined;
+  const result = body.result;
+  const container = (
+    Array.isArray(result)
+      ? result[result.length - 1]
+      : result && typeof result === "object"
+        ? result
+        : body
+  ) as Record<string, unknown> | undefined;
   if (!container) return null;
 
   const msg = (container.message ?? container.edited_message ?? container) as ZaloBotMessage;
   const chatId = msg.chat?.id ?? (container.chat as { id?: string })?.id;
   if (chatId === undefined || chatId === null || chatId === "") return null;
 
-  const photoField = msg.photo;
+  const photoField = msg.photo ?? msg.image;
   const photo = Array.isArray(photoField) ? photoField[photoField.length - 1] : photoField;
 
   const chatType = String(msg.chat?.chat_type ?? msg.chat?.type ?? "").toUpperCase();
@@ -177,7 +199,7 @@ export function normalizeZaloUpdate(raw: unknown): NormalizedUpdate | null {
     fromId: String(msg.from?.id ?? ""),
     fromName: (msg.from?.display_name || msg.from?.name || "bạn").trim(),
     text: (msg.text ?? msg.caption ?? "").trim(),
-    photoUrl: photo?.url ?? msg.photo_url ?? null,
+    photoUrl: photo?.url ?? msg.photo_url ?? msg.image_url ?? null,
     isGroup: chatType.includes("GROUP"),
     eventName: String(container.event_name ?? body.event_name ?? ""),
   };
