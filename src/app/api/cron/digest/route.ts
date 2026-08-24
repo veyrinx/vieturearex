@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { sendUserTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import { sendDiscordPublicNotification, DISCORD_COLORS } from "@/lib/server/discord-notify";
 import { SITE_URL } from "@/lib/constants/site";
+import { withCron } from "@/lib/server/ops-log";
 
 type NewsRow   = { slug: string; title: string; category: string | null };
 type EventRow  = { id: string; title: string; start_date: string };
@@ -12,12 +13,7 @@ type ForumRow  = { id: string; title: string; category: string; display_name: st
 
 export const maxDuration = 30;
 
-export async function GET(request: NextRequest) {
-  const auth = request.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("digest", async () => {
 
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
@@ -137,4 +133,4 @@ export async function GET(request: NextRequest) {
     telegram: tgResult.status === "fulfilled" ? tgResult.value : { sent: false },
     discord:  dcResult.status  === "fulfilled" ? dcResult.value  : { sent: false },
   });
-}
+});

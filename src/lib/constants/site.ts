@@ -158,6 +158,7 @@ export const adminNavItems = [
   { title: "GIẢI ĐẤU", href: "/admin/tournaments" },
   { title: "CHỢ AREX", href: "/admin/shop" },
   { title: "PHÂN QUYỀN", href: "/admin/permissions" },
+  { title: "VẬN HÀNH", href: "/admin/ops" },
   { title: "CÀI ĐẶT", href: "/admin/settings" },
   { title: "API DOCS", href: "/admin/api-docs" },
   { title: "HỒ SƠ", href: "/admin/profile" },

@@ -7,6 +7,7 @@ import { getAllCharacters, ROLE_META } from "@/lib/data/ff-characters";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { siteConfig } from "@/lib/constants/site";
+import { SITE_ROUTES } from "@/lib/constants/site-routes";
 
 const BASE = siteConfig.url;
 
@@ -41,6 +42,45 @@ function newsPriority(days: number): number {
   if (days < 14) return 0.80;
   if (days < 60) return 0.70;
   return 0.60;
+}
+
+/**
+ * Trang chỉ có nghĩa với người đã đăng nhập, hoặc là bước trong một luồng —
+ * không đưa vào sitemap (robots.ts cũng chặn phần lớn trong số này).
+ */
+const PRIVATE_ROUTES = new Set<string>([
+  "/login", "/register", "/join", "/setup", "/updating",
+  "/profile", "/notifications", "/favorites",
+  "/telegram-link", "/discord-link",
+  "/wiki/create",
+  "/shop/dang-ky-ban", "/shop/dang-tin", "/shop/tin-cua-toi",
+  "/shop/don-hang", "/shop/gian-hang", "/shop/nhan-su", "/shop/ctv",
+  "/tournaments/my-team", "/tournaments/propose",
+  "/partnership/hop-dong",
+]);
+
+/**
+ * Mỗi trang mới thêm vào SITE_ROUTES tự có mặt trong sitemap.
+ *
+ * Sinh ra vì đợt v1.3.0: /check-scam, /theo-doi-nick, /nhiem-vu lên rồi mà
+ * sitemap vẫn không biết — danh sách bên dưới viết tay nên cứ thêm trang là
+ * quên. Mục nào đã được khai tay (có priority/alternates riêng) thì bản khai
+ * tay thắng, xem bước gộp ở cuối hàm.
+ */
+function autoRoutes(now: Date): MetadataRoute.Sitemap {
+  return SITE_ROUTES.filter((r) => !PRIVATE_ROUTES.has(r)).map((route) => ({
+    url: route === "/" ? BASE : `${BASE}${route}`,
+    lastModified: now,
+    changeFrequency: "weekly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+    priority: 0.5,
+  }));
+}
+
+/** Gộp trùng theo URL, mục SAU thắng — bản khai tay luôn nằm sau bản tự sinh. */
+function dedupe(entries: MetadataRoute.Sitemap): MetadataRoute.Sitemap {
+  const byUrl = new Map<string, MetadataRoute.Sitemap[0]>();
+  for (const e of entries) byUrl.set(e.url, e);
+  return [...byUrl.values()];
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -490,7 +530,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
-  return [
+  return dedupe([
+    // Tự sinh trước, khai tay sau — khai tay ghi đè.
+    ...autoRoutes(now),
     ...coreRoutes,
     ...viRoutes,
     ...legalRoutes,
@@ -501,5 +543,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...tournamentRoutes,
     ...wikiRoutes,
     ...ffRoutes,
-  ];
+  ]);
 }

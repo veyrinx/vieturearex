@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
 import { syncEventStatuses } from "@/lib/server/event-status";
+import { withCron } from "@/lib/server/ops-log";
 
 // Auto-hide (not delete — reversible) expired / stale content.
 // Called by Vercel Cron daily. Content is hidden by status change so admins
@@ -28,12 +29,7 @@ function readDays(map: Record<string, string>, key: string, fallback: number): n
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export const GET = withCron("hide-expired", async () => {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false, reason: "db_unavailable" });
 
@@ -82,4 +78,4 @@ export async function GET(req: NextRequest) {
   if (result.forum > 0) revalidatePath("/community", "layout");
 
   return NextResponse.json({ ok: true, hidden: result, newsDays, forumDays });
-}
+});

@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDailyReport } from "@/lib/server/send-daily-report";
 import { runAuthReport } from "@/lib/server/send-auth-report";
+import { withCron } from "@/lib/server/ops-log";
 
-export async function GET(request: NextRequest) {
-  const auth = request.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("daily-report", async (request: NextRequest) => {
 
   const force = request.headers.get("x-force-report") === "1";
   const result = await runDailyReport(force);
@@ -23,4 +19,4 @@ export async function GET(request: NextRequest) {
     : { ok: true, sent: false, reason: "daily_report_skipped" };
 
   return NextResponse.json({ ...result, authReport });
-}
+});

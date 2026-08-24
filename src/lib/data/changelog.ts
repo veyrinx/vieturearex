@@ -17,6 +17,18 @@ export const CHANGE_META: Record<ChangeType, { label: string; cls: string }> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-08-23",
+    changes: [
+      { type: "improvement", text: "Công cụ Free Fire không còn chết đột ngột giữa ngày: kết quả tra cứu được đệm lại 5 phút, nhiều người cùng tra một UID chỉ tốn 1 lượt, và khi hết lượt trong ngày thì báo rõ thay vì lỗi khó hiểu" },
+      { type: "feature", text: "Nhật ký việc định kỳ: mỗi lần chạy nền (báo cáo, nhắc sự kiện, quét nick, dọn dữ liệu…) đều ghi lại kết quả — hỏng là có cảnh báo ngay, không còn hỏng lặng lẽ nhiều ngày" },
+      { type: "feature", text: "Trang Vận hành (/admin/ops): xem việc nào vừa chạy, mất bao lâu, lỗi gì, việc nào quá hạn — kèm nút chạy lại ngay và số lượt tra cứu Free Fire còn lại trong ngày" },
+      { type: "improvement", text: "Sitemap tự lấy danh sách trang từ nguồn chung — trang mới lên là Google thấy ngay, không phải chờ khai tay (đợt này bổ sung /check-scam, /theo-doi-nick, /nhiem-vu, chợ Arex…)" },
+      { type: "improvement", text: "Tự kiểm tra site sau mỗi lần cập nhật và mỗi sáng: trang chủ, tin tức, chợ, sitemap — hỏng là biết trước khi người dùng kêu" },
+      { type: "fix", text: "Bổ sung việc quét nick vào lịch chạy dự phòng — trước đây Vercel sập là tính năng theo dõi nick đứng im" },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-08-23",
     changes: [

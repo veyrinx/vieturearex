@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { fetchFFVersion, checkCdnUrls, DEFAULT_CDN_PATTERNS } from "@/lib/server/ff-version";
@@ -6,6 +6,7 @@ import { sendTelegramNotification, vnNow } from "@/lib/server/telegram-notify";
 import type { NotifySection } from "@/lib/server/telegram-notify";
 import { notifyUserFFVersion } from "@/lib/server/user-notify";
 import { SITE_URL } from "@/lib/constants/site";
+import { withCron } from "@/lib/server/ops-log";
 
 const VERSION_KEY = "ff.last_known_version";
 const PATTERNS_KEY = "ff.cdn_url_patterns";
@@ -13,12 +14,7 @@ const PATTERNS_KEY = "ff.cdn_url_patterns";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-export async function GET(request: NextRequest) {
-  const auth = request.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("ff-version-check", async () => {
 
   const info = await fetchFFVersion();
   if (!info) {
@@ -112,7 +108,7 @@ export async function GET(request: NextRequest) {
     cdnLinks,
     accessibleLinks,
   });
-}
+});
 
 function formatSize(bytes?: number): string {
   if (!bytes) return "Link";

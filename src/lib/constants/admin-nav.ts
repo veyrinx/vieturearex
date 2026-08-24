@@ -3,7 +3,7 @@ import {
   Newspaper, CalendarRange, Radio, ImageIcon, BookOpen, Grid2x2, Bell, Brain, ListChecks, Swords, Layers, CalendarClock,
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
-  Settings, Lock, FileCode, CircleUser,
+  Settings, Lock, FileCode, CircleUser, Activity,
   FileText, FileSignature, Users2, SlidersHorizontal, Eye, Download,
   ShoppingBag, Share2, Handshake, Store, KeyRound,
   type LucideIcon,
@@ -94,6 +94,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: SlidersHorizontal,
     items: [
       { title: "Cài đặt",   href: "/admin/settings",  icon: Settings },
+      { title: "Vận hành",  href: "/admin/ops",       icon: Activity },
       { title: "Tải app",   href: "/admin/app",       icon: Download },
       { title: "Khóa chức năng", href: "/admin/feature-locks", icon: Lock },
       { title: "Bảo mật",   href: "/admin/security",  icon: Lock },

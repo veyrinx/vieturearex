@@ -17,7 +17,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --incremental false",
-    "supabase:ensure-admin": "node scripts/ensure-supabase-admin.mjs"
+    "supabase:ensure-admin": "node scripts/ensure-supabase-admin.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.0",

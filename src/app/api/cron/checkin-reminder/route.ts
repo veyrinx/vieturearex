@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
 import { runBxhRankNotify } from "@/lib/server/bxh-rank-notify";
 import { SITE_URL } from "@/lib/constants/site";
+import { withCron } from "@/lib/server/ops-log";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -18,12 +19,7 @@ function todayInVN(): string {
 
 // Nhắc điểm danh: DM người đã LIÊN KẾT + BẬT thông báo + hôm nay CHƯA điểm danh.
 // Chạy ké luôn nhịp BXH buổi tối vì plan Hobby chỉ cho mỗi cron 1 lần/ngày.
-export async function GET(request: NextRequest) {
-  const auth = request.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("checkin-reminder", async () => {
 
   const bxh = await runBxhRankNotify().catch(() => null);
 
@@ -74,4 +70,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ sent, bxh });
-}
+});

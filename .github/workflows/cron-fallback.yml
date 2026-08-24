@@ -16,6 +16,7 @@ on:
     - cron: "0 1 * * *"   # bxh-rank-notify
     - cron: "0 2 * * *"   # ff-version-check
     - cron: "0 3 * * *"   # hide-expired
+    - cron: "0 4 * * *"   # ff-watch
     - cron: "30 3 * * *"  # purge-expired
     - cron: "0 6 * * *"   # publish-scheduled
     - cron: "0 7 * * *"   # event-reminders
@@ -44,6 +45,7 @@ jobs:
             "0 1 * * *")  EP=bxh-rank-notify ;;
             "0 2 * * *")  EP=ff-version-check ;;
             "0 3 * * *")  EP=hide-expired ;;
+            "0 4 * * *")  EP=ff-watch ;;
             "30 3 * * *") EP=purge-expired ;;
             "0 6 * * *")  EP=publish-scheduled ;;
             "0 7 * * *")  EP=event-reminders ;;
@@ -55,7 +57,7 @@ jobs:
             *)            EP="${{ inputs.endpoint }}" ;;
           esac
           if [ -z "$EP" ]; then
-            EP="bxh-rank-notify ff-version-check hide-expired purge-expired publish-scheduled event-reminders daily-report digest checkin-reminder event-status shop-stale-orders"
+            EP="bxh-rank-notify ff-version-check hide-expired ff-watch purge-expired publish-scheduled event-reminders daily-report digest checkin-reminder event-status shop-stale-orders"
           fi
           echo "endpoints=$EP" >> "$GITHUB_OUTPUT"
 

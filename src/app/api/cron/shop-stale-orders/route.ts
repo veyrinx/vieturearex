@@ -5,6 +5,7 @@ import { getAuthContext } from "@/lib/server/auth";
 import { isShopAdminRole, listOrders } from "@/lib/server/shop";
 import { notifyStaleOrders } from "@/lib/server/shop-notify";
 import { hoursSince, isOrderStale, orderLastMoved } from "@/lib/constants/shop";
+import { withCron } from "@/lib/server/ops-log";
 
 /**
  * Quét đơn chợ đang treo và nhắc người phụ trách.
@@ -39,22 +40,24 @@ async function readState(db: NonNullable<ReturnType<typeof createAdminSupabaseCl
   }
 }
 
-export async function GET(req: NextRequest) {
-  // Route này gửi Discord + push, nên không để hở như mấy cron chỉ dọn dữ liệu:
-  // chưa cấu hình CRON_SECRET thì vẫn phải là lịch của Vercel (header
-  // `x-vercel-cron`) hoặc admin bấm tay, chứ không phải ai gọi cũng chạy.
+// Route này gửi Discord + push, nên không để hở như mấy cron chỉ dọn dữ liệu:
+// chưa cấu hình CRON_SECRET thì vẫn phải là lịch của Vercel (header
+// `x-vercel-cron`) hoặc admin bấm tay, chứ không phải ai gọi cũng chạy.
+async function authorize(req: NextRequest): Promise<NextResponse | null> {
   const secret = process.env.CRON_SECRET;
   const fromCron = secret
     ? req.headers.get("authorization") === `Bearer ${secret}`
     : !!req.headers.get("x-vercel-cron");
+  if (fromCron) return null;
 
-  if (!fromCron) {
-    const auth = await getAuthContext();
-    if (!isShopAdminRole(auth.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await getAuthContext();
+  if (!isShopAdminRole(auth.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  return null;
+}
 
+export const GET = withCron("shop-stale-orders", async () => {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false, reason: "db_unavailable" });
 
@@ -95,4 +98,4 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.idleHours - a.idleHours)
       .slice(0, 5),
   });
-}
+}, { authorize });

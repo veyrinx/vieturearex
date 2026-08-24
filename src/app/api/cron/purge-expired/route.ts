@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getSettings } from "@/lib/data/content-service";
 import { vietnamDayStartIso } from "@/lib/utils/vietnam-time";
+import { withCron } from "@/lib/server/ops-log";
 
 const SETTING_ENABLED = "cron.purge_expired_events_enabled";
 const SETTING_GRACE_DAYS = "cron.purge_expired_events_grace_days";
@@ -21,12 +22,7 @@ const DEFAULT_GRACE_DAYS = 30;
 /** Thông tin bàn giao acc bị xoá sau ngần này ngày kể từ khi đơn khép lại. */
 const SECRET_RETENTION_DAYS = 30;
 
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("purge-expired", async () => {
 
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false, reason: "db_unavailable" });
@@ -106,4 +102,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, deleted, graceDays, secretsPurged, loginAttemptsPurged });
-}
+});

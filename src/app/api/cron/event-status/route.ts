@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { syncEventStatuses } from "@/lib/server/event-status";
+import { withCron } from "@/lib/server/ops-log";
 
 /**
  * Tự chuyển sự kiện giữa "sắp diễn ra → đang diễn ra → đã kết thúc".
@@ -14,12 +15,7 @@ import { syncEventStatuses } from "@/lib/server/event-status";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("event-status", async () => {
 
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false, reason: "db_unavailable" });
@@ -34,4 +30,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, synced });
-}
+});

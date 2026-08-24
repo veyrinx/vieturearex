@@ -1,0 +1,44 @@
+name: Kiểm tra nhanh site
+
+# Gọi vài đường sống-còn của site (health, trang chủ, sitemap, API tin/sự kiện)
+# và báo động nếu hỏng. Chạy sau mỗi lần push lên main — tức sau mỗi lần Vercel
+# triển khai — và mỗi sáng một lần để bắt cả thứ hỏng ngoài lúc deploy (Supabase
+# chết, tên miền hết hạn, biến môi trường bị đổi tay).
+#
+# Đổi tên miền kiểm tra: Settings → Secrets and variables → Actions → Variables
+#   SMOKE_BASE_URL = https://www.arexnetwork.vn
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * *" # 07:00 giờ VN
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Gốc URL cần kiểm tra"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Chờ Vercel triển khai xong
+        if: github.event_name == 'push'
+        # Push xong Vercel mới bắt đầu build; gọi ngay là kiểm tra bản CŨ.
+        run: sleep 180
+
+      - name: Chạy kiểm tra
+        env:
+          BASE: ${{ inputs.base || vars.SMOKE_BASE_URL || 'https://www.arexnetwork.vn' }}
+        run: node scripts/smoke.mjs --base "$BASE"

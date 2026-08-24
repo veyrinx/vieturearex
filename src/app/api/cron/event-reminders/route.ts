@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import {
@@ -8,6 +8,7 @@ import {
 } from "@/lib/server/telegram-notify";
 import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 import { SITE_URL } from "@/lib/constants/site";
+import { withCron } from "@/lib/server/ops-log";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -31,12 +32,7 @@ type TournamentRow = {
   prize_pool: string | null;
 };
 
-export async function GET(request: NextRequest) {
-  const auth = request.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const GET = withCron("event-reminders", async () => {
 
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false, error: "No DB" });
@@ -154,4 +150,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, notified: results.length, results });
-}
+});

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
@@ -9,16 +9,12 @@ import { sendPushNotification } from "@/lib/server/push-notify";
 import { notifyUserNewArticle } from "@/lib/server/user-notify";
 import { broadcastToSubscribers } from "@/lib/server/telegram-broadcast";
 import { SITE_URL } from "@/lib/constants/site";
+import { withCron } from "@/lib/server/ops-log";
 
 type DueArticle = { id: string; title: string; slug: string; category?: string | null; excerpt?: string | null };
 
 // Called by Vercel Cron every hour: 0 * * * *
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization") ?? "";
-  const expected = process.env.CRON_SECRET;
-  if (expected && auth !== `Bearer ${expected}`)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export const GET = withCron("publish-scheduled", async () => {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ ok: false, reason: "db_unavailable" });
 
@@ -83,4 +79,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, published: ids.length, titles: due.map((d) => d.title) });
-}
+});
