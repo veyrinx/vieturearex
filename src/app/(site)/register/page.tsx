@@ -185,7 +185,9 @@ export default function UserRegisterPage() {
         });
         if (!signInError) {
           toast.success("Tạo tài khoản thành công! Chào mừng bạn đến với Arex.");
-          router.push("/setup?next=/");
+          // Tên hiển thị đã lấy ngay ở form này, không còn gì phải hỏi thêm —
+          // FF ID để dành cho lúc người dùng thật sự vào giải đấu.
+          router.push("/");
           router.refresh();
           return;
         }

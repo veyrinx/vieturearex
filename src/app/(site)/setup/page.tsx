@@ -9,19 +9,42 @@ import { Input } from "@/components/ui/input";
 
 type Profile = { display_name: string | null; ff_id: string | null };
 
+/**
+ * Bước hoàn thiện hồ sơ.
+ *
+ * FF ID KHÔNG còn là cửa ải của việc đăng ký: phần lớn người vào Arex chỉ đọc
+ * tin, đi chợ hay lên diễn đàn, bắt họ khai ID game trước khi được dùng site
+ * là chặn nhầm người.
+ *
+ * Trang này giờ chỉ bắt buộc FF ID khi được gọi kèm `?need=ff` — tức người
+ * dùng đang đi vào một luồng thật sự cần nó (lập team, tham gia giải, nộp kết
+ * quả). Không có tham số đó thì ô FF ID vẫn hiện nhưng để trống cũng qua.
+ */
 export default function SetupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [ffId, setFfId] = useState("");
+  const [needFf, setNeedFf] = useState(false);
 
   useEffect(() => {
+    // Đọc thẳng từ window thay vì useSearchParams để trang không phải bọc
+    // Suspense — trang này vốn đã là client component và luôn chạy ở trình duyệt.
+    const params = new URLSearchParams(window.location.search);
+    const requireFf = params.get("need") === "ff";
+    const next = params.get("next");
+    setNeedFf(requireFf);
+
     fetch("/api/user/profile", { credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : null))
       .then((p: Profile | null) => {
         if (!p) { router.replace("/login"); return; }
-        if (p.display_name && p.ff_id) { router.replace("/profile"); return; }
+        // Đã đủ thứ trang này cần thì đi tiếp luôn, đừng bắt bấm thêm một nút.
+        if (p.display_name && (!requireFf || p.ff_id)) {
+          router.replace(next ?? "/profile");
+          return;
+        }
         setDisplayName(p.display_name ?? "");
         setFfId(p.ff_id ?? "");
         setLoading(false);
@@ -32,7 +55,11 @@ export default function SetupPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) { toast.error("Vui lòng nhập tên hiển thị."); return; }
-    if (!/^\d{6,12}$/.test(ffId.trim())) { toast.error("FF ID phải là 6–12 chữ số."); return; }
+    const ff = ffId.trim();
+    if (needFf && !ff) { toast.error("Luồng này cần FF ID để tiếp tục."); return; }
+    // Để trống thì thôi, nhưng đã gõ thì phải đúng dạng — lưu một ID sai còn
+    // tệ hơn không lưu gì.
+    if (ff && !/^\d{6,12}$/.test(ff)) { toast.error("FF ID phải là 6–12 chữ số."); return; }
 
     setSaving(true);
     try {
@@ -40,7 +67,7 @@ export default function SetupPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ display_name: displayName.trim(), ff_id: ffId.trim() }),
+        body: JSON.stringify({ display_name: displayName.trim(), ff_id: ff }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { error?: string };
@@ -66,7 +93,9 @@ export default function SetupPage() {
   }
 
   const ffIdValid = /^\d{6,12}$/.test(ffId.trim());
-  const canSubmit = displayName.trim().length > 0 && ffIdValid;
+  const canSubmit =
+    displayName.trim().length > 0 &&
+    (ffId.trim() === "" ? !needFf : ffIdValid);
 
   return (
     <div className="relative flex min-h-[85vh] items-center justify-center px-4 py-10 overflow-hidden">
@@ -91,7 +120,9 @@ export default function SetupPage() {
               Hoàn thiện hồ sơ
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Vài thông tin cuối để bắt đầu hành trình của bạn
+              {needFf
+                ? "Cần FF ID để đi tiếp vào giải đấu"
+                : "Vài thông tin cuối để bắt đầu hành trình của bạn"}
             </p>
           </div>
         </div>
@@ -120,7 +151,14 @@ export default function SetupPage() {
             {/* FF ID */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                <Gamepad2 className="size-3.5 text-amber-500" /> FF ID <span className="text-destructive">*</span>
+                <Gamepad2 className="size-3.5 text-amber-500" /> FF ID{" "}
+                {needFf ? (
+                  <span className="text-destructive">*</span>
+                ) : (
+                  <span className="ml-auto text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
+                    Không bắt buộc
+                  </span>
+                )}
               </label>
               <div className="relative">
                 <Input
@@ -138,7 +176,9 @@ export default function SetupPage() {
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground">
-                ID trong game Free Fire — dùng để tham gia giải đấu
+                {needFf
+                  ? "Luồng giải đấu cần ID trong game Free Fire để ghép bạn vào đúng đội."
+                  : "ID trong game Free Fire — chỉ cần khi bạn chơi giải, để trống cũng được."}
               </p>
             </div>
 

@@ -51,7 +51,7 @@ export default function TeamJoinPage() {
   const onJoin = async () => {
     const p = profile as Profile;
     if (!p?.ff_id || !p?.display_name) {
-      router.push(`/setup?next=/teams/${id}/join`);
+      router.push(`/setup?need=ff&next=/teams/${id}/join`);
       return;
     }
     setJoining(true);
@@ -62,7 +62,7 @@ export default function TeamJoinPage() {
       });
       const data = await res.json() as { ok?: boolean; error?: string };
       if (data.error === "setup_required") {
-        router.push(`/setup?next=/teams/${id}/join`);
+        router.push(`/setup?need=ff&next=/teams/${id}/join`);
         return;
       }
       if (!res.ok) { toast.error(data.error ?? "Lỗi tham gia team."); return; }
@@ -177,7 +177,7 @@ export default function TeamJoinPage() {
               <p className="text-xs text-muted-foreground mt-1">Bạn cần có tên hiển thị và FF ID trước khi gia nhập team.</p>
             </div>
           </div>
-          <Link href={`/setup?next=/teams/${id}/join`}>
+          <Link href={`/setup?need=ff&next=/teams/${id}/join`}>
             <Button className="w-full rounded-xl">Thiết lập ngay</Button>
           </Link>
         </div>

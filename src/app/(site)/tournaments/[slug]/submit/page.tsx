@@ -275,7 +275,7 @@ export default function SubmitPage() {
       {!p.ff_id && (
         <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-400">
           <AlertTriangle className="size-4 shrink-0" />
-          <span>Bạn chưa có FF ID. <Link href={`/setup?next=/tournaments/${slug}/submit`} className="font-semibold underline">Thiết lập ngay</Link></span>
+          <span>Bạn chưa có FF ID. <Link href={`/setup?need=ff&next=/tournaments/${slug}/submit`} className="font-semibold underline">Thiết lập ngay</Link></span>
         </div>
       )}
 

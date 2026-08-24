@@ -73,8 +73,10 @@ export default function UserLoginPage() {
     const nextParam = new URLSearchParams(window.location.search).get("next") ?? "/";
     const profileRes = await fetch("/api/user/profile", { credentials: "same-origin" }).catch(() => null);
     if (profileRes?.ok) {
-      const profile = await profileRes.json() as { ff_id: string | null };
-      if (!profile.ff_id) {
+      const profile = await profileRes.json() as { display_name: string | null };
+      // Chỉ thiếu tên hiển thị mới phải qua bước thiết lập. Thiếu FF ID thì
+      // kệ — chỉ luồng giải đấu mới cần, và luồng đó tự hỏi khi tới nơi.
+      if (!profile.display_name) {
         toast.success("Chào mừng bạn trở lại!");
         router.push(`/setup?next=${encodeURIComponent(nextParam)}`);
         router.refresh();

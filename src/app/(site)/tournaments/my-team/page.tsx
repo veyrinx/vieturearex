@@ -93,7 +93,7 @@ export default function MyTeamPage() {
     const p = profile as Profile;
     if (!p?.ff_id || !p?.display_name) {
       toast.error("Cần thiết lập FF ID và tên hiển thị trước.");
-      router.push("/setup?next=/tournaments/my-team");
+      router.push("/setup?need=ff&next=/tournaments/my-team");
       return;
     }
     setSaving(true);
@@ -225,7 +225,7 @@ export default function MyTeamPage() {
           <div>
             <p className="font-semibold mb-1">Cần thiết lập tài khoản trước</p>
             <p className="text-xs opacity-80 mb-3">Bạn cần có <strong>tên hiển thị</strong> và <strong>FF ID</strong> để tạo hoặc tham gia team.</p>
-            <Link href="/setup?next=/tournaments/my-team"><Button size="sm" className="h-8 rounded-lg text-xs font-bold">Thiết lập ngay</Button></Link>
+            <Link href="/setup?need=ff&next=/tournaments/my-team"><Button size="sm" className="h-8 rounded-lg text-xs font-bold">Thiết lập ngay</Button></Link>
           </div>
         </div>
       )}

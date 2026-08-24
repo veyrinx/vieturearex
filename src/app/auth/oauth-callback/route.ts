@@ -188,9 +188,15 @@ export async function GET(request: NextRequest) {
     } catch { /* non-fatal */ }
   }
 
-  // Chưa có FF ID → đưa qua bước thiết lập, giống luồng đăng nhập bằng mật khẩu.
+  // Chưa có tên hiển thị → đưa qua bước thiết lập, giống luồng đăng nhập bằng
+  // mật khẩu. Thiếu FF ID thì không chặn: chỉ giải đấu mới cần tới nó.
+  //
+  // `existing` là ảnh chụp TRƯỚC khi vá tên từ provider ở trên, nên phải xét cả
+  // providerName — không thì người đăng nhập Google (đã có sẵn tên) vẫn bị đá
+  // sang /setup một cách vô cớ.
+  //
   // Đổi Location trên chính response để giữ nguyên cookie session vừa được set.
-  if (!existing?.ff_id) {
+  if (!(existing?.display_name ?? providerName)) {
     const setupUrl = new URL(`/setup?next=${encodeURIComponent(nextPath)}`, requestUrl.origin);
     response.headers.set("location", setupUrl.toString());
   }
