@@ -13,7 +13,7 @@ const schema = z.object({
   title: z.string().max(120).optional(),
   text: z.string().min(1).max(1800),
   image_url: z.string().url().max(500).optional().or(z.literal("")),
-  target: z.enum(["default", "all"]).default("default"),
+  target: z.enum(["configured", "all"]).default("configured"),
 });
 
 export async function POST(request: NextRequest) {

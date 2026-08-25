@@ -183,6 +183,11 @@ const DEFAULT_WELCOME_PREVIEW =
 
 const DEFAULT_FAREWELL_PREVIEW = "🙋 {name} vừa rời nhóm. Hẹn gặp lại!";
 
+/** Tách danh sách chat id — khớp parseChatIds trong lib/server/zalo-broadcast.ts. */
+function splitChatIds(raw: string): string[] {
+  return [...new Set(raw.split(/[\r\n,;]+/).map((x) => x.trim()).filter(Boolean))];
+}
+
 /** Thay chỗ trống bằng tên mẫu để xem trước — đúng cách bot thay lúc chạy thật. */
 function previewGreeting(template: string): string {
   return template
@@ -270,7 +275,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [zaloHookDetail, setZaloHookDetail] = useState<string | null>(null);
   const [zaloChats, setZaloChats] = useState<{ chat_id: string; name: string; type: string; last_text: string }[] | null>(null);
   const [zaloChatsStatus, setZaloChatsStatus] = useState<"idle" | "loading">("idle");
-  const [zaloNotify, setZaloNotify] = useState({ title: "", text: "", image: "", target: "default" as "default" | "all" });
+  const [zaloNotify, setZaloNotify] = useState({ title: "", text: "", image: "", target: "configured" as "configured" | "all" });
   const [zaloNotifyStatus, setZaloNotifyStatus] = useState<"idle" | "loading">("idle");
   type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
   const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
@@ -469,9 +474,11 @@ ${JSON.stringify(d, null, 2)}`);
   }
 
   async function testZaloBot() {
-    const chatId = v("integrations.zalo_bot_chat_id").trim();
+    // Gửi thử vào nhóm đầu danh sách; ô một-chat cũ vẫn nhận để cấu hình sẵn không mất.
+    const chatId =
+      splitChatIds(v("integrations.zalo_bot_chat_ids"))[0] ?? v("integrations.zalo_bot_chat_id").trim();
     if (!chatId) {
-      toast.error("Nhập Chat ID nhận thông báo rồi Lưu trước đã.");
+      toast.error("Chọn nhóm nhận thông báo rồi Lưu trước đã.");
       return;
     }
     setZaloTestStatus("loading");
@@ -1449,13 +1456,25 @@ ${JSON.stringify(d, null, 2)}`);
             />
             <SensitiveHint hint={sensitiveHint("integrations.zalo_bot_token")} />
           </Field>
-          <Field label="Chat ID nhận thông báo" hint="ID chat/nhóm bot sẽ đẩy tin sự kiện, bài mới. Nhắn bot một câu rồi xem log webhook để lấy ID.">
-            <Input
-              value={v("integrations.zalo_bot_chat_id")}
-              onChange={(e) => set("integrations.zalo_bot_chat_id", e.target.value)}
-              placeholder="chat id..."
-              className="font-mono text-xs"
-            />
+          <Field
+            label="Nhóm nhận thông báo"
+            icon={Users}
+            hint="Mỗi dòng một chat/nhóm. Bấm Lấy Chat ID ở dưới rồi chọn cho nhanh. Bỏ trống thì tin tự đăng bắn cho MỌI chat đã nhắn bot."
+          >
+            <div className="space-y-2">
+              <Textarea
+                value={v("integrations.zalo_bot_chat_ids")}
+                onChange={(e) => set("integrations.zalo_bot_chat_ids", e.target.value)}
+                rows={3}
+                placeholder={"6ede9afa66b88fe6d6a9\n8f21c7b3a4e5d6..."}
+                className="resize-y font-mono text-xs"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {splitChatIds(v("integrations.zalo_bot_chat_ids")).length
+                  ? `Đang chọn ${splitChatIds(v("integrations.zalo_bot_chat_ids")).length} nhóm`
+                  : "Chưa chọn nhóm nào — sẽ gửi cho mọi chat đã nhắn bot"}
+              </p>
+            </div>
           </Field>
           <Field label="Link mở bot" hint="Hiện nút “Mở bot Arex trên Zalo” ở trang /zalo-link. Bỏ trống thì ẩn nút.">
             <Input
@@ -1498,17 +1517,25 @@ ${JSON.stringify(d, null, 2)}`);
             {zaloChats?.length ? (
               <div className="mt-3 space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Bấm một dòng để điền Chat ID
+                  Bấm để thêm / bỏ khỏi danh sách nhận thông báo
                 </p>
                 {zaloChats.map((c) => {
-                  const isPicked = v("integrations.zalo_bot_chat_id") === c.chat_id;
+                  const picked = splitChatIds(v("integrations.zalo_bot_chat_ids"));
+                  const isPicked = picked.includes(c.chat_id);
                   return (
                     <button
                       key={c.chat_id}
                       type="button"
                       onClick={() => {
-                        set("integrations.zalo_bot_chat_id", c.chat_id);
-                        toast.success(`Đã điền Chat ID ${c.chat_id} — bấm Lưu để giữ lại.`);
+                        const next = isPicked
+                          ? picked.filter((id) => id !== c.chat_id)
+                          : [...picked, c.chat_id];
+                        set("integrations.zalo_bot_chat_ids", next.join("\n"));
+                        toast.success(
+                          isPicked
+                            ? `Đã bỏ ${c.name || c.chat_id} khỏi danh sách — bấm Lưu để giữ lại.`
+                            : `Đã thêm ${c.name || c.chat_id} — bấm Lưu để giữ lại.`,
+                        );
                       }}
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition",
@@ -1630,13 +1657,13 @@ ${zaloNotify.text}` : zaloNotify.text}
               <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={zaloNotify.target}
-                  onValueChange={(val) => setZaloNotify((p) => ({ ...p, target: val as "default" | "all" }))}
+                  onValueChange={(val) => setZaloNotify((p) => ({ ...p, target: val as "configured" | "all" }))}
                 >
                   <SelectTrigger className="max-w-56">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="default">Chỉ chat mặc định</SelectItem>
+                    <SelectItem value="configured">Nhóm đã chọn</SelectItem>
                     <SelectItem value="all">Tất cả chat đã nhắn bot</SelectItem>
                   </SelectContent>
                 </Select>

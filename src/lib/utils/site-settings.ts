@@ -136,6 +136,7 @@ export const settingsFormFieldOrder = [
   "integrations.telegram_user_chat_id",
   "integrations.zalo_bot_token",
   "integrations.zalo_bot_chat_id",
+  "integrations.zalo_bot_chat_ids",
   "integrations.zalo_bot_link",
   "integrations.zalo_auto_news",
   "integrations.zalo_auto_events",

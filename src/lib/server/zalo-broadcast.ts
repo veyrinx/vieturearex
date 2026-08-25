@@ -24,8 +24,14 @@ export const MAX_BROADCAST_TARGETS = 200;
 export const ZALO_AUTO_NEWS_KEY = "integrations.zalo_auto_news";
 export const ZALO_AUTO_EVENTS_KEY = "integrations.zalo_auto_events";
 export const ZALO_CHAT_ID_KEY = "integrations.zalo_bot_chat_id";
+/** Danh sách nhóm/chat nhận thông báo, mỗi dòng một id. */
+export const ZALO_CHAT_IDS_KEY = "integrations.zalo_bot_chat_ids";
 
-export type BroadcastTarget = "default" | "all";
+/**
+ * "configured" = đúng những nhóm admin đã chọn; "all" = mọi chat từng nhắn bot;
+ * "auto" = có chọn thì gửi đúng nhóm đã chọn, chưa chọn gì thì gửi tất cả.
+ */
+export type BroadcastTarget = "configured" | "all" | "auto";
 export type BroadcastResult = {
   ok: boolean;
   sent: number;
@@ -35,13 +41,27 @@ export type BroadcastResult = {
   results: { chat_id: string; ok: boolean }[];
 };
 
+/** Tách danh sách id: xuống dòng, dấu phẩy hay chấm phẩy đều nhận. */
+export function parseChatIds(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return [...new Set(raw.split(/[\r\n,;]+/).map((s) => s.trim()).filter(Boolean))];
+}
+
+/** Nhóm/chat admin đã chọn. Vẫn đọc ô một-chat cũ để cấu hình sẵn không mất. */
+export async function getConfiguredChatIds(): Promise<string[]> {
+  const settings = await getSettings().catch(() => []);
+  const get = (key: string) => settings.find((s) => s.key === key)?.value;
+  const many = parseChatIds(get(ZALO_CHAT_IDS_KEY));
+  if (many.length) return many;
+  const legacy = get(ZALO_CHAT_ID_KEY)?.trim() || (process.env.ZALO_BOT_CHAT_ID?.trim() ?? "");
+  return legacy ? parseChatIds(legacy) : [];
+}
+
 export async function resolveZaloTargets(target: BroadcastTarget): Promise<string[]> {
-  if (target === "default") {
-    const settings = await getSettings().catch(() => []);
-    const configured =
-      settings.find((s) => s.key === ZALO_CHAT_ID_KEY)?.value?.trim() ||
-      (process.env.ZALO_BOT_CHAT_ID?.trim() ?? "");
-    return configured ? [configured] : [];
+  if (target === "configured") return getConfiguredChatIds();
+  if (target === "auto") {
+    const chosen = await getConfiguredChatIds();
+    if (chosen.length) return chosen;
   }
 
   const db = createAdminSupabaseClient();
@@ -65,12 +85,12 @@ export async function broadcastZaloBot(opts: {
     return { ok: false, reason: token ? "bot_token_malformed" : "bot_token_not_configured", ...empty };
   }
 
-  const target = opts.target ?? "all";
+  const target = opts.target ?? "auto";
   const chatIds = await resolveZaloTargets(target);
   if (!chatIds.length) {
     return {
       ok: false,
-      reason: target === "all" ? "no_chats_yet" : "chat_id_not_configured",
+      reason: target === "configured" ? "chat_id_not_configured" : "no_chats_yet",
       ...empty,
     };
   }
