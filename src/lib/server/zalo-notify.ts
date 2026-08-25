@@ -14,7 +14,14 @@ const ZALO_OA_MESSAGE_API = "https://openapi.zalo.me/v3.0/oa/message";
  * FALLBACK: official OA API (`zalo.oa_access_token` + recipient) — only used
  * when no personal webhook is configured. Kept for business Official Accounts.
  */
-export async function sendZaloNotification(title: string, body: string, url?: string) {
+export async function sendZaloNotification(
+  title: string,
+  body: string,
+  url?: string,
+  // Bật khi bot Zalo đã tự bắn tin này rồi (xem zalo-broadcast.ts) — không có
+  // cờ thì chat mặc định nhận hai lần y hệt nhau.
+  opts?: { skipBot?: boolean },
+) {
   const settings = await getSettings();
   const get = (key: string) => settings.find((s) => s.key === key)?.value?.trim() || "";
 
@@ -37,7 +44,9 @@ export async function sendZaloNotification(title: string, body: string, url?: st
   }
 
   // ── Bot Zalo (bot.zapps.vn) — kênh chính thức, dùng khi có token + chat id ──
-  const botChatId = get("integrations.zalo_bot_chat_id") || (process.env.ZALO_BOT_CHAT_ID?.trim() ?? "");
+  const botChatId = opts?.skipBot
+    ? ""
+    : get("integrations.zalo_bot_chat_id") || (process.env.ZALO_BOT_CHAT_ID?.trim() ?? "");
   if (botChatId) {
     const botToken = await getZaloBotToken();
     if (botToken && (await sendZaloBotMessage(botToken, botChatId, message))) {
@@ -68,7 +77,12 @@ export async function sendZaloNotification(title: string, body: string, url?: st
   return { sent: false, reason: "not_configured" as const };
 }
 
-export async function notifyNewEvent(title: string, startDate: string, url?: string) {
+export async function notifyNewEvent(
+  title: string,
+  startDate: string,
+  url?: string,
+  opts?: { skipBot?: boolean },
+) {
   const formattedDate = new Date(startDate).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -81,6 +95,7 @@ export async function notifyNewEvent(title: string, startDate: string, url?: str
     `SỰ KIỆN MỚI: ${title}`,
     `Bắt đầu: ${formattedDate}`,
     url,
+    opts,
   );
 }
 

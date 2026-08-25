@@ -1559,6 +1559,29 @@ ${JSON.stringify(d, null, 2)}`);
               </div>
             ) : null}
           </Field>
+          <Field label="Tự đăng" hint="Có tin/sự kiện mới thì bot tự bắn vào mọi chat đã nhắn bot." icon={Zap}>
+            <div className="space-y-2">
+              {[
+                { key: "integrations.zalo_auto_news", label: "Bài viết mới", icon: Newspaper },
+                { key: "integrations.zalo_auto_events", label: "Sự kiện mới", icon: Calendar },
+              ].map((row) => {
+                const on = v(row.key) !== "false" && v(row.key) !== "0";
+                return (
+                  <label
+                    key={row.key}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border/60 px-3 py-2 transition hover:bg-muted/40"
+                  >
+                    <row.icon className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 text-xs font-semibold">{row.label}</span>
+                    <span className={cn("text-[11px]", on ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                      {on ? "Đang bật" : "Đang tắt"}
+                    </span>
+                    <Toggle checked={on} onChange={(next) => set(row.key, next ? "true" : "false")} label={row.label} />
+                  </label>
+                );
+              })}
+            </div>
+          </Field>
           <Field label="Thông báo nhanh" hint="Gõ nội dung rồi bấm Gửi — không cần tạo bài, không cần Lưu cài đặt." icon={BellRing}>
             <div className="space-y-2.5">
               <Input

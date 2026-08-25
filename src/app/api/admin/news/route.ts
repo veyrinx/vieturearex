@@ -179,6 +179,26 @@ export async function POST(request: NextRequest) {
         broadcastToSubscribers(text).catch(() => null);
       });
     }
+    // Bot Zalo: trước đây chỉ Telegram được nối vào luồng tự đăng nên bên Zalo
+    // im hoàn toàn dù đã có bot và có chat.
+    if (article.status === "published") {
+      const siteUrl = SITE_URL;
+      void import("@/lib/server/zalo-broadcast").then(async ({ broadcastZaloBot, isZaloAutoPostOn, ZALO_AUTO_NEWS_KEY }) => {
+        if (!(await isZaloAutoPostOn(ZALO_AUTO_NEWS_KEY))) return;
+        const text = [
+          "📰 BÀI VIẾT MỚI",
+          "",
+          article.title,
+          article.category ? `🏷️ ${article.category}` : "",
+          article.excerpt ? `\n${article.excerpt.slice(0, 300)}` : "",
+          `\n🔗 ${siteUrl}/news/${article.slug}`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+        await broadcastZaloBot({ text, imageUrl: article.cover || undefined });
+      }).catch(() => null);
+    }
+
     revalidatePath("/news", "layout");
     revalidatePath("/", "layout");
 

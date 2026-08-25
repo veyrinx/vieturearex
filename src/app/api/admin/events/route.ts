@@ -196,6 +196,48 @@ export async function POST(request: NextRequest) {
     // Admin bot nội bộ luôn gửi nếu đã cấu hình
     notifyEventChange(event, "created", adminName);
 
+    // Zalo cá nhân qua relay webhook — kênh riêng, không phải bot. Cũng để
+    // NGOÀI autoEventsEnabled vì cờ đó đòi credentials Telegram. skipBot: bot
+    // Zalo đã có đường bắn riêng ngay dưới, không để chat mặc định nhận hai lần.
+    void import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) =>
+      notifyNewEvent(event.title, event.start_date, event.link ?? undefined, { skipBot: true }),
+    ).catch(() => null);
+
+    // Bot Zalo đứng RIÊNG, không nhốt trong autoEventsEnabled: cờ đó đòi phải
+    // có credentials Telegram, nên chưa cấu hình Telegram là Zalo câm theo dù
+    // bot Zalo vẫn chạy tốt.
+    {
+      const siteUrl = SITE_URL;
+      void import("@/lib/server/zalo-broadcast").then(async ({ broadcastZaloBot, isZaloAutoPostOn, ZALO_AUTO_EVENTS_KEY }) => {
+        if (!(await isZaloAutoPostOn(ZALO_AUTO_EVENTS_KEY))) return;
+        const fmt = (value: string) => {
+          const d = new Date(value);
+          return Number.isNaN(d.getTime())
+            ? ""
+            : d.toLocaleString("vi-VN", {
+                timeZone: "Asia/Ho_Chi_Minh",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              });
+        };
+        const range = [fmt(event.start_date), fmt(event.end_date)].filter(Boolean).join(" → ");
+        const text = [
+          "📅 SỰ KIỆN MỚI",
+          "",
+          event.title,
+          range ? `🕒 ${range}` : "",
+          event.server_region ? `🌐 Server ${event.server_region}` : "",
+          event.description ? `\n${String(event.description).slice(0, 300)}` : "",
+          `\n🔗 ${siteUrl}/events/${event.id}`,
+          event.link ? `↗️ Trang gốc: ${event.link}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+        await broadcastZaloBot({ text, imageUrl: event.image_url || event.thumbnail_url || undefined });
+      }).catch(() => null);
+    }
+
     if (autoEventsEnabled) {
       const siteUrl = SITE_URL;
       if (autoBroadcastEnabled) {
@@ -206,9 +248,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      import("@/lib/server/zalo-notify").then(({ notifyNewEvent }) => {
-        notifyNewEvent(event.title, event.start_date, event.link ?? undefined).catch(() => {});
-      });
       import("@/lib/server/push-notify").then(({ sendPushNotification }) => {
         sendPushNotification(`SỰ KIỆN MỚI: ${event.title}`, `Bắt đầu: ${new Date(event.start_date).toLocaleDateString("vi-VN")}`, "/events").catch(() => {});
       });
