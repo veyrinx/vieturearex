@@ -40,17 +40,74 @@ function cleanToken(raw: string): string {
     .replace(/^(?:Bearer|bot)/i, "");
 }
 
+function maskShape(value: string): string {
+  return Array.from(value)
+    .map((ch) => {
+      if (/[A-Za-z]/.test(ch)) return "a";
+      if (/[0-9]/.test(ch)) return "9";
+      if (ch === " ") return "␠";
+      if (ch.charCodeAt(0) < 32) return "␊";
+      return ch;
+    })
+    .join("");
+}
+
 export function isValidZaloBotToken(token: string): boolean {
   return ZALO_BOT_TOKEN_PATTERN.test(token);
 }
 
+/** "enc:" còn nguyên = APP_SECRET lệch, token không giải mã được → coi như chưa có. */
+function pickToken(rows: { key: string; value: string }[]): string {
+  const raw = rows.find((s) => s.key === ZALO_BOT_TOKEN_KEY)?.value ?? "";
+  return raw.startsWith("enc:") ? "" : cleanToken(raw);
+}
+
 export async function getZaloBotToken(): Promise<string> {
-  const settings = await getSettings().catch(() => []);
-  const fromSettings = settings.find((s) => s.key === ZALO_BOT_TOKEN_KEY)?.value ?? "";
-  // "enc:" còn nguyên = APP_SECRET lệch, token không giải mã được → coi như chưa có.
-  const cleaned = fromSettings.startsWith("enc:") ? "" : cleanToken(fromSettings);
-  if (cleaned) return cleaned;
-  return cleanToken(process.env.ZALO_BOT_TOKEN ?? "");
+  const cached = pickToken(await getSettings().catch(() => []));
+  if (isValidZaloBotToken(cached)) return cached;
+  // Chưa thấy token dùng được thì đọc thẳng DB rồi mới chịu thua: getSettings()
+  // nhớ 60 giây và mỗi máy Fluid giữ memo riêng, nên admin vừa dán token xong
+  // bấm Set Webhook là rơi trúng máy còn nhớ bản CŨ — báo "chưa cấu hình token"
+  // trong khi DB đã có.
+  const fresh = pickToken(await getSettingsByKeys([ZALO_BOT_TOKEN_KEY]).catch(() => []));
+  if (fresh) return fresh;
+  return cached || cleanToken(process.env.ZALO_BOT_TOKEN ?? "");
+}
+
+/**
+ * Vì sao token không dùng được — KHÔNG lộ token: chữ thành `a`, số thành `9`,
+ * mọi ký tự lạ giữ nguyên. Nhìn cái mặt nạ là thấy ngay dư dấu nháy, còn
+ * khoảng trắng, hay id không phải số.
+ */
+export async function describeZaloBotToken(): Promise<{
+  source: "settings" | "env" | "none";
+  row_exists: boolean;
+  undecrypted: boolean;
+  raw_length: number;
+  cleaned_length: number;
+  raw_shape: string;
+  cleaned_shape: string;
+  valid: boolean;
+}> {
+  // Đọc thẳng DB — chẩn đoán mà lấy bản nhớ 60 giây thì chỉ tổ dẫn sai đường.
+  const rows = await getSettingsByKeys([ZALO_BOT_TOKEN_KEY]).catch(() => []);
+  const row = rows.find((s) => s.key === ZALO_BOT_TOKEN_KEY)?.value ?? "";
+  const undecrypted = row.startsWith("enc:");
+  const fromSettings = undecrypted ? "" : cleanToken(row);
+  const fromEnv = cleanToken(process.env.ZALO_BOT_TOKEN ?? "");
+  const token = fromSettings || fromEnv;
+  const raw = fromSettings ? row : fromEnv;
+  return {
+    source: fromSettings ? "settings" : fromEnv ? "env" : "none",
+    row_exists: row.length > 0,
+    undecrypted,
+    raw_length: raw.length,
+    cleaned_length: token.length,
+    // raw_shape giữ cả khoảng trắng/dấu nháy — chính chỗ đó mới lộ ra token hỏng.
+    raw_shape: maskShape(raw),
+    cleaned_shape: maskShape(token),
+    valid: isValidZaloBotToken(token),
+  };
 }
 
 /**

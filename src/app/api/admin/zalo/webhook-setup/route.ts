@@ -3,6 +3,7 @@ import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { SITE_URL } from "@/lib/constants/site";
 import { resolveServingOrigin } from "@/lib/server/serving-origin";
 import {
+  describeZaloBotToken,
   ensureZaloBotWebhookSecret,
   getZaloBotToken,
   getZaloBotWebhookSecret,
@@ -28,13 +29,18 @@ export async function POST(request: NextRequest) {
   const action = body.action === "delete" ? "delete" : body.action === "test" ? "test" : "set";
 
   const token = await getZaloBotToken();
-  if (!token) {
-    return NextResponse.json({ ok: false, reason: "bot_token_not_configured" }, { status: 400 });
-  }
   // Token sai dạng thì Zalo trả "Not Found" — thông báo không chỉ về đâu cả,
-  // nên chặn ngay ở đây và nói thẳng token hỏng.
-  if (!isValidZaloBotToken(token)) {
-    return NextResponse.json({ ok: false, reason: "bot_token_malformed" }, { status: 400 });
+  // nên chặn ngay ở đây, kèm mặt nạ token (chữ→a, số→9) để thấy hỏng chỗ nào
+  // mà không lộ token thật.
+  if (!token || !isValidZaloBotToken(token)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: token ? "bot_token_malformed" : "bot_token_not_configured",
+        token_diagnosis: await describeZaloBotToken(),
+      },
+      { status: 400 },
+    );
   }
 
   if (action === "test") {
@@ -100,8 +106,13 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
 
   const token = await getZaloBotToken();
-  if (!token) return NextResponse.json({ ok: false, reason: "bot_token_not_configured" });
-  if (!isValidZaloBotToken(token)) return NextResponse.json({ ok: false, reason: "bot_token_malformed" });
+  if (!token || !isValidZaloBotToken(token)) {
+    return NextResponse.json({
+      ok: false,
+      reason: token ? "bot_token_malformed" : "bot_token_not_configured",
+      token_diagnosis: await describeZaloBotToken(),
+    });
+  }
 
   const me = await zaloBotApi<{ display_name?: string; account_name?: string; id?: string }>(token, "getMe", {});
   if (me.ok === false) {
