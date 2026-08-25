@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { SITE_URL } from "@/lib/constants/site";
 import { resolveServingOrigin } from "@/lib/server/serving-origin";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   describeZaloBotToken,
   ensureZaloBotWebhookSecret,
   getZaloBotToken,
   getZaloBotWebhookSecret,
   isValidZaloBotToken,
+  normalizeZaloUpdate,
   sendZaloBotMessage,
   zaloBotApi,
 } from "@/lib/server/zalo-bot";
 
 /**
  * Đăng ký / gỡ webhook cho bot Zalo (bot.zapps.me).
- * POST { action: "set" | "delete" | "test", chat_id?: string }
+ * POST { action: "set" | "delete" | "test" | "chats", chat_id?: string }
  */
 
 function webhookPath(origin: string) {
@@ -87,7 +89,14 @@ export async function POST(request: NextRequest) {
   if (denied) return denied;
 
   const body = (await request.json().catch(() => ({}))) as { action?: string; chat_id?: string };
-  const action = body.action === "delete" ? "delete" : body.action === "test" ? "test" : "set";
+  const action =
+    body.action === "delete"
+      ? "delete"
+      : body.action === "test"
+        ? "test"
+        : body.action === "chats"
+          ? "chats"
+          : "set";
 
   const token = await getZaloBotToken();
   // Token sai dạng thì Zalo trả "Not Found" — thông báo không chỉ về đâu cả,
@@ -102,6 +111,59 @@ export async function POST(request: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  // Liệt kê chat đã nhắn bot, để admin khỏi phải mò chat_id bằng tay.
+  // Đi bằng getUpdates (site GỌI RA Zalo) nên vẫn chạy được cả khi webhook đang
+  // bị CDN chặn — đúng lúc cần nhất, vì lúc đó bảng zalo_bot_chats rỗng.
+  if (action === "chats") {
+    const res = await zaloBotApi<unknown[]>(token, "getUpdates", { limit: 100 });
+    const fromApi = (Array.isArray(res.result) ? res.result : [])
+      .map((item) => normalizeZaloUpdate({ result: item }))
+      .filter((u): u is NonNullable<typeof u> => Boolean(u?.chatId))
+      .map((u) => ({
+        chat_id: u.chatId,
+        name: u.fromName,
+        type: u.isGroup ? "GROUP" : "USER",
+        last_text: u.text.slice(0, 60),
+      }));
+
+    const db = createAdminSupabaseClient();
+    const stored = db
+      ? ((
+          await db
+            .from("zalo_bot_chats")
+            .select("chat_id, chat_type, display_name, last_seen_at")
+            .order("last_seen_at", { ascending: false })
+            .limit(20)
+        ).data ?? [])
+      : [];
+
+    // Trùng chat_id thì bản từ API mới hơn, giữ nó.
+    const seen = new Set(fromApi.map((c) => c.chat_id));
+    const merged = [
+      ...fromApi,
+      ...(stored as { chat_id: string; chat_type?: string; display_name?: string }[])
+        .filter((r) => !seen.has(r.chat_id))
+        .map((r) => ({
+          chat_id: r.chat_id,
+          name: r.display_name ?? "",
+          type: r.chat_type ?? "USER",
+          last_text: "",
+        })),
+    ];
+
+    return NextResponse.json({
+      ok: true,
+      action,
+      chats: merged,
+      // getUpdates hỏng khi webhook đang bật là chuyện thường — nói ra để khỏi
+      // tưởng bot chết.
+      updates_error: res.ok === false ? (res.description ?? "zalo_error") : null,
+      hint: merged.length
+        ? null
+        : "Chưa có chat nào. Mở Zalo, nhắn cho bot một câu bất kỳ rồi bấm lại nút này.",
+    });
   }
 
   if (action === "test") {

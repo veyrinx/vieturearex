@@ -232,6 +232,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   // Toast bay mất sau vài giây, admin chỉ kịp thấy dấu X — giữ nguyên văn phản hồi
   // của Zalo ngay dưới nút để còn lần ra lý do.
   const [zaloHookDetail, setZaloHookDetail] = useState<string | null>(null);
+  const [zaloChats, setZaloChats] = useState<{ chat_id: string; name: string; type: string; last_text: string }[] | null>(null);
+  const [zaloChatsStatus, setZaloChatsStatus] = useState<"idle" | "loading">("idle");
   type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
   const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -362,6 +364,35 @@ ${JSON.stringify(d, null, 2)}`);
       toast.error("Lỗi kết nối");
     }
     setTimeout(() => setZaloHookStatus("idle"), 5000);
+  }
+
+  // Lấy chat_id mà không phải mò: hỏi thẳng Zalo xem ai đã nhắn bot.
+  async function loadZaloChats() {
+    setZaloChatsStatus("loading");
+    try {
+      const res = await fetch("/api/admin/zalo/webhook-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "chats" }),
+      });
+      const d = (await res.json().catch(() => ({}))) as {
+        ok?: boolean; reason?: string; hint?: string | null; updates_error?: string | null;
+        chats?: { chat_id: string; name: string; type: string; last_text: string }[];
+      };
+      if (res.ok && d.ok) {
+        setZaloChats(d.chats ?? []);
+        if (!d.chats?.length) toast.info(d.hint ?? "Chưa có chat nào nhắn bot.");
+        else toast.success(`Tìm thấy ${d.chats.length} chat — bấm vào một dòng để điền Chat ID.`);
+        if (d.updates_error) {
+          toast.warning(`Zalo không trả được lịch sử tin (${d.updates_error}) — danh sách dưới đây lấy từ những chat đã nhắn bot trước đó.`);
+        }
+      } else {
+        toast.error(`Không lấy được danh sách chat: ${d.reason ?? "kiểm tra token"}`);
+      }
+    } catch {
+      toast.error("Lỗi kết nối");
+    }
+    setZaloChatsStatus("idle");
   }
 
   async function testZaloBot() {
@@ -1373,8 +1404,36 @@ ${JSON.stringify(d, null, 2)}`);
                 {zaloTestStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <BellRing className="size-3.5" />}
                 {zaloTestStatus === "loading" ? "Đang gửi…" : zaloTestStatus === "ok" ? "✅ Đã gửi!" : zaloTestStatus === "err" ? "❌ Lỗi" : "Gửi thử"}
               </button>
+              <button
+                type="button"
+                onClick={loadZaloChats}
+                disabled={zaloChatsStatus === "loading"}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
+              >
+                {zaloChatsStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <Plug className="size-3.5" />}
+                {zaloChatsStatus === "loading" ? "Đang tìm…" : "Lấy Chat ID"}
+              </button>
               <span className="text-[11px] text-muted-foreground">Nhập token &amp; bấm Lưu trước khi set webhook</span>
             </div>
+            {zaloChats?.length ? (
+              <div className="mt-3 space-y-1.5">
+                {zaloChats.map((c) => (
+                  <button
+                    key={c.chat_id}
+                    type="button"
+                    onClick={() => {
+                      set("integrations.zalo_bot_chat_id", c.chat_id);
+                      toast.success(`Đã điền Chat ID ${c.chat_id} — bấm Lưu để giữ lại.`);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-left text-[11px] transition hover:bg-muted"
+                  >
+                    <span className="font-semibold">{c.name || "(không tên)"}</span>
+                    <span className="text-muted-foreground">{c.type}</span>
+                    <span className="font-mono">{c.chat_id}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {zaloHookDetail ? (
               <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
                 {zaloHookDetail}
