@@ -334,7 +334,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         toast.error(
           d.reason === "bot_token_not_configured"
             ? "Chưa có Zalo Bot Token — nhập token ở trên rồi Lưu trước."
-            : `Set webhook Zalo thất bại: ${d.reason ?? "kiểm tra token"}`,
+            : d.reason === "bot_token_malformed"
+              ? "Zalo Bot Token sai dạng — phải là <số>:<chuỗi>, ví dụ 1234567890:abcDEF_123. Dán lại từ bot.zapps.me, đừng kèm dấu nháy hay khoảng trắng."
+              : `Set webhook Zalo thất bại: ${d.reason ?? "kiểm tra token"}`,
         );
       }
     } catch {

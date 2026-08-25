@@ -24,12 +24,33 @@ const API_BASES = [
 export const ZALO_BOT_TOKEN_KEY = "integrations.zalo_bot_token";
 export const ZALO_BOT_WEBHOOK_SECRET_KEY = "integrations.zalo_bot_webhook_secret";
 
+/**
+ * Token phải đúng dạng `<id số>:<chuỗi>`. Sai một ly — dư dấu nháy, còn
+ * khoảng trắng giữa, id không phải số — là Zalo trả `Not Found` 404 (vì URL
+ * `/bot<token>/<method>` không khớp route nào), chứ không phải `Unauthorized`.
+ * Thông báo đó chẳng chỉ về đâu cả nên phải tự bắt từ đầu.
+ */
+export const ZALO_BOT_TOKEN_PATTERN = /^\d+:[A-Za-z0-9_-]+$/;
+
+/** Bỏ khoảng trắng, dấu nháy và tiền tố hay bị copy kèm khi dán token. */
+function cleanToken(raw: string): string {
+  return raw
+    .replace(/\s+/g, "")
+    .replace(/^["'‘’“”]+|["'‘’“”]+$/g, "")
+    .replace(/^(?:Bearer|bot)/i, "");
+}
+
+export function isValidZaloBotToken(token: string): boolean {
+  return ZALO_BOT_TOKEN_PATTERN.test(token);
+}
+
 export async function getZaloBotToken(): Promise<string> {
   const settings = await getSettings().catch(() => []);
-  const fromSettings = settings.find((s) => s.key === ZALO_BOT_TOKEN_KEY)?.value?.trim() ?? "";
+  const fromSettings = settings.find((s) => s.key === ZALO_BOT_TOKEN_KEY)?.value ?? "";
   // "enc:" còn nguyên = APP_SECRET lệch, token không giải mã được → coi như chưa có.
-  if (fromSettings && !fromSettings.startsWith("enc:")) return fromSettings;
-  return process.env.ZALO_BOT_TOKEN?.trim() ?? "";
+  const cleaned = fromSettings.startsWith("enc:") ? "" : cleanToken(fromSettings);
+  if (cleaned) return cleaned;
+  return cleanToken(process.env.ZALO_BOT_TOKEN ?? "");
 }
 
 /**

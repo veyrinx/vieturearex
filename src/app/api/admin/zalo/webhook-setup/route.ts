@@ -6,6 +6,7 @@ import {
   ensureZaloBotWebhookSecret,
   getZaloBotToken,
   getZaloBotWebhookSecret,
+  isValidZaloBotToken,
   sendZaloBotMessage,
   zaloBotApi,
 } from "@/lib/server/zalo-bot";
@@ -29,6 +30,11 @@ export async function POST(request: NextRequest) {
   const token = await getZaloBotToken();
   if (!token) {
     return NextResponse.json({ ok: false, reason: "bot_token_not_configured" }, { status: 400 });
+  }
+  // Token sai dạng thì Zalo trả "Not Found" — thông báo không chỉ về đâu cả,
+  // nên chặn ngay ở đây và nói thẳng token hỏng.
+  if (!isValidZaloBotToken(token)) {
+    return NextResponse.json({ ok: false, reason: "bot_token_malformed" }, { status: 400 });
   }
 
   if (action === "test") {
@@ -87,6 +93,7 @@ export async function GET(request: NextRequest) {
 
   const token = await getZaloBotToken();
   if (!token) return NextResponse.json({ ok: false, reason: "bot_token_not_configured" });
+  if (!isValidZaloBotToken(token)) return NextResponse.json({ ok: false, reason: "bot_token_malformed" });
 
   const me = await zaloBotApi<{ display_name?: string; account_name?: string; id?: string }>(token, "getMe", {});
   if (me.ok === false) {

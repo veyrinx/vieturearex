@@ -13,6 +13,7 @@ import { ocrFromFetch } from "@/lib/server/ff-ocr";
 import {
   getZaloBotToken,
   getZaloBotWebhookSecret,
+  isValidZaloBotToken,
   normalizeCommand,
   normalizeZaloUpdate,
   sendZaloBotMessage,
@@ -379,6 +380,12 @@ export async function POST(req: NextRequest) {
   const token = await getZaloBotToken();
   if (!token) {
     console.warn("[zalo-bot] Có update nhưng CHƯA CẤU HÌNH TOKEN — lưu token ở Admin hoặc đặt ZALO_BOT_TOKEN.");
+    return NextResponse.json({ ok: true });
+  }
+  // Token sai dạng: mọi lệnh gọi API sau đó chỉ nhận "Not Found" của Zalo,
+  // bot nhận được tin nhưng không trả lời nổi câu nào.
+  if (!isValidZaloBotToken(token)) {
+    console.warn("[zalo-bot] Có update nhưng TOKEN SAI DẠNG — phải là <số>:<chuỗi>, dán lại từ bot.zapps.me.");
     return NextResponse.json({ ok: true });
   }
 
