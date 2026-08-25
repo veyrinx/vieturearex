@@ -48,6 +48,32 @@ async function probeOwnWebhook(url: string, secret: string) {
   }
 }
 
+/** Trang chặn của Cloudflare trả 403 kèm "Just a moment..." chứ không phải JSON. */
+function looksBlockedByCdn(probe: { status: number; body: string }): boolean {
+  return (
+    (probe.status === 403 || probe.status === 503) &&
+    /just a moment|cf-browser-verification|cloudflare|attention required/i.test(probe.body)
+  );
+}
+
+/**
+ * Tên miền chính có thể nằm sau Cloudflare với chế độ thử thách trình duyệt —
+ * người dùng không thấy gì nhưng MÁY gọi vào là ăn 403 "Just a moment…", nên
+ * Zalo không bao giờ giao được update. Thử lần lượt các cửa vào của site rồi
+ * đăng ký cửa nào thật sự nhận được POST máy-gọi-máy.
+ */
+function webhookCandidates(serving: string, requestOrigin: string): string[] {
+  const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vercelNow = process.env.VERCEL_URL?.trim();
+  const list = [
+    serving,
+    requestOrigin,
+    vercelProd ? `https://${vercelProd}` : "",
+    vercelNow ? `https://${vercelNow}` : "",
+  ];
+  return [...new Set(list.filter(Boolean))];
+}
+
 export async function POST(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (denied) return denied;
@@ -81,11 +107,28 @@ export async function POST(request: NextRequest) {
   // đúng nơi trả 2xx, không tới được thì lấy chính nơi admin đang đứng.
   const origin = new URL(request.url).origin;
   const serving = await resolveServingOrigin(SITE_URL, origin);
-  const url = webhookPath(serving);
   const switchedFrom = serving === SITE_URL ? null : webhookPath(SITE_URL);
   // Zalo bắt buộc secret_token khi setWebhook → chưa có thì tự sinh và lưu lại,
   // đúng thứ /api/zalo/bot đọc ra để kiểm header X-Bot-Api-Secret-Token.
   const secret = action === "delete" ? "" : await ensureZaloBotWebhookSecret();
+
+  // Chọn cửa vào mà máy gọi máy thật sự đi lọt, chứ không đăng ký bừa tên miền
+  // chính rồi để Zalo ăn 403 của Cloudflare.
+  const probes: { url: string; status: number; ms: number; redirected_to: string | null; body: string }[] = [];
+  let url = webhookPath(serving);
+  if (action === "set") {
+    for (const origin of webhookCandidates(serving, new URL(request.url).origin)) {
+      const candidate = webhookPath(origin);
+      const probe = await probeOwnWebhook(candidate, secret);
+      probes.push({ url: candidate, ...probe });
+      if (probe.status === 200) {
+        url = candidate;
+        break;
+      }
+    }
+  }
+  const chosenProbe = probes.find((p) => p.url === url) ?? probes[0] ?? null;
+  const blockedEverywhere = probes.length > 0 && probes.every(looksBlockedByCdn);
 
   const res =
     action === "delete"
@@ -114,7 +157,7 @@ export async function POST(request: NextRequest) {
   // Tự gọi webhook của chính mình y như Zalo gọi. `verification` của Zalo chỉ
   // nói hỏng chứ không nói hỏng vì đâu; đối chiếu với lượt gọi này mới tách được
   // "endpoint chết" và "Zalo không tới được endpoint đang sống".
-  const selfCheck = action === "set" ? await probeOwnWebhook(url, secret) : null;
+  const selfCheck = chosenProbe;
 
   const info = await zaloBotApi<Record<string, unknown>>(token, "getWebhookInfo", {});
   const me = await zaloBotApi<{ display_name?: string; account_name?: string; id?: string }>(token, "getMe", {});
@@ -127,6 +170,9 @@ export async function POST(request: NextRequest) {
     secret_configured: Boolean(secret),
     verification,
     self_check: selfCheck,
+    probes,
+    // true = MỌI cửa vào đều bị CDN chặn → phải thêm ngoại lệ trên Cloudflare.
+    blocked_by_cdn: blockedEverywhere,
     bot: me.result ?? null,
     info: info.result ?? null,
     ...(switchedFrom ? { switched_from: switchedFrom } : {}),

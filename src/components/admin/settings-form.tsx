@@ -316,6 +316,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           status_code?: number; error?: string; message?: string; description?: string;
         } | null;
         self_check?: { status: number; ms: number; redirected_to: string | null; body: string } | null;
+        probes?: { url: string; status: number }[];
+        blocked_by_cdn?: boolean;
         bot?: { display_name?: string; account_name?: string } | null;
       };
       setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
@@ -326,10 +328,21 @@ ${JSON.stringify(d, null, 2)}`);
         if (d.bot?.display_name || d.bot?.account_name) {
           toast.info(`Bot: ${d.bot.display_name ?? d.bot.account_name}`);
         }
+        if (d.webhook_url && !d.webhook_url.startsWith(window.location.origin)) {
+          toast.info(`Webhook đăng ký vào ${d.webhook_url} — đây là cửa vào duy nhất nhận được POST từ máy khác.`, { duration: 12000 });
+        }
         if (d.switched_from) toast.warning(`NEXT_PUBLIC_SITE_URL đang trỏ vào địa chỉ bị chuyển hướng (${d.switched_from}) — sửa lại trên Vercel.`);
         if (d.secret_configured === false) toast.warning("Không lưu được secret webhook — ai cũng giả được cập nhật gửi tới webhook.");
         // Zalo gọi thử webhook ngay lúc đăng ký; hỏng ở đây là bot sẽ câm dù setWebhook báo ok.
         const ver = d.verification;
+        // Cloudflare bật thuộc tính thử thách trình duyệt: người dùng không thấy gì, nhưng
+        // MÁY gọi vào là ăn 403 "Just a moment…" nên Zalo không giao được update.
+        if (d.blocked_by_cdn) {
+          toast.error(
+            "Cloudflare đang chặn mọi cửa vào webhook (403 “Just a moment…”). Vào Cloudflare → Security → WAF, thêm rule Skip cho đường dẫn /api/zalo/bot (và tắt Bot Fight Mode cho đường dẫn đó).",
+            { duration: 30000 },
+          );
+        }
         if (ver && (ver.success === false || ver.ok === false)) {
           const sc = d.self_check;
           // Đối chiếu với lượt site tự gọi chính mình: tách được endpoint chết
