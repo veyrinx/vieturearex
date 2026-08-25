@@ -66,6 +66,9 @@ function webhookCandidates(serving: string, requestOrigin: string): string[] {
   const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
   const vercelNow = process.env.VERCEL_URL?.trim();
   const list = [
+    // Khai WEBHOOK_PUBLIC_ORIGIN khi có tên miền phụ để DNS-only (mây xám) —
+    // cách sạch nhất để giữ Cloudflare cho cả site mà webhook vẫn vào được.
+    process.env.WEBHOOK_PUBLIC_ORIGIN?.trim().replace(/\/+$/, "") ?? "",
     serving,
     requestOrigin,
     vercelProd ? `https://${vercelProd}` : "",
