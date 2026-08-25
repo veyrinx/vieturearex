@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/constants/site";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "BXH nick khủng VN — Widget | Arex",
+  title: "BXH nick khủng VN — Widget | Arex NetWork",
   robots: { index: false, follow: false },
 };
 

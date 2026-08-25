@@ -307,6 +307,10 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       const d = (await res.json().catch(() => ({}))) as {
         ok?: boolean; webhook_url?: string; reason?: string;
         switched_from?: string; secret_configured?: boolean;
+        verification?: {
+          success?: boolean; ok?: boolean; status?: string | number;
+          status_code?: number; error?: string; message?: string; description?: string;
+        } | null;
         bot?: { display_name?: string; account_name?: string } | null;
       };
       setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
@@ -316,7 +320,16 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           toast.info(`Bot: ${d.bot.display_name ?? d.bot.account_name}`);
         }
         if (d.switched_from) toast.warning(`NEXT_PUBLIC_SITE_URL đang trỏ vào địa chỉ bị chuyển hướng (${d.switched_from}) — sửa lại trên Vercel.`);
-        if (d.secret_configured === false) toast.warning("Chưa đặt ZALO_BOT_WEBHOOK_SECRET — ai cũng giả được cập nhật gửi tới webhook.");
+        if (d.secret_configured === false) toast.warning("Không lưu được secret webhook — ai cũng giả được cập nhật gửi tới webhook.");
+        // Zalo gọi thử webhook ngay lúc đăng ký; hỏng ở đây là bot sẽ câm dù setWebhook báo ok.
+        const ver = d.verification;
+        if (ver && (ver.success === false || ver.ok === false)) {
+          toast.error(
+            `Zalo gọi thử webhook không thành công: ${
+              ver.error ?? ver.message ?? ver.description ?? ver.status_code ?? ver.status ?? "không rõ lý do"
+            }`,
+          );
+        }
       } else {
         toast.error(
           d.reason === "bot_token_not_configured"
@@ -1292,9 +1305,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       <div className="space-y-5">
         <Card>
           <div className="py-4">
-            <SectionHeader icon={SendHorizonal} title="Bot Zalo" desc="Bot đăng ký tại bot.zapps.vn — trả lời lệnh, điểm danh, gửi thông báo vào chat/nhóm Zalo." />
+            <SectionHeader icon={SendHorizonal} title="Bot Zalo" desc="Bot đăng ký tại bot.zapps.me — trả lời lệnh, điểm danh, gửi thông báo vào chat/nhóm Zalo." />
           </div>
-          <Field label="Zalo Bot Token" hint="Lấy ở bot.zapps.vn sau khi tạo bot. Dạng 1234567890:abcdef...">
+          <Field label="Zalo Bot Token" hint="Lấy ở bot.zapps.me sau khi tạo bot. Dạng 1234567890:abcdef...">
             <Input
               value={v("integrations.zalo_bot_token")}
               onChange={(e) => set("integrations.zalo_bot_token", e.target.value)}

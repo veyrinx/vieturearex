@@ -12,6 +12,7 @@ import { generateAiReply, isAiReplyEnabled } from "@/lib/server/ai-support";
 import { ocrFromFetch } from "@/lib/server/ff-ocr";
 import {
   getZaloBotToken,
+  getZaloBotWebhookSecret,
   normalizeCommand,
   normalizeZaloUpdate,
   sendZaloBotMessage,
@@ -347,10 +348,10 @@ export async function POST(req: NextRequest) {
   const limited = enforceRateLimit(req, { name: "zalo-bot-webhook", limit: 120, windowMs: 60_000 });
   if (limited) return limited;
 
-  // CHỈ nhận secret khai riêng cho Zalo. Trước đây còn tự lấy CRON_SECRET làm
-  // dự phòng: ai đăng ký webhook thẳng trên bot.zapps.me (không kèm secret_token)
-  // là mọi tin nhắn bị vứt lặng lẽ, không dấu vết nào để lần.
-  const secret = process.env.ZALO_BOT_WEBHOOK_SECRET || "";
+  // Secret lấy từ env, không có thì từ settings (nút Set Webhook tự sinh & lưu).
+  // Trước đây chỉ đọc env: chưa ai khai biến thì setWebhook lỗi vì Zalo bắt buộc
+  // secret_token, webhook không đăng ký nổi và bot câm suốt.
+  const secret = await getZaloBotWebhookSecret();
   if (secret) {
     const received =
       req.headers.get("x-bot-api-secret-token") ??
@@ -359,7 +360,7 @@ export async function POST(req: NextRequest) {
       "";
     // Luôn trả 200 để Zalo khỏi gửi lại liên tục, nhưng phải ghi log.
     if (received !== secret) {
-      console.warn("[zalo-bot] BỎ QUA update: secret không khớp.", received ? "Header có secret nhưng khác." : "Webhook đăng ký không kèm secret_token — đăng ký lại bằng nút Set Webhook trong Admin.");
+      console.warn("[zalo-bot] BỎ QUA update: secret không khớp.", received ? "Header có secret nhưng khác — bấm Set Webhook trong Admin để đăng ký lại đúng secret." : "Webhook đăng ký không kèm secret_token — đăng ký lại bằng nút Set Webhook trong Admin.");
       return NextResponse.json({ ok: true });
     }
   }

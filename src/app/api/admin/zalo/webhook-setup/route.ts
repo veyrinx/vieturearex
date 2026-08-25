@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth } from "@/lib/server/api-guard";
 import { SITE_URL } from "@/lib/constants/site";
 import { resolveServingOrigin } from "@/lib/server/serving-origin";
-import { getZaloBotToken, zaloBotApi, sendZaloBotMessage } from "@/lib/server/zalo-bot";
+import {
+  ensureZaloBotWebhookSecret,
+  getZaloBotToken,
+  getZaloBotWebhookSecret,
+  sendZaloBotMessage,
+  zaloBotApi,
+} from "@/lib/server/zalo-bot";
 
 /**
- * Đăng ký / gỡ webhook cho bot Zalo (bot.zapps.vn).
+ * Đăng ký / gỡ webhook cho bot Zalo (bot.zapps.me).
  * POST { action: "set" | "delete" | "test", chat_id?: string }
  */
 
@@ -38,16 +44,14 @@ export async function POST(request: NextRequest) {
   const serving = await resolveServingOrigin(SITE_URL, origin);
   const url = webhookPath(serving);
   const switchedFrom = serving === SITE_URL ? null : webhookPath(SITE_URL);
-  // Chỉ dùng secret khai riêng cho Zalo — phải khớp đúng thứ /api/zalo/bot kiểm.
-  const secret = process.env.ZALO_BOT_WEBHOOK_SECRET || "";
+  // Zalo bắt buộc secret_token khi setWebhook → chưa có thì tự sinh và lưu lại,
+  // đúng thứ /api/zalo/bot đọc ra để kiểm header X-Bot-Api-Secret-Token.
+  const secret = action === "delete" ? "" : await ensureZaloBotWebhookSecret();
 
   const res =
     action === "delete"
-      ? await zaloBotApi(token, "deleteWebhook", {})
-      : await zaloBotApi(token, "setWebhook", {
-          url,
-          ...(secret ? { secret_token: secret } : {}),
-        });
+      ? await zaloBotApi<Record<string, unknown>>(token, "deleteWebhook", {})
+      : await zaloBotApi<Record<string, unknown>>(token, "setWebhook", { url, secret_token: secret });
 
   if (res.ok === false) {
     return NextResponse.json(
@@ -55,6 +59,10 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
+
+  // Zalo tự gọi thử webhook rồi trả kết quả trong `verification` — đây là chỗ
+  // duy nhất biết được vì sao bot im (endpoint 404, secret lệch, timeout…).
+  const verification = (res.result as { verification?: Record<string, unknown> } | undefined)?.verification ?? null;
 
   const info = await zaloBotApi<Record<string, unknown>>(token, "getWebhookInfo", {});
   const me = await zaloBotApi<{ display_name?: string; account_name?: string; id?: string }>(token, "getMe", {});
@@ -65,6 +73,7 @@ export async function POST(request: NextRequest) {
     webhook_url: action === "set" ? url : null,
     // Không có secret thì ai cũng giả được cập nhật gửi tới webhook.
     secret_configured: Boolean(secret),
+    verification,
     bot: me.result ?? null,
     info: info.result ?? null,
     ...(switchedFrom ? { switched_from: switchedFrom } : {}),
@@ -96,6 +105,6 @@ export async function GET(request: NextRequest) {
     expected_url: expected,
     // false = webhook đang trỏ sai chỗ → bấm "Đăng ký webhook" lại là xong.
     url_matches: current === expected,
-    secret_configured: Boolean(process.env.ZALO_BOT_WEBHOOK_SECRET),
+    secret_configured: Boolean(await getZaloBotWebhookSecret()),
   });
 }

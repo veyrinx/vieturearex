@@ -1,5 +1,5 @@
 import "server-only";
-import { getSettings } from "@/lib/data/content-service";
+import { getSettings, getSettingsByKeys, updateSetting } from "@/lib/data/content-service";
 
 /**
  * Zalo Bot Platform (bot.zapps.me) — KHÔNG phải OA.
@@ -22,6 +22,7 @@ const API_BASES = [
 ];
 
 export const ZALO_BOT_TOKEN_KEY = "integrations.zalo_bot_token";
+export const ZALO_BOT_WEBHOOK_SECRET_KEY = "integrations.zalo_bot_webhook_secret";
 
 export async function getZaloBotToken(): Promise<string> {
   const settings = await getSettings().catch(() => []);
@@ -29,6 +30,32 @@ export async function getZaloBotToken(): Promise<string> {
   // "enc:" còn nguyên = APP_SECRET lệch, token không giải mã được → coi như chưa có.
   if (fromSettings && !fromSettings.startsWith("enc:")) return fromSettings;
   return process.env.ZALO_BOT_TOKEN?.trim() ?? "";
+}
+
+/**
+ * Secret webhook. Zalo BẮT BUỘC `secret_token` khi setWebhook (8–256 ký tự), nên
+ * không thể để phụ thuộc vào một biến môi trường có thể chưa ai khai — thiếu nó
+ * là setWebhook trả lỗi, webhook không bao giờ đăng ký được, bot câm.
+ *
+ * Đọc thẳng DB chứ không qua getSettings(): admin bấm Set Webhook xong là Zalo
+ * gọi verify ngay, cache 60 giây sẽ trả bản cũ và update đầu tiên bị vứt.
+ */
+export async function getZaloBotWebhookSecret(): Promise<string> {
+  const fromEnv = process.env.ZALO_BOT_WEBHOOK_SECRET?.trim();
+  if (fromEnv) return fromEnv;
+  const rows = await getSettingsByKeys([ZALO_BOT_WEBHOOK_SECRET_KEY]).catch(() => []);
+  const stored = rows.find((s) => s.key === ZALO_BOT_WEBHOOK_SECRET_KEY)?.value?.trim() ?? "";
+  return stored && !stored.startsWith("enc:") ? stored : "";
+}
+
+/** Chưa có secret thì tự sinh và lưu lại, để nút Set Webhook luôn chạy được. */
+export async function ensureZaloBotWebhookSecret(): Promise<string> {
+  const existing = await getZaloBotWebhookSecret();
+  if (existing) return existing;
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  const generated = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  await updateSetting(ZALO_BOT_WEBHOOK_SECRET_KEY, generated);
+  return generated;
 }
 
 type ZaloBotResponse<T> = { ok?: boolean; result?: T; error_code?: number; description?: string };
@@ -61,24 +88,24 @@ async function callOnce<T>(
   return { status: res.status, data };
 }
 
-/** Các method đọc — Zalo phục vụ bằng GET, POST vào là 404/405. */
-const GET_METHODS = new Set(["getme", "getupdates", "getwebhookinfo", "getfile"]);
-
 export async function zaloBotApi<T = unknown>(
   token: string,
   method: string,
   payload: Record<string, unknown> = {},
 ): Promise<ZaloBotResponse<T>> {
-  const primary: "GET" | "POST" = GET_METHODS.has(method.toLowerCase()) ? "GET" : "POST";
+  // Tài liệu bot.zapps.me khai POST cho MỌI method, kể cả getMe/getWebhookInfo.
+  // (Trước đây tưởng mấy method đọc phải đi GET, nhưng lúc thử thì tên miền còn
+  // sai — zapps.vn không tồn tại — nên gọi gì cũng hỏng.)
+  const primary: "GET" | "POST" = "POST";
 
   let res: { status: number; data: ZaloBotResponse<T> } | null = null;
   for (const base of API_BASES) {
     res = await callOnce<T>(token, method, primary, payload, base);
-    // Tài liệu Zalo Bot còn nhảy nhót giữa GET/POST tuỳ method — sai động từ thì
-    // nhận 405 chứ không phải lỗi thật, nên thử nốt động từ kia rồi mới kêu.
-    if (res?.status === 405) {
-      const other = await callOnce<T>(token, method, primary === "GET" ? "POST" : "GET", payload, base);
-      if (other) res = other;
+    // Phòng khi Zalo đổi ý với vài method: 404/405 có thể chỉ là sai động từ,
+    // thử nốt cái kia và chỉ lấy nếu thật sự chạy được.
+    if (res && (res.status === 404 || res.status === 405)) {
+      const other = await callOnce<T>(token, method, primary === "POST" ? "GET" : "POST", payload, base);
+      if (other && other.status < 400) res = other;
     }
     // Chỉ đổi sang tên miền dự phòng khi không nối được, còn API trả lời (kể cả
     // 404 vì token sai) thì dừng — đổi tên miền cũng ra kết quả y hệt.
