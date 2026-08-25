@@ -87,7 +87,12 @@ export async function POST(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (denied) return denied;
 
-  const body = (await request.json().catch(() => ({}))) as { action?: string; chat_id?: string };
+  const body = (await request.json().catch(() => ({}))) as {
+    action?: string;
+    chat_id?: string;
+    // "gỡ tạm webhook để đọc lịch sử tin" — xem nhánh action === "chats".
+    force?: boolean;
+  };
   const action =
     body.action === "delete"
       ? "delete"
@@ -116,7 +121,25 @@ export async function POST(request: NextRequest) {
   // Đi bằng getUpdates (site GỌI RA Zalo) nên vẫn chạy được cả khi webhook đang
   // bị CDN chặn — đúng lúc cần nhất, vì lúc đó bảng zalo_bot_chats rỗng.
   if (action === "chats") {
-    const res = await zaloBotApi<unknown[]>(token, "getUpdates", { limit: 100 });
+    let res = await zaloBotApi<unknown[]>(token, "getUpdates", { limit: 100 });
+    let webhookRestored: string | null = null;
+
+    // Webhook đang đăng ký thì API kiểu Telegram từ chối getUpdates — hai đường
+    // nhận update không chạy song song được. Khi admin bấm "gỡ tạm", gỡ webhook,
+    // lấy lịch sử, rồi ĐĂNG KÝ LẠI ngay. Cần đúng lúc webhook chết vì CDN chặn:
+    // đó là lúc không còn đường nào khác để biết chat id.
+    if (res.ok === false && body.force) {
+      const info = await zaloBotApi<{ url?: string }>(token, "getWebhookInfo", {});
+      const previous = info.result?.url ?? "";
+      await zaloBotApi(token, "deleteWebhook", {});
+      res = await zaloBotApi<unknown[]>(token, "getUpdates", { limit: 100 });
+      if (previous) {
+        const secret = await ensureZaloBotWebhookSecret();
+        const back = await zaloBotApi(token, "setWebhook", { url: previous, secret_token: secret });
+        webhookRestored = back.ok === false ? `LỖI: ${back.description ?? "không đăng ký lại được"}` : previous;
+      }
+    }
+
     const fromApi = (Array.isArray(res.result) ? res.result : [])
       .map((item) => normalizeZaloUpdate({ result: item }))
       .filter((u): u is NonNullable<typeof u> => Boolean(u?.chatId))
@@ -159,6 +182,9 @@ export async function POST(request: NextRequest) {
       // getUpdates hỏng khi webhook đang bật là chuyện thường — nói ra để khỏi
       // tưởng bot chết.
       updates_error: res.ok === false ? (res.description ?? "zalo_error") : null,
+      // Zalo từ chối getUpdates vì webhook đang bật → gợi ý bấm lại với "gỡ tạm".
+      can_retry_forced: res.ok === false && !body.force,
+      webhook_restored: webhookRestored,
       hint: merged.length
         ? null
         : "Chưa có chat nào. Mở Zalo, nhắn cho bot một câu bất kỳ rồi bấm lại nút này.",
