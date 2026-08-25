@@ -234,6 +234,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [zaloHookDetail, setZaloHookDetail] = useState<string | null>(null);
   const [zaloChats, setZaloChats] = useState<{ chat_id: string; name: string; type: string; last_text: string }[] | null>(null);
   const [zaloChatsStatus, setZaloChatsStatus] = useState<"idle" | "loading">("idle");
+  const [zaloNotify, setZaloNotify] = useState({ title: "", text: "", image: "", target: "default" as "default" | "all" });
+  const [zaloNotifyStatus, setZaloNotifyStatus] = useState<"idle" | "loading">("idle");
   type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
   const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -393,6 +395,41 @@ ${JSON.stringify(d, null, 2)}`);
       toast.error("Lỗi kết nối");
     }
     setZaloChatsStatus("idle");
+  }
+
+  async function sendZaloNotify() {
+    if (!zaloNotify.text.trim()) {
+      toast.error("Nhập nội dung thông báo đã.");
+      return;
+    }
+    setZaloNotifyStatus("loading");
+    try {
+      const res = await fetch("/api/admin/zalo/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: zaloNotify.title.trim() || undefined,
+          text: zaloNotify.text.trim(),
+          image_url: zaloNotify.image.trim() || undefined,
+          target: zaloNotify.target,
+        }),
+      });
+      const d = (await res.json().catch(() => ({}))) as {
+        ok?: boolean; sent?: number; failed?: number; skipped?: number; reason?: string; hint?: string;
+      };
+      if (res.ok && d.ok) {
+        toast.success(
+          `Đã gửi tới ${d.sent} chat${d.failed ? `, ${d.failed} chat lỗi` : ""}${d.skipped ? `, còn ${d.skipped} chat chưa gửi` : ""}.`,
+          { duration: 12000 },
+        );
+        setZaloNotify((prev) => ({ ...prev, title: "", text: "", image: "" }));
+      } else {
+        toast.error(d.hint ?? `Gửi thông báo thất bại: ${d.reason ?? "kiểm tra token"}`, { duration: 15000 });
+      }
+    } catch {
+      toast.error("Lỗi kết nối");
+    }
+    setZaloNotifyStatus("idle");
   }
 
   async function testZaloBot() {
@@ -1446,6 +1483,48 @@ ${JSON.stringify(d, null, 2)}`);
                 {zaloHookDetail}
               </pre>
             ) : null}
+          </Field>
+          <Field label="Thông báo nhanh" hint="Gõ nội dung rồi bấm Gửi — không cần tạo bài, không cần Lưu cài đặt." icon={BellRing}>
+            <div className="space-y-2">
+              <Input
+                value={zaloNotify.title}
+                onChange={(e) => setZaloNotify((p) => ({ ...p, title: e.target.value }))}
+                placeholder="Tiêu đề (bỏ trống cũng được)"
+              />
+              <textarea
+                value={zaloNotify.text}
+                onChange={(e) => setZaloNotify((p) => ({ ...p, text: e.target.value }))}
+                rows={4}
+                maxLength={1800}
+                placeholder="Nội dung thông báo…"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
+              />
+              <Input
+                value={zaloNotify.image}
+                onChange={(e) => setZaloNotify((p) => ({ ...p, image: e.target.value }))}
+                placeholder="Link ảnh kèm theo (tuỳ chọn)"
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={zaloNotify.target}
+                  onChange={(e) => setZaloNotify((p) => ({ ...p, target: e.target.value as "default" | "all" }))}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none"
+                >
+                  <option value="default">Chỉ chat mặc định</option>
+                  <option value="all">Tất cả chat đã nhắn bot</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={sendZaloNotify}
+                  disabled={zaloNotifyStatus === "loading"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+                >
+                  {zaloNotifyStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <BellRing className="size-3.5" />}
+                  {zaloNotifyStatus === "loading" ? "Đang gửi…" : "Gửi ngay"}
+                </button>
+                <span className="text-[11px] text-muted-foreground">{zaloNotify.text.length}/1800</span>
+              </div>
+            </div>
           </Field>
         </Card>
 
