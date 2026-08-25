@@ -229,6 +229,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [webhookStatus, setWebhookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const [zaloHookStatus, setZaloHookStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
   const [zaloTestStatus, setZaloTestStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
+  // Toast bay mất sau vài giây, admin chỉ kịp thấy dấu X — giữ nguyên văn phản hồi
+  // của Zalo ngay dưới nút để còn lần ra lý do.
+  const [zaloHookDetail, setZaloHookDetail] = useState<string | null>(null);
   type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
   const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -298,6 +301,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
 
   async function setupZaloWebhook() {
     setZaloHookStatus("loading");
+    setZaloHookDetail(null);
     try {
       const res = await fetch("/api/admin/zalo/webhook-setup", {
         method: "POST",
@@ -314,6 +318,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         bot?: { display_name?: string; account_name?: string } | null;
       };
       setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
+      setZaloHookDetail(`HTTP ${res.status}
+${JSON.stringify(d, null, 2)}`);
       if (res.ok && d.ok) {
         toast.success(`Webhook Zalo đã set: ${d.webhook_url}`);
         if (d.bot?.display_name || d.bot?.account_name) {
@@ -339,8 +345,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               : `Set webhook Zalo thất bại: ${d.reason ?? "kiểm tra token"}`,
         );
       }
-    } catch {
+    } catch (err) {
       setZaloHookStatus("err");
+      setZaloHookDetail(`Lỗi kết nối: ${String(err)}`);
       toast.error("Lỗi kết nối");
     }
     setTimeout(() => setZaloHookStatus("idle"), 5000);
@@ -361,6 +368,8 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
       });
       const d = (await res.json().catch(() => ({}))) as { ok?: boolean; reason?: string };
       setZaloTestStatus(res.ok && d.ok ? "ok" : "err");
+      setZaloHookDetail(`GỬI THỬ — HTTP ${res.status}
+${JSON.stringify(d, null, 2)}`);
       if (res.ok && d.ok) toast.success("Đã gửi tin thử qua bot Zalo.");
       else toast.error(`Gửi thử thất bại: ${d.reason ?? "kiểm tra token & chat id"}`);
     } catch {
@@ -1355,6 +1364,11 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
               </button>
               <span className="text-[11px] text-muted-foreground">Nhập token &amp; bấm Lưu trước khi set webhook</span>
             </div>
+            {zaloHookDetail ? (
+              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+                {zaloHookDetail}
+              </pre>
+            ) : null}
           </Field>
         </Card>
 

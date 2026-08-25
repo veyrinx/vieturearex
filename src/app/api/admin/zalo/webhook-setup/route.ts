@@ -60,8 +60,16 @@ export async function POST(request: NextRequest) {
       : await zaloBotApi<Record<string, unknown>>(token, "setWebhook", { url, secret_token: secret });
 
   if (res.ok === false) {
+    // Trả kèm error_code + url đã gửi: "Not Found" trơ trọi không chỉ ra được
+    // lỗi nằm ở token hay ở địa chỉ webhook.
     return NextResponse.json(
-      { ok: false, reason: res.description ?? "zalo_error" },
+      {
+        ok: false,
+        reason: res.description ?? "zalo_error",
+        error_code: res.error_code ?? null,
+        sent_url: url,
+        token_tail: `…${token.slice(-4)}`,
+      },
       { status: 400 },
     );
   }
