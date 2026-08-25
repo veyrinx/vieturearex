@@ -2,14 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { getNews, getEvents } from "@/lib/data/content-service";
-import { getGlobalPlayerLeaderboard } from "@/lib/tms/data";
 import { performCheckin } from "@/lib/server/checkin";
-import { getPrimeStoreLive } from "@/lib/server/prime-store-live";
 import { DEFAULT_PRIME_SERVER } from "@/lib/constants/prime-store-live";
 import { siteConfig } from "@/lib/constants/site";
 import { enforceRateLimit } from "@/lib/server/api-guard";
-import { generateAiReply, isAiReplyEnabled } from "@/lib/server/ai-support";
-import { ocrFromFetch } from "@/lib/server/ff-ocr";
 import { getGroupGreetings } from "@/lib/server/group-greeting";
 import {
   detectZaloMemberEvent,
@@ -33,6 +29,11 @@ import {
  * "/diemdanh", "diemdanh", "điểm danh".
  */
 
+/**
+ * OCR ảnh, AI, dữ liệu giải đấu và cửa hàng Prime nạp LƯỜI: mỗi tin nhắn chỉ
+ * chạm tới một nhánh, mà nạp sẵn hết thì máy vừa nguội phải dựng cả đống mã
+ * chưa chắc dùng — người gõ "help" cũng phải đợi OCR khởi động xong.
+ */
 const SITE = siteConfig.url;
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Arex";
 
@@ -270,6 +271,7 @@ async function actHoso(ctx: Ctx): Promise<void> {
 }
 
 async function actBxh(ctx: Ctx): Promise<void> {
+  const { getGlobalPlayerLeaderboard } = await import("@/lib/tms/data");
   const players = await getGlobalPlayerLeaderboard(5).catch(() => []);
   const medals = ["🥇", "🥈", "🥉", "4.", "5."];
   const lines = ["🏅 Top tuyển thủ cộng đồng\n"];
@@ -292,23 +294,28 @@ async function actNews(ctx: Ctx): Promise<void> {
     await say(ctx, "Chưa có tin tức nào.");
     return;
   }
-  await say(ctx, `📰 ${latest.length} tin mới nhất`);
-  // Từng tin một kèm ảnh bìa: gộp hết vào một tin chữ thì Zalo không hiện ảnh,
-  // mà ảnh mới là thứ khiến người ta bấm vào.
-  for (const item of latest) {
-    const caption = [
-      `📰 ${item.title}`,
-      item.category ? `🏷️ ${item.category}` : "",
-      vnDateTime(item.created_at) ? `🗓️ Đăng ${vnDateTime(item.created_at)}` : "",
-      item.excerpt ? `\n${item.excerpt.slice(0, 300)}` : "",
-      `\n🔗 ${SITE}/news/${item.slug}`,
-      item.cover ? `🖼️ ${item.cover}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-    await sayPhoto(ctx, item.cover, caption);
-  }
-  await say(ctx, `🔗 Tất cả tin tức: ${SITE}/news`);
+  // Gộp dòng mở đầu vào tin đầu và dòng link tổng vào tin cuối, rồi bắn SONG
+  // SONG: trước đây 5 lượt gọi API nối đuôi nhau, mỗi lượt một vòng mạng nên
+  // người dùng ngồi đợi mấy giây mới thấy đủ.
+  await Promise.all(
+    latest.map((item, i) =>
+      sayPhoto(
+        ctx,
+        item.cover,
+        [
+          i === 0 ? `📰 ${latest.length} TIN MỚI NHẤT\n` : "",
+          `📰 ${item.title}`,
+          item.category ? `🏷️ ${item.category}` : "",
+          vnDateTime(item.created_at) ? `🗓️ Đăng ${vnDateTime(item.created_at)}` : "",
+          item.excerpt ? `\n${item.excerpt.slice(0, 300)}` : "",
+          `\n🔗 ${SITE}/news/${item.slug}`,
+          i === latest.length - 1 ? `\n📚 Tất cả tin tức: ${SITE}/news` : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      ),
+    ),
+  );
 }
 
 async function actEvents(ctx: Ctx): Promise<void> {
@@ -319,28 +326,29 @@ async function actEvents(ctx: Ctx): Promise<void> {
     return;
   }
   const shown = active.slice(0, 3);
-  await say(
-    ctx,
-    `📅 ${active.length} sự kiện đang mở${active.length > shown.length ? ` — hiện ${shown.length} cái gần nhất` : ""}`,
+  // Xem ghi chú ở actNews: gộp đầu/cuối rồi bắn song song cho đỡ phải đợi.
+  await Promise.all(
+    shown.map((ev, i) => {
+      const image = ev.image_url || ev.thumbnail_url || "";
+      const caption = [
+        i === 0
+          ? `📅 ${active.length} SỰ KIỆN ĐANG MỞ${active.length > shown.length ? ` — hiện ${shown.length} cái gần nhất` : ""}\n`
+          : "",
+        ev.status === "active" ? "🟢 ĐANG DIỄN RA" : "🔵 SẮP DIỄN RA",
+        `📅 ${ev.title}`,
+        vnRange(ev.start_date, ev.end_date) ? `🕒 ${vnRange(ev.start_date, ev.end_date)}` : "",
+        countdownLabel(ev.start_date, ev.end_date, ev.status),
+        ev.server_region ? `🌐 Server ${ev.server_region}` : "",
+        ev.description ? `\n${ev.description.slice(0, 300)}` : "",
+        `\n🔗 ${SITE}/events/${ev.id}`,
+        ev.link ? `↗️ Trang gốc: ${ev.link}` : "",
+        i === shown.length - 1 ? `\n📚 Tất cả sự kiện: ${SITE}/events` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      return sayPhoto(ctx, image, caption);
+    }),
   );
-  for (const ev of shown) {
-    const image = ev.image_url || ev.thumbnail_url || "";
-    const caption = [
-      ev.status === "active" ? "🟢 ĐANG DIỄN RA" : "🔵 SẮP DIỄN RA",
-      `📅 ${ev.title}`,
-      vnRange(ev.start_date, ev.end_date) ? `🕒 ${vnRange(ev.start_date, ev.end_date)}` : "",
-      countdownLabel(ev.start_date, ev.end_date, ev.status),
-      ev.server_region ? `🌐 Server ${ev.server_region}` : "",
-      ev.description ? `\n${ev.description.slice(0, 300)}` : "",
-      `\n🔗 ${SITE}/events/${ev.id}`,
-      ev.link ? `↗️ Trang gốc: ${ev.link}` : "",
-      image ? `🖼️ ${image}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-    await sayPhoto(ctx, image, caption);
-  }
-  await say(ctx, `🔗 Tất cả sự kiện: ${SITE}/events`);
 }
 
 async function actGiaidau(ctx: Ctx): Promise<void> {
@@ -356,6 +364,7 @@ async function actVukhi(ctx: Ctx): Promise<void> {
 }
 
 async function actNap(ctx: Ctx): Promise<void> {
+  const { getPrimeStoreLive } = await import("@/lib/server/prime-store-live");
   const live = await getPrimeStoreLive(DEFAULT_PRIME_SERVER).catch(() => null);
   const lines = ["💎 Cửa hàng Prime trong game (VN)\n"];
   if (!live || live.items.length === 0) {
@@ -373,6 +382,7 @@ async function actNap(ctx: Ctx): Promise<void> {
 async function handlePhoto(ctx: Ctx, photoUrl: string): Promise<void> {
   await say(ctx, "⏳ Đang nhận dạng kết quả...");
   try {
+    const { ocrFromFetch } = await import("@/lib/server/ff-ocr");
     const result = await ocrFromFetch(photoUrl);
     if (result.players.length === 0) {
       await say(ctx, "❌ Không tìm thấy dữ liệu kết quả Free Fire trong ảnh này.");
@@ -388,6 +398,7 @@ async function handlePhoto(ctx: Ctx, photoUrl: string): Promise<void> {
 }
 
 async function handleAi(ctx: Ctx, text: string): Promise<void> {
+  const { generateAiReply, isAiReplyEnabled } = await import("@/lib/server/ai-support");
   if (!(await isAiReplyEnabled())) {
     await say(ctx, `🤔 Mình chưa hiểu. Gõ "help" để xem danh sách lệnh.`);
     return;
@@ -446,6 +457,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now();
   const limited = enforceRateLimit(req, { name: "zalo-bot-webhook", limit: 120, windowMs: 60_000 });
   if (limited) return limited;
 
@@ -461,10 +473,10 @@ export async function POST(req: NextRequest) {
     return new NextResponse(challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
   }
 
-  // Secret lấy từ env, không có thì từ settings (nút Set Webhook tự sinh & lưu).
-  // Trước đây chỉ đọc env: chưa ai khai biến thì setWebhook lỗi vì Zalo bắt buộc
-  // secret_token, webhook không đăng ký nổi và bot câm suốt.
-  let secret = await getZaloBotWebhookSecret();
+  // Secret và token đọc SONG SONG: hai thứ không liên quan nhau, nối đuôi là
+  // cộng thêm một vòng chờ vào mọi tin nhắn.
+  const [secretInitial, token] = await Promise.all([getZaloBotWebhookSecret(), getZaloBotToken()]);
+  let secret = secretInitial;
   if (secret) {
     const received =
       req.headers.get("x-bot-api-secret-token") ??
@@ -488,7 +500,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, self_check: true });
   }
 
-  const token = await getZaloBotToken();
   if (!token) {
     console.warn("[zalo-bot] Có update nhưng CHƯA CẤU HÌNH TOKEN — lưu token ở Admin hoặc đặt ZALO_BOT_TOKEN.");
     return NextResponse.json({ ok: true });
@@ -520,7 +531,9 @@ export async function POST(req: NextRequest) {
   // Bỏ qua chính tin bot vừa gửi (tránh vòng lặp tự trả lời).
   if (/sent|delivered|seen/i.test(update.eventName)) return NextResponse.json({ ok: true });
 
-  console.log(`[zalo-bot] update ${update.eventName || "?"} chat=${update.chatId} text=${JSON.stringify(update.text.slice(0, 80))}`);
+  console.log(
+    `[zalo-bot] update ${update.eventName || "?"} chat=${update.chatId} text=${JSON.stringify(update.text.slice(0, 80))} (chuẩn bị ${Date.now() - startedAt}ms)`,
+  );
 
   const ctx: Ctx = {
     token,
@@ -574,6 +587,10 @@ export async function POST(req: NextRequest) {
     await handleAi(ctx, stripBotMention(text) || text);
   } catch (err) {
     console.error("[zalo-bot] xử lý update lỗi:", err);
+  } finally {
+    // Chậm ở đâu thì cứ nhìn số này: tách được "site nghĩ lâu" với "Zalo giao
+    // tin trễ", khỏi đoán mò.
+    console.log(`[zalo-bot] xong sau ${Date.now() - startedAt}ms`);
   }
 
   return NextResponse.json({ ok: true });
