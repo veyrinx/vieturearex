@@ -173,6 +173,42 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
+/** Xem trước đúng hình dáng tin nhắn sẽ gửi — chữ nào ra chữ nấy, kể cả xuống dòng. */
+// Giữ khớp với DEFAULT_WELCOME_TEXT / DEFAULT_FAREWELL_TEXT trong
+// lib/server/group-greeting.ts — hai chỗ này phải nói cùng một câu.
+const DEFAULT_WELCOME_PREVIEW =
+  "👋 Chào {name} đã vào nhóm!\n\n" +
+  "Gõ `help` để xem bot làm được gì, `diemdanh` để điểm danh nhận điểm.\n" +
+  `🔗 ${SITE_URL}`;
+
+const DEFAULT_FAREWELL_PREVIEW = "🙋 {name} vừa rời nhóm. Hẹn gặp lại!";
+
+/** Thay chỗ trống bằng tên mẫu để xem trước — đúng cách bot thay lúc chạy thật. */
+function previewGreeting(template: string): string {
+  return template
+    .replaceAll("{name}", "Minh Anh")
+    .replaceAll("{group}", "Cộng đồng Arex")
+    .replaceAll("{site}", SITE_URL);
+}
+
+function ChatPreview({ text, empty = "Chưa có nội dung" }: { text: string; empty?: string }) {
+  const body = text.trim();
+  return (
+    <div className="mt-2 rounded-xl border border-border/60 bg-muted/30 p-3">
+      <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <MessageSquare className="size-3" /> Xem trước
+      </p>
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-primary/10 px-3 py-2">
+        {body ? (
+          <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">{body}</p>
+        ) : (
+          <p className="text-xs italic text-muted-foreground">{empty}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function HourSelect({ value, onChange, hint }: { value: string; onChange: (v: string) => void; hint?: string }) {
   return (
     <div className="flex items-center gap-2">
@@ -1461,68 +1497,130 @@ ${JSON.stringify(d, null, 2)}`);
             </div>
             {zaloChats?.length ? (
               <div className="mt-3 space-y-1.5">
-                {zaloChats.map((c) => (
-                  <button
-                    key={c.chat_id}
-                    type="button"
-                    onClick={() => {
-                      set("integrations.zalo_bot_chat_id", c.chat_id);
-                      toast.success(`Đã điền Chat ID ${c.chat_id} — bấm Lưu để giữ lại.`);
-                    }}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-left text-[11px] transition hover:bg-muted"
-                  >
-                    <span className="font-semibold">{c.name || "(không tên)"}</span>
-                    <span className="text-muted-foreground">{c.type}</span>
-                    <span className="font-mono">{c.chat_id}</span>
-                  </button>
-                ))}
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Bấm một dòng để điền Chat ID
+                </p>
+                {zaloChats.map((c) => {
+                  const isPicked = v("integrations.zalo_bot_chat_id") === c.chat_id;
+                  return (
+                    <button
+                      key={c.chat_id}
+                      type="button"
+                      onClick={() => {
+                        set("integrations.zalo_bot_chat_id", c.chat_id);
+                        toast.success(`Đã điền Chat ID ${c.chat_id} — bấm Lưu để giữ lại.`);
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition",
+                        isPicked ? "border-primary/50 bg-primary/5" : "border-border/60 hover:bg-muted/60",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                          c.type === "GROUP" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {c.type === "GROUP" ? <Users className="size-3.5" /> : <User className="size-3.5" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-semibold">{c.name || "(không tên)"}</span>
+                        <span className="block truncate font-mono text-[10px] text-muted-foreground">{c.chat_id}</span>
+                        {c.last_text ? (
+                          <span className="block truncate text-[10px] italic text-muted-foreground">“{c.last_text}”</span>
+                        ) : null}
+                      </span>
+                      {isPicked ? <CheckCircle2 className="size-4 shrink-0 text-primary" /> : null}
+                    </button>
+                  );
+                })}
               </div>
             ) : null}
             {zaloHookDetail ? (
-              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
-                {zaloHookDetail}
-              </pre>
+              <div className="mt-3 overflow-hidden rounded-xl border border-border/60">
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-3 py-1.5">
+                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <FileText className="size-3" /> Phản hồi từ Zalo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(zaloHookDetail);
+                      toast.success("Đã chép — dán vào chỗ cần hỏi là được.");
+                    }}
+                    className="text-[10px] font-semibold text-primary hover:underline"
+                  >
+                    Chép
+                  </button>
+                </div>
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all bg-muted/20 p-3 text-[11px] leading-relaxed text-muted-foreground">
+                  {zaloHookDetail}
+                </pre>
+              </div>
             ) : null}
           </Field>
           <Field label="Thông báo nhanh" hint="Gõ nội dung rồi bấm Gửi — không cần tạo bài, không cần Lưu cài đặt." icon={BellRing}>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Input
                 value={zaloNotify.title}
                 onChange={(e) => setZaloNotify((p) => ({ ...p, title: e.target.value }))}
                 placeholder="Tiêu đề (bỏ trống cũng được)"
               />
-              <textarea
-                value={zaloNotify.text}
-                onChange={(e) => setZaloNotify((p) => ({ ...p, text: e.target.value }))}
-                rows={4}
-                maxLength={1800}
-                placeholder="Nội dung thông báo…"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
+              <div className="relative">
+                <Textarea
+                  value={zaloNotify.text}
+                  onChange={(e) => setZaloNotify((p) => ({ ...p, text: e.target.value }))}
+                  rows={4}
+                  maxLength={1800}
+                  placeholder="Nội dung thông báo…"
+                  className="resize-y pb-6"
+                />
+                <span
+                  className={cn(
+                    "pointer-events-none absolute bottom-2 right-3 text-[10px] tabular-nums",
+                    zaloNotify.text.length > 1700 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
+                  )}
+                >
+                  {zaloNotify.text.length}/1800
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={zaloNotify.image}
+                  onChange={(e) => setZaloNotify((p) => ({ ...p, image: e.target.value }))}
+                  placeholder="Link ảnh kèm theo (tuỳ chọn)"
+                />
+                <ImageUploadButton onUploaded={(url) => setZaloNotify((p) => ({ ...p, image: url }))} />
+              </div>
+              {zaloNotify.image ? (
+                <div className="overflow-hidden rounded-xl border border-border/60">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={zaloNotify.image} alt="Ảnh kèm thông báo" className="max-h-40 w-full object-cover" />
+                </div>
+              ) : null}
+              <ChatPreview
+                text={zaloNotify.title ? `🔔 ${zaloNotify.title}
+
+${zaloNotify.text}` : zaloNotify.text}
+                empty="Gõ nội dung để xem trước tin nhắn"
               />
-              <Input
-                value={zaloNotify.image}
-                onChange={(e) => setZaloNotify((p) => ({ ...p, image: e.target.value }))}
-                placeholder="Link ảnh kèm theo (tuỳ chọn)"
-              />
-              <div className="flex flex-wrap items-center gap-3">
-                <select
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
                   value={zaloNotify.target}
-                  onChange={(e) => setZaloNotify((p) => ({ ...p, target: e.target.value as "default" | "all" }))}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none"
+                  onValueChange={(val) => setZaloNotify((p) => ({ ...p, target: val as "default" | "all" }))}
                 >
-                  <option value="default">Chỉ chat mặc định</option>
-                  <option value="all">Tất cả chat đã nhắn bot</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={sendZaloNotify}
-                  disabled={zaloNotifyStatus === "loading"}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
-                >
+                  <SelectTrigger className="max-w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Chỉ chat mặc định</SelectItem>
+                    <SelectItem value="all">Tất cả chat đã nhắn bot</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={sendZaloNotify} disabled={zaloNotifyStatus === "loading" || !zaloNotify.text.trim()} size="sm">
                   {zaloNotifyStatus === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <BellRing className="size-3.5" />}
                   {zaloNotifyStatus === "loading" ? "Đang gửi…" : "Gửi ngay"}
-                </button>
-                <span className="text-[11px] text-muted-foreground">{zaloNotify.text.length}/1800</span>
+                </Button>
               </div>
             </div>
           </Field>
@@ -1531,38 +1629,77 @@ ${JSON.stringify(d, null, 2)}`);
         <Card>
           <div className="py-4">
             <SectionHeader
-              icon={BellRing}
+              icon={Users}
               title="Chào & tiễn thành viên nhóm"
               desc="Dùng chung cho cả nhóm Zalo lẫn Telegram — sửa một chỗ, hai bên nói giống nhau."
             />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {[
+                { token: "{name}", desc: "tên người" },
+                { token: "{group}", desc: "tên nhóm" },
+                { token: "{site}", desc: "địa chỉ site" },
+              ].map((t) => (
+                <span
+                  key={t.token}
+                  className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                >
+                  <code className="font-mono font-semibold text-foreground">{t.token}</code>
+                  {t.desc}
+                </span>
+              ))}
+            </div>
           </div>
-          <Field label="Chào người mới vào nhóm" hint="Chỗ trống thay được: {name} tên người, {group} tên nhóm, {site} địa chỉ site.">
-            <Toggle
-              checked={v("integrations.group_welcome_enabled") !== "0"}
-              onChange={(on) => set("integrations.group_welcome_enabled", on ? "1" : "0")}
-              label="Bật lời chào"
-            />
-            <textarea
-              value={v("integrations.group_welcome_text")}
-              onChange={(e) => set("integrations.group_welcome_text", e.target.value)}
-              rows={4}
-              placeholder="👋 Chào {name} đã vào nhóm! Gõ help để xem bot làm được gì. 🔗 {site}"
-              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
-            />
+          <Field label="Chào người mới vào nhóm" icon={Users} hint="Bỏ trống thì dùng câu mặc định.">
+            <div className="space-y-2">
+              <label className="flex cursor-pointer items-center gap-2">
+                <Toggle
+                  checked={v("integrations.group_welcome_enabled") !== "0"}
+                  onChange={(on) => set("integrations.group_welcome_enabled", on ? "1" : "0")}
+                  label="Bật lời chào"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {v("integrations.group_welcome_enabled") !== "0" ? "Đang bật" : "Đang tắt"}
+                </span>
+              </label>
+              {v("integrations.group_welcome_enabled") !== "0" ? (
+                <>
+                  <Textarea
+                    value={v("integrations.group_welcome_text")}
+                    onChange={(e) => set("integrations.group_welcome_text", e.target.value)}
+                    rows={4}
+                    placeholder={DEFAULT_WELCOME_PREVIEW}
+                    className="resize-y"
+                  />
+                  <ChatPreview text={previewGreeting(v("integrations.group_welcome_text") || DEFAULT_WELCOME_PREVIEW)} />
+                </>
+              ) : null}
+            </div>
           </Field>
-          <Field label="Tiễn người rời nhóm" hint="Bỏ trống thì dùng câu mặc định.">
-            <Toggle
-              checked={v("integrations.group_farewell_enabled") !== "0"}
-              onChange={(on) => set("integrations.group_farewell_enabled", on ? "1" : "0")}
-              label="Bật lời tiễn"
-            />
-            <textarea
-              value={v("integrations.group_farewell_text")}
-              onChange={(e) => set("integrations.group_farewell_text", e.target.value)}
-              rows={3}
-              placeholder={"🙋 {name} vừa rời nhóm. Hẹn gặp lại!"}
-              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
-            />
+          <Field label="Tiễn người rời nhóm" icon={Users} hint="Bỏ trống thì dùng câu mặc định.">
+            <div className="space-y-2">
+              <label className="flex cursor-pointer items-center gap-2">
+                <Toggle
+                  checked={v("integrations.group_farewell_enabled") !== "0"}
+                  onChange={(on) => set("integrations.group_farewell_enabled", on ? "1" : "0")}
+                  label="Bật lời tiễn"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {v("integrations.group_farewell_enabled") !== "0" ? "Đang bật" : "Đang tắt"}
+                </span>
+              </label>
+              {v("integrations.group_farewell_enabled") !== "0" ? (
+                <>
+                  <Textarea
+                    value={v("integrations.group_farewell_text")}
+                    onChange={(e) => set("integrations.group_farewell_text", e.target.value)}
+                    rows={3}
+                    placeholder={DEFAULT_FAREWELL_PREVIEW}
+                    className="resize-y"
+                  />
+                  <ChatPreview text={previewGreeting(v("integrations.group_farewell_text") || DEFAULT_FAREWELL_PREVIEW)} />
+                </>
+              ) : null}
+            </div>
           </Field>
         </Card>
 
