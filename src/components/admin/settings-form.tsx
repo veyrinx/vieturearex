@@ -408,12 +408,19 @@ ${JSON.stringify(d, null, 2)}`);
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "test", chat_id: chatId }),
       });
-      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; reason?: string };
+      const d = (await res.json().catch(() => ({}))) as {
+        ok?: boolean; reason?: string; error_code?: number | null; hint?: string | null;
+      };
       setZaloTestStatus(res.ok && d.ok ? "ok" : "err");
       setZaloHookDetail(`GỬI THỬ — HTTP ${res.status}
 ${JSON.stringify(d, null, 2)}`);
       if (res.ok && d.ok) toast.success("Đã gửi tin thử qua bot Zalo.");
-      else toast.error(`Gửi thử thất bại: ${d.reason ?? "kiểm tra token & chat id"}`);
+      else {
+        toast.error(
+          d.hint ?? `Gửi thử thất bại: ${d.reason ?? "kiểm tra token & chat id"}${d.error_code ? ` (mã ${d.error_code})` : ""}`,
+          { duration: 20000 },
+        );
+      }
     } catch {
       setZaloTestStatus("err");
       toast.error("Lỗi kết nối");

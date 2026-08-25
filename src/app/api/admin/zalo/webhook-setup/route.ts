@@ -10,7 +10,6 @@ import {
   getZaloBotWebhookSecret,
   isValidZaloBotToken,
   normalizeZaloUpdate,
-  sendZaloBotMessage,
   zaloBotApi,
 } from "@/lib/server/zalo-bot";
 
@@ -169,8 +168,29 @@ export async function POST(request: NextRequest) {
   if (action === "test") {
     const chatId = body.chat_id?.trim();
     if (!chatId) return NextResponse.json({ ok: false, reason: "missing_chat_id" }, { status: 400 });
-    const sent = await sendZaloBotMessage(token, chatId, "🧪 Test bot Arex — kết nối OK.");
-    return NextResponse.json({ ok: sent, action, chat_id: chatId }, { status: sent ? 200 : 400 });
+    // Gọi thẳng zaloBotApi thay vì sendZaloBotMessage: hàm kia chỉ trả true/false
+    // nên lý do Zalo từ chối bị nuốt mất, admin chỉ thấy "ok: false" trơ trọi.
+    const sent = await zaloBotApi<Record<string, unknown>>(token, "sendMessage", {
+      chat_id: chatId,
+      text: "🧪 Test bot Arex — kết nối OK.",
+    });
+    const ok = sent.ok !== false;
+    return NextResponse.json(
+      {
+        ok,
+        action,
+        chat_id: chatId,
+        error_code: sent.error_code ?? null,
+        reason: ok ? null : (sent.description ?? "zalo_error"),
+        // Zalo trả 404 cho sendMessage khi chat_id không tồn tại HOẶC người đó
+        // chưa từng nhắn bot — bot không được phép nhắn trước.
+        hint:
+          ok || sent.error_code !== 404
+            ? null
+            : "Zalo báo không tìm thấy chat. Kiểm tra lại Chat ID, và nhớ rằng bot chỉ nhắn được cho người đã chủ động nhắn bot trước (hoặc nhóm đã thêm bot).",
+      },
+      { status: ok ? 200 : 400 },
+    );
   }
 
   // Cùng cách chốt tên miền như bot Telegram: đi theo chuyển hướng để đăng ký
