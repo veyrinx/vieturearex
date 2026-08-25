@@ -118,21 +118,31 @@ export async function describeZaloBotToken(): Promise<{
  * Đọc thẳng DB chứ không qua getSettings(): admin bấm Set Webhook xong là Zalo
  * gọi verify ngay, cache 60 giây sẽ trả bản cũ và update đầu tiên bị vứt.
  */
-export async function getZaloBotWebhookSecret(): Promise<string> {
+let secretMemo: { value: string; expires: number } | null = null;
+
+export async function getZaloBotWebhookSecret(force = false): Promise<string> {
   const fromEnv = process.env.ZALO_BOT_WEBHOOK_SECRET?.trim();
   if (fromEnv) return fromEnv;
+  // Nhớ 60 giây: webhook chạy cho MỌI tin nhắn, bắt mỗi lượt đợi một vòng
+  // Supabase là tự chuốc rủi ro quá hạn khi máy vừa nguội. Header lệch thì bên
+  // gọi ép đọc lại (force) nên secret vừa đổi vẫn nhận ra ngay.
+  const now = Date.now();
+  if (!force && secretMemo && secretMemo.expires > now) return secretMemo.value;
   const rows = await getSettingsByKeys([ZALO_BOT_WEBHOOK_SECRET_KEY]).catch(() => []);
   const stored = rows.find((s) => s.key === ZALO_BOT_WEBHOOK_SECRET_KEY)?.value?.trim() ?? "";
-  return stored && !stored.startsWith("enc:") ? stored : "";
+  const value = stored && !stored.startsWith("enc:") ? stored : "";
+  secretMemo = { value, expires: now + 60_000 };
+  return value;
 }
 
 /** Chưa có secret thì tự sinh và lưu lại, để nút Set Webhook luôn chạy được. */
 export async function ensureZaloBotWebhookSecret(): Promise<string> {
-  const existing = await getZaloBotWebhookSecret();
+  const existing = await getZaloBotWebhookSecret(true);
   if (existing) return existing;
   const bytes = crypto.getRandomValues(new Uint8Array(24));
   const generated = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
   await updateSetting(ZALO_BOT_WEBHOOK_SECRET_KEY, generated);
+  secretMemo = { value: generated, expires: Date.now() + 60_000 };
   return generated;
 }
 

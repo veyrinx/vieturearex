@@ -315,6 +315,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
           success?: boolean; ok?: boolean; status?: string | number;
           status_code?: number; error?: string; message?: string; description?: string;
         } | null;
+        self_check?: { status: number; ms: number; redirected_to: string | null; body: string } | null;
         bot?: { display_name?: string; account_name?: string } | null;
       };
       setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
@@ -330,10 +331,23 @@ ${JSON.stringify(d, null, 2)}`);
         // Zalo gọi thử webhook ngay lúc đăng ký; hỏng ở đây là bot sẽ câm dù setWebhook báo ok.
         const ver = d.verification;
         if (ver && (ver.success === false || ver.ok === false)) {
+          const sc = d.self_check;
+          // Đối chiếu với lượt site tự gọi chính mình: tách được endpoint chết
+          // với endpoint sống nhưng Zalo không tới được.
+          const why = sc?.redirected_to
+            ? `endpoint đang 3xx về ${sc.redirected_to} — Zalo không đi theo chuyển hướng, sửa NEXT_PUBLIC_SITE_URL`
+            : sc && sc.status === 0
+              ? `chính site cũng không gọi được endpoint (${sc.body})`
+              : sc && sc.status !== 200
+                ? `endpoint trả HTTP ${sc.status}`
+                : sc
+                  ? `endpoint vẫn sống (HTTP 200, ${sc.ms}ms) — lỗi nằm ở phía Zalo, xem chi tiết bên dưới`
+                  : "";
           toast.error(
             `Zalo gọi thử webhook không thành công: ${
               ver.error ?? ver.message ?? ver.description ?? ver.status_code ?? ver.status ?? "không rõ lý do"
-            }`,
+            }${why ? ` — ${why}` : ""}`,
+            { duration: 15000 },
           );
         }
       } else {

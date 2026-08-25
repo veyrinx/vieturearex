@@ -21,6 +21,33 @@ function webhookPath(origin: string) {
   return `${origin}/api/zalo/bot`;
 }
 
+/** Gọi thử chính webhook của mình, đúng kiểu Zalo gọi: POST + header secret. */
+async function probeOwnWebhook(url: string, secret: string) {
+  const started = Date.now();
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(secret ? { "X-Bot-Api-Secret-Token": secret } : {}),
+      },
+      body: JSON.stringify({ event_name: "webhook_selfcheck" }),
+      redirect: "manual",
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    return {
+      status: res.status,
+      ms: Date.now() - started,
+      // 3xx = Zalo sẽ chết lặng ở đây: máy gọi máy không đi theo chuyển hướng.
+      redirected_to: res.status >= 300 && res.status < 400 ? res.headers.get("location") : null,
+      body: (await res.text().catch(() => "")).slice(0, 200),
+    };
+  } catch (err) {
+    return { status: 0, ms: Date.now() - started, redirected_to: null, body: String(err).slice(0, 200) };
+  }
+}
+
 export async function POST(request: NextRequest) {
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (denied) return denied;
@@ -84,6 +111,11 @@ export async function POST(request: NextRequest) {
   // duy nhất biết được vì sao bot im (endpoint 404, secret lệch, timeout…).
   const verification = (res.result as { verification?: Record<string, unknown> } | undefined)?.verification ?? null;
 
+  // Tự gọi webhook của chính mình y như Zalo gọi. `verification` của Zalo chỉ
+  // nói hỏng chứ không nói hỏng vì đâu; đối chiếu với lượt gọi này mới tách được
+  // "endpoint chết" và "Zalo không tới được endpoint đang sống".
+  const selfCheck = action === "set" ? await probeOwnWebhook(url, secret) : null;
+
   const info = await zaloBotApi<Record<string, unknown>>(token, "getWebhookInfo", {});
   const me = await zaloBotApi<{ display_name?: string; account_name?: string; id?: string }>(token, "getMe", {});
 
@@ -94,6 +126,7 @@ export async function POST(request: NextRequest) {
     // Không có secret thì ai cũng giả được cập nhật gửi tới webhook.
     secret_configured: Boolean(secret),
     verification,
+    self_check: selfCheck,
     bot: me.result ?? null,
     info: info.result ?? null,
     ...(switchedFrom ? { switched_from: switchedFrom } : {}),

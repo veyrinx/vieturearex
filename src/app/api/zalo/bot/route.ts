@@ -352,13 +352,16 @@ export async function POST(req: NextRequest) {
   // Secret lấy từ env, không có thì từ settings (nút Set Webhook tự sinh & lưu).
   // Trước đây chỉ đọc env: chưa ai khai biến thì setWebhook lỗi vì Zalo bắt buộc
   // secret_token, webhook không đăng ký nổi và bot câm suốt.
-  const secret = await getZaloBotWebhookSecret();
+  let secret = await getZaloBotWebhookSecret();
   if (secret) {
     const received =
       req.headers.get("x-bot-api-secret-token") ??
       req.headers.get("x-zalo-bot-api-secret-token") ??
       req.headers.get("x-zalo-signature") ??
       "";
+    // Lệch thì đọc lại thẳng DB rồi mới kết luận: có thể admin vừa đăng ký lại
+    // với secret mới mà máy này còn giữ bản nhớ cũ.
+    if (received && received !== secret) secret = await getZaloBotWebhookSecret(true);
     // Luôn trả 200 để Zalo khỏi gửi lại liên tục, nhưng phải ghi log.
     if (received !== secret) {
       console.warn("[zalo-bot] BỎ QUA update: secret không khớp.", received ? "Header có secret nhưng khác — bấm Set Webhook trong Admin để đăng ký lại đúng secret." : "Webhook đăng ký không kèm secret_token — đăng ký lại bằng nút Set Webhook trong Admin.");
