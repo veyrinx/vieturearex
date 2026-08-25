@@ -17,6 +17,7 @@ import {
   normalizeCommand,
   normalizeZaloUpdate,
   sendZaloBotMessage,
+  sendZaloBotPhoto,
   type NormalizedUpdate,
 } from "@/lib/server/zalo-bot";
 
@@ -40,6 +41,56 @@ type Ctx = {
 };
 
 const say = (ctx: Ctx, text: string) => sendZaloBotMessage(ctx.token, ctx.chatId, text);
+
+/**
+ * Gửi ảnh kèm chú thích. Zalo nhận ảnh qua URL nên không phải tải về, nhưng
+ * ảnh hỏng hoặc host chặn hotlink là sendPhoto trượt — lúc đó vẫn phải nhả chú
+ * thích ra dạng chữ, không thì người dùng chẳng nhận được gì.
+ */
+async function sayPhoto(ctx: Ctx, photoUrl: string, caption: string): Promise<void> {
+  if (photoUrl) {
+    const sent = await sendZaloBotPhoto(ctx.token, ctx.chatId, photoUrl, caption);
+    if (sent) return;
+  }
+  await say(ctx, caption);
+}
+
+/** Giờ VN, bỏ phần giờ khi mốc rơi đúng nửa đêm (ngày thuần). */
+function vnDateTime(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const midnight =
+    d.toLocaleTimeString("en-GB", { timeZone: "Asia/Ho_Chi_Minh", hour12: false }) === "00:00:00";
+  return d.toLocaleString("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    ...(midnight ? {} : { hour: "2-digit", minute: "2-digit" }),
+  });
+}
+
+/** "05/09/2026 → 20/09/2026", tự lược vế trống. */
+function vnRange(start: string | null | undefined, end: string | null | undefined): string {
+  const a = vnDateTime(start);
+  const b = vnDateTime(end);
+  if (a && b) return `${a} → ${b}`;
+  return a || b || "";
+}
+
+/** Còn bao lâu nữa mở / còn lại bao lâu — thứ người ta thật sự muốn biết. */
+function countdownLabel(start: string, end: string, status: string): string {
+  const now = Date.now();
+  const startMs = new Date(start).getTime();
+  const endMs = new Date(end).getTime();
+  const days = (ms: number) => Math.max(0, Math.ceil((ms - now) / 86_400_000));
+  if (status === "upcoming" && !Number.isNaN(startMs) && startMs > now) {
+    return `⏳ Còn ${days(startMs)} ngày nữa bắt đầu`;
+  }
+  if (!Number.isNaN(endMs) && endMs > now) return `⏰ Còn ${days(endMs)} ngày nữa kết thúc`;
+  return "";
+}
 
 /** Ghi nhận chat đã nhắn bot để sau này đẩy thông báo (bắn rồi quên). */
 async function rememberChat(update: NormalizedUpdate): Promise<void> {
@@ -232,32 +283,60 @@ async function actBxh(ctx: Ctx): Promise<void> {
 
 async function actNews(ctx: Ctx): Promise<void> {
   const news = await getNews("published").catch(() => []);
-  const latest = news.slice(0, 5);
+  const latest = news.slice(0, 3);
   if (!latest.length) {
     await say(ctx, "Chưa có tin tức nào.");
     return;
   }
-  const lines = ["📰 Tin tức mới nhất\n"];
-  latest.forEach((item, i) => {
-    lines.push(`${i + 1}. ${item.title}\n   ${SITE}/news/${item.slug}`);
-  });
-  lines.push(`\n🔗 Tất cả: ${SITE}/news`);
-  await say(ctx, lines.join("\n"));
+  await say(ctx, `📰 ${latest.length} tin mới nhất`);
+  // Từng tin một kèm ảnh bìa: gộp hết vào một tin chữ thì Zalo không hiện ảnh,
+  // mà ảnh mới là thứ khiến người ta bấm vào.
+  for (const item of latest) {
+    const caption = [
+      `📰 ${item.title}`,
+      item.category ? `🏷️ ${item.category}` : "",
+      vnDateTime(item.created_at) ? `🗓️ Đăng ${vnDateTime(item.created_at)}` : "",
+      item.excerpt ? `\n${item.excerpt.slice(0, 300)}` : "",
+      `\n🔗 ${SITE}/news/${item.slug}`,
+      item.cover ? `🖼️ ${item.cover}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    await sayPhoto(ctx, item.cover, caption);
+  }
+  await say(ctx, `🔗 Tất cả tin tức: ${SITE}/news`);
 }
 
 async function actEvents(ctx: Ctx): Promise<void> {
   const events = await getEvents().catch(() => []);
-  const active = events.filter((ev) => ev.status === "active" || ev.status === "upcoming").slice(0, 5);
+  const active = events.filter((ev) => ev.status === "active" || ev.status === "upcoming");
   if (!active.length) {
     await say(ctx, `Hiện không có sự kiện nào đang diễn ra.\n🔗 ${SITE}/events`);
     return;
   }
-  const lines = ["📅 Sự kiện Free Fire\n"];
-  active.forEach((ev, i) => {
-    lines.push(`${i + 1}. ${ev.status === "active" ? "🟢" : "🔵"} ${ev.title}\n   ${SITE}/events/${ev.id}`);
-  });
-  lines.push(`\n🔗 Tất cả: ${SITE}/events`);
-  await say(ctx, lines.join("\n"));
+  const shown = active.slice(0, 3);
+  await say(
+    ctx,
+    `📅 ${active.length} sự kiện đang mở${active.length > shown.length ? ` — hiện ${shown.length} cái gần nhất` : ""}`,
+  );
+  for (const ev of shown) {
+    const image = ev.image_url || ev.thumbnail_url || "";
+    const caption = [
+      ev.status === "active" ? "🟢 ĐANG DIỄN RA" : "🔵 SẮP DIỄN RA",
+      `📅 ${ev.title}`,
+      vnRange(ev.start_date, ev.end_date) ? `🕒 ${vnRange(ev.start_date, ev.end_date)}` : "",
+      countdownLabel(ev.start_date, ev.end_date, ev.status),
+      ev.server_region ? `🌐 Server ${ev.server_region}` : "",
+      ev.description ? `\n${ev.description.slice(0, 300)}` : "",
+      `\n🔗 ${SITE}/events/${ev.id}`,
+      ev.link ? `↗️ Trang gốc: ${ev.link}` : "",
+      image ? `🖼️ ${image}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    await sayPhoto(ctx, image, caption);
+  }
+  await say(ctx, `🔗 Tất cả sự kiện: ${SITE}/events`);
 }
 
 async function actGiaidau(ctx: Ctx): Promise<void> {

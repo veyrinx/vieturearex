@@ -241,6 +241,58 @@ export async function sendZaloBotMessage(
   return ok;
 }
 
+/**
+ * Tải ảnh về rồi đẩy lên dạng multipart. Cần khi Zalo không lấy được ảnh theo
+ * URL: host chặn hotlink, ảnh nằm sau CDN đòi cookie, hoặc API chỉ chịu nhận
+ * file thật. Có giới hạn để một cái link rác không kéo sập route.
+ */
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
+async function uploadZaloPhoto(
+  token: string,
+  chatId: string,
+  photoUrl: string,
+  caption?: string,
+): Promise<boolean> {
+  const fetched = await fetch(photoUrl, { signal: AbortSignal.timeout(15_000) }).catch(() => null);
+  if (!fetched?.ok) return false;
+  const type = fetched.headers.get("content-type") ?? "image/jpeg";
+  if (!type.startsWith("image/")) return false;
+  const buf = await fetched.arrayBuffer().catch(() => null);
+  if (!buf || buf.byteLength === 0 || buf.byteLength > MAX_PHOTO_BYTES) return false;
+
+  const name = (() => {
+    try {
+      const base = new URL(photoUrl).pathname.split("/").pop() || "photo.jpg";
+      return /[.](jpe?g|png|gif|webp)$/i.test(base) ? base : `${base}.jpg`;
+    } catch {
+      return "photo.jpg";
+    }
+  })();
+
+  const form = new FormData();
+  form.append("chat_id", chatId);
+  if (caption) form.append("caption", caption);
+  form.append("photo", new Blob([buf], { type }), name);
+
+  for (const base of API_BASES) {
+    // Không đi qua zaloBotApi được: hàm đó luôn gửi JSON, còn multipart phải để
+    // fetch tự đặt Content-Type kèm boundary.
+    const res = await fetch(`${base}/bot${token}/sendPhoto`, {
+      method: "POST",
+      body: form,
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
+    }).catch(() => null);
+    if (!res) continue;
+    const data = (await res.json().catch(() => ({}))) as ZaloBotResponse<unknown>;
+    if (data.ok !== false) return true;
+    console.warn("[zalo-bot] tải ảnh lên lỗi:", data.error_code, data.description);
+    return false;
+  }
+  return false;
+}
+
 export async function sendZaloBotPhoto(
   token: string,
   chatId: string,
@@ -252,7 +304,9 @@ export async function sendZaloBotPhoto(
     photo: photoUrl,
     ...(caption ? { caption } : {}),
   });
-  return res.ok !== false;
+  if (res.ok !== false) return true;
+  console.warn("[zalo-bot] sendPhoto theo URL lỗi:", res.error_code, res.description, "— thử tải ảnh về rồi đẩy lên.");
+  return uploadZaloPhoto(token, chatId, photoUrl, caption);
 }
 
 // ── Chuẩn hoá update ────────────────────────────────────────────────────────
