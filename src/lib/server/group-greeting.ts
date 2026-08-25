@@ -27,6 +27,10 @@ function isOn(value: string | undefined): boolean {
 }
 
 /** {name} → tên người, {group} → tên nhóm, {site} → địa chỉ site. */
+export function renderGreeting(template: string, name: string, group = ""): string {
+  return render(template, name, group);
+}
+
 function render(template: string, name: string, group: string): string {
   return template
     .replaceAll("{name}", name || "bạn")
@@ -53,5 +57,22 @@ export async function getGroupGreetings(name: string, group = ""): Promise<Group
   return {
     welcome: welcomeOn ? render(welcomeText, name, group) : null,
     farewell: farewellOn ? render(farewellText, name, group) : null,
+  };
+}
+
+/** Chữ đang lưu + trạng thái bật/tắt — cho nút "Gửi thử" trong Admin. */
+export async function getGroupGreetingConfig(): Promise<{
+  welcomeOn: boolean;
+  farewellOn: boolean;
+  welcomeText: string;
+  farewellText: string;
+}> {
+  const settings = await getSettings().catch(() => []);
+  const get = (key: string) => settings.find((s) => s.key === key)?.value;
+  return {
+    welcomeOn: isOn(get(GROUP_WELCOME_ENABLED_KEY)),
+    farewellOn: isOn(get(GROUP_FAREWELL_ENABLED_KEY)),
+    welcomeText: get(GROUP_WELCOME_TEXT_KEY)?.trim() || DEFAULT_WELCOME_TEXT,
+    farewellText: get(GROUP_FAREWELL_TEXT_KEY)?.trim() || DEFAULT_FAREWELL_TEXT,
   };
 }

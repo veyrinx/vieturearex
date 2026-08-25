@@ -32,7 +32,7 @@ type ChatType = "private" | "group" | "supergroup" | "channel" | undefined;
 type TelegramFrom = { id: number; first_name?: string; last_name?: string; username?: string };
 type TelegramMessage = {
   from?: TelegramFrom;
-  chat?: { id: number; type?: ChatType };
+  chat?: { id: number; type?: ChatType; title?: string };
   text?: string;
   reply_to_message?: { text?: string; caption?: string };
   // Vào/rời nhóm tới dưới dạng message KHÔNG có text — trước đây rơi thẳng vào
@@ -48,13 +48,17 @@ type TelegramCallbackQuery = {
 };
 type TelegramChatMember = {
   from?: TelegramFrom;
-  chat?: { id: number; type?: ChatType };
-  new_chat_member?: { user?: TelegramFrom; status?: string };
+  chat?: { id: number; type?: ChatType; title?: string };
+  old_chat_member?: { user?: TelegramFrom; status?: string; is_member?: boolean };
+  new_chat_member?: { user?: TelegramFrom; status?: string; is_member?: boolean };
 };
 type TelegramUpdate = {
   message?: TelegramMessage;
   callback_query?: TelegramCallbackQuery;
   my_chat_member?: TelegramChatMember;
+  // Nhóm đông / siêu nhóm KHÔNG hiện tin dịch vụ "X đã vào nhóm" nữa, chỉ còn
+  // update này — nên đây mới là đường chắc chắn biết ai ra ai vào.
+  chat_member?: TelegramChatMember;
 };
 
 // ── Telegram API helpers ────────────────────────────────────────────────────
@@ -464,16 +468,24 @@ const tgName = (u?: TelegramFrom): string =>
 async function handleGroupMembership(token: string, message: TelegramMessage): Promise<boolean> {
   const chatId = message.chat?.id;
   if (!token || !chatId) return false;
+  const selfId = botIdFromToken(token);
+  const isSelf = (u: TelegramFrom) => isBotSelf(u, selfId);
 
-  const joined = (message.new_chat_members ?? []).filter((u) => u && !isBotSelf(u));
+  const joined = (message.new_chat_members ?? [])
+    .filter((u) => u && !isSelf(u))
+    .filter((u) => !alreadyGreeted(`${chatId}:${u.id}:join`));
   if (joined.length) {
-    const { welcome } = await getGroupGreetings(joined.map(tgName).join(", "));
+    const { welcome } = await getGroupGreetings(joined.map(tgName).join(", "), message.chat?.title ?? "");
     if (welcome) await sendTelegramMessage(token, chatId, welcome);
     return true;
   }
 
-  if (message.left_chat_member && !isBotSelf(message.left_chat_member)) {
-    const { farewell } = await getGroupGreetings(tgName(message.left_chat_member));
+  if (
+    message.left_chat_member &&
+    !isSelf(message.left_chat_member) &&
+    !alreadyGreeted(`${chatId}:${message.left_chat_member.id}:leave`)
+  ) {
+    const { farewell } = await getGroupGreetings(tgName(message.left_chat_member), message.chat?.title ?? "");
     if (farewell) await sendTelegramMessage(token, chatId, farewell);
     return true;
   }
@@ -481,8 +493,64 @@ async function handleGroupMembership(token: string, message: TelegramMessage): P
   return Boolean(message.new_chat_members?.length || message.left_chat_member);
 }
 
-/** Chính bot được thêm vào / bị kick thì đừng tự chào mình. */
-function isBotSelf(user: TelegramFrom): boolean {
+/**
+ * Chào/tiễn cùng một người hai lần là chuyện có thật: nhóm nhỏ gửi CẢ tin dịch
+ * vụ (new_chat_members) LẪN update chat_member cho một lượt vào. Nhớ lại trong
+ * chốc lát để chỉ nói một câu.
+ */
+const greetedRecently = new Map<string, number>();
+const GREET_DEDUPE_MS = 90_000;
+
+function alreadyGreeted(key: string): boolean {
+  const now = Date.now();
+  for (const [k, at] of greetedRecently) if (now - at > GREET_DEDUPE_MS) greetedRecently.delete(k);
+  if ((greetedRecently.get(key) ?? 0) > now - GREET_DEDUPE_MS) return true;
+  greetedRecently.set(key, now);
+  return false;
+}
+
+/** Các trạng thái coi như "đang ở trong nhóm". */
+function isInChat(member?: { status?: string; is_member?: boolean }): boolean {
+  const status = member?.status ?? "";
+  if (status === "restricted") return member?.is_member !== false;
+  return status === "member" || status === "administrator" || status === "creator";
+}
+
+/**
+ * Ai đó vào/rời nhóm theo update `chat_member`. Bot phải là QUẢN TRỊ VIÊN của
+ * nhóm thì Telegram mới gửi loại update này.
+ */
+async function handleGroupMemberUpdate(token: string, update: TelegramChatMember): Promise<void> {
+  const chatId = update.chat?.id;
+  const user = update.new_chat_member?.user;
+  if (!token || !chatId || !user) return;
+  if (update.chat?.type === "private") return;
+  if (isBotSelf(user, botIdFromToken(token))) return;
+
+  const was = isInChat(update.old_chat_member);
+  const now = isInChat(update.new_chat_member);
+  if (was === now) return;
+
+  const kind = now ? "join" : "leave";
+  if (alreadyGreeted(`${chatId}:${user.id}:${kind}`)) return;
+
+  const { welcome, farewell } = await getGroupGreetings(tgName(user), update.chat?.title ?? "");
+  const text = now ? welcome : farewell;
+  if (text) await sendTelegramMessage(token, chatId, text);
+}
+
+/** Token Telegram là `<id bot>:<chuỗi>` — id thật của bot nằm sẵn ở vế đầu. */
+function botIdFromToken(token: string): number {
+  return Number(token.split(":")[0]) || 0;
+}
+
+/**
+ * Chính bot được thêm vào / bị kick thì đừng tự chào mình. So bằng ID lấy từ
+ * token; cách cũ đoán qua username kết thúc bằng "bot" vừa bỏ sót bot không đặt
+ * tên kiểu đó, vừa nuốt luôn lời chào cho người thật tên "...bot".
+ */
+function isBotSelf(user: TelegramFrom, selfId = 0): boolean {
+  if (selfId && user.id === selfId) return true;
   return Boolean(user.username && /bot$/i.test(user.username));
 }
 
@@ -526,6 +594,12 @@ export async function POST(req: NextRequest) {
   // Callback buttons (inline keyboard actions)
   if (update.callback_query) {
     if (token) await handleCallbackQuery(token, update.callback_query);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Người khác vào/rời nhóm (bot phải là admin nhóm mới nhận được).
+  if (update.chat_member) {
+    if (token) await handleGroupMemberUpdate(token, update.chat_member).catch(() => null);
     return NextResponse.json({ ok: true });
   }
 

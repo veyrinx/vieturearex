@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
     tgEndpoint = `https://api.telegram.org/bot${token}/setWebhook`;
     tgBody = {
       url: webhookUrl,
-      allowed_updates: ["message", "callback_query", "my_chat_member"],
+      // "chat_member" KHÔNG được gửi mặc định — thiếu nó thì siêu nhóm (nơi
+      // Telegram giấu tin dịch vụ "X đã vào nhóm") chẳng bao giờ chào ai.
+      allowed_updates: ["message", "callback_query", "my_chat_member", "chat_member"],
       drop_pending_updates: true,
       ...(secret ? { secret_token: secret } : {}),
     };

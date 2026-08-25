@@ -278,6 +278,9 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
   const [zaloForceHint, setZaloForceHint] = useState<string | null>(null);
   const [zaloNotify, setZaloNotify] = useState({ title: "", text: "", image: "", target: "configured" as "configured" | "all" });
   const [zaloNotifyStatus, setZaloNotifyStatus] = useState<"idle" | "loading">("idle");
+  // Kênh gửi thử lời chào/tiễn + đang gửi cái nào (để chỉ khoá đúng nút đó).
+  const [greetChannel, setGreetChannel] = useState<"all" | "zalo" | "telegram">("all");
+  const [greetTesting, setGreetTesting] = useState<"welcome" | "farewell" | null>(null);
   type HealthCheck = { name: string; ok: boolean; detail: string; fix?: string };
   const [health, setHealth] = useState<{ ok: boolean; checks: HealthCheck[] } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -449,6 +452,41 @@ ${JSON.stringify(d, null, 2)}`);
       toast.error("Lỗi kết nối");
     }
     setZaloChatsStatus("idle");
+  }
+
+  /**
+   * Bắn thử lời chào/tiễn ra đúng những nhóm sẽ nhận nó thật. Gửi CHỮ ĐANG GÕ
+   * chứ không phải bản đã lưu — thử mà phải Lưu trước thì chẳng còn là thử.
+   */
+  async function testGreeting(kind: "welcome" | "farewell") {
+    const draft = v(kind === "welcome" ? "integrations.group_welcome_text" : "integrations.group_farewell_text").trim();
+    setGreetTesting(kind);
+    try {
+      const res = await fetch("/api/admin/group-greeting/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, channel: greetChannel, text: draft || undefined }),
+      });
+      const d = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        sent?: number;
+        results?: { channel: string; ok: boolean; sent: number; detail?: string }[];
+        disabled_warning?: string | null;
+        reason?: string;
+      };
+      const detail = (d.results ?? [])
+        .map((r) => `${r.channel === "zalo" ? "Zalo" : "Telegram"}: ${r.ok ? `${r.sent} nhóm` : (r.detail ?? "lỗi")}`)
+        .join(" · ");
+      if (res.ok && d.ok) {
+        toast.success(`Đã gửi thử tới ${d.sent} nhóm. ${detail}`, { duration: 12000 });
+        if (d.disabled_warning) toast.warning(d.disabled_warning, { duration: 15000 });
+      } else {
+        toast.error(detail || `Gửi thử thất bại: ${d.reason ?? "kiểm tra cấu hình bot"}`, { duration: 15000 });
+      }
+    } catch {
+      toast.error("Lỗi kết nối");
+    }
+    setGreetTesting(null);
   }
 
   async function sendZaloNotify() {
@@ -1730,6 +1768,22 @@ ${zaloNotify.text}` : zaloNotify.text}
                 </span>
               ))}
             </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Gửi thử tới:</span>
+              <Select value={greetChannel} onValueChange={(val) => setGreetChannel(val as "all" | "zalo" | "telegram")}>
+                <SelectTrigger className="h-8 max-w-44 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Cả Zalo & Telegram</SelectItem>
+                  <SelectItem value="zalo">Chỉ Zalo</SelectItem>
+                  <SelectItem value="telegram">Chỉ Telegram</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                Gửi đúng chữ đang gõ, vào chính những nhóm sẽ nhận thật — không cần Lưu trước.
+              </span>
+            </div>
           </div>
           <Field label="Chào người mới vào nhóm" icon={Users} hint="Bỏ trống thì dùng câu mặc định.">
             <div className="space-y-2">
@@ -1753,6 +1807,22 @@ ${zaloNotify.text}` : zaloNotify.text}
                     className="resize-y"
                   />
                   <ChatPreview text={previewGreeting(v("integrations.group_welcome_text") || DEFAULT_WELCOME_PREVIEW)} />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => testGreeting("welcome")}
+                      disabled={greetTesting !== null}
+                    >
+                      {greetTesting === "welcome" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <SendHorizonal className="size-3.5" />
+                      )}
+                      {greetTesting === "welcome" ? "Đang gửi…" : "Gửi thử lời chào"}
+                    </Button>
+                  </div>
                 </>
               ) : null}
             </div>
@@ -1779,6 +1849,22 @@ ${zaloNotify.text}` : zaloNotify.text}
                     className="resize-y"
                   />
                   <ChatPreview text={previewGreeting(v("integrations.group_farewell_text") || DEFAULT_FAREWELL_PREVIEW)} />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => testGreeting("farewell")}
+                      disabled={greetTesting !== null}
+                    >
+                      {greetTesting === "farewell" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <SendHorizonal className="size-3.5" />
+                      )}
+                      {greetTesting === "farewell" ? "Đang gửi…" : "Gửi thử lời tiễn"}
+                    </Button>
+                  </div>
                 </>
               ) : null}
             </div>

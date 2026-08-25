@@ -8,6 +8,7 @@ import { siteConfig } from "@/lib/constants/site";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { getGroupGreetings } from "@/lib/server/group-greeting";
 import {
+  ZALO_MEMBER_EVENT_HINT,
   detectZaloMemberEvent,
   getZaloBotId,
   getZaloBotToken,
@@ -407,8 +408,34 @@ async function handleAi(ctx: Ctx, text: string): Promise<void> {
     [{ sender_type: "user", sender_name: ctx.fromName, content: text.slice(0, 2000) }],
     SITE_NAME,
   ).catch(() => null);
-  await say(ctx, result?.reply?.trim()
-    || "Cảm ơn bạn đã nhắn! Câu hỏi đã được ghi nhận, đội ngũ Arex sẽ hỗ trợ sớm nhất 🙏");
+
+  const reply = result?.reply?.trim();
+  if (reply) {
+    await say(ctx, reply);
+    return;
+  }
+
+  // Trợ lý hỏng thì nói thật và chỉ sang lệnh — trước đây mọi lỗi đều nuốt bằng
+  // một câu cảm ơn, người dùng cứ đứng đợi hỗ trợ chẳng bao giờ tới.
+  await say(ctx, aiFallbackMessage(result?.category));
+}
+
+function aiFallbackMessage(category: string | undefined): string {
+  const useCommands = `Trong lúc chờ, mấy lệnh này vẫn chạy bình thường:\n` +
+    `• hoso — thông tin tài khoản\n• diemdanh — điểm danh nhận điểm\n` +
+    `• tintuc · sukien · bxh\n• help — xem đầy đủ`;
+
+  switch (category) {
+    case "quota_exceeded":
+      return `🤖 Trợ lý AI đang hết hạn mức, tạm thời chưa trả lời tự do được.\n\n${useCommands}`;
+    case "rate_limited":
+      return `🤖 Trợ lý AI đang quá tải, thử lại sau vài phút nhé.\n\n${useCommands}`;
+    case "bad_api_key":
+    case "no_api_key":
+      return `🤖 Trợ lý AI chưa được cấu hình xong.\n\n${useCommands}`;
+    default:
+      return `🤔 Mình chưa hiểu ý bạn.\n\n${useCommands}`;
+  }
 }
 
 /** Chạy lệnh theo tên đã chuẩn hoá. false = không phải lệnh. */
@@ -438,11 +465,15 @@ async function handleMemberEvent(
   // Chính bot được thêm vào nhóm thì đừng tự chào mình.
   const botId = await getZaloBotId(token).catch(() => "");
   const people = member.members.filter((m) => !botId || m.id !== botId);
-  if (!people.length) return;
 
+  // Không đọc ra người nào (Zalo giấu danh sách ở trường lạ) thì vẫn chào —
+  // "{name}" lùi về "bạn". Câm hẳn mới là hỏng; chào trống còn hơn không chào.
   const names = people.map((m) => m.name).filter(Boolean).join(", ");
-  const { welcome, farewell } = await getGroupGreetings(names);
+  const { welcome, farewell } = await getGroupGreetings(names, member.chatName);
   const text = member.kind === "join" ? welcome : farewell;
+  console.log(
+    `[zalo-bot] thành viên ${member.kind} chat=${member.chatId} event=${member.eventName || "?"} người=${names || "(không rõ)"} → ${text ? "gửi lời chào" : "đang tắt, bỏ qua"}`,
+  );
   if (!text) return;
   await sendZaloBotMessage(token, member.chatId, text);
 }
@@ -526,6 +557,16 @@ export async function POST(req: NextRequest) {
     // Không đọc ra chat id = dạng payload lạ. In ra để còn biết Zalo gửi gì.
     console.warn("[zalo-bot] Không đọc được update:", JSON.stringify(raw)?.slice(0, 600));
     return NextResponse.json({ ok: true });
+  }
+
+  // Nghe như sự kiện thành viên mà detect ở trên không nhận: in NGUYÊN payload.
+  // Đây là thứ duy nhất cho biết Zalo đặt danh sách người ra/vào ở trường nào,
+  // và không có nó thì mỗi lần bot im lại phải ngồi đoán.
+  if (ZALO_MEMBER_EVENT_HINT.test(update.eventName)) {
+    console.warn(
+      `[zalo-bot] Sự kiện "${update.eventName}" nghe như có người ra/vào nhóm nhưng không bắt được:`,
+      JSON.stringify(raw)?.slice(0, 1200),
+    );
   }
 
   // Bỏ qua chính tin bot vừa gửi (tránh vòng lặp tự trả lời).

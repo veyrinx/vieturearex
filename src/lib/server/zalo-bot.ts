@@ -354,15 +354,47 @@ export async function getZaloBotId(token: string): Promise<string> {
 export type ZaloMemberEvent = {
   kind: "join" | "leave";
   chatId: string;
+  chatName: string;
   members: { id: string; name: string }[];
+  /** Tên sự kiện thô — để log khi khớp hụt, còn biết Zalo đang gửi cái gì. */
+  eventName: string;
 };
+
+/** Tên sự kiện nghe như có người ra/vào nhóm — dùng cả để log lúc khớp hụt. */
+export const ZALO_MEMBER_EVENT_HINT =
+  /member|participant|join|added|enter|invite|leave|left|remove|kick|out_group|exit|quit/i;
+
+const JOIN_PATTERN = /join|add|enter|invite|new_member|participant/i;
+const LEAVE_PATTERN = /leave|left|remove|kick|out|exit|quit|block/i;
+
+/** Gom mọi biến thể tên trường về một danh sách người. */
+function collectMembers(pools: unknown[]): { id: string; name: string }[] {
+  type RawMember = { id?: string | number; user_id?: string | number; display_name?: string; name?: string };
+  const members: { id: string; name: string }[] = [];
+  for (const pool of pools) {
+    if (!pool) continue;
+    for (const entry of (Array.isArray(pool) ? pool : [pool]) as RawMember[]) {
+      if (!entry || typeof entry !== "object") continue;
+      const id = String(entry.id ?? entry.user_id ?? "");
+      const name = String(entry.display_name ?? entry.name ?? "").trim();
+      if (!id && !name) continue;
+      if (members.some((m) => m.id === id && m.name === name)) continue;
+      members.push({ id, name });
+    }
+  }
+  return members;
+}
 
 /**
  * Bắt sự kiện có người vào/rời nhóm.
  *
  * Tài liệu Zalo Bot không chốt tên sự kiện lẫn chỗ đặt danh sách thành viên,
- * nên khớp rộng theo tên sự kiện rồi mò thành viên ở mọi chỗ hay gặp. Thà nhận
- * hụt một dạng lạ còn hơn khoá cứng vào một tên rồi im lặng khi Zalo đổi.
+ * nên nhận diện theo HAI đường và chỉ cần một đường trúng:
+ *   1. tên sự kiện (`event_name`) nghe như vào/ra nhóm;
+ *   2. hình dáng payload — có trường kiểu `new_chat_members`/`left_chat_member`.
+ * Trước đây chỉ đi đường (1): Zalo gửi sự kiện thành viên KHÔNG kèm event_name
+ * (hoặc kèm tên khác) là rơi thẳng vào luồng tin nhắn rồi bị bỏ vì không có
+ * chữ — bot im ru dù người ra vào ầm ầm.
  */
 export function detectZaloMemberEvent(raw: unknown): ZaloMemberEvent | null {
   if (!raw || typeof raw !== "object") return null;
@@ -373,48 +405,77 @@ export function detectZaloMemberEvent(raw: unknown): ZaloMemberEvent | null {
   ) as Record<string, unknown> | undefined;
   if (!container) return null;
 
-  const eventName = String(container.event_name ?? body.event_name ?? "").toLowerCase();
-  if (!eventName) return null;
-  const kind: "join" | "leave" | null = /join|added|enter|invite/.test(eventName)
-    ? "join"
-    : /leave|left|remove|kick|out_group/.test(eventName)
-      ? "leave"
+  const eventName = String(container.event_name ?? body.event_name ?? "");
+  const msg = (container.message ?? container) as Record<string, unknown>;
+
+  // Đường (2): các trường chỉ xuất hiện ở tin vào/ra nhóm.
+  const joinPools = [
+    container.new_chat_members,
+    container.new_members,
+    container.joined_members,
+    container.members_added,
+    msg.new_chat_members,
+    msg.new_members,
+    msg.members_added,
+  ];
+  const leavePools = [
+    container.left_chat_member,
+    container.left_member,
+    container.removed_member,
+    container.members_removed,
+    msg.left_chat_member,
+    msg.left_member,
+    msg.members_removed,
+  ];
+  const joined = collectMembers(joinPools);
+  const left = collectMembers(leavePools);
+
+  // Đường (1): tên sự kiện. Kiểm "leave" trước — "user_left_group" cũng dính
+  // chữ "add" nào đâu, nhưng "remove_from_group" thì lại chứa "from"… nên cứ
+  // ưu tiên vế rời để không chào nhầm người vừa bị mời ra.
+  const byName: "join" | "leave" | null = LEAVE_PATTERN.test(eventName)
+    ? "leave"
+    : JOIN_PATTERN.test(eventName)
+      ? "join"
       : null;
+
+  const kind: "join" | "leave" | null = left.length
+    ? "leave"
+    : joined.length
+      ? "join"
+      : byName;
   if (!kind) return null;
 
-  const msg = (container.message ?? container) as Record<string, unknown>;
-  const chat = (msg.chat ?? container.chat) as { id?: string | number } | undefined;
-  const chatId = String(chat?.id ?? container.chat_id ?? "");
+  const chat = (msg.chat ?? container.chat) as
+    | { id?: string | number; name?: string; title?: string; chat_name?: string }
+    | undefined;
+  const chatId = String(chat?.id ?? container.chat_id ?? msg.chat_id ?? "");
   if (!chatId) return null;
 
-  type RawMember = { id?: string | number; display_name?: string; name?: string };
-  const pools = [
-    container.members,
-    container.member,
-    container.new_members,
-    container.new_chat_members,
-    container.left_member,
-    msg.members,
-    msg.new_chat_members,
-    msg.left_chat_member,
-    container.user,
-    msg.from,
-  ];
+  // Chỉ khi hai pool trên rỗng mới mò rộng: `user`/`from` trong sự kiện thành
+  // viên có khi là NGƯỜI THÊM chứ không phải người được thêm, lấy bừa là chào
+  // nhầm tên.
+  const members = left.length
+    ? left
+    : joined.length
+      ? joined
+      : collectMembers([
+          container.members,
+          container.member,
+          msg.members,
+          msg.member,
+          container.user,
+          container.from,
+          msg.from,
+        ]);
 
-  const members: { id: string; name: string }[] = [];
-  for (const pool of pools) {
-    if (!pool) continue;
-    for (const entry of (Array.isArray(pool) ? pool : [pool]) as RawMember[]) {
-      if (!entry || typeof entry !== "object") continue;
-      const id = String(entry.id ?? "");
-      const name = String(entry.display_name ?? entry.name ?? "").trim();
-      if (!id && !name) continue;
-      if (members.some((m) => m.id === id && m.name === name)) continue;
-      members.push({ id, name });
-    }
-  }
-
-  return { kind, chatId, members };
+  return {
+    kind,
+    chatId,
+    chatName: String(chat?.name ?? chat?.title ?? chat?.chat_name ?? "").trim(),
+    members,
+    eventName,
+  };
 }
 
 export function normalizeZaloUpdate(raw: unknown): NormalizedUpdate | null {

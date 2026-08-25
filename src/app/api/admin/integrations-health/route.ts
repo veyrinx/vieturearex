@@ -237,6 +237,46 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── Trợ lý AI ─────────────────────────────────────────────────────────────
+  // Gọi thật một lượt cực ngắn: key còn hạn mức hay không thì chỉ nhà cung cấp
+  // mới trả lời được, đọc cấu hình suông chẳng biết gì.
+  {
+    const aiKey = get("integrations.ai_api_key") || (process.env.OPENAI_API_KEY ?? "");
+    if (!aiKey) {
+      checks.push({ name: "Trợ lý AI", ok: false, detail: "Chưa có API key", fix: "Dán key ở Cài đặt → Tích hợp → AI." });
+    } else if (undecrypted(aiKey)) {
+      checks.push({ name: "Trợ lý AI", ok: false, detail: "Key không giải mã được" });
+    } else {
+      const base = get("integrations.ai_base_url") || "https://api.openai.com/v1";
+      const res = await fetch(`${base.replace(/\/+$/, "")}/models`, {
+        headers: { Authorization: `Bearer ${aiKey}` },
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => null);
+
+      const status = res?.status ?? 0;
+      checks.push({
+        name: "Trợ lý AI",
+        ok: Boolean(res?.ok),
+        detail: res?.ok
+          ? "Key còn dùng được"
+          : status === 429
+            ? "429 — hết hạn mức hoặc gọi quá dày"
+            : status === 401 || status === 403
+              ? `${status} — key sai hoặc bị từ chối`
+              : status
+                ? `Nhà cung cấp trả ${status}`
+                : "Không kết nối được",
+        fix: res?.ok
+          ? undefined
+          : status === 429
+            ? "Nạp thêm hạn mức cho tài khoản AI, hoặc đổi sang key/nhà cung cấp khác. Trong lúc đó bot vẫn chạy lệnh bình thường, chỉ không trả lời tự do."
+            : status === 401 || status === 403
+              ? "Dán lại API key ở Cài đặt → Tích hợp → AI."
+              : undefined,
+      });
+    }
+  }
+
   return NextResponse.json(
     {
       site_url: SITE_URL,

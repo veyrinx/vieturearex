@@ -95,7 +95,10 @@ export async function generateAiReply(
   const lastUserMsg = recent.filter((m) => m.sender_type === "user").at(-1)?.content ?? "";
 
   try {
-    const client = new OpenAI({ apiKey, baseURL });
+    // maxRetries mặc định của SDK là 2: gặp 429 vì hết hạn mức thì thử lại chẳng
+    // bao giờ cứu được, chỉ khiến bot ngồi im thêm mấy giây rồi vẫn trả lời hụt.
+    // Một lần thử lại là đủ cho 429 thoáng qua, quá đó thì chịu thua cho nhanh.
+    const client = new OpenAI({ apiKey, baseURL, maxRetries: 1, timeout: 20_000 });
     const response = await client.chat.completions.create({
       model,
       max_tokens: 1024,
@@ -123,10 +126,29 @@ export async function generateAiReply(
     return { reply, refused, category };
   } catch (err) {
     // Surface the real cause in logs (bad/expired key, quota, wrong model, etc.)
-    const detail =
-      err && typeof err === "object"
-        ? `${(err as { status?: number }).status ?? ""} ${(err as { message?: string }).message ?? String(err)}`.trim()
-        : String(err);
+    const e = (err ?? {}) as { status?: number; code?: string; message?: string };
+    const detail = `${e.status ?? ""} ${e.message ?? String(err)}`.trim();
+    const blob = `${e.code ?? ""} ${e.message ?? ""}`.toLowerCase();
+
+    // 429 gộp hai chuyện khác hẳn nhau: gọi quá dày (chờ chút là xong) và hết
+    // hạn mức/hết tiền (chờ bao lâu cũng vô ích). Gộp làm một là cứ tưởng bot
+    // hỏng, trong khi việc phải làm là nạp tiền hoặc đổi key.
+    if (e.status === 429) {
+      const outOfQuota = /quota|billing|credit|exceeded your current/.test(blob);
+      console.error(
+        outOfQuota
+          ? "[ai-support] HẾT HẠN MỨC OpenAI — nạp tiền hoặc đổi key ở Admin → Tích hợp → AI. Chi tiết:"
+          : "[ai-support] Bị chặn vì gọi quá dày (429) — thử lại sau ít phút. Chi tiết:",
+        detail,
+      );
+      return { reply: "", refused: false, category: outOfQuota ? "quota_exceeded" : "rate_limited" };
+    }
+
+    if (e.status === 401 || e.status === 403) {
+      console.error("[ai-support] Key AI sai hoặc bị từ chối — kiểm tra lại ở Admin → Tích hợp → AI. Chi tiết:", detail);
+      return { reply: "", refused: false, category: "bad_api_key" };
+    }
+
     console.error("[ai-support] OpenAI error:", detail);
     return { reply: "", refused: false, category: "error" };
   }
