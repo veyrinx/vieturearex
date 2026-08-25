@@ -340,6 +340,83 @@ export type NormalizedUpdate = {
  * getUpdates trả `result` là mảng, còn webhook trả object. Ngoài ra vẫn nhận
  * dạng `{update_id, message}` kiểu Telegram cho chắc. Thiếu chat id thì bỏ qua.
  */
+/** Id của chính bot, nhớ lại để khỏi hỏi Zalo mỗi lần có người ra vào nhóm. */
+let botIdMemo: { token: string; id: string } | null = null;
+
+export async function getZaloBotId(token: string): Promise<string> {
+  if (botIdMemo?.token === token) return botIdMemo.id;
+  const res = await zaloBotApi<{ id?: string }>(token, "getMe", {});
+  const id = String(res.result?.id ?? "");
+  if (id) botIdMemo = { token, id };
+  return id;
+}
+
+export type ZaloMemberEvent = {
+  kind: "join" | "leave";
+  chatId: string;
+  members: { id: string; name: string }[];
+};
+
+/**
+ * Bắt sự kiện có người vào/rời nhóm.
+ *
+ * Tài liệu Zalo Bot không chốt tên sự kiện lẫn chỗ đặt danh sách thành viên,
+ * nên khớp rộng theo tên sự kiện rồi mò thành viên ở mọi chỗ hay gặp. Thà nhận
+ * hụt một dạng lạ còn hơn khoá cứng vào một tên rồi im lặng khi Zalo đổi.
+ */
+export function detectZaloMemberEvent(raw: unknown): ZaloMemberEvent | null {
+  if (!raw || typeof raw !== "object") return null;
+  const body = raw as Record<string, unknown>;
+  const result = body.result;
+  const container = (
+    Array.isArray(result) ? result[result.length - 1] : result && typeof result === "object" ? result : body
+  ) as Record<string, unknown> | undefined;
+  if (!container) return null;
+
+  const eventName = String(container.event_name ?? body.event_name ?? "").toLowerCase();
+  if (!eventName) return null;
+  const kind: "join" | "leave" | null = /join|added|enter|invite/.test(eventName)
+    ? "join"
+    : /leave|left|remove|kick|out_group/.test(eventName)
+      ? "leave"
+      : null;
+  if (!kind) return null;
+
+  const msg = (container.message ?? container) as Record<string, unknown>;
+  const chat = (msg.chat ?? container.chat) as { id?: string | number } | undefined;
+  const chatId = String(chat?.id ?? container.chat_id ?? "");
+  if (!chatId) return null;
+
+  type RawMember = { id?: string | number; display_name?: string; name?: string };
+  const pools = [
+    container.members,
+    container.member,
+    container.new_members,
+    container.new_chat_members,
+    container.left_member,
+    msg.members,
+    msg.new_chat_members,
+    msg.left_chat_member,
+    container.user,
+    msg.from,
+  ];
+
+  const members: { id: string; name: string }[] = [];
+  for (const pool of pools) {
+    if (!pool) continue;
+    for (const entry of (Array.isArray(pool) ? pool : [pool]) as RawMember[]) {
+      if (!entry || typeof entry !== "object") continue;
+      const id = String(entry.id ?? "");
+      const name = String(entry.display_name ?? entry.name ?? "").trim();
+      if (!id && !name) continue;
+      if (members.some((m) => m.id === id && m.name === name)) continue;
+      members.push({ id, name });
+    }
+  }
+
+  return { kind, chatId, members };
+}
+
 export function normalizeZaloUpdate(raw: unknown): NormalizedUpdate | null {
   if (!raw || typeof raw !== "object") return null;
   const body = raw as Record<string, unknown>;

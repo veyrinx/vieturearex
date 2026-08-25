@@ -8,6 +8,7 @@ import { sanitizePlainText } from "@/lib/server/sanitize";
 import { siteConfig, SITE_URL } from "@/lib/constants/site";
 import { subscribeUser, unsubscribeUser } from "@/lib/server/telegram-broadcast";
 import { enforceRateLimit } from "@/lib/server/api-guard";
+import { getGroupGreetings } from "@/lib/server/group-greeting";
 import { getPrimeStoreLive } from "@/lib/server/prime-store-live";
 import { DEFAULT_PRIME_SERVER } from "@/lib/constants/prime-store-live";
 import { generateAiReply, isAiReplyEnabled } from "@/lib/server/ai-support";
@@ -34,6 +35,10 @@ type TelegramMessage = {
   chat?: { id: number; type?: ChatType };
   text?: string;
   reply_to_message?: { text?: string; caption?: string };
+  // Vào/rời nhóm tới dưới dạng message KHÔNG có text — trước đây rơi thẳng vào
+  // nhánh `if (!text) return` nên chẳng ai chào ai.
+  new_chat_members?: TelegramFrom[];
+  left_chat_member?: TelegramFrom;
 };
 type TelegramCallbackQuery = {
   id: string;
@@ -452,6 +457,35 @@ async function handleCallbackQuery(token: string, cb: TelegramCallbackQuery): Pr
   await runAction(action, "", ctx);
 }
 
+const tgName = (u?: TelegramFrom): string =>
+  [u?.first_name, u?.last_name].filter(Boolean).join(" ") || u?.username || "bạn";
+
+/** Chào người mới vào nhóm / tiễn người rời nhóm. */
+async function handleGroupMembership(token: string, message: TelegramMessage): Promise<boolean> {
+  const chatId = message.chat?.id;
+  if (!token || !chatId) return false;
+
+  const joined = (message.new_chat_members ?? []).filter((u) => u && !isBotSelf(u));
+  if (joined.length) {
+    const { welcome } = await getGroupGreetings(joined.map(tgName).join(", "));
+    if (welcome) await sendTelegramMessage(token, chatId, welcome);
+    return true;
+  }
+
+  if (message.left_chat_member && !isBotSelf(message.left_chat_member)) {
+    const { farewell } = await getGroupGreetings(tgName(message.left_chat_member));
+    if (farewell) await sendTelegramMessage(token, chatId, farewell);
+    return true;
+  }
+
+  return Boolean(message.new_chat_members?.length || message.left_chat_member);
+}
+
+/** Chính bot được thêm vào / bị kick thì đừng tự chào mình. */
+function isBotSelf(user: TelegramFrom): boolean {
+  return Boolean(user.username && /bot$/i.test(user.username));
+}
+
 /** Bot bị chặn / bị kick → tự huỷ đăng ký nhận tin. */
 async function handleChatMember(update: TelegramChatMember): Promise<void> {
   const status = update.new_chat_member?.status;
@@ -504,6 +538,13 @@ export async function POST(req: NextRequest) {
   if (!update.message) return NextResponse.json({ ok: true });
 
   const { message } = update;
+
+  // Chào/tiễn trước khi đòi text: tin vào-rời nhóm không mang text.
+  if (message.new_chat_members?.length || message.left_chat_member) {
+    await handleGroupMembership(token, message).catch(() => null);
+    return NextResponse.json({ ok: true });
+  }
+
   const text = message.text?.trim();
   const chatId = message.chat?.id;
   const chatType = message.chat?.type;

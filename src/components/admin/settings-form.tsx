@@ -1530,6 +1530,44 @@ ${JSON.stringify(d, null, 2)}`);
 
         <Card>
           <div className="py-4">
+            <SectionHeader
+              icon={BellRing}
+              title="Chào & tiễn thành viên nhóm"
+              desc="Dùng chung cho cả nhóm Zalo lẫn Telegram — sửa một chỗ, hai bên nói giống nhau."
+            />
+          </div>
+          <Field label="Chào người mới vào nhóm" hint="Chỗ trống thay được: {name} tên người, {group} tên nhóm, {site} địa chỉ site.">
+            <Toggle
+              checked={v("integrations.group_welcome_enabled") !== "0"}
+              onChange={(on) => set("integrations.group_welcome_enabled", on ? "1" : "0")}
+              label="Bật lời chào"
+            />
+            <textarea
+              value={v("integrations.group_welcome_text")}
+              onChange={(e) => set("integrations.group_welcome_text", e.target.value)}
+              rows={4}
+              placeholder="👋 Chào {name} đã vào nhóm! Gõ help để xem bot làm được gì. 🔗 {site}"
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
+            />
+          </Field>
+          <Field label="Tiễn người rời nhóm" hint="Bỏ trống thì dùng câu mặc định.">
+            <Toggle
+              checked={v("integrations.group_farewell_enabled") !== "0"}
+              onChange={(on) => set("integrations.group_farewell_enabled", on ? "1" : "0")}
+              label="Bật lời tiễn"
+            />
+            <textarea
+              value={v("integrations.group_farewell_text")}
+              onChange={(e) => set("integrations.group_farewell_text", e.target.value)}
+              rows={3}
+              placeholder={"🙋 {name} vừa rời nhóm. Hẹn gặp lại!"}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
+            />
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
             <SectionHeader icon={Plug} title="Zalo" desc="Gửi thông báo tới Zalo cá nhân/nhóm qua webhook relay. OA API chỉ là dự phòng." />
           </div>
           <Field label="Zalo cá nhân — Webhook relay" hint="URL bot cá nhân của bạn (relay vào nhóm Zalo cá nhân). Đây là kênh chính.">

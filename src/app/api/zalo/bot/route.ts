@@ -10,7 +10,10 @@ import { siteConfig } from "@/lib/constants/site";
 import { enforceRateLimit } from "@/lib/server/api-guard";
 import { generateAiReply, isAiReplyEnabled } from "@/lib/server/ai-support";
 import { ocrFromFetch } from "@/lib/server/ff-ocr";
+import { getGroupGreetings } from "@/lib/server/group-greeting";
 import {
+  detectZaloMemberEvent,
+  getZaloBotId,
   getZaloBotToken,
   getZaloBotWebhookSecret,
   isValidZaloBotToken,
@@ -416,6 +419,23 @@ async function runAction(action: string, arg: string, ctx: Ctx): Promise<boolean
   }
 }
 
+/** Chào người mới vào nhóm / tiễn người rời nhóm. */
+async function handleMemberEvent(
+  token: string,
+  member: NonNullable<ReturnType<typeof detectZaloMemberEvent>>,
+): Promise<void> {
+  // Chính bot được thêm vào nhóm thì đừng tự chào mình.
+  const botId = await getZaloBotId(token).catch(() => "");
+  const people = member.members.filter((m) => !botId || m.id !== botId);
+  if (!people.length) return;
+
+  const names = people.map((m) => m.name).filter(Boolean).join(", ");
+  const { welcome, farewell } = await getGroupGreetings(names);
+  const text = member.kind === "join" ? welcome : farewell;
+  if (!text) return;
+  await sendZaloBotMessage(token, member.chatId, text);
+}
+
 // ── Webhook ─────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -468,16 +488,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, self_check: true });
   }
 
-  const update: NormalizedUpdate | null = normalizeZaloUpdate(raw);
-  if (!update) {
-    // Không đọc ra chat id = dạng payload lạ. In ra để còn biết Zalo gửi gì.
-    console.warn("[zalo-bot] Không đọc được update:", JSON.stringify(raw)?.slice(0, 600));
-    return NextResponse.json({ ok: true });
-  }
-
-  // Bỏ qua chính tin bot vừa gửi (tránh vòng lặp tự trả lời).
-  if (/sent|delivered|seen/i.test(update.eventName)) return NextResponse.json({ ok: true });
-
   const token = await getZaloBotToken();
   if (!token) {
     console.warn("[zalo-bot] Có update nhưng CHƯA CẤU HÌNH TOKEN — lưu token ở Admin hoặc đặt ZALO_BOT_TOKEN.");
@@ -489,6 +499,26 @@ export async function POST(req: NextRequest) {
     console.warn("[zalo-bot] Có update nhưng TOKEN SAI DẠNG — phải là <số>:<chuỗi>, dán lại từ bot.zapps.me.");
     return NextResponse.json({ ok: true });
   }
+
+  // Có người vào/rời nhóm: sự kiện này không mang text nên phải bắt trước khi
+  // đưa vào luồng chuẩn hoá tin nhắn.
+  const member = detectZaloMemberEvent(raw);
+  if (member) {
+    await handleMemberEvent(token, member).catch((err) =>
+      console.error("[zalo-bot] chào/tiễn thành viên lỗi:", err),
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  const update: NormalizedUpdate | null = normalizeZaloUpdate(raw);
+  if (!update) {
+    // Không đọc ra chat id = dạng payload lạ. In ra để còn biết Zalo gửi gì.
+    console.warn("[zalo-bot] Không đọc được update:", JSON.stringify(raw)?.slice(0, 600));
+    return NextResponse.json({ ok: true });
+  }
+
+  // Bỏ qua chính tin bot vừa gửi (tránh vòng lặp tự trả lời).
+  if (/sent|delivered|seen/i.test(update.eventName)) return NextResponse.json({ ok: true });
 
   console.log(`[zalo-bot] update ${update.eventName || "?"} chat=${update.chatId} text=${JSON.stringify(update.text.slice(0, 80))}`);
 
