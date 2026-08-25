@@ -319,56 +319,33 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         probes?: { url: string; status: number }[];
         blocked_by_cdn?: boolean;
         protected_by_vercel?: boolean;
+        diagnosis?: string | null;
         bot?: { display_name?: string; account_name?: string } | null;
       };
       setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
       setZaloHookDetail(`HTTP ${res.status}
 ${JSON.stringify(d, null, 2)}`);
       if (res.ok && d.ok) {
-        toast.success(`Webhook Zalo đã set: ${d.webhook_url}`);
-        if (d.bot?.display_name || d.bot?.account_name) {
-          toast.info(`Bot: ${d.bot.display_name ?? d.bot.account_name}`);
-        }
-        if (d.webhook_url && !d.webhook_url.startsWith(window.location.origin)) {
-          toast.info(`Webhook đăng ký vào ${d.webhook_url} — đây là cửa vào duy nhất nhận được POST từ máy khác.`, { duration: 12000 });
-        }
-        if (d.switched_from) toast.warning(`NEXT_PUBLIC_SITE_URL đang trỏ vào địa chỉ bị chuyển hướng (${d.switched_from}) — sửa lại trên Vercel.`);
-        if (d.secret_configured === false) toast.warning("Không lưu được secret webhook — ai cũng giả được cập nhật gửi tới webhook.");
-        // Zalo gọi thử webhook ngay lúc đăng ký; hỏng ở đây là bot sẽ câm dù setWebhook báo ok.
         const ver = d.verification;
-        // Cloudflare bật thuộc tính thử thách trình duyệt: người dùng không thấy gì, nhưng
-        // MÁY gọi vào là ăn 403 "Just a moment…" nên Zalo không giao được update.
-        if (d.blocked_by_cdn) {
+        // setWebhook báo ok chưa có nghĩa là chạy: Zalo tự gọi thử webhook ngay
+        // sau đó, hỏng ở bước này là bot câm.
+        const verFailed = Boolean(ver && (ver.success === false || ver.ok === false));
+        const botName = d.bot?.display_name ?? d.bot?.account_name ?? "";
+        if (!verFailed && !d.diagnosis) {
+          toast.success(`Webhook Zalo đã set: ${d.webhook_url}${botName ? ` — ${botName}` : ""}`);
+        } else {
+          setZaloHookStatus("err");
+          // MỘT câu thôi. Chi tiết đầy đủ nằm ở khối bên dưới nút, không bay mất.
           toast.error(
-            "Cloudflare chặn mọi cửa vào webhook (403 “Just a moment…”). Cách gọn nhất: Cloudflare → DNS, bấm đám mây của bản ghi webhook cho nó chuyển sang MÀU XÁM (DNS only). Mây cam là Cloudflare còn đứng giữa và vẫn chặn.",
+            d.diagnosis ??
+              `Zalo gọi thử webhook không thành công (${
+                ver?.error ?? ver?.message ?? ver?.description ?? ver?.status_code ?? "không rõ lý do"
+              }) trong khi cửa vào vẫn trả HTTP ${d.self_check?.status ?? "?"} — xem chi tiết bên dưới.`,
             { duration: 30000 },
           );
         }
-        if (d.protected_by_vercel) {
-          toast.warning(
-            "Tên miền *.vercel.app đang bật Deployment Protection (401) nên không dùng làm đường lui được — tắt ở Vercel → Settings → Deployment Protection nếu muốn dùng.",
-            { duration: 20000 },
-          );
-        }
-        if (ver && (ver.success === false || ver.ok === false)) {
-          const sc = d.self_check;
-          // Đối chiếu với lượt site tự gọi chính mình: tách được endpoint chết
-          // với endpoint sống nhưng Zalo không tới được.
-          const why = sc?.redirected_to
-            ? `endpoint đang 3xx về ${sc.redirected_to} — Zalo không đi theo chuyển hướng, sửa NEXT_PUBLIC_SITE_URL`
-            : sc && sc.status === 0
-              ? `chính site cũng không gọi được endpoint (${sc.body})`
-              : sc && sc.status !== 200
-                ? `endpoint trả HTTP ${sc.status}`
-                : sc
-                  ? `endpoint vẫn sống (HTTP 200, ${sc.ms}ms) — lỗi nằm ở phía Zalo, xem chi tiết bên dưới`
-                  : "";
-          toast.error(
-            `Zalo gọi thử webhook không thành công: ${
-              ver.error ?? ver.message ?? ver.description ?? ver.status_code ?? ver.status ?? "không rõ lý do"
-            }${why ? ` — ${why}` : ""}`,
-            { duration: 15000 },
-          );
+        if (d.secret_configured === false) {
+          toast.warning("Không lưu được secret webhook — ai cũng giả được cập nhật gửi tới webhook.");
         }
       } else {
         toast.error(

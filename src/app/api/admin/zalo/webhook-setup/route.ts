@@ -143,6 +143,18 @@ export async function POST(request: NextRequest) {
   const blockedEverywhere = noneReachable && probes.some(looksBlockedByCdn);
   const vercelProtected = noneReachable && probes.some(looksProtectedByVercel);
 
+  // MỘT câu kết luận duy nhất cho admin. Trước đây mỗi triệu chứng một toast,
+  // bấm một cái nổ ra bốn ô đỏ vàng chồng nhau, đọc xong vẫn không biết làm gì.
+  const diagnosis = !noneReachable
+    ? null
+    : blockedEverywhere
+      ? "Cloudflare chặn mọi cửa vào webhook (403 “Just a moment…”). Vào Cloudflare → DNS, bấm đám mây của bản ghi trỏ tới site cho nó chuyển sang MÀU XÁM (DNS only). Mây cam là Cloudflare còn đứng giữa và vẫn chặn."
+      : vercelProtected
+        ? "Chỉ còn cửa *.vercel.app mà tên miền đó đang bật Deployment Protection (401). Tắt ở Vercel → Settings → Deployment Protection, hoặc mở một cửa khác cho webhook."
+        : (chosenProbe?.redirected_to
+            ? `Cửa vào đang chuyển hướng sang ${chosenProbe.redirected_to} — máy gọi máy không đi theo chuyển hướng nên Zalo sẽ chết lặng. Đăng ký thẳng vào địa chỉ phục vụ trực tiếp.`
+            : `Không cửa vào nào nhận được POST từ máy khác (${probes.map((p) => `${new URL(p.url).host}: ${p.status || "không nối được"}`).join(", ")}).`);
+
   const res =
     action === "delete"
       ? await zaloBotApi<Record<string, unknown>>(token, "deleteWebhook", {})
@@ -188,6 +200,7 @@ export async function POST(request: NextRequest) {
     blocked_by_cdn: blockedEverywhere,
     // true = tên miền *.vercel.app đang bật Deployment Protection.
     protected_by_vercel: vercelProtected,
+    diagnosis,
     bot: me.result ?? null,
     info: info.result ?? null,
     ...(switchedFrom ? { switched_from: switchedFrom } : {}),
