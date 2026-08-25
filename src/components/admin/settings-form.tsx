@@ -318,6 +318,7 @@ export function SettingsForm({ settings, onSaved, siteId = "arex" }: SettingsFor
         self_check?: { status: number; ms: number; redirected_to: string | null; body: string } | null;
         probes?: { url: string; status: number }[];
         blocked_by_cdn?: boolean;
+        protected_by_vercel?: boolean;
         bot?: { display_name?: string; account_name?: string } | null;
       };
       setZaloHookStatus(res.ok && d.ok ? "ok" : "err");
@@ -339,8 +340,14 @@ ${JSON.stringify(d, null, 2)}`);
         // MÁY gọi vào là ăn 403 "Just a moment…" nên Zalo không giao được update.
         if (d.blocked_by_cdn) {
           toast.error(
-            "Cloudflare đang chặn mọi cửa vào webhook (403 “Just a moment…”). Vào Cloudflare → Security → WAF, thêm rule Skip cho đường dẫn /api/zalo/bot (và tắt Bot Fight Mode cho đường dẫn đó).",
+            "Cloudflare chặn mọi cửa vào webhook (403 “Just a moment…”). Cách gọn nhất: Cloudflare → DNS, bấm đám mây của bản ghi webhook cho nó chuyển sang MÀU XÁM (DNS only). Mây cam là Cloudflare còn đứng giữa và vẫn chặn.",
             { duration: 30000 },
+          );
+        }
+        if (d.protected_by_vercel) {
+          toast.warning(
+            "Tên miền *.vercel.app đang bật Deployment Protection (401) nên không dùng làm đường lui được — tắt ở Vercel → Settings → Deployment Protection nếu muốn dùng.",
+            { duration: 20000 },
           );
         }
         if (ver && (ver.success === false || ver.ok === false)) {

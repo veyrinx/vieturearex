@@ -56,6 +56,11 @@ function looksBlockedByCdn(probe: { status: number; body: string }): boolean {
   );
 }
 
+/** Vercel Deployment Protection: tên miền *.vercel.app đòi đăng nhập SSO. */
+function looksProtectedByVercel(probe: { status: number; body: string }): boolean {
+  return probe.status === 401 && /protected deployment|vercel_auth/i.test(probe.body);
+}
+
 /**
  * Tên miền chính có thể nằm sau Cloudflare với chế độ thử thách trình duyệt —
  * người dùng không thấy gì nhưng MÁY gọi vào là ăn 403 "Just a moment…", nên
@@ -131,7 +136,12 @@ export async function POST(request: NextRequest) {
     }
   }
   const chosenProbe = probes.find((p) => p.url === url) ?? probes[0] ?? null;
-  const blockedEverywhere = probes.length > 0 && probes.every(looksBlockedByCdn);
+  // Trước đây đòi MỌI cửa phải là trang chặn của Cloudflare mới báo động — chỉ
+  // cần một cửa hỏng vì lý do khác (Vercel Deployment Protection) là im re.
+  // Đúng ra: không cửa nào vào được, mà có cửa dính CDN, thì đó là thủ phạm.
+  const noneReachable = probes.length > 0 && !probes.some((p) => p.status === 200);
+  const blockedEverywhere = noneReachable && probes.some(looksBlockedByCdn);
+  const vercelProtected = noneReachable && probes.some(looksProtectedByVercel);
 
   const res =
     action === "delete"
@@ -174,8 +184,10 @@ export async function POST(request: NextRequest) {
     verification,
     self_check: selfCheck,
     probes,
-    // true = MỌI cửa vào đều bị CDN chặn → phải thêm ngoại lệ trên Cloudflare.
+    // true = không cửa nào vào được và có cửa dính trang chặn của CDN.
     blocked_by_cdn: blockedEverywhere,
+    // true = tên miền *.vercel.app đang bật Deployment Protection.
+    protected_by_vercel: vercelProtected,
     bot: me.result ?? null,
     info: info.result ?? null,
     ...(switchedFrom ? { switched_from: switchedFrom } : {}),
