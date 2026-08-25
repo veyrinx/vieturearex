@@ -349,6 +349,18 @@ export async function POST(req: NextRequest) {
   const limited = enforceRateLimit(req, { name: "zalo-bot-webhook", limit: 120, windowMs: 60_000 });
   if (limited) return limited;
 
+  // Đọc thân tin TRƯỚC khi kiểm secret: nhiều nền tảng xác minh webhook bằng
+  // một chuỗi challenge và đòi echo lại nguyên văn. Trả `{ok:true}` cho lượt đó
+  // là xác minh trượt dù endpoint vẫn 200.
+  const raw = await req.json().catch(() => null);
+  const challenge =
+    raw && typeof raw === "object"
+      ? ((raw as Record<string, unknown>).challenge ?? (raw as Record<string, unknown>).hub_challenge)
+      : null;
+  if (typeof challenge === "string" && challenge) {
+    return new NextResponse(challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
+  }
+
   // Secret lấy từ env, không có thì từ settings (nút Set Webhook tự sinh & lưu).
   // Trước đây chỉ đọc env: chưa ai khai biến thì setWebhook lỗi vì Zalo bắt buộc
   // secret_token, webhook không đăng ký nổi và bot câm suốt.
@@ -369,7 +381,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const raw = await req.json().catch(() => null);
+  // Lượt site tự gọi mình để chẩn đoán (nút Set Webhook). Đặt SAU vòng kiểm
+  // secret là có thêm một tín hiệu: thấy `self_check: true` nghĩa là secret cũng
+  // khớp; chỉ thấy `{ok:true}` trơ trọi là secret lệch.
+  if (raw && typeof raw === "object" && (raw as Record<string, unknown>).event_name === "webhook_selfcheck") {
+    return NextResponse.json({ ok: true, self_check: true });
+  }
+
   const update: NormalizedUpdate | null = normalizeZaloUpdate(raw);
   if (!update) {
     // Không đọc ra chat id = dạng payload lạ. In ra để còn biết Zalo gửi gì.
