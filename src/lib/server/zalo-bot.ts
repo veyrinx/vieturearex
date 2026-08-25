@@ -391,13 +391,30 @@ export function deaccent(s: string): string {
  * "liên kết ABC123"). Nên trả cả dạng 1 chữ lẫn 2 chữ dính liền để bên gọi thử
  * lần lượt; arg giữ nguyên chữ gốc vì mã liên kết cần đúng ký tự.
  */
+/**
+ * Bỏ phần nhắc tên bot dính vào lệnh.
+ *
+ * Trong nhóm, Zalo chèn nguyên tên hiển thị vào đầu tin khi người ta nhắc bot —
+ * "@Bot VieTure Hub /hoso". Tên có dấu cách nên không cắt theo từ được; may là
+ * hễ có "/" thì phần lệnh bắt đầu từ đó. Kiểu Telegram "/hoso@TenBot" cũng gặp,
+ * xử luôn.
+ */
+export function stripBotMention(text: string): string {
+  let out = text.trim();
+  if (out.startsWith("@")) {
+    const slash = out.indexOf("/");
+    out = slash > 0 ? out.slice(slash) : out.replace(/^@\S+\s*/, "");
+  }
+  return out.replace(/^(\/?[^\s@]+)@\S+/, "$1").trim();
+}
+
 export function normalizeCommand(text: string): {
   one: string;
   two: string;
   argAfterOne: string;
   argAfterTwo: string;
 } {
-  const raw = text.trim().replace(/^\//, "").split(/\s+/);
+  const raw = stripBotMention(text).replace(/^\//, "").split(/\s+/);
   const words = deaccent(raw.join(" ")).split(/\s+/).filter(Boolean);
   return {
     one: words[0] ?? "",

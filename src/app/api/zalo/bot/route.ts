@@ -16,6 +16,7 @@ import {
   isValidZaloBotToken,
   normalizeCommand,
   normalizeZaloUpdate,
+  stripBotMention,
   sendZaloBotMessage,
   sendZaloBotPhoto,
   type NormalizedUpdate,
@@ -510,12 +511,27 @@ export async function POST(req: NextRequest) {
     const text = update.text;
     if (!text) return NextResponse.json({ ok: true });
 
-    const isSlash = text.startsWith("/");
-    const { one, two, argAfterOne, argAfterTwo } = normalizeCommand(text);
+    const isSlash = stripBotMention(text).startsWith("/");
 
     // Lệnh 2 chữ trước ("diem danh"), rồi mới tới 1 chữ ("bxh").
-    if (await runAction(two, argAfterTwo, ctx)) return NextResponse.json({ ok: true });
-    if (await runAction(one, argAfterOne, ctx)) return NextResponse.json({ ok: true });
+    const dispatch = async (candidate: string) => {
+      const { one, two, argAfterOne, argAfterTwo } = normalizeCommand(candidate);
+      if (await runAction(two, argAfterTwo, ctx)) return true;
+      return runAction(one, argAfterOne, ctx);
+    };
+
+    if (await dispatch(text)) return NextResponse.json({ ok: true });
+
+    // Nhắc tên bot trong nhóm: Zalo chèn cả tên hiển thị có dấu cách vào đầu tin
+    // ("@Bot VieTure Hub hoso") nên cắt gọn bằng regex là thua. Bỏ dần từng chữ
+    // ở đầu rồi thử lại — runAction không đụng gì khi lệnh không khớp nên thử
+    // hụt vô hại. Nhờ vậy "/hoso" chạy dù có @bot hay không.
+    if (text.trimStart().startsWith("@")) {
+      const words = text.trim().split(/\s+/);
+      for (let i = 1; i < Math.min(words.length, 6); i++) {
+        if (await dispatch(words.slice(i).join(" "))) return NextResponse.json({ ok: true });
+      }
+    }
 
     // Trong nhóm: im lặng với chữ lạ, chỉ báo khi gõ hẳn "/lệnh".
     if (update.isGroup) {
@@ -523,7 +539,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    await handleAi(ctx, text);
+    // Bỏ phần nhắc tên bot trước khi đưa cho AI, không thì câu hỏi nào cũng
+    // dính "@Bot VieTure Hub" ở đầu.
+    await handleAi(ctx, stripBotMention(text) || text);
   } catch (err) {
     console.error("[zalo-bot] xử lý update lỗi:", err);
   }
