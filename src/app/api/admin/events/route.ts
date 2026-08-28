@@ -234,7 +234,12 @@ export async function POST(request: NextRequest) {
         ]
           .filter(Boolean)
           .join("\n");
-        await broadcastZaloBot({ text, imageUrl: event.image_url || event.thumbnail_url || undefined });
+        // serverRegion: nhóm Zalo đã chọn server khác thì bỏ qua tin này.
+        await broadcastZaloBot({
+          text,
+          imageUrl: event.image_url || event.thumbnail_url || undefined,
+          serverRegion: event.server_region ?? null,
+        });
       }).catch(() => null);
     }
 

@@ -201,6 +201,27 @@ export async function POST(request: NextRequest) {
       text: "🧪 Test bot Arex — kết nối OK.",
     });
     const ok = sent.ok !== false;
+
+    // Tin thứ hai CÓ LINK. Gần như mọi câu trả lời của bot đều đính đường dẫn
+    // về site, nên câu hỏi "Zalo có chặn link không" quyết định bot còn dùng
+    // được hay không — hỏi thẳng Zalo một lần, khỏi đoán.
+    const linkProbe = ok
+      ? await zaloBotApi<Record<string, unknown>>(token, "sendMessage", {
+          chat_id: chatId,
+          text: `🧪 Test link — ${SITE_URL}/events`,
+        })
+      : null;
+    const linkOk = linkProbe ? linkProbe.ok !== false : null;
+
+    // Chặn link thì thử tiếp bản bỏ "https://" — đúng thứ sendZaloBotMessage tự
+    // lùi về khi gặp lỗi, để biết đường lùi đó có thật sự lọt không.
+    const plainProbe = linkOk === false
+      ? await zaloBotApi<Record<string, unknown>>(token, "sendMessage", {
+          chat_id: chatId,
+          text: `🧪 Test link (bỏ https) — ${SITE_URL.replace(/^https?:\/\/(www\.)?/, "")}/events`,
+        })
+      : null;
+
     return NextResponse.json(
       {
         ok,
@@ -208,6 +229,22 @@ export async function POST(request: NextRequest) {
         chat_id: chatId,
         error_code: sent.error_code ?? null,
         reason: ok ? null : (sent.description ?? "zalo_error"),
+        link_test:
+          linkProbe === null
+            ? null
+            : {
+                ok: linkOk,
+                error_code: linkProbe.error_code ?? null,
+                description: linkProbe.description ?? null,
+                plain_fallback_ok: plainProbe ? plainProbe.ok !== false : null,
+                plain_fallback_description: plainProbe?.description ?? null,
+                verdict:
+                  linkOk
+                    ? "Zalo NHẬN tin có link — không cần bỏ https."
+                    : plainProbe && plainProbe.ok !== false
+                      ? "Zalo CHẶN link; bản bỏ https:// thì lọt — bot sẽ tự lùi về dạng này."
+                      : "Zalo chặn cả hai dạng — phải bỏ hẳn đường dẫn khỏi tin nhắn.",
+              },
         // Zalo trả 404 cho sendMessage khi chat_id không tồn tại HOẶC người đó
         // chưa từng nhắn bot — bot không được phép nhắn trước.
         hint:

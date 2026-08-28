@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
-import { getNews, getEvents } from "@/lib/data/content-service";
+import { getNews, getEvents, getSettings } from "@/lib/data/content-service";
+import { mergeEventServers, type EventServer } from "@/lib/constants/event-servers";
 import { performCheckin } from "@/lib/server/checkin";
 import { DEFAULT_PRIME_SERVER } from "@/lib/constants/prime-store-live";
 import { siteConfig } from "@/lib/constants/site";
@@ -44,6 +45,8 @@ type Ctx = {
   fromId: string;
   fromName: string;
   isGroup: boolean;
+  /** Server nhóm này theo dõi ("vn"…): null = nhận tất, undefined = chưa đọc CSDL. */
+  serverRegion: string | null | undefined;
 };
 
 const say = (ctx: Ctx, text: string) => sendZaloBotMessage(ctx.token, ctx.chatId, text);
@@ -96,6 +99,28 @@ function countdownLabel(start: string, end: string, status: string): string {
   }
   if (!Number.isNaN(endMs) && endMs > now) return `⏰ Còn ${days(endMs)} ngày nữa kết thúc`;
   return "";
+}
+
+/**
+ * Tin đã xử lý trong ít phút gần đây.
+ *
+ * Zalo gửi lại update khi webhook trả lời chậm; không chặn thì bot nhả hai lần
+ * cùng một câu vào nhóm. Nhớ trong bộ nhớ tiến trình là đủ: lượt gửi lại luôn
+ * tới ngay sau lượt đầu, mà mỗi máy tự giữ phần của mình cũng không sao.
+ */
+const SEEN_TTL_MS = 5 * 60_000;
+const seenMessages = new Map<string, number>();
+
+function alreadyHandled(messageId: string): boolean {
+  if (!messageId) return false;
+  const now = Date.now();
+  if (seenMessages.size > 500) {
+    for (const [id, at] of seenMessages) if (now - at > SEEN_TTL_MS) seenMessages.delete(id);
+  }
+  const seenAt = seenMessages.get(messageId);
+  if (seenAt !== undefined && now - seenAt < SEEN_TTL_MS) return true;
+  seenMessages.set(messageId, now);
+  return false;
 }
 
 /** Ghi nhận chat đã nhắn bot để sau này đẩy thông báo (bắn rồi quên). */
@@ -186,6 +211,104 @@ async function actLienket(ctx: Ctx, arg: string): Promise<void> {
   await say(ctx, "🎉 Liên kết thành công!\n\nGõ \"diemdanh\" mỗi ngày để cộng điểm, \"hoso\" để xem hồ sơ.");
 }
 
+// ── Server của nhóm ─────────────────────────────────────────────────────────
+
+/** Danh sách server đang bật (preset + tự thêm − đã ẩn), lấy từ cài đặt site. */
+async function loadServers(): Promise<EventServer[]> {
+  const settings = await getSettings().catch(() => []);
+  const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  return mergeEventServers(
+    map["events.custom_servers"],
+    map["events.hidden_servers"],
+    map["events.server_logos"],
+  );
+}
+
+/**
+ * Server nhóm này theo dõi, đọc LƯỜI và nhớ lại trong lượt.
+ *
+ * Phần lớn tin nhắn (help, điểm danh, hồ sơ) chẳng cần biết server, nên đọc sẵn
+ * cho mọi update là cộng thêm một vòng chờ CSDL vào mỗi lượt trả lời.
+ */
+async function chatServer(ctx: Ctx): Promise<string | null> {
+  if (ctx.serverRegion !== undefined) return ctx.serverRegion;
+  ctx.serverRegion = null;
+  const db = createAdminSupabaseClient();
+  if (!db) return null;
+  const { data, error } = (await untypedFrom(db, "zalo_bot_chats")
+    .select("server_region")
+    .eq("chat_id", ctx.chatId)
+    .maybeSingle()) as { data: { server_region: string | null } | null; error: { message?: string } | null };
+  // Cột chưa có (migration chưa chạy) thì coi như nhóm nhận tất, đừng làm hỏng lệnh.
+  if (error) return null;
+  ctx.serverRegion = data?.server_region?.toLowerCase() || null;
+  return ctx.serverRegion;
+}
+
+/**
+ * Xem / đặt server cho nhóm này.
+ *
+ * "server" → đang theo dõi cái nào; "server vn" → chỉ nhận sự kiện VN;
+ * "server all" (hay "tatca", "off") → nhận lại tất cả.
+ */
+async function actServer(ctx: Ctx, arg: string): Promise<void> {
+  const servers = await loadServers();
+  const list = servers.map((s) => `${s.flag} ${s.key} — ${s.label}`).join("\n");
+  const wanted = arg.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  const now = await chatServer(ctx);
+  if (!wanted) {
+    const current = now
+      ? servers.find((s) => s.key === now)?.label ?? now.toUpperCase()
+      : null;
+    await say(ctx,
+      `🌐 Server của ${ctx.isGroup ? "nhóm" : "bạn"}: ${current ?? "TẤT CẢ"}\n\n` +
+      `Đổi bằng: server <mã>\n${list}\n\n` +
+      `Nhận lại tất cả: server all`,
+    );
+    return;
+  }
+
+  const db = createAdminSupabaseClient();
+  if (!db) {
+    await say(ctx, "Hệ thống bận, thử lại sau.");
+    return;
+  }
+
+  const clearing = wanted === "all" || wanted === "tatca" || wanted === "off";
+  const picked = clearing ? null : servers.find((s) => s.key === wanted);
+  if (!clearing && !picked) {
+    await say(ctx, `❌ Không có server "${wanted}".\n\n${list}`);
+    return;
+  }
+
+  // Chat có thể chưa nằm trong bảng (bot vừa được thêm vào nhóm) — upsert cho
+  // chắc, đừng để lệnh trôi vào hư không rồi báo là đã lưu.
+  const { error } = await untypedFrom(db, "zalo_bot_chats").upsert(
+    {
+      chat_id: ctx.chatId,
+      chat_type: ctx.isGroup ? "GROUP" : "USER",
+      server_region: picked?.key ?? null,
+      last_seen_at: new Date().toISOString(),
+      is_active: true,
+    } as never,
+    { onConflict: "chat_id" },
+  );
+  if (error) {
+    const missingColumn = /server_region/.test(error.message ?? "");
+    console.warn("[zalo-bot] đặt server nhóm lỗi:", error.message);
+    await say(ctx, missingColumn
+      ? "⚠️ Máy chủ chưa bật phần chia server (thiếu cột trong CSDL). Nhờ admin chạy migration giúp nhé."
+      : "❌ Không lưu được, thử lại sau.");
+    return;
+  }
+
+  ctx.serverRegion = picked?.key ?? null;
+  await say(ctx, picked
+    ? `✅ Từ giờ ${ctx.isGroup ? "nhóm" : "bạn"} chỉ nhận sự kiện server ${picked.flag} ${picked.label}.`
+    : `✅ Đã bỏ giới hạn — nhận sự kiện của mọi server.`);
+}
+
 // ── Các lệnh ────────────────────────────────────────────────────────────────
 
 async function actStart(ctx: Ctx): Promise<void> {
@@ -203,6 +326,7 @@ async function actStart(ctx: Ctx): Promise<void> {
     `• vukhi — wiki vũ khí\n` +
     `• quiz — đố vui nhận thưởng\n` +
     `• lienket — nối tài khoản Arex\n` +
+    `• server — chọn server nhóm theo dõi\n` +
     `• help — xem lại danh sách này\n\n` +
     (ctx.isGroup ? `Trong nhóm nhớ thêm dấu "." hoặc "/" trước lệnh: ".diemdanh"\n\n` : "") +
     `🌐 ${SITE}`,
@@ -212,7 +336,7 @@ async function actStart(ctx: Ctx): Promise<void> {
 async function actHelp(ctx: Ctx): Promise<void> {
   await say(ctx,
     `🤖 Bot ${SITE_NAME} — danh sách lệnh\n\n` +
-    `diemdanh · hoso · bxh · tintuc · sukien · giaidau · nap · vukhi · quiz · lienket\n\n` +
+    `diemdanh · hoso · bxh · tintuc · sukien · giaidau · nap · vukhi · quiz · lienket · server\n\n` +
     `Gõ có dấu hay không dấu đều được.\n` +
     (ctx.isGroup
       ? `👥 Trong nhóm: thêm dấu "." hoặc "/" trước lệnh (".hoso", "/sukien") — khỏi tag tên bot.\n`
@@ -323,10 +447,15 @@ async function actNews(ctx: Ctx): Promise<void> {
 }
 
 async function actEvents(ctx: Ctx): Promise<void> {
-  const events = await getEvents().catch(() => []);
+  const server = await chatServer(ctx);
+  const events = await getEvents({ server: server ?? undefined }).catch(() => []);
   const active = events.filter((ev) => ev.status === "active" || ev.status === "upcoming");
   if (!active.length) {
-    await say(ctx, `Hiện không có sự kiện nào đang diễn ra.\n🔗 ${SITE}/events`);
+    const scope = server ? ` cho server ${server.toUpperCase()}` : "";
+    await say(ctx,
+      `Hiện không có sự kiện nào đang diễn ra${scope}.\n🔗 ${SITE}/events` +
+        (server ? `\n\nMuốn xem mọi server: gõ "server all".` : ""),
+    );
     return;
   }
   const shown = active.slice(0, 3);
@@ -428,6 +557,9 @@ async function runAction(action: string, arg: string, ctx: Ctx): Promise<boolean
     case "diemdanh": case "checkin":                     await actCheckin(ctx); return true;
     case "hoso": case "profile": case "taikhoan":        await actHoso(ctx); return true;
     case "lienket": case "link":                         await actLienket(ctx, arg); return true;
+    // Không đặt bí danh "may": "mày" trong câu chat bỏ dấu thành "may", nhóm
+    // nào cũng dính, bot nhảy vào giữa cuộc trò chuyện.
+    case "server": case "khuvuc":                        await actServer(ctx, arg); return true;
     case "bxh": case "xephang": case "leaderboard":      await actBxh(ctx); return true;
     case "tintuc": case "news": case "tin":              await actNews(ctx); return true;
     case "sukien": case "events": case "event":          await actEvents(ctx); return true;
@@ -554,6 +686,13 @@ export async function POST(req: NextRequest) {
   // Bỏ qua chính tin bot vừa gửi (tránh vòng lặp tự trả lời).
   if (/sent|delivered|seen/i.test(update.eventName)) return NextResponse.json({ ok: true });
 
+  // Zalo gửi lại update khi lượt trước trả lời chậm — trả lời hai lần trong
+  // nhóm đông trông như bot lỗi.
+  if (alreadyHandled(update.messageId)) {
+    console.log(`[zalo-bot] bỏ qua tin lặp ${update.messageId} chat=${update.chatId}`);
+    return NextResponse.json({ ok: true });
+  }
+
   console.log(
     `[zalo-bot] update ${update.eventName || "?"} chat=${update.chatId} text=${JSON.stringify(update.text.slice(0, 80))} (chuẩn bị ${Date.now() - startedAt}ms)`,
   );
@@ -564,6 +703,7 @@ export async function POST(req: NextRequest) {
     fromId: update.fromId,
     fromName: update.fromName,
     isGroup: update.isGroup,
+    serverRegion: undefined,
   };
 
   void rememberChat(update).catch(() => null);

@@ -383,6 +383,8 @@ export type ZaloBotMessage = {
 };
 
 export type NormalizedUpdate = {
+  /** Id tin nhắn — dùng để bỏ qua update Zalo gửi lại. Rỗng nếu payload không có. */
+  messageId: string;
   chatId: string;
   fromId: string;
   fromName: string;
@@ -560,6 +562,7 @@ export function normalizeZaloUpdate(raw: unknown): NormalizedUpdate | null {
   const chatType = String(msg.chat?.chat_type ?? msg.chat?.type ?? "").toUpperCase();
 
   return {
+    messageId: String(msg.message_id ?? (container as { message_id?: string }).message_id ?? ""),
     chatId: String(chatId),
     fromId: String(msg.from?.id ?? ""),
     fromName: (msg.from?.display_name || msg.from?.name || "bạn").trim(),

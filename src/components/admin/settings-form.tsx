@@ -541,11 +541,20 @@ ${JSON.stringify(d, null, 2)}`);
       });
       const d = (await res.json().catch(() => ({}))) as {
         ok?: boolean; reason?: string; error_code?: number | null; hint?: string | null;
+        link_test?: { ok?: boolean | null; verdict?: string } | null;
       };
       setZaloTestStatus(res.ok && d.ok ? "ok" : "err");
       setZaloHookDetail(`GỬI THỬ — HTTP ${res.status}
 ${JSON.stringify(d, null, 2)}`);
-      if (res.ok && d.ok) toast.success("Đã gửi tin thử qua bot Zalo.");
+      if (res.ok && d.ok) {
+        toast.success("Đã gửi tin thử qua bot Zalo.");
+        // Kết quả tin-có-link mới là thứ đáng xem: bot đính link vào gần như
+        // mọi câu trả lời, Zalo chặn là bot câm mà chẳng ai biết vì sao.
+        if (d.link_test?.verdict) {
+          if (d.link_test.ok) toast.success(d.link_test.verdict, { duration: 12000 });
+          else toast.warning(d.link_test.verdict, { duration: 20000 });
+        }
+      }
       else {
         toast.error(
           d.hint ?? `Gửi thử thất bại: ${d.reason ?? "kiểm tra token & chat id"}${d.error_code ? ` (mã ${d.error_code})` : ""}`,

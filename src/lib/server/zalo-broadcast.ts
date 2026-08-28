@@ -74,10 +74,39 @@ export async function resolveZaloTargets(target: BroadcastTarget): Promise<strin
   return (data ?? []).map((r) => r.chat_id).filter(Boolean);
 }
 
+/**
+ * Bỏ những nhóm đã chọn server KHÁC.
+ *
+ * Nhóm chưa chọn gì vẫn nhận tất — đó là mặc định cũ, đổi ngầm thành "không
+ * nhận gì" là tự tay tắt thông báo của mọi nhóm đang chạy.
+ */
+async function keepChatsForServer(chatIds: string[], serverRegion: string): Promise<string[]> {
+  if (!chatIds.length) return chatIds;
+  const db = createAdminSupabaseClient();
+  if (!db) return chatIds;
+  const { data, error } = (await untypedFrom(db, "zalo_bot_chats")
+    .select("chat_id, server_region")
+    .in("chat_id", chatIds)) as {
+      data: { chat_id: string; server_region: string | null }[] | null;
+      error: { message?: string } | null;
+    };
+  // Cột chưa có (migration chưa chạy) → cứ gửi hết như trước.
+  if (error || !data) return chatIds;
+
+  const pinned = new Map(data.map((row) => [row.chat_id, (row.server_region ?? "").toLowerCase()]));
+  const wanted = serverRegion.toLowerCase();
+  return chatIds.filter((id) => {
+    const chosen = pinned.get(id);
+    return !chosen || chosen === wanted;
+  });
+}
+
 export async function broadcastZaloBot(opts: {
   text: string;
   imageUrl?: string;
   target?: BroadcastTarget;
+  /** Server của nội dung — nhóm đã chọn server khác sẽ bị bỏ qua. */
+  serverRegion?: string | null;
 }): Promise<BroadcastResult> {
   const empty = { sent: 0, failed: 0, skipped: 0, results: [] };
   const token = await getZaloBotToken();
@@ -86,7 +115,8 @@ export async function broadcastZaloBot(opts: {
   }
 
   const target = opts.target ?? "auto";
-  const chatIds = await resolveZaloTargets(target);
+  let chatIds = await resolveZaloTargets(target);
+  if (opts.serverRegion) chatIds = await keepChatsForServer(chatIds, opts.serverRegion);
   if (!chatIds.length) {
     return {
       ok: false,
