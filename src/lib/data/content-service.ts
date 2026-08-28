@@ -322,6 +322,7 @@ export async function createEvent(
 
   // Retry without optional columns if migration not run yet
   if (result.error && /created_by_name|updated_by_name|view_count|server_region/.test(result.error.message ?? "")) {
+    console.warn("[events] thiếu cột, lưu bản rút gọn — chạy supabase/migration-event-server-region.sql:", result.error.message);
     const { created_by_name: _a, updated_by_name: _b, view_count: _c, server_region: _d, ...safePayload } = fullPayload as Record<string, unknown>;
     result = await supabase
       .from("events")
@@ -365,6 +366,7 @@ export async function updateEvent(
     .select("*")
     .single();
   if (result.error && /server_region/.test(result.error.message ?? "")) {
+    console.warn("[events] thiếu cột server_region khi cập nhật — chạy supabase/migration-event-server-region.sql");
     const { server_region: _, ...safe } = updatePayload as Record<string, unknown>;
     result = await supabase
       .from("events")

@@ -4,6 +4,7 @@ import { RowHeading } from "@/components/common/row-heading";
 import { ScrollRow } from "@/components/common/scroll-row";
 import { formatVietnamDate } from "@/lib/utils/vietnam-time";
 import type { EventItem } from "@/lib/types/content";
+import { getEventServer } from "@/lib/constants/event-servers";
 
 /**
  * Sự kiện nổi bật — một thẻ dẫn lớn tràn ngang, phần còn lại chạy ngang bên dưới.
@@ -132,7 +133,7 @@ export function FeaturedEventsShowcase({ events }: { events: EventItem[] }) {
               {lead.server_region && (
                 <span className="inline-flex items-center gap-1.5">
                   <Globe2 className="size-3.5" />
-                  {lead.server_region}
+                  {getEventServer(lead.server_region)?.label ?? lead.server_region.toUpperCase()}
                 </span>
               )}
             </div>

@@ -1,6 +1,7 @@
 import { getEvents } from "@/lib/data/content-service";
 import type { EventItem } from "@/lib/types/content";
 import { siteConfig } from "@/lib/constants/site";
+import { getEventServer } from "@/lib/constants/event-servers";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Mi } from "../_components/mi";
@@ -52,7 +53,7 @@ function EventCard({ item }: { item: EventItem }) {
             className="text-[11px]"
             style={{ color: "var(--tg-theme-hint-color, #888)" }}
           >
-            Server: {item.server_region}
+            Server: {getEventServer(item.server_region)?.label ?? item.server_region.toUpperCase()}
           </p>
         )}
         <a

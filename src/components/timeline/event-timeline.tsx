@@ -191,7 +191,7 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
     const cutoffMs = Date.now() - 24 * 60 * 60 * 1000;
     return events.filter((event) => {
       if (favoritesOnly && !favIds.includes(event.id)) return false;
-      if (server !== "all" && (event.server_region ?? "vn") !== server) return false;
+      if (server !== "all" && (event.server_region ?? "").toLowerCase() !== server) return false;
       const eventStartMs = new Date(event.start_date).getTime();
       const eventEndMs = new Date(event.end_date).getTime();
       if (Number.isNaN(eventStartMs) || Number.isNaN(eventEndMs)) return false;

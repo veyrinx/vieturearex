@@ -66,7 +66,7 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
 
     return safeData
       .filter((event) => {
-        if (server !== "all" && (event.server_region ?? "vn") !== server) return false;
+        if (server !== "all" && (event.server_region ?? "").toLowerCase() !== server) return false;
         const eventStart = new Date(event.start_date);
         const eventEnd = new Date(event.end_date);
         const matchFrom = from ? !isBefore(eventEnd, from) : isEventInCurrentVietnamMonthWindow(event.start_date);

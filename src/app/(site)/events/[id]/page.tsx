@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, ExternalLink, Eye, UserCircle2, Clock } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, Eye, UserCircle2 } from "lucide-react";
 import { getEventById } from "@/lib/data/content-service";
 import { formatVietnamDateTime } from "@/lib/utils/vietnam-time";
 import { StatusBadge } from "@/components/common/status-badge";
@@ -9,6 +9,7 @@ import { EventViewTracker } from "@/components/events/event-view-tracker";
 import { EventComments } from "@/components/events/event-comments";
 import { EventImageEditor } from "@/components/events/event-image-editor";
 import { EventImageDisplay } from "@/components/events/event-image-display";
+import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
 import { PollWidget } from "@/components/common/poll-widget";
 import { siteConfig } from "@/lib/constants/site";
 import { cn } from "@/lib/utils";
@@ -174,9 +175,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             </span>
           )}
           {event.server_region && (
-            <span className="flex items-center gap-1.5 ml-auto font-bold uppercase tracking-wider text-[10px]">
-              <Clock className="size-3.5" /> {event.server_region.toUpperCase()}
-            </span>
+            <ServerBadge serverKey={event.server_region} variant="full" className="ml-auto" />
           )}
         </div>
 

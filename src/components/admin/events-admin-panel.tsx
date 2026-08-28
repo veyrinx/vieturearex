@@ -75,7 +75,7 @@ export function EventsAdminPanel() {
     const term = search.trim().toLowerCase();
     const list = events.filter((event) => {
       if (statusFilter !== "all" && event.status !== statusFilter) return false;
-      if (serverFilter !== "all" && (event.server_region ?? "vn").toLowerCase() !== serverFilter) return false;
+      if (serverFilter !== "all" && (event.server_region ?? "").toLowerCase() !== serverFilter) return false;
       if (!term) return true;
       return (
         event.title.toLowerCase().includes(term) ||
@@ -320,7 +320,7 @@ export function EventsAdminPanel() {
               </thead>
               <tbody>
                 {paged.map((event) => {
-                  const server = serverByKey[(event.server_region ?? "vn").toLowerCase()];
+                  const server = event.server_region ? serverByKey[event.server_region.toLowerCase()] : undefined;
                   const thumb = event.thumbnail_url || event.image_url;
                   return (
                     <tr key={event.id} className="border-t border-border text-foreground">
