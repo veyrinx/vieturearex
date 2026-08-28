@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EventModal } from "@/components/timeline/event-modal";
 import { useFavoriteEventIds } from "@/components/events/event-actions";
 import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
-import { useEventServers } from "@/hooks/use-event-servers";
+import { ServerFilterChips } from "@/components/events/server-filter-chips";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -78,7 +78,6 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({});
   const favIds = useFavoriteEventIds();
-  const eventServers = useEventServers();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: events = initialEvents, isLoading } = useEventsQuery({
@@ -185,6 +184,21 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
   }, [fromDate, toDate, events]);
 
   const timelineWidth = days.length * dayWidth;
+
+  // Cùng bộ lọc với visibleEvents nhưng bỏ qua server — chip server đếm trên tập này.
+  const serverCountBase = useMemo(() => {
+    const cutoffMs = Date.now() - 24 * 60 * 60 * 1000;
+    return events.filter((event) => {
+      if (favoritesOnly && !favIds.includes(event.id)) return false;
+      const eventStartMs = new Date(event.start_date).getTime();
+      const eventEndMs = new Date(event.end_date).getTime();
+      if (Number.isNaN(eventStartMs) || Number.isNaN(eventEndMs)) return false;
+      if (eventEndMs < cutoffMs) return false;
+      const eventStart = startOfDay(new Date(event.start_date));
+      const eventEnd = endOfDay(new Date(event.end_date));
+      return !isAfter(eventStart, rangeEnd) && !isBefore(eventEnd, rangeStart);
+    });
+  }, [events, rangeEnd, rangeStart, favoritesOnly, favIds]);
 
   const visibleEvents = useMemo(() => {
     // Ẩn events đã kết thúc hơn 24h trước (theo timestamp thực, không clamp giờ địa phương)
@@ -312,43 +326,12 @@ export function EventTimeline({ initialEvents }: EventTimelineProps) {
           </button>
         </div>
 
-        {/* Server chips */}
-        <div className={cn("mt-2 flex flex-wrap items-center gap-1.5", filterOpen ? "" : "hidden md:flex")}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">SERVER:</span>
-          <button
-            type="button"
-            onClick={() => setServer("all")}
-            className={cn(
-              "rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
-              server === "all"
-                ? "border-primary/40 bg-primary/10 text-primary dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
-                : "border-border bg-muted text-muted-foreground hover:border-primary/40",
-            )}
-          >
-            Tất cả
-          </button>
-          {eventServers.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => setServer(s.key)}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
-                server === s.key
-                  ? s.color
-                  : "border-border bg-muted text-muted-foreground hover:border-primary/40",
-              )}
-            >
-              {s.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={s.logoUrl} alt="" className="size-3.5 rounded-sm object-cover" loading="lazy" />
-              ) : (
-                <span aria-hidden>{s.flag}</span>
-              )}
-              {s.short}
-            </button>
-          ))}
-        </div>
+        <ServerFilterChips
+          events={serverCountBase}
+          value={server}
+          onChange={setServer}
+          className={cn("mt-2", filterOpen ? "" : "hidden md:flex")}
+        />
       </div>
 
       {visibleEvents.length === 0 ? (

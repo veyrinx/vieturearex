@@ -13,7 +13,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { EventModal } from "@/components/timeline/event-modal";
 import { MediaFrame } from "@/components/common/media-frame";
 import { ServerBadgeClient as ServerBadge } from "@/components/events/server-badge-client";
-import { useEventServers } from "@/hooks/use-event-servers";
+import { ServerFilterChips } from "@/components/events/server-filter-chips";
 import { useEventsQuery } from "@/hooks/use-events-query";
 import type { EventItem, EventStatus } from "@/lib/types/content";
 import { cn } from "@/lib/utils";
@@ -53,11 +53,12 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [toDate, setToDate] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const eventServers = useEventServers();
   const { data, isFetching } = useEventsQuery({ status });
   const safeData = useMemo(() => data ?? initialEvents ?? [], [data, initialEvents]);
 
-  const events = useMemo(() => {
+  // Lọc mọi thứ TRỪ server trước, để chip server đếm được đúng số sự kiện
+  // đang nằm trong khoảng ngày / trạng thái hiện tại.
+  const dateFiltered = useMemo(() => {
     const parsedFrom = fromDate ? parseVietnamDateInputStart(fromDate) : null;
     const parsedTo = toDate ? parseVietnamDateInputEnd(toDate) : null;
     const shouldSwap = Boolean(parsedFrom && parsedTo && isAfter(parsedFrom, parsedTo));
@@ -66,7 +67,6 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
 
     return safeData
       .filter((event) => {
-        if (server !== "all" && (event.server_region ?? "").toLowerCase() !== server) return false;
         const eventStart = new Date(event.start_date);
         const eventEnd = new Date(event.end_date);
         const matchFrom = from ? !isBefore(eventEnd, from) : isEventInCurrentVietnamMonthWindow(event.start_date);
@@ -78,7 +78,15 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         const right = new Date(b.start_date).getTime();
         return sort === "newest" ? right - left : left - right;
       });
-  }, [safeData, fromDate, sort, toDate, server]);
+  }, [safeData, fromDate, sort, toDate]);
+
+  const events = useMemo(
+    () =>
+      server === "all"
+        ? dateFiltered
+        : dateFiltered.filter((event) => (event.server_region ?? "").toLowerCase() === server),
+    [dateFiltered, server],
+  );
 
   const hasActiveFilters = status !== "all" || server !== "all" || fromDate !== "" || toDate !== "";
   const resetFilters = () => {
@@ -151,43 +159,12 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
         </div>
         </div>
 
-        {/* Server chips */}
-        <div className={cn("mt-3 flex flex-wrap items-center gap-1.5", filterOpen ? "" : "hidden md:flex")}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">SERVER:</span>
-          <button
-            type="button"
-            onClick={() => setServer("all")}
-            className={cn(
-              "rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
-              server === "all"
-                ? "border-primary/40 bg-primary/10 text-primary dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400"
-                : "border-border bg-muted text-muted-foreground hover:border-primary/40",
-            )}
-          >
-            Tất cả
-          </button>
-          {eventServers.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => setServer(s.key)}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition",
-                server === s.key
-                  ? s.color
-                  : "border-border bg-muted text-muted-foreground hover:border-primary/40",
-              )}
-            >
-              {s.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={s.logoUrl} alt="" className="size-3.5 rounded-sm object-cover" loading="lazy" />
-              ) : (
-                <span aria-hidden>{s.flag}</span>
-              )}
-              {s.short}
-            </button>
-          ))}
-        </div>
+        <ServerFilterChips
+          events={dateFiltered}
+          value={server}
+          onChange={setServer}
+          className={cn("mt-3", filterOpen ? "" : "hidden md:flex")}
+        />
       </div>
 
       {isFetching && !data && (

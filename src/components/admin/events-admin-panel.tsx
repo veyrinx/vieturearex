@@ -75,7 +75,9 @@ export function EventsAdminPanel() {
     const term = search.trim().toLowerCase();
     const list = events.filter((event) => {
       if (statusFilter !== "all" && event.status !== statusFilter) return false;
-      if (serverFilter !== "all" && (event.server_region ?? "").toLowerCase() !== serverFilter) return false;
+      const eventServer = (event.server_region ?? "").toLowerCase();
+      if (serverFilter === "none" && eventServer) return false;
+      if (serverFilter !== "all" && serverFilter !== "none" && eventServer !== serverFilter) return false;
       if (!term) return true;
       return (
         event.title.toLowerCase().includes(term) ||
@@ -234,6 +236,7 @@ export function EventsAdminPanel() {
           aria-label="Lọc theo server"
         >
           <option value="all">Tất cả server</option>
+          <option value="none">⚠️ Chưa gán server</option>
           {servers.map((s) => (
             <option key={s.key} value={s.key}>
               {s.flag} {s.label}

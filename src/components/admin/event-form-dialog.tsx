@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -97,6 +97,20 @@ export function EventFormDialog({
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const eventServers = useEventServers();
   const imageUrl = (watch("image_url") ?? "").trim();
+  const serverValue = (watch("server_region") ?? "").trim().toLowerCase();
+
+  // Server đang gán mà không còn trong danh sách (admin ẩn preset, hoặc custom
+  // server tải về chậm hơn lần render đầu) vẫn phải có option riêng: <select>
+  // không có option khớp sẽ tự nhả value, lưu lại là sự kiện âm thầm đổi server.
+  const serverOptions = useMemo(() => {
+    if (!serverValue || eventServers.some((s) => s.key === serverValue)) {
+      return eventServers;
+    }
+    return [
+      ...eventServers,
+      { key: serverValue, label: `${serverValue.toUpperCase()} (không còn trong danh sách)`, short: serverValue.toUpperCase(), flag: "🏳️", color: "" },
+    ];
+  }, [eventServers, serverValue]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -322,7 +336,7 @@ export function EventFormDialog({
                 {...register("server_region")}
                 className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
-                {eventServers.map((s) => (
+                {serverOptions.map((s) => (
                   <option key={s.key} value={s.key}>{s.flag} {s.label}</option>
                 ))}
               </select>
