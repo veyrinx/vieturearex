@@ -14,9 +14,9 @@ import {
   getZaloBotToken,
   getZaloBotWebhookSecret,
   isValidZaloBotToken,
+  hasCommandPrefix,
   normalizeCommand,
   normalizeZaloUpdate,
-  stripBotMention,
   sendZaloBotMessage,
   sendZaloBotPhoto,
   type NormalizedUpdate,
@@ -204,6 +204,7 @@ async function actStart(ctx: Ctx): Promise<void> {
     `• quiz — đố vui nhận thưởng\n` +
     `• lienket — nối tài khoản Arex\n` +
     `• help — xem lại danh sách này\n\n` +
+    (ctx.isGroup ? `Trong nhóm nhớ thêm dấu "." hoặc "/" trước lệnh: ".diemdanh"\n\n` : "") +
     `🌐 ${SITE}`,
   );
 }
@@ -212,9 +213,11 @@ async function actHelp(ctx: Ctx): Promise<void> {
   await say(ctx,
     `🤖 Bot ${SITE_NAME} — danh sách lệnh\n\n` +
     `diemdanh · hoso · bxh · tintuc · sukien · giaidau · nap · vukhi · quiz · lienket\n\n` +
-    `Gõ có dấu hay không dấu, có "/" hay không đều được.\n` +
+    `Gõ có dấu hay không dấu đều được.\n` +
+    (ctx.isGroup
+      ? `👥 Trong nhóm: thêm dấu "." hoặc "/" trước lệnh (".hoso", "/sukien") — khỏi tag tên bot.\n`
+      : "") +
     `📸 Gửi ảnh kết quả trận Free Fire → bot tự đọc K/A/D.\n` +
-    (ctx.isGroup ? "" : `💬 Nhắn tự do để hỏi trợ lý AI của ${SITE_NAME}.\n`) +
     `🌐 ${SITE}`,
   );
 }
@@ -398,44 +401,23 @@ async function handlePhoto(ctx: Ctx, photoUrl: string): Promise<void> {
   }
 }
 
-async function handleAi(ctx: Ctx, text: string): Promise<void> {
-  const { generateAiReply, isAiReplyEnabled } = await import("@/lib/server/ai-support");
-  if (!(await isAiReplyEnabled())) {
-    await say(ctx, `🤔 Mình chưa hiểu. Gõ "help" để xem danh sách lệnh.`);
-    return;
-  }
-  const result = await generateAiReply(
-    [{ sender_type: "user", sender_name: ctx.fromName, content: text.slice(0, 2000) }],
-    SITE_NAME,
-  ).catch(() => null);
-
-  const reply = result?.reply?.trim();
-  if (reply) {
-    await say(ctx, reply);
-    return;
-  }
-
-  // Trợ lý hỏng thì nói thật và chỉ sang lệnh — trước đây mọi lỗi đều nuốt bằng
-  // một câu cảm ơn, người dùng cứ đứng đợi hỗ trợ chẳng bao giờ tới.
-  await say(ctx, aiFallbackMessage(result?.category));
-}
-
-function aiFallbackMessage(category: string | undefined): string {
-  const useCommands = `Trong lúc chờ, mấy lệnh này vẫn chạy bình thường:\n` +
-    `• hoso — thông tin tài khoản\n• diemdanh — điểm danh nhận điểm\n` +
-    `• tintuc · sukien · bxh\n• help — xem đầy đủ`;
-
-  switch (category) {
-    case "quota_exceeded":
-      return `🤖 Trợ lý AI đang hết hạn mức, tạm thời chưa trả lời tự do được.\n\n${useCommands}`;
-    case "rate_limited":
-      return `🤖 Trợ lý AI đang quá tải, thử lại sau vài phút nhé.\n\n${useCommands}`;
-    case "bad_api_key":
-    case "no_api_key":
-      return `🤖 Trợ lý AI chưa được cấu hình xong.\n\n${useCommands}`;
-    default:
-      return `🤔 Mình chưa hiểu ý bạn.\n\n${useCommands}`;
-  }
+/**
+ * Không khớp lệnh nào thì chỉ đường, KHÔNG gọi AI nữa.
+ *
+ * Trợ lý AI đã gỡ khỏi bot: mỗi câu tự do phải chờ mô hình nghĩ mất mấy giây,
+ * lại tốn hạn mức, mà hết hạn mức là trả về 429 rồi cũng chỉ nhả một câu xin
+ * lỗi. Chỉ thẳng sang lệnh vừa nhanh vừa đúng thứ người ta cần.
+ */
+async function sayUnknown(ctx: Ctx): Promise<void> {
+  await say(
+    ctx,
+    `🤔 Mình chưa hiểu ý bạn.\n\n` +
+      `Thử mấy lệnh này (trong nhóm thì thêm "." phía trước):\n` +
+      `• hoso — thông tin tài khoản\n` +
+      `• diemdanh — điểm danh nhận điểm\n` +
+      `• tintuc · sukien · bxh\n` +
+      `• help — xem đầy đủ`,
+  );
 }
 
 /** Chạy lệnh theo tên đã chuẩn hoá. false = không phải lệnh. */
@@ -595,7 +577,7 @@ export async function POST(req: NextRequest) {
     const text = update.text;
     if (!text) return NextResponse.json({ ok: true });
 
-    const isSlash = stripBotMention(text).startsWith("/");
+    const prefixed = hasCommandPrefix(text);
 
     // Lệnh 2 chữ trước ("diem danh"), rồi mới tới 1 chữ ("bxh").
     const dispatch = async (candidate: string) => {
@@ -617,15 +599,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Trong nhóm: im lặng với chữ lạ, chỉ báo khi gõ hẳn "/lệnh".
+    // Trong nhóm: im lặng với chữ lạ, chỉ báo khi có dấu gọi bot (". / !").
     if (update.isGroup) {
-      if (isSlash) await say(ctx, `🤔 Không có lệnh này. Gõ "help" để xem danh sách.`);
+      if (prefixed) await say(ctx, `🤔 Không có lệnh này. Gõ ".help" để xem danh sách.`);
       return NextResponse.json({ ok: true });
     }
 
-    // Bỏ phần nhắc tên bot trước khi đưa cho AI, không thì câu hỏi nào cũng
-    // dính "@Bot VieTure Hub" ở đầu.
-    await handleAi(ctx, stripBotMention(text) || text);
+    await sayUnknown(ctx);
   } catch (err) {
     console.error("[zalo-bot] xử lý update lỗi:", err);
   } finally {

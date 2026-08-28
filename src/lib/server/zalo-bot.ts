@@ -225,6 +225,53 @@ function splitMessage(text: string, max = 1800): string[] {
   return parts;
 }
 
+/**
+ * Zalo chặn tin có liên kết.
+ *
+ * Gần như mọi câu trả lời của bot đều đính một đường dẫn về site, nên khi Zalo
+ * từ chối tin chứa link thì bot câm gần hết — nhìn từ trong nhóm thì y như bot
+ * chết. Cách chữa: bỏ phần "https://" (và "www.") để chuỗi còn lại là địa chỉ
+ * đọc được, người dùng vẫn copy hoặc gõ tay được, mà bộ lọc link không bắt.
+ */
+export function plainifyLinks(text: string): string {
+  return text.replace(/https?:\/\/(www\.)?/gi, "");
+}
+
+const HAS_LINK_RE = /https?:\/\//i;
+
+/** Lời từ chối nghe như "tin này có link" — Zalo mỗi bản mỗi chữ nên bắt rộng. */
+const LINK_BLOCKED_RE = /link|url|http|spam|domain|website|duong dan|đường dẫn|liên kết|lien ket/i;
+
+/**
+ * Bot này có bị chặn link không — nhớ trong vòng đời tiến trình.
+ *
+ * Lần đầu bị từ chối thì thử lại bản không link; từ đó về sau gửi thẳng bản
+ * không link, khỏi tốn một lượt gọi hỏng cho mọi tin nhắn sau.
+ */
+let linksBlocked = false;
+
+async function sendChunk(token: string, chatId: string, chunk: string): Promise<boolean> {
+  const body = linksBlocked ? plainifyLinks(chunk) : chunk;
+  const res = await zaloBotApi(token, "sendMessage", { chat_id: chatId, text: body });
+  if (res.ok !== false) return true;
+
+  const why = `${res.error_code ?? ""} ${res.description ?? ""}`;
+  const linkFault = HAS_LINK_RE.test(body) && LINK_BLOCKED_RE.test(why);
+  if (!linkFault) {
+    console.warn("[zalo-bot] sendMessage lỗi:", res.error_code, res.description);
+    return false;
+  }
+
+  console.warn(`[zalo-bot] Zalo từ chối tin có link (${why.trim()}) — gửi lại bản bỏ "https://".`);
+  const retry = await zaloBotApi(token, "sendMessage", { chat_id: chatId, text: plainifyLinks(body) });
+  if (retry.ok === false) {
+    console.warn("[zalo-bot] gửi lại bản không link vẫn lỗi:", retry.error_code, retry.description);
+    return false;
+  }
+  linksBlocked = true;
+  return true;
+}
+
 export async function sendZaloBotMessage(
   token: string,
   chatId: string,
@@ -232,11 +279,7 @@ export async function sendZaloBotMessage(
 ): Promise<boolean> {
   let ok = true;
   for (const chunk of splitMessage(text)) {
-    const res = await zaloBotApi(token, "sendMessage", { chat_id: chatId, text: chunk });
-    if (res.ok === false) {
-      console.warn("[zalo-bot] sendMessage lỗi:", res.error_code, res.description);
-      ok = false;
-    }
+    if (!(await sendChunk(token, chatId, chunk))) ok = false;
   }
   return ok;
 }
@@ -297,16 +340,31 @@ export async function sendZaloBotPhoto(
   token: string,
   chatId: string,
   photoUrl: string,
-  caption?: string,
+  rawCaption?: string,
 ): Promise<boolean> {
+  // photo là URL nên vẫn gửi nguyên; chỉ chú thích mới đi qua bộ lọc link.
+  const caption = rawCaption && linksBlocked ? plainifyLinks(rawCaption) : rawCaption;
   const res = await zaloBotApi(token, "sendPhoto", {
     chat_id: chatId,
     photo: photoUrl,
     ...(caption ? { caption } : {}),
   });
   if (res.ok !== false) return true;
+
+  // Chú thích có link mà Zalo chê link: bỏ "https://" rồi thử lại trước khi
+  // nghi cho tấm ảnh — tải ảnh về đẩy lại tốn cả chục giây mà chẳng chữa gì.
+  const why = `${res.error_code ?? ""} ${res.description ?? ""}`;
+  if (caption && HAS_LINK_RE.test(caption) && LINK_BLOCKED_RE.test(why)) {
+    const plain = plainifyLinks(caption);
+    const retry = await zaloBotApi(token, "sendPhoto", { chat_id: chatId, photo: photoUrl, caption: plain });
+    if (retry.ok !== false) {
+      linksBlocked = true;
+      return true;
+    }
+  }
+
   console.warn("[zalo-bot] sendPhoto theo URL lỗi:", res.error_code, res.description, "— thử tải ảnh về rồi đẩy lên.");
-  return uploadZaloPhoto(token, chatId, photoUrl, caption);
+  return uploadZaloPhoto(token, chatId, photoUrl, linksBlocked && caption ? plainifyLinks(caption) : caption);
 }
 
 // ── Chuẩn hoá update ────────────────────────────────────────────────────────
@@ -529,21 +587,36 @@ export function deaccent(s: string): string {
  * "liên kết ABC123"). Nên trả cả dạng 1 chữ lẫn 2 chữ dính liền để bên gọi thử
  * lần lượt; arg giữ nguyên chữ gốc vì mã liên kết cần đúng ký tự.
  */
+/** Ký tự mở đầu một lệnh: "/hoso", ".hoso", "!hoso" đều tính. */
+export const COMMAND_PREFIX_RE = /^[/.!]+/;
+
 /**
  * Bỏ phần nhắc tên bot dính vào lệnh.
  *
  * Trong nhóm, Zalo chèn nguyên tên hiển thị vào đầu tin khi người ta nhắc bot —
  * "@Bot VieTure Hub /hoso". Tên có dấu cách nên không cắt theo từ được; may là
- * hễ có "/" thì phần lệnh bắt đầu từ đó. Kiểu Telegram "/hoso@TenBot" cũng gặp,
- * xử luôn.
+ * hễ gặp ký tự mở lệnh ("/", "." hay "!") thì phần lệnh bắt đầu từ đó. Kiểu
+ * Telegram "/hoso@TenBot" cũng gặp, xử luôn.
  */
 export function stripBotMention(text: string): string {
   let out = text.trim();
   if (out.startsWith("@")) {
-    const slash = out.indexOf("/");
-    out = slash > 0 ? out.slice(slash) : out.replace(/^@\S+\s*/, "");
+    const trigger = out.search(/[/.!](?=\S)/);
+    out = trigger > 0 ? out.slice(trigger) : out.replace(/^@\S+\s*/, "");
   }
-  return out.replace(/^(\/?[^\s@]+)@\S+/, "$1").trim();
+  return out.replace(/^([/.!]?[^\s@]+)@\S+/, "$1").trim();
+}
+
+/**
+ * Tin này có mở đầu bằng ký tự gọi bot không (sau khi gỡ phần @tên bot)?
+ *
+ * Trong nhóm đông, gõ "." hoặc "/" trước lệnh là đủ để bot biết câu đó dành cho
+ * mình — không phải tag tên bot nữa, mà bot cũng không nhảy vào mọi câu chuyện.
+ */
+export function hasCommandPrefix(text: string): boolean {
+  // Phải có chữ/số ngay sau dấu, để "..." hay "!!!" trong lúc tán gẫu không bị
+  // hiểu là gọi bot.
+  return /^[/.!]+[\p{L}\p{N}]/u.test(stripBotMention(text));
 }
 
 export function normalizeCommand(text: string): {
@@ -552,7 +625,7 @@ export function normalizeCommand(text: string): {
   argAfterOne: string;
   argAfterTwo: string;
 } {
-  const raw = stripBotMention(text).replace(/^\//, "").split(/\s+/);
+  const raw = stripBotMention(text).replace(COMMAND_PREFIX_RE, "").split(/\s+/);
   const words = deaccent(raw.join(" ")).split(/\s+/).filter(Boolean);
   return {
     one: words[0] ?? "",
