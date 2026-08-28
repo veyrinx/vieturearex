@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import type { EventItem } from "@/lib/types/content";
 import { useEventServers } from "@/hooks/use-event-servers";
+import { guessServerFromImageUrl } from "@/lib/constants/event-servers";
 import { createClient } from "@/lib/supabase/client";
 import {
   formatVietnamDateInput,
@@ -95,6 +96,8 @@ export function EventFormDialog({
   });
 
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  // Admin đã tự chọn server thì thôi đoán — ý người bao giờ cũng thắng máy.
+  const [serverTouched, setServerTouched] = useState(false);
   const eventServers = useEventServers();
   const imageUrl = (watch("image_url") ?? "").trim();
   const serverValue = (watch("server_region") ?? "").trim().toLowerCase();
@@ -112,6 +115,17 @@ export function EventFormDialog({
     ];
   }, [eventServers, serverValue]);
 
+  // Dán link ảnh Free Fire là biết luôn server: ảnh Garena mang sẵn mã vùng
+  // trong đường dẫn ("/Local/VN/", "OB47VN"). Chỉ điền hộ khi tạo mới hoặc nhân
+  // bản — sự kiện đã lưu thì giá trị trong CSDL là quyết định của admin.
+  useEffect(() => {
+    if (serverTouched || (isEditing && !isDuplicate)) return;
+    const guess = guessServerFromImageUrl(imageUrl);
+    if (guess && guess !== serverValue) {
+      setValue("server_region", guess, { shouldDirty: true });
+    }
+  }, [imageUrl, serverTouched, serverValue, isEditing, isDuplicate, setValue]);
+
   useEffect(() => {
     const supabase = createClient();
     if (supabase) {
@@ -125,6 +139,8 @@ export function EventFormDialog({
     if (!open) {
       return;
     }
+
+    setServerTouched(false);
 
     if (initialData) {
       reset({
@@ -333,7 +349,7 @@ export function EventFormDialog({
                 Server / Khu vực
               </label>
               <select
-                {...register("server_region")}
+                {...register("server_region", { onChange: () => setServerTouched(true) })}
                 className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 {serverOptions.map((s) => (

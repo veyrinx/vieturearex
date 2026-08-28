@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isAfter, isBefore } from "date-fns";
 import { ArrowRight, ExternalLink, CalendarDays } from "lucide-react";
 import Link from "next/link";
@@ -55,6 +55,29 @@ export function EventsGrid({ initialEvents }: EventsGridProps) {
   const [filterOpen, setFilterOpen] = useState(false);
   const { data, isFetching } = useEventsQuery({ status });
   const safeData = useMemo(() => data ?? initialEvents ?? [], [data, initialEvents]);
+
+  // Chip server đi vào địa chỉ trang (?server=vn) để còn gửi cho nhau được.
+  // Đọc/ghi bằng history thay vì useSearchParams: hook đó kéo cả trang sang
+  // render động, mà trang sự kiện đang là trang tĩnh làm mới mỗi 60 giây.
+  useEffect(() => {
+    const fromUrl = (new URLSearchParams(window.location.search).get("server") ?? "").toLowerCase();
+    if (fromUrl && fromUrl !== "all") setServer(fromUrl);
+  }, []);
+
+  // Lượt đầu chỉ đọc, không ghi: ghi ngay lúc đó là xoá mất ?server=... vừa
+  // nhận từ địa chỉ, trước cả khi state kịp cập nhật.
+  const firstPass = useRef(true);
+  useEffect(() => {
+    if (firstPass.current) {
+      firstPass.current = false;
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (server === "all") params.delete("server");
+    else params.set("server", server);
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+  }, [server]);
 
   // Lọc mọi thứ TRỪ server trước, để chip server đếm được đúng số sự kiện
   // đang nằm trong khoảng ngày / trạng thái hiện tại.

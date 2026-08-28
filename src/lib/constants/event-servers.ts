@@ -30,6 +30,46 @@ export function getEventServer(key: string | null | undefined): EventServer | nu
   return EVENT_SERVER_BY_KEY[key.toLowerCase()] ?? null;
 }
 
+/**
+ * Mã vùng hay gặp trong đường dẫn ảnh Free Fire → key server của site.
+ *
+ * Ảnh sự kiện gần như luôn lấy thẳng từ CDN Garena, mà đường dẫn có sẵn vùng:
+ *   dl.dir.freefiremobile.com/common/Local/VN/Splash_Upload/260821_OB47VN_...
+ * Đọc được vùng ở đó thì admin khỏi phải nhớ chọn server cho từng sự kiện.
+ */
+const IMAGE_REGION_ALIASES: Record<string, string> = {
+  vn: "vn", vi: "vn",
+  br: "br",
+  in: "in", ind: "in",
+  id: "id",
+  th: "th",
+  ph: "ph",
+  tw: "tw",
+  sg: "sea", my: "sea", sea: "sea",
+  mena: "mena", me: "mena", ar: "mena",
+  latam: "latam", la: "latam", mx: "latam",
+  all: "global", ww: "global", global: "global", us: "global",
+};
+
+/**
+ * Đoán server từ URL ảnh sự kiện. null = không đoán được, để người dùng tự chọn.
+ *
+ * Bắt hai dạng: thư mục vùng ("/Local/VN/") và mã bản dựng dính tên vùng
+ * ("OB47VN"). Chỉ trả về khi chắc chắn — đoán bừa còn tệ hơn để trống, vì
+ * server sai thì sự kiện lọt sang nhóm Zalo của server khác.
+ */
+export function guessServerFromImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const byFolder = url.match(/\/Local\/([A-Za-z]{2,5})\//i)?.[1];
+  const byBuild = url.match(/OB\d+([A-Za-z]{2,5})[_./-]/i)?.[1];
+  for (const candidate of [byFolder, byBuild]) {
+    if (!candidate) continue;
+    const key = IMAGE_REGION_ALIASES[candidate.toLowerCase()];
+    if (key) return key;
+  }
+  return null;
+}
+
 const VALID_COLORS: Record<string, string> = {
   red: "bg-red-500/10 text-red-500 border-red-500/30",
   orange: "bg-orange-500/10 text-orange-500 border-orange-500/30",

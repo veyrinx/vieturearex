@@ -34,6 +34,8 @@ import { normalizeDuties } from "@/lib/constants/team-duties";
 type EventQuery = {
   search?: string;
   status?: EventStatus | "all";
+  /** Key server ("vn", "sea"…) hoặc "all". Sự kiện chưa gán server không khớp key nào. */
+  server?: string;
 };
 
 const SAMPLE_EVENT_TEXT_PATTERN = /Sample timeline event\s*\([^)]*\)\s*using provided FF image\.?/i;
@@ -102,7 +104,10 @@ function applyEventQuery(events: EventItem[], query?: EventQuery) {
         : true;
       const matchStatus =
         !query?.status || query.status === "all" ? true : event.status === query.status;
-      return matchSearch && matchStatus;
+      const server = query?.server?.trim().toLowerCase();
+      const matchServer =
+        !server || server === "all" ? true : (event.server_region ?? "").toLowerCase() === server;
+      return matchSearch && matchStatus && matchServer;
     })
     .sort((a, b) => compareDesc(new Date(a.start_date), new Date(b.start_date)));
 }

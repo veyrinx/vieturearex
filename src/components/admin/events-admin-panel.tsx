@@ -50,6 +50,8 @@ export function EventsAdminPanel() {
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkServer, setBulkServer] = useState("");
+  const [bulkAssigning, setBulkAssigning] = useState(false);
 
   const serverByKey = useMemo(
     () => Object.fromEntries(servers.map((s) => [s.key, s])),
@@ -138,6 +140,36 @@ export function EventsAdminPanel() {
       toast.error("Lỗi mạng, không thể xóa sự kiện.");
     } finally {
       setBulkDeleting(false);
+    }
+  };
+
+  /**
+   * Gán server cho cả loạt sự kiện đã chọn.
+   *
+   * Đi đường riêng /api/admin/events/bulk chứ không gọi PATCH từng cái: PATCH
+   * bắn thông báo Telegram/Discord mỗi lượt, dọn dữ liệu mà dội tin cả nhóm.
+   */
+  const assignServer = async () => {
+    if (!bulkServer || selected.length === 0) return;
+    setBulkAssigning(true);
+    try {
+      const response = await fetch("/api/admin/events/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selected, server_region: bulkServer === "none" ? null : bulkServer }),
+      });
+      const data = (await response.json().catch(() => null)) as { updated?: number; error?: string } | null;
+      if (!response.ok) {
+        toast.error(data?.error ?? "GÁN SERVER THẤT BẠI.");
+        return;
+      }
+      toast.success(`ĐÃ GÁN SERVER CHO ${data?.updated ?? selected.length} SỰ KIỆN.`);
+      setBulkServer("");
+      await refresh();
+    } catch {
+      toast.error("Lỗi mạng, không gán được server.");
+    } finally {
+      setBulkAssigning(false);
     }
   };
 
@@ -262,7 +294,30 @@ export function EventsAdminPanel() {
           <p className="text-sm font-semibold text-foreground">
             ĐÃ CHỌN {selected.length} SỰ KIỆN
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={bulkServer}
+              onChange={(e) => setBulkServer(e.target.value)}
+              className="h-9 rounded-xl border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              aria-label="Gán server cho sự kiện đã chọn"
+            >
+              <option value="">Gán server…</option>
+              {servers.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.flag} {s.label}
+                </option>
+              ))}
+              <option value="none">Gỡ server</option>
+            </select>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!bulkServer || bulkAssigning}
+              onClick={assignServer}
+            >
+              {bulkAssigning ? "ĐANG GÁN..." : "ÁP DỤNG"}
+            </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => setSelected([])}>
               BỎ CHỌN
             </Button>

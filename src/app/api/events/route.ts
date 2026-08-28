@@ -16,9 +16,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? undefined;
   const status = (searchParams.get("status") as EventStatus | "all" | null) ?? undefined;
+  // ?server=vn — bot Zalo và app mobile lọc thẳng ở đây thay vì kéo cả danh
+  // sách về rồi tự lọc, mỗi nơi một luật.
+  const server = searchParams.get("server") ?? undefined;
   const events = await getEvents({
     search,
     status,
+    server,
   });
 
   // CORS for /api/* is set centrally in next.config.mjs headers().
