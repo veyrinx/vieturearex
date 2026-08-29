@@ -168,6 +168,10 @@ export const CAPABILITIES = [
   { key: "shop.order.view_all", group: "Shop",       label: "Xem toàn bộ đơn hàng" },
   { key: "shop.escrow.manage",  group: "Shop",       label: "Xác nhận tiền giữ & giải ngân" },
   { key: "shop.dispute.resolve", group: "Shop",      label: "Xử lý tranh chấp" },
+  // Wishlist — công cụ gắn danh sách mong muốn trong game
+  { key: "wishlist.view",        group: "Wishlist",   label: "Mở công cụ wishlist" },
+  { key: "wishlist.manage",      group: "Wishlist",   label: "Thêm / bớt món trong wishlist" },
+  { key: "wishlist.credentials", group: "Wishlist",   label: "Đăng nhập acc người chơi (.dat / uid + mật khẩu)" },
   // Analytics
   { key: "analytics.view",     group: "Thống kê",   label: "Xem thống kê & lượt xem" },
   // Verified Content
@@ -197,6 +201,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "users.view", "users.edit", "users.ban",
     "shop.listing.approve", "shop.seller.approve", "shop.order.claim",
     "shop.order.view_all", "shop.escrow.manage", "shop.dispute.resolve",
+    "wishlist.view", "wishlist.manage", "wishlist.credentials",
     "analytics.view",
     "settings.edit", "logs.view",
   ],
@@ -208,6 +213,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "tms.create", "tms.manage", "tms.scores",
     "team.approve_it", "team.invite",
     "users.view",
+    "wishlist.view",
     "analytics.view",
     "logs.view",
   ],
@@ -222,6 +228,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "users.view",
     "shop.listing.approve", "shop.seller.approve", "shop.order.claim",
     "shop.order.view_all", "shop.escrow.manage", "shop.dispute.resolve",
+    "wishlist.view", "wishlist.manage",
     "analytics.view",
   ],
   support: [
@@ -229,6 +236,7 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "ratings.manage",
     "users.view",
     "shop.order.view_all",
+    "wishlist.view",
   ],
   team_member: [],
   // Giao dịch viên: chỉ ôm đơn + giữ/giải ngân tiền, không đụng nội dung site

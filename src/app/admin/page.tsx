@@ -27,6 +27,7 @@ import { APP_VERSION } from "@/lib/data/changelog";
 const BUILD = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
 import { getDashboardStats, getUserByEmail } from "@/lib/data/content-service";
 import { getAuthContext } from "@/lib/server/auth";
+import { allowedAdminHrefs, getAdminAccess } from "@/lib/server/admin-access";
 
 export const metadata: Metadata = {
   title: "Dashboard Quản Trị",
@@ -52,13 +53,23 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; from?: string }>;
+}) {
   const auth = await getAuthContext();
-  const [stats, userProfile, trends] = await Promise.all([
+  const [stats, userProfile, trends, access, params] = await Promise.all([
     getDashboardStats(),
     auth.email ? getUserByEmail(auth.email).catch(() => null) : Promise.resolve(null),
     getStatsTrends().catch(() => ({ users: null, news: null, events: null, views: null })),
+    getAdminAccess(auth),
+    searchParams,
   ]);
+
+  // Khu vực vai này được cấp — bảng truy cập nhanh bám đúng sidebar.
+  const allowed = new Set(allowedAdminHrefs(access));
+  const forbiddenFrom = params.error === "forbidden" ? (params.from ?? "") : null;
 
   const roleLabel = ROLE_LABELS[auth.role] ?? auth.role;
   const roleColor = ROLE_COLORS[auth.role] ?? ROLE_COLORS.user;
@@ -66,6 +77,14 @@ export default async function AdminDashboardPage() {
 
   return (
     <section className="space-y-6">
+
+      {forbiddenFrom !== null && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          Vai <strong>{roleLabel}</strong> chưa được cấp khu vực{" "}
+          <code className="rounded bg-red-500/10 px-1.5 py-0.5 text-xs">{forbiddenFrom || "này"}</code>.
+          Cần thì nhờ super admin mở thêm ở <Link href="/admin/permissions" className="underline">Phân quyền</Link>.
+        </div>
+      )}
 
       {/* ── Welcome card ── */}
       <div className="relative overflow-hidden rounded-[24px] border border-primary/15 bg-gradient-to-br from-primary/8 via-primary/4 to-card p-6 shadow-[0_20px_50px_rgba(0,82,255,0.06)] dark:border-amber-400/15 dark:from-amber-500/8 dark:via-amber-400/4 dark:shadow-[0_20px_50px_rgba(247,147,26,0.04)]">
@@ -168,7 +187,7 @@ export default async function AdminDashboardPage() {
       <div className="space-y-4">
         <SectionHeader icon={Zap} title="Truy cập nhanh" />
         {adminNavGroups.map((group) => {
-          const items = group.items.filter((it) => it.href !== "/admin");
+          const items = group.items.filter((it) => it.href !== "/admin" && allowed.has(it.href));
           if (items.length === 0) return null;
           return (
             <div key={group.label} className="space-y-2">

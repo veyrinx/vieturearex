@@ -5,11 +5,17 @@ import {
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser, Activity,
   FileText, FileSignature, Users2, SlidersHorizontal, Eye, Download,
-  ShoppingBag, Share2, Handshake, Store, KeyRound,
+  ShoppingBag, Share2, Handshake, Store, KeyRound, Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
 export type AdminNavItem = { title: string; href: string; icon: LucideIcon };
+
+/**
+ * Điều kiện vào từng mục nằm ở `lib/constants/admin-routes.ts` (file đó không
+ * import icon nên middleware nạp được). Sidebar / Ctrl-K / bảng truy cập nhanh
+ * chỉ nhận sẵn danh sách href được phép từ server rồi lọc theo.
+ */
 export type AdminNavGroup = { label: string; icon: LucideIcon; items: AdminNavItem[] };
 
 export const adminNavGroups: AdminNavGroup[] = [
@@ -58,6 +64,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [
       { title: "Cửa hàng Prime", href: "/admin/prime", icon: ShoppingBag },
       { title: "Chợ Arex",       href: "/admin/shop",  icon: Store },
+      { title: "DS mong muốn",   href: "/admin/wishlist", icon: Sparkles },
     ],
   },
   {

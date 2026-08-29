@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 
 const ALL_ITEMS = adminNavGroups.flatMap((g) => g.items.map((it) => ({ ...it, group: g.label })));
 
-export function AdminCommandPalette() {
+/** `allowedHrefs`: khu vực vai này được cấp — Ctrl-K không gợi ý chỗ không vào được. */
+export function AdminCommandPalette({ allowedHrefs }: { allowedHrefs?: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -42,11 +43,17 @@ export function AdminCommandPalette() {
     }
   }, [open]);
 
+  const items = useMemo(() => {
+    if (!allowedHrefs) return ALL_ITEMS;
+    const allowed = new Set(allowedHrefs);
+    return ALL_ITEMS.filter((it) => allowed.has(it.href));
+  }, [allowedHrefs]);
+
   const results = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return ALL_ITEMS;
-    return ALL_ITEMS.filter((it) => it.title.toLowerCase().includes(s) || it.group.toLowerCase().includes(s));
-  }, [q]);
+    if (!s) return items;
+    return items.filter((it) => it.title.toLowerCase().includes(s) || it.group.toLowerCase().includes(s));
+  }, [q, items]);
 
   useEffect(() => { setActive(0); }, [q]);
 

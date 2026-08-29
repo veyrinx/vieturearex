@@ -15,12 +15,21 @@ import {
   type FeatureLock,
 } from "@/lib/constants/feature-locks";
 import { hasSupabaseEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
+import { adminRouteRule, canAccessAdminRoute } from "@/lib/constants/admin-routes";
+import {
+  BUILTIN_ROLE_LEVELS,
+  getResolvedRoles,
+  getRoleLevel,
+  parseRoleCapabilities,
+} from "@/lib/permissions";
 
 /**
  * Middleware duy nhất đang chạy. Hai việc:
  *  1. Đẩy khách sang máy chủ dự phòng khi công tắc site.failover bật
  *     (POST /api/admin/failover — trang admin cho công tắc này đã bị gỡ).
  *  2. Chặn các chức năng đang khóa (/admin/feature-locks) → /updating.
+ *  3. Chặn quản trị viên vào khu vực /admin không thuộc phần được cấp
+ *     (xem `lib/constants/admin-routes.ts`).
  *
  * Việc (2) bắt buộc phải nằm ở đây: layout của (site) không biết đường dẫn hiện
  * tại nên chỉ chặn được bảo trì toàn site, không chặn được từng chức năng.
@@ -37,7 +46,15 @@ import { hasSupabaseEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env
 
 const CACHE_TTL_MS = 30_000;
 
-type MiddlewareSettings = { failover: FailoverConfig | null; locks: FeatureLock[] };
+type MiddlewareSettings = {
+  failover: FailoverConfig | null;
+  locks: FeatureLock[];
+  /** JSON thô của ma trận phân quyền + vai tự tạo — dùng cho chốt /admin. */
+  roleCapabilities: string | null;
+  customRoles: string | null;
+};
+
+const PERMISSION_KEYS = ["permissions.role_capabilities", "permissions.custom_roles"] as const;
 
 let cache: { data: MiddlewareSettings; expires: number } | null = null;
 
@@ -57,7 +74,7 @@ async function loadSettings(): Promise<MiddlewareSettings | null> {
 
   try {
     const res = await fetch(
-      `${url}/rest/v1/settings?select=key,value&key=in.(${SETTINGS_KEY_FAILOVER},${SETTINGS_KEY_FEATURE_LOCKS})`,
+      `${url}/rest/v1/settings?select=key,value&key=in.(${SETTINGS_KEY_FAILOVER},${SETTINGS_KEY_FEATURE_LOCKS},${PERMISSION_KEYS.join(",")})`,
       {
         headers: { apikey: key, Authorization: `Bearer ${key}` },
         cache: "no-store",
@@ -70,6 +87,8 @@ async function loadSettings(): Promise<MiddlewareSettings | null> {
     const data: MiddlewareSettings = {
       failover: parseFailover(pick(SETTINGS_KEY_FAILOVER)),
       locks: parseFeatureLocks(pick(SETTINGS_KEY_FEATURE_LOCKS)),
+      roleCapabilities: pick(PERMISSION_KEYS[0]),
+      customRoles: pick(PERMISSION_KEYS[1]),
     };
     cache = { data, expires: now + CACHE_TTL_MS };
     return data;
@@ -86,8 +105,9 @@ async function loadSettings(): Promise<MiddlewareSettings | null> {
  */
 const ADMIN_ROLES = ["super_admin", "admin", "it", "manager", "support"];
 
-async function isAdminVisitor(request: NextRequest): Promise<boolean> {
-  if (!hasSupabaseEnv || !supabaseUrl || !supabaseAnonKey) return false;
+/** Vai của người đang gửi request, hoặc null nếu chưa đăng nhập / không tra được. */
+async function visitorRole(request: NextRequest): Promise<string | null> {
+  if (!hasSupabaseEnv || !supabaseUrl || !supabaseAnonKey) return null;
   try {
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
@@ -99,16 +119,59 @@ async function isAdminVisitor(request: NextRequest): Promise<boolean> {
       },
     });
     const { data } = await supabase.auth.getUser();
-    if (!data.user) return false;
+    if (!data.user) return null;
     const { data: profile } = await supabase
       .from("users")
       .select("role")
       .eq("id", data.user.id)
       .maybeSingle<{ role: string | null }>();
-    return !!profile?.role && ADMIN_ROLES.includes(profile.role);
+    return profile?.role ?? null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+async function isAdminVisitor(request: NextRequest): Promise<boolean> {
+  const role = await visitorRole(request);
+  return !!role && ADMIN_ROLES.includes(role);
+}
+
+/**
+ * Chốt phân quyền cho /admin: vào đúng phần được cấp, còn lại đá về dashboard.
+ *
+ * Chặn ở đây chứ không ở layout vì layout và page render SONG SONG — chuyển
+ * hướng từ layout không kịp giữ dữ liệu của page lại trong RSC stream.
+ *
+ * Không tra được vai (Supabase lỗi, phiên hết hạn) thì cho đi tiếp: khi đó
+ * `requireAdminAccess()` trong layout vẫn đứng chặn cửa ngoài, và một nhịp mạng
+ * hỏng không nên hất cả đội ngũ ra khỏi trang quản trị.
+ */
+async function applyAdminGuard(
+  request: NextRequest,
+  settings: MiddlewareSettings | null,
+): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl;
+  if (!pathname.startsWith("/admin")) return null;
+  if (request.method !== "GET") return null;
+  // Không có luật riêng (dashboard, changelog, hồ sơ) → khỏi tốn lượt tra vai.
+  if (!adminRouteRule(pathname)) return null;
+
+  const role = await visitorRole(request);
+  if (!role) return null;
+
+  const resolved = getResolvedRoles(settings?.customRoles ?? null, settings?.roleCapabilities ?? null);
+  const matrix = parseRoleCapabilities(settings?.roleCapabilities ?? null);
+  const level =
+    getRoleLevel(role, resolved) || (BUILTIN_ROLE_LEVELS as Record<string, number>)[role] || 0;
+
+  if (canAccessAdminRoute(pathname, { role, level, matrix, resolved })) return null;
+
+  const url = new URL("/admin", request.url);
+  url.searchParams.set("error", "forbidden");
+  url.searchParams.set("from", pathname);
+  const res = NextResponse.redirect(url, 307);
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }
 
 /**
@@ -138,6 +201,10 @@ export async function middleware(request: NextRequest) {
   if (shouldSkipFailover(pathname)) return NextResponse.next();
 
   const settings = await loadSettings();
+
+  const forbidden = await applyAdminGuard(request, settings);
+  if (forbidden) return forbidden;
+
   const cfg = settings?.failover ?? null;
   if (!cfg?.enabled || !cfg.target) return applyFeatureLock(request, settings?.locks ?? []);
 

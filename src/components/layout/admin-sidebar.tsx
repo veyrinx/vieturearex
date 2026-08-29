@@ -21,8 +21,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME }: { onNavigate?: () => void; logoUrl?: string; siteIcon?: string; siteName?: string }) {
+/**
+ * `allowedHrefs` do server tính (xem `lib/server/admin-access.ts`): chỉ những
+ * khu vực vai này được cấp mới hiện ra. Không truyền = hiện đủ, để chỗ nào còn
+ * dùng sidebar mà chưa kịp cập nhật thì không tự dưng trắng menu.
+ */
+function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME, allowedHrefs }: { onNavigate?: () => void; logoUrl?: string; siteIcon?: string; siteName?: string; allowedHrefs?: string[] }) {
   const pathname = usePathname();
+  const allowed = allowedHrefs ? new Set(allowedHrefs) : null;
 
   return (
     <aside className="flex max-h-[calc(100vh-3rem)] flex-col rounded-none border border-border bg-card p-4 md:rounded-2xl">
@@ -57,6 +63,8 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
       <nav className="scrollbar-none flex-1 space-y-4 overflow-y-auto">
         {adminNavGroups.map((group) => {
           const GroupIcon = group.icon;
+          const items = allowed ? group.items.filter((i) => allowed.has(i.href)) : group.items;
+          if (items.length === 0) return null;
           return (
             <div key={group.label} className="space-y-1">
               {/* Tiêu đề nhóm */}
@@ -66,7 +74,7 @@ function AdminSidebarContent({ onNavigate, logoUrl, siteIcon, siteName = DEFAULT
                   {group.label}
                 </span>
               </div>
-              {group.items.map((item) => {
+              {items.map((item) => {
                 const Icon = item.icon;
                 const active = pathname === item.href;
                 return (
@@ -101,15 +109,16 @@ type AdminSidebarProps = {
   logoUrl?: string;
   siteIcon?: string;
   siteName?: string;
+  allowedHrefs?: string[];
 };
 
-export function AdminSidebar({ logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME }: AdminSidebarProps) {
+export function AdminSidebar({ logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME, allowedHrefs }: AdminSidebarProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <div className="hidden w-72 shrink-0 self-start md:sticky md:top-6 md:block">
-        <AdminSidebarContent logoUrl={logoUrl} siteIcon={siteIcon} siteName={siteName} />
+        <AdminSidebarContent logoUrl={logoUrl} siteIcon={siteIcon} siteName={siteName} allowedHrefs={allowedHrefs} />
       </div>
 
       <div className="md:hidden">
@@ -129,7 +138,7 @@ export function AdminSidebar({ logoUrl, siteIcon, siteName = DEFAULT_SITE_NAME }
                 ĐIỀU HƯỚNG NHANH TỚI CÁC KHU VỰC QUẢN TRỊ.
               </SheetDescription>
             </SheetHeader>
-            <AdminSidebarContent logoUrl={logoUrl} siteIcon={siteIcon} siteName={siteName} onNavigate={() => setOpen(false)} />
+            <AdminSidebarContent logoUrl={logoUrl} siteIcon={siteIcon} siteName={siteName} allowedHrefs={allowedHrefs} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>
