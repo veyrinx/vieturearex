@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, Shield, FileText, Send } from "lucide-react";
+import Image from "next/image";
+import {
+  Mail, Shield, FileText, Send, Newspaper, Globe2, Users, Trophy, Store, Handshake, Lock,
+  Building2, CalendarDays, MapPin, Link2, ArrowRight,
+} from "lucide-react";
 import { siteConfig } from "@/lib/constants/site";
 import { PageContentOverride } from "@/components/common/page-content-override";
 import { ContactInfo } from "@/components/common/contact-info";
+import { getSettings, getAdminProfiles } from "@/lib/data/content-service";
+import { buildSettingsMap } from "@/lib/utils/site-settings";
+import { getRoleMeta } from "@/lib/constants/roles";
+import type { PublicUserProfile } from "@/lib/types/content";
 
 export const metadata: Metadata = {
   title: "Về Chúng Tôi",
@@ -23,11 +31,56 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
+// Số liệu do admin nhập ở /admin/settings → Giới Thiệu. Giá trị mặc định nằm
+// trong defaultSiteSettingValues; xoá trắng ô trong admin thì ô đó bị ẩn.
 const STATS = [
-  { label: "Bài viết tin tức", value: "500+", desc: "Tin tức Free Fire cập nhật liên tục" },
-  { label: "Sự kiện theo dõi", value: "200+", desc: "Lịch sự kiện in-game đầy đủ" },
-  { label: "Lượt xem hàng tháng", value: "50K+", desc: "Người chơi tin tưởng Arex" },
-  { label: "Năm hoạt động", value: "2+", desc: "Đồng hành cùng cộng đồng Free Fire" },
+  { key: "about.stat_articles", label: "Bài viết tin tức",    desc: "Tin tức Free Fire cập nhật liên tục" },
+  { key: "about.stat_events",   label: "Sự kiện theo dõi",    desc: "Lịch sự kiện in-game đầy đủ" },
+  { key: "about.stat_views",    label: "Lượt xem hàng tháng", desc: "Người chơi tin tưởng Arex" },
+  { key: "about.stat_years",    label: "Năm hoạt động",       desc: "Đồng hành cùng cộng đồng Free Fire" },
+];
+
+// ── Mô hình hoạt động của Arex Network Global ──────────────────────────────
+// Chỉ mô tả ở mức nghiệp vụ. Tuyệt đối không nêu tên API, endpoint, nhà cung
+// cấp hạ tầng, cấu trúc dữ liệu hay bất kỳ chi tiết kỹ thuật nội bộ nào.
+const MODEL_PILLARS = [
+  {
+    icon: Newspaper,
+    title: "Trung tâm nội dung",
+    desc: "Đội biên tập theo dõi các kênh chính thức và nguồn tin uy tín mỗi ngày, biên soạn lại bằng tiếng Việt, gắn nguồn rõ ràng rồi mới đưa lên nền tảng.",
+  },
+  {
+    icon: Globe2,
+    title: "Một nội dung, nhiều điểm chạm",
+    desc: "Cùng một nội dung đã duyệt được đưa tới website, ứng dụng di động, mini app trên các nền tảng nhắn tin và các nhóm cộng đồng — người chơi ở đâu cũng nhận được cùng một thông tin.",
+  },
+  {
+    icon: Users,
+    title: "Cộng đồng đồng vận hành",
+    desc: "Người chơi gửi bài, báo lỗi, đề xuất chủ đề; cộng tác viên và quản trị viên được cấp vai trò theo đúng phạm vi công việc, mỗi vai chỉ thấy phần việc của mình.",
+  },
+  {
+    icon: Trophy,
+    title: "Giải đấu & Esports",
+    desc: "Hỗ trợ ban tổ chức mở giải cộng đồng: nhận đăng ký đội, xếp lịch thi đấu, ghi nhận kết quả và công bố bảng xếp hạng công khai cho người xem theo dõi.",
+  },
+  {
+    icon: Store,
+    title: "Chợ & dịch vụ cộng đồng",
+    desc: "Gian hàng do người bán được xác minh vận hành, có quy tắc kiểm duyệt và cảnh báo lừa đảo. Thông tin nhạy cảm của người mua và người bán luôn được che bớt trước khi hiển thị.",
+  },
+  {
+    icon: Handshake,
+    title: "Hợp tác & đối tác",
+    desc: "Đồng hành cùng đội tuyển, nhà sáng tạo nội dung và các đơn vị cùng lĩnh vực theo thỏa thuận hợp tác rõ ràng, có văn bản, dựa trên trao đổi giá trị chứ không mua bán dữ liệu.",
+  },
+];
+
+const MODEL_FLOW = [
+  { step: "01", title: "Thu thập", desc: "Ghi nhận tin tức, sự kiện, kết quả giải đấu từ nguồn chính thức và từ cộng đồng." },
+  { step: "02", title: "Kiểm duyệt", desc: "Đối chiếu nguồn, biên tập lại nội dung, loại bỏ tin sai lệch trước khi đăng." },
+  { step: "03", title: "Xuất bản", desc: "Đưa nội dung ra toàn bộ kênh của Arex cùng lúc, kèm thông báo cho người theo dõi." },
+  { step: "04", title: "Lắng nghe", desc: "Nhận phản hồi, đính chính khi cần và dùng dữ liệu tổng hợp để cải thiện nội dung kỳ sau." },
 ];
 
 const SECTIONS = [
@@ -59,7 +112,7 @@ const SECTIONS = [
     content: [
       "Mọi nội dung trên Arex được kiểm duyệt kỹ lưỡng trước khi xuất bản. Chúng tôi luôn ghi rõ nguồn gốc hình ảnh và tuân thủ quy định về bản quyền theo Luật Sở hữu Trí tuệ Việt Nam.",
       "Dữ liệu người dùng được bảo vệ theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Chúng tôi không thu thập thông tin không cần thiết và không chia sẻ dữ liệu cho bên thứ ba vì mục đích thương mại.",
-      "Nền tảng sử dụng công nghệ hiện đại: Next.js 15, Supabase, và được triển khai trên Vercel với tiêu chuẩn bảo mật cao — đảm bảo tốc độ, ổn định và an toàn cho người dùng.",
+      "Hạ tầng vận hành được đặt tại các nhà cung cấp uy tín quốc tế, có sao lưu định kỳ và giám sát liên tục. Vì lý do an toàn, chúng tôi không công bố chi tiết kỹ thuật, cấu trúc hệ thống hay các kết nối nội bộ của nền tảng.",
     ],
   },
   {
@@ -71,6 +124,7 @@ const SECTIONS = [
   },
 ];
 
+/** Bản dự phòng khi chưa bật đội ngũ thật (hoặc chưa ai bật hiện trên trang đội ngũ). */
 const TEAM = [
   {
     name: "Qunzz Dev",
@@ -135,7 +189,40 @@ const LINKS = [
   { label: "Điều Khoản Sử Dụng", href: "/terms-of-use", desc: "Quy tắc sử dụng nền tảng" },
 ];
 
-export default function AboutPage() {
+/** Một dòng mô tả cho thẻ quản trị viên: chức danh + mảng phụ trách. */
+function memberLine(p: PublicUserProfile): string {
+  const duties = (p.team_duties ?? []).filter(Boolean);
+  if (duties.length) return `Phụ trách ${duties.slice(0, 3).join(", ").toLowerCase()}.`;
+  return p.team_focus?.trim() || p.bio?.trim() || "Thành viên ban quản trị Arex Network.";
+}
+
+export default async function AboutPage() {
+  // Trang công khai: chỉ đọc phần cài đặt giới thiệu và hồ sơ quản trị đã bật
+  // "hiện trên trang đội ngũ". Không chạm tới bất kỳ khoá hay cấu hình nội bộ nào.
+  const [settings, profiles] = await Promise.all([
+    getSettings().catch(() => []),
+    getAdminProfiles().catch(() => [] as PublicUserProfile[]),
+  ]);
+  const map = buildSettingsMap(settings);
+  const val = (k: string) => (map[k] ?? "").trim();
+
+  const orgName = val("about.org_name") || "Arex Network Global";
+  const orgTagline = val("about.org_tagline");
+  const stats = STATS.map((s) => ({ ...s, value: val(s.key) })).filter((s) => s.value);
+
+  const orgFacts = [
+    { icon: Building2,    label: "Tên tổ chức",       value: orgName },
+    { icon: CalendarDays, label: "Năm thành lập",     value: val("about.founded_year") },
+    { icon: Users,        label: "Đơn vị vận hành",   value: val("about.operator") },
+    { icon: MapPin,       label: "Phạm vi hoạt động", value: val("about.scope") },
+    { icon: Link2,        label: "Tên miền chính thức", value: siteConfig.url.replace(/^https?:\/\//, "") },
+    { icon: Mail,         label: "Email liên hệ",     value: val("social.email") || siteConfig.contactEmail },
+  ].filter((f) => f.value);
+
+  const showTeam = val("about.show_team") !== "false";
+  const teamLimit = Math.min(24, Math.max(1, Number(val("about.team_limit")) || 6));
+  const team = showTeam ? profiles.slice(0, teamLimit) : [];
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 md:py-14 space-y-10">
       {/* Hero */}
@@ -144,7 +231,7 @@ export default function AboutPage() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
         <p className="relative text-[10px] font-black uppercase tracking-[0.28em] text-primary dark:text-amber-400">Về Chúng Tôi</p>
         <h1 className="relative font-heading text-4xl font-black uppercase tracking-[0.04em] text-foreground md:text-5xl">
-          Arex Network
+          {orgName}
         </h1>
         <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
           Cổng thông tin cộng đồng <strong className="text-foreground">Free Fire</strong> độc lập tại Việt Nam — do người chơi xây dựng, dành cho người chơi.
@@ -160,15 +247,100 @@ export default function AboutPage() {
 
       <PageContentOverride pageKey="about">
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {STATS.map(({ label, value, desc }) => (
-          <div key={label} className="rounded-2xl border border-border bg-card p-5 text-center space-y-1">
-            <p className="font-heading text-3xl font-black text-primary dark:text-amber-400">{value}</p>
-            <p className="text-sm font-semibold text-foreground">{label}</p>
-            <p className="text-xs text-muted-foreground leading-snug">{desc}</p>
+      {stats.length > 0 && (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {stats.map(({ label, value, desc }) => (
+            <div key={label} className="rounded-2xl border border-border bg-card p-5 text-center space-y-1">
+              <p className="font-heading text-3xl font-black text-primary dark:text-amber-400">{value}</p>
+              <p className="text-sm font-semibold text-foreground">{label}</p>
+              <p className="text-xs text-muted-foreground leading-snug">{desc}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Hồ sơ tổ chức — nội dung do admin nhập ở /admin/settings → Giới Thiệu */}
+      <section className="rounded-2xl border border-border bg-card p-6 md:p-8 space-y-5">
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
+            Hồ sơ tổ chức
+          </h2>
+        </div>
+        {orgTagline && <p className="text-base leading-relaxed text-muted-foreground">{orgTagline}</p>}
+        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          {orgFacts.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+                <Icon className="size-4 text-primary dark:text-amber-400" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70">{label}</p>
+                <p className="truncate text-sm font-bold text-foreground">{value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Mô hình hoạt động */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2.5">
+          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+          <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
+            Mô hình hoạt động của {orgName}
+          </h2>
+        </div>
+
+        <p className="text-base leading-relaxed text-muted-foreground">
+          {orgName} vận hành như một mạng lưới cộng đồng: một trung tâm nội dung duy nhất, nhiều kênh phân phối
+          và một cộng đồng người chơi cùng đóng góp. Dưới đây là cách các mảnh ghép đó làm việc với nhau.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {MODEL_PILLARS.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="rounded-2xl border border-border bg-card p-5 space-y-3">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 dark:bg-amber-400/10">
+                <Icon className="size-4 text-primary dark:text-amber-400" />
+              </span>
+              <p className="font-heading text-sm font-black text-foreground">{title}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Vòng vận hành */}
+        <div className="rounded-2xl border border-border bg-card p-6 md:p-8 space-y-5">
+          <p className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
+            Một nội dung đi qua bốn bước
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {MODEL_FLOW.map(({ step, title, desc }) => (
+              <div key={step} className="space-y-1.5">
+                <p className="font-heading text-2xl font-black text-primary/30 dark:text-amber-400/30">{step}</p>
+                <p className="text-sm font-bold text-foreground">{title}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+
+        {/* Ranh giới thông tin */}
+        <div className="flex items-start gap-4 rounded-2xl border border-border bg-muted/30 p-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-amber-400/10">
+            <Lock className="size-4 text-primary dark:text-amber-400" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-foreground">Chúng tôi công khai cách làm, không công khai cách vận hành bên trong</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Arex chia sẻ minh bạch quy trình và nguyên tắc làm việc, nhưng không công bố chi tiết kỹ thuật của hệ thống:
+              không có địa chỉ dịch vụ nội bộ, khóa truy cập, cấu trúc dữ liệu hay quy trình xử lý phía sau. Đây là biện pháp
+              bảo vệ tài khoản và dữ liệu của chính người dùng. Đối tác cần kết nối kỹ thuật vui lòng liên hệ qua email chính
+              thức để được trao đổi riêng.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Content sections */}
       <div className="space-y-8">
@@ -191,28 +363,86 @@ export default function AboutPage() {
         ))}
       </div>
 
-      {/* Team */}
+      {/* Team — hồ sơ thật của ban quản trị, sửa ở /admin/team */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2.5">
-          <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
-          <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
-            Đội ngũ quản trị
-          </h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-0.5 rounded-full bg-primary dark:bg-amber-400" />
+            <h2 className="font-heading text-base font-black uppercase tracking-[0.14em] text-primary dark:text-amber-400">
+              Đội ngũ quản trị
+            </h2>
+          </div>
+          {team.length > 0 && (
+            <Link
+              href="/team"
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-primary hover:underline dark:text-amber-400"
+            >
+              Toàn bộ đội ngũ <ArrowRight className="size-3.5" />
+            </Link>
+          )}
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {TEAM.map(({ name, role, desc, initials, gradient }) => (
-            <div key={name} className="rounded-2xl border border-border bg-card p-5 space-y-3">
-              <div className={`inline-flex size-11 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-sm font-black text-white`}>
-                {initials}
-              </div>
-              <div>
-                <p className="font-heading text-sm font-black text-foreground">{name}</p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary dark:text-amber-400">{role}</p>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+
+        {team.length > 0 ? (
+          <>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Người thật, tên thật, có hồ sơ công khai — bạn biết chính xác ai đang vận hành nền tảng và ai phụ trách mảng nào.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {team.map((p) => {
+                const meta = getRoleMeta(p.role);
+                const RoleIcon = meta.icon;
+                const name = p.display_name ?? "Thành viên";
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/u/${p.id}`}
+                    className="group rounded-2xl border border-border bg-card p-5 space-y-3 transition-all hover:border-primary/40 hover:shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`relative size-11 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br ${meta.gradient}`}>
+                        {p.avatar_url ? (
+                          <Image src={p.avatar_url} alt={name} fill sizes="44px" className="object-cover" />
+                        ) : (
+                          <span className="flex size-full items-center justify-center text-sm font-black text-white">
+                            {name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-heading text-sm font-black text-foreground">{name}</p>
+                        <p className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-primary dark:text-amber-400">
+                          {p.team_title || meta.label}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${meta.color} ${meta.border}`}>
+                      <RoleIcon className="size-3" />
+                      {meta.label}
+                    </span>
+
+                    <p className="text-xs leading-relaxed text-muted-foreground">{memberLine(p)}</p>
+                  </Link>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {TEAM.map(({ name, role, desc, initials, gradient }) => (
+              <div key={name} className="rounded-2xl border border-border bg-card p-5 space-y-3">
+                <div className={`inline-flex size-11 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-sm font-black text-white`}>
+                  {initials}
+                </div>
+                <div>
+                  <p className="font-heading text-sm font-black text-foreground">{name}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary dark:text-amber-400">{role}</p>
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Contact grid */}

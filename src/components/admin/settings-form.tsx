@@ -9,7 +9,7 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
-  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2, Phone,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2, Phone, Info,
 } from "lucide-react";
 import { ImageUploadButton } from "@/components/common/image-upload-button";
 import type { SiteSetting } from "@/lib/types/content";
@@ -38,6 +38,7 @@ const NAV_GROUPS = {
     { id: "event_servers", icon: Globe,       label: "Server Sự Kiện", desc: "Server tuỳ chỉnh" },
     { id: "streams",      icon: Tv,           label: "Livestream",  desc: "YouTube livestream" },
     { id: "tms",          icon: Trophy,       label: "Giải Đấu",    desc: "Quota & thanh toán TMS" },
+    { id: "about",        icon: Info,         label: "Giới Thiệu",  desc: "Trang Về chúng tôi" },
   ],
   "Giao diện": [
     { id: "branding",     icon: Palette,      label: "Thương Hiệu", desc: "Tên, logo, favicon" },
@@ -1089,6 +1090,95 @@ ${JSON.stringify(d, null, 2)}`);
             </div>
           </div>
         </Card>
+      </div>
+    ),
+
+    // ── GIỚI THIỆU (/about) ─────────────────────────────────────────────────
+    // Chỉ là thông tin giới thiệu ở mức tổ chức. KHÔNG khai gì liên quan tới
+    // hạ tầng, API hay khoá truy cập ở đây — trang /about là trang công khai.
+    about: (
+      <div className="space-y-5">
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Info} title="Hồ Sơ Tổ Chức" desc="Hiển thị trong khối “Hồ sơ tổ chức” ở trang /about" />
+          </div>
+          <Field label="Tên tổ chức" hint="VD: Arex Network Global" icon={Globe}>
+            <Input value={v("about.org_name")} onChange={(e) => set("about.org_name", e.target.value)} placeholder="Arex Network Global" />
+          </Field>
+          <Field label="Câu định vị" hint="Một dòng ngắn dưới tên tổ chức" icon={Sparkles}>
+            <Input value={v("about.org_tagline")} onChange={(e) => set("about.org_tagline", e.target.value)} placeholder="Mạng lưới cộng đồng Free Fire độc lập" />
+          </Field>
+          <Field label="Năm thành lập" icon={Calendar}>
+            <Input value={v("about.founded_year")} onChange={(e) => set("about.founded_year", e.target.value)} placeholder="2023" className="max-w-32" />
+          </Field>
+          <Field label="Đơn vị vận hành" hint="Tên nhóm / đội ngũ đứng sau nền tảng" icon={Users}>
+            <Input value={v("about.operator")} onChange={(e) => set("about.operator", e.target.value)} placeholder="Đội ngũ Arex Network" />
+          </Field>
+          <Field label="Phạm vi hoạt động" hint="VD: Việt Nam · SEA · Global" icon={Globe}>
+            <Input value={v("about.scope")} onChange={(e) => set("about.scope", e.target.value)} placeholder="Việt Nam · SEA · Global" />
+          </Field>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={BarChart3} title="Số Liệu Trang Giới Thiệu" desc="Bốn ô thống kê ở đầu trang /about — để trống thì ô đó bị ẩn" />
+          </div>
+          {[
+            { key: "about.stat_articles", label: "Bài viết tin tức", hint: "VD: 500+" },
+            { key: "about.stat_events",   label: "Sự kiện theo dõi", hint: "VD: 200+" },
+            { key: "about.stat_views",    label: "Lượt xem / tháng", hint: "VD: 50K+" },
+            { key: "about.stat_years",    label: "Năm hoạt động",    hint: "VD: 2+" },
+          ].map(({ key, label, hint }) => (
+            <Field key={key} label={label} hint={hint}>
+              <Input value={v(key)} onChange={(e) => set(key, e.target.value)} placeholder={hint.replace("VD: ", "")} className="max-w-40" />
+            </Field>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={Users} title="Đội Ngũ Quản Trị" desc="Lấy thẳng từ hồ sơ thật của quản trị viên" />
+          </div>
+          <div className="space-y-2 py-3">
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold">Hiện đội ngũ thật trên trang /about</p>
+                <p className="text-xs text-muted-foreground">
+                  Lấy từ danh sách quản trị viên đang bật “hiện trên trang đội ngũ”. Tắt thì trang dùng phần mô tả chung chung như cũ.
+                  Tên, ảnh, chức danh và mảng phụ trách sửa ở <span className="font-semibold text-foreground">/admin/team</span>.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="mt-1 size-4 shrink-0 accent-primary"
+                checked={v("about.show_team") !== "false"}
+                onChange={(e) => set("about.show_team", e.target.checked ? "true" : "false")}
+              />
+            </label>
+          </div>
+          <Field label="Số người hiển thị" hint="Phần còn lại xem ở trang /team">
+            <Input
+              type="number"
+              min={1}
+              max={24}
+              value={v("about.team_limit")}
+              onChange={(e) => set("about.team_limit", e.target.value)}
+              placeholder="6"
+              className="max-w-24"
+            />
+          </Field>
+        </Card>
+
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <Info className="size-3.5" /> Phần còn lại của trang giới thiệu nằm ở đâu
+          </p>
+          <ul className="space-y-1 text-xs text-muted-foreground">
+            <li>· Kênh liên hệ & mạng xã hội (Email, Zalo, Facebook, Telegram, Discord, YouTube, TikTok) — mục <span className="font-semibold text-foreground">Mạng Xã Hội</span> ngay bên trái.</li>
+            <li>· Hồ sơ, chức danh, mảng phụ trách của từng quản trị viên — <span className="font-semibold text-foreground">/admin/team</span>.</li>
+            <li>· Viết đè toàn bộ nội dung trang bằng văn bản riêng — <span className="font-semibold text-foreground">/admin/page-content</span>.</li>
+          </ul>
+        </div>
       </div>
     ),
 
