@@ -26,6 +26,17 @@ import {
 const DEFAULT_API_BASE = "https://kog-api-gateway.vercel.app/api/wishlist/account";
 const API_BASE_SETTING_KEY = "integrations.wishlist_api_base";
 
+/**
+ * Gateway chỉ mở cửa cho đúng một Origin: frontend FFWM chạy trên GitHub Pages.
+ * Gọi từ máy chủ vốn không có Origin nên bị chặn "Access Denied" — ta gắn đúng
+ * origin đó vào mỗi lượt gọi để qua allowlist. Đổi được qua env nếu gateway đổi.
+ */
+const GATEWAY_ORIGIN = process.env.WISHLIST_API_ORIGIN || "https://kingofgames02.github.io";
+const GATEWAY_ORIGIN_HEADERS = {
+  Origin: GATEWAY_ORIGIN,
+  Referer: `${GATEWAY_ORIGIN}/FFWM-app/`,
+} as const;
+
 /** Kho tên + độ hiếm vật phẩm (chỉ để hiển thị; ID mới là thứ gửi sang game). */
 const LIBRARY_URL =
   "https://raw.githubusercontent.com/KingofGames02/Free-Fire-Items-Library/main/ItemsData_en.json";
@@ -101,6 +112,7 @@ async function callGateway<T>(
         "Content-Type": "application/json",
         Authorization: session.token,
         "Server-Url": session.serverUrl,
+        ...GATEWAY_ORIGIN_HEADERS,
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -146,12 +158,13 @@ export async function loginWishlistAccount(input: {
       new Blob([input.datBytes as unknown as BlobPart], { type: "application/octet-stream" }),
       input.datName || "GUEST.DAT",
     );
-    init = { method: "POST", body: form };
+    // FormData tự đặt Content-Type (kèm boundary); chỉ thêm origin cho qua allowlist.
+    init = { method: "POST", headers: { ...GATEWAY_ORIGIN_HEADERS }, body: form };
   } else {
     if (!input.uid || !input.password) return { error: "Thiếu UID hoặc mật khẩu.", status: 400 };
     init = {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...GATEWAY_ORIGIN_HEADERS },
       body: JSON.stringify({ uid: input.uid, password: input.password }),
     };
   }
