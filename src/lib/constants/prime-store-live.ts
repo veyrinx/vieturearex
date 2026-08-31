@@ -2,7 +2,19 @@
 // khác với gói Prime của Arex ở constants/store.ts (do admin tự nhập).
 // Hàm thuần (dùng được cả client lẫn server).
 
-export const PRIME_STORE_API = "https://kog-primestore.vercel.app/get_prime_store";
+/**
+ * Nguồn cửa hàng Prime LIVE.
+ *
+ * Bản cũ `kog-primestore.vercel.app/get_prime_store` đã bị gỡ (Vercel trả 404
+ * "deployment could not be found") nên trang im lặng trắng trơn — `fetchServer`
+ * nuốt lỗi rồi trả mảng rỗng. Endpoint mới nằm chung KOG API Gateway với
+ * wishlist, payload y hệt (`primeStoreDesc` / `primeStoreItems` /
+ * `primeGiftStoreItems`) và vẫn nhận `?server=`.
+ *
+ * Gateway chặn theo Origin, và đổi URL được qua env — cả hai nằm ở
+ * `server/prime-store-live.ts` (file này client cũng nạp nên không đọc env).
+ */
+export const PRIME_STORE_API = "https://kog-api-gateway.vercel.app/api/primestore/store";
 
 /** Server không truyền param = server mặc định của API. */
 export const PRIME_SERVERS = [

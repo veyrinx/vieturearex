@@ -17,19 +17,39 @@ import {
 const REVALIDATE_SECONDS = 1_800;
 const FETCH_TIMEOUT_MS = 8_000;
 
+/** Đổi được mà không phải build lại, phòng khi gateway dời chỗ lần nữa. */
+const API_URL = process.env.PRIME_STORE_API_URL || PRIME_STORE_API;
+
+/**
+ * Gateway chỉ mở cho đúng một Origin (frontend FFWM trên GitHub Pages) — gọi từ
+ * máy chủ vốn không có Origin nên ăn 403. Dùng chung biến với wishlist vì cùng
+ * một gateway, xem `lib/server/ff-wishlist.ts`.
+ */
+const GATEWAY_ORIGIN = process.env.WISHLIST_API_ORIGIN || "https://kingofgames02.github.io";
+const REQUEST_HEADERS = {
+  Accept: "application/json",
+  Origin: GATEWAY_ORIGIN,
+  Referer: `${GATEWAY_ORIGIN}/FFWM-app/`,
+} as const;
+
 type ServerStore = { window: PrimeStoreWindow | null; items: PrimeLiveItem[] };
 
 async function fetchServer(server: PrimeServer): Promise<ServerStore> {
-  const url = `${PRIME_STORE_API}?server=${encodeURIComponent(server)}`;
+  const url = `${API_URL}?server=${encodeURIComponent(server)}`;
   try {
     const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: REQUEST_HEADERS,
       next: { revalidate: REVALIDATE_SECONDS, tags: ["prime-store-live"] },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return { window: null, items: [] };
+    if (!res.ok) {
+      // Nguồn chết thì trang chỉ trắng trơn, không có dấu vết nào — log để còn biết.
+      console.error(`[prime-store] ${server} → HTTP ${res.status}`);
+      return { window: null, items: [] };
+    }
     return parsePrimeStorePayload(await res.json());
-  } catch {
+  } catch (err) {
+    console.error(`[prime-store] ${server} →`, err instanceof Error ? err.message : err);
     return { window: null, items: [] };
   }
 }
