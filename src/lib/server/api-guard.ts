@@ -6,6 +6,11 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getClientIp } from "@/lib/server/get-client-ip";
 import { getSettings } from "@/lib/data/content-service";
 import {
+  persistBlock,
+  recordRateLimitViolation,
+  SPAM_BLOCK_DURATION_MS,
+} from "@/lib/server/ip-blocker";
+import {
   getResolvedRoles, getRoleLevel, hasCapabilityWithRoles, parseRoleCapabilities,
   BUILTIN_ROLE_LEVELS, type CapabilityKey,
 } from "@/lib/permissions";
@@ -31,6 +36,19 @@ export function enforceRateLimit(
   });
 
   if (!result.success) {
+    // Ăn 429 một hai nhịp là người dùng thật bấm nhanh. Ăn liên tục suốt nhiều
+    // phút thì là cố tình — ghi vào danh sách chặn để middleware chặn thẳng ở
+    // cửa, thay vì cứ trả 429 mãi mà vẫn phải nhận từng request một.
+    const spam = recordRateLimitViolation(getClientKey(request), options.name);
+    if (spam) {
+      void persistBlock({
+        ip: getClientKey(request),
+        reason: spam.reason,
+        by: "auto:rate-limit",
+        durationMs: SPAM_BLOCK_DURATION_MS,
+      });
+    }
+
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       {

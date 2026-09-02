@@ -13,7 +13,14 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNowStrict } from "date-fns";
 import { vi } from "date-fns/locale";
 
-type BlockedEntry = { ip: string; blockedAt: number; reason: string };
+type BlockedEntry = {
+  ip: string;
+  blockedAt: number;
+  reason: string;
+  /** null = chặn vĩnh viễn tới khi mở tay. Bản ghi cũ không có trường này. */
+  expiresAt?: number | null;
+  by?: string;
+};
 type VisitorEntry = { ip: string; lastPath: string; ua: string; lastSeen: number; count: number };
 type Tab = "visitors" | "blocked" | "whitelist";
 
@@ -26,8 +33,14 @@ function timeAgo(ts: number) {
   catch { return "vừa xong"; }
 }
 
-function blockedUntil(blockedAt: number) {
-  return new Date(blockedAt + 60 * 60 * 1000).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+function blockedUntil(entry: BlockedEntry) {
+  if (entry.expiresAt === null) return "Vĩnh viễn";
+  const at = entry.expiresAt ?? entry.blockedAt + 60 * 60 * 1000;
+  const d = new Date(at);
+  const sameDay = new Date().toDateString() === d.toDateString();
+  return sameDay
+    ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 function shortenUa(ua: string) {
@@ -194,8 +207,8 @@ export function SecurityPanel() {
         {[
           { icon: Eye, label: "IP đã theo dõi", value: visitors.length, color: "text-blue-500 bg-blue-500/10" },
           { icon: Lock, label: "Đang bị chặn", value: blocked.length, color: "text-red-500 bg-red-500/10" },
-          { icon: AlertTriangle, label: "Tự động chặn", value: blocked.filter(b => b.reason.includes("lần")).length, color: "text-amber-500 bg-amber-500/10" },
-          { icon: CheckCircle2, label: "Chặn thủ công", value: blocked.filter(b => !b.reason.includes("lần")).length, color: "text-purple-500 bg-purple-500/10" },
+          { icon: AlertTriangle, label: "Tự động chặn", value: blocked.filter(b => b.by !== "admin").length, color: "text-amber-500 bg-amber-500/10" },
+          { icon: CheckCircle2, label: "Chặn thủ công", value: blocked.filter(b => b.by === "admin").length, color: "text-purple-500 bg-purple-500/10" },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="rounded-2xl border border-border bg-card flex items-center gap-3 p-4">
             <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", color)}>
@@ -395,7 +408,9 @@ export function SecurityPanel() {
                       <p className="truncate text-xs text-muted-foreground">{entry.reason}</p>
                       <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
                         <span className="flex items-center gap-1"><Clock className="size-2.5" /> {timeAgo(entry.blockedAt)}</span>
-                        <span>Hết hạn lúc: {blockedUntil(entry.blockedAt)}</span>
+                        <span>
+                          {entry.expiresAt === null ? "Vĩnh viễn" : `Hết hạn: ${blockedUntil(entry)}`}
+                        </span>
                       </div>
                     </div>
                     <Button

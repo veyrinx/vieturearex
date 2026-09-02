@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { enforceRateLimit } from "@/lib/server/api-guard";
+import { enforceRateLimit, getClientIp } from "@/lib/server/api-guard";
 import {
   checkLoginAllowed,
   recordFailedLogin,
   resetLoginAttempts,
 } from "@/lib/server/login-guard";
+import { persistBlock } from "@/lib/server/ip-blocker";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { getUserByEmail } from "@/lib/data/content-service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-function getIp(request: NextRequest) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-}
+/**
+ * Phần tử ĐẦU của x-forwarded-for là do chính khách đặt — kẻ dò mật khẩu chỉ
+ * cần đổi header mỗi lượt là bộ đếm cấm không bao giờ chạm ngưỡng, tệ hơn là
+ * nó ghi lệnh cấm lên IP của người khác. `getClientIp` ưu tiên header do biên
+ * (Cloudflare/proxy) đặt, khách không chèn được.
+ */
+const getIp = getClientIp;
 
 export async function GET(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "login-check-get", limit: 30, windowMs: 60_000 });
@@ -64,6 +69,16 @@ export async function POST(request: NextRequest) {
   const result = await recordFailedLogin(ip);
 
   if (result.status === "banned") {
+    // Bảng login_attempts chỉ được đọc khi CHÍNH trình duyệt chịu hỏi
+    // /api/auth/login-check — kẻ dò mật khẩu thì không. Đẩy luôn sang danh
+    // sách chặn để middleware chặn ở cửa, không cần ai hỏi.
+    await persistBlock({
+      ip,
+      reason: `Dò mật khẩu: 20 lần đăng nhập sai (email ${email})`,
+      by: "auto:login-guard",
+      durationMs: 30 * 24 * 60 * 60 * 1000,
+    });
+
     await logAdminActivity({
       actorEmail: email,
       action: "LOGIN_BANNED",

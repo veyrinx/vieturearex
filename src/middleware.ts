@@ -14,6 +14,23 @@ import {
   shouldSkipFeatureLock,
   type FeatureLock,
 } from "@/lib/constants/feature-locks";
+import {
+  SETTINGS_KEY_BLOCKED_IPS,
+  SETTINGS_KEY_IP_WHITELIST,
+  findIpBlock,
+  parseBlockedIps,
+  parseIpWhitelist,
+  type BlockedIp,
+} from "@/lib/constants/ip-block";
+import {
+  DEFAULT_FLOOD_GUARD,
+  SETTINGS_KEY_FLOOD_GUARD,
+  looksAuthenticated,
+  parseFloodGuard,
+  shouldSkipFloodGuard,
+  type FloodGuardConfig,
+} from "@/lib/constants/flood-guard";
+import { getClientIp } from "@/lib/server/get-client-ip";
 import { hasSupabaseEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 import { adminRouteRule, canAccessAdminRoute } from "@/lib/constants/admin-routes";
 import {
@@ -24,15 +41,21 @@ import {
 } from "@/lib/permissions";
 
 /**
- * Middleware duy nhất đang chạy. Hai việc:
- *  1. Đẩy khách sang máy chủ dự phòng khi công tắc site.failover bật
+ * Middleware duy nhất đang chạy. Bốn việc:
+ *  1. Chặn thẳng IP nằm trong danh sách chặn (/admin/security) — 403, không
+ *     một trang nào render. Kèm chốt chống flood: khi lưu lượng vọt lên mức
+ *     không còn giống người dùng thật, khách vãng lai ăn 429 ngay tại đây.
+ *  2. Đẩy khách sang máy chủ dự phòng khi công tắc site.failover bật
  *     (POST /api/admin/failover — trang admin cho công tắc này đã bị gỡ).
- *  2. Chặn các chức năng đang khóa (/admin/feature-locks) → /updating.
- *  3. Chặn quản trị viên vào khu vực /admin không thuộc phần được cấp
+ *  3. Chặn các chức năng đang khóa (/admin/feature-locks) → /updating.
+ *  4. Chặn quản trị viên vào khu vực /admin không thuộc phần được cấp
  *     (xem `lib/constants/admin-routes.ts`).
  *
- * Việc (2) bắt buộc phải nằm ở đây: layout của (site) không biết đường dẫn hiện
+ * Việc (3) bắt buộc phải nằm ở đây: layout của (site) không biết đường dẫn hiện
  * tại nên chỉ chặn được bảo trì toàn site, không chặn được từng chức năng.
+ *
+ * `/api/health` và `/api/cron` thoát ra trước mọi chốt (xem shouldSkipFailover):
+ * giám sát phải luôn hỏi được, việc định kỳ phải luôn chạy được.
  *
  * ⚠️ Đừng gộp file `middleware.ts` ở thư mục gốc vào đây. File đó viết cho thời
  * app còn nằm ngoài src/ nên Next chưa từng chạy nó, và luật bên trong đã lệch
@@ -49,6 +72,9 @@ const CACHE_TTL_MS = 30_000;
 type MiddlewareSettings = {
   failover: FailoverConfig | null;
   locks: FeatureLock[];
+  blockedIps: BlockedIp[];
+  ipWhitelist: string[];
+  flood: FloodGuardConfig;
   /** JSON thô của ma trận phân quyền + vai tự tạo — dùng cho chốt /admin. */
   roleCapabilities: string | null;
   customRoles: string | null;
@@ -74,7 +100,7 @@ async function loadSettings(): Promise<MiddlewareSettings | null> {
 
   try {
     const res = await fetch(
-      `${url}/rest/v1/settings?select=key,value&key=in.(${SETTINGS_KEY_FAILOVER},${SETTINGS_KEY_FEATURE_LOCKS},${PERMISSION_KEYS.join(",")})`,
+      `${url}/rest/v1/settings?select=key,value&key=in.(${SETTINGS_KEY_FAILOVER},${SETTINGS_KEY_FEATURE_LOCKS},${SETTINGS_KEY_BLOCKED_IPS},${SETTINGS_KEY_IP_WHITELIST},${SETTINGS_KEY_FLOOD_GUARD},${PERMISSION_KEYS.join(",")})`,
       {
         headers: { apikey: key, Authorization: `Bearer ${key}` },
         cache: "no-store",
@@ -87,6 +113,9 @@ async function loadSettings(): Promise<MiddlewareSettings | null> {
     const data: MiddlewareSettings = {
       failover: parseFailover(pick(SETTINGS_KEY_FAILOVER)),
       locks: parseFeatureLocks(pick(SETTINGS_KEY_FEATURE_LOCKS)),
+      blockedIps: parseBlockedIps(pick(SETTINGS_KEY_BLOCKED_IPS)),
+      ipWhitelist: parseIpWhitelist(pick(SETTINGS_KEY_IP_WHITELIST)),
+      flood: parseFloodGuard(pick(SETTINGS_KEY_FLOOD_GUARD)),
       roleCapabilities: pick(PERMISSION_KEYS[0]),
       customRoles: pick(PERMISSION_KEYS[1]),
     };
@@ -97,6 +126,105 @@ async function loadSettings(): Promise<MiddlewareSettings | null> {
     // ngay giữa lúc đang cần nó nhất.
     return cache?.data ?? null;
   }
+}
+
+/**
+ * Cửa đầu tiên: IP trong danh sách chặn thì dừng ngay tại đây.
+ *
+ * Phải nằm ở middleware chứ không phải trong từng route: kẻ spam không tử tế
+ * đến mức chỉ gõ vào những API mình nhớ ra mà bọc. Ở đây là mọi trang, mọi API
+ * đi qua matcher đều chung một cửa.
+ *
+ * Trả 403 gọn: không redirect (kẻ spam cứ bám theo là thành vòng lặp), không
+ * render trang nào (render là vẫn tốn đúng cái tài nguyên mình đang muốn giữ).
+ */
+function applyIpBlock(request: NextRequest, settings: MiddlewareSettings | null): NextResponse | null {
+  if (!settings || settings.blockedIps.length === 0) return null;
+
+  const ip = getClientIp(request);
+  const hit = findIpBlock(ip, settings.blockedIps, settings.ipWhitelist);
+  if (!hit) return null;
+
+  const res = new NextResponse(
+    JSON.stringify({
+      error: "Truy cập bị từ chối.",
+      reason: hit.reason || "IP nằm trong danh sách chặn.",
+      contact: "Nhầm lẫn? Liên hệ đội ngũ Arex qua /contact.",
+    }),
+    { status: 403, headers: { "Content-Type": "application/json; charset=utf-8" } },
+  );
+  res.headers.set("Cache-Control", "no-store");
+  res.headers.set("x-arex-blocked", "1");
+  return res;
+}
+
+// ── Chốt chống flood ────────────────────────────────────────────────────────
+//
+// Bộ đếm nằm trong RAM của từng máy. Đúng là mỗi máy chỉ thấy phần lưu lượng
+// của mình, nhưng một đợt đánh thật thì máy nào cũng ngộp — không cần bộ đếm
+// dùng chung mới nhận ra, mà bộ đếm dùng chung lại thêm một vòng gọi mạng trên
+// mỗi request, đúng thứ phải tránh lúc đang bị đánh.
+
+let windowStart = 0;
+let windowCount = 0;
+/** Đang trong chế độ phòng thủ tới lúc nào (ms). */
+let defendUntil = 0;
+
+/**
+ * Đếm một request và cho biết có đang bị đánh không.
+ *
+ * Gọi cho MỌI request kể cả khi chốt đang tắt: tắt chốt mà vẫn đếm thì lúc bật
+ * lên là có sẵn số liệu, không phải khởi động lại từ con số 0.
+ */
+function noteRequest(cfg: FloodGuardConfig, now: number): boolean {
+  if (now - windowStart > cfg.windowMs) {
+    windowStart = now;
+    windowCount = 0;
+  }
+  windowCount += 1;
+
+  if (windowCount > cfg.threshold) defendUntil = now + cfg.holdMs;
+  return now < defendUntil;
+}
+
+/**
+ * Đang bị flood thì khách vãng lai ăn 429 ngay, không render gì.
+ *
+ * Người đã đăng nhập đi tiếp: kẻ tấn công gần như không cầm cookie phiên thật,
+ * còn người dùng đang giữa chừng công việc thì không đáng bị hất ra vì hàng xóm
+ * ồn ào.
+ */
+function applyFloodGuard(
+  request: NextRequest,
+  settings: MiddlewareSettings | null,
+): NextResponse | null {
+  const cfg = settings?.flood ?? DEFAULT_FLOOD_GUARD;
+  const now = Date.now();
+  const surging = noteRequest(cfg, now);
+
+  if (cfg.mode === "off") return null;
+  if (cfg.mode === "auto" && !surging) return null;
+  if (shouldSkipFloodGuard(request.nextUrl.pathname)) return null;
+  if (looksAuthenticated(request.cookies.getAll().map((c) => c.name))) return null;
+  // Người trực phải vào được /admin để bật luật ở biên ngay giữa lúc bị đánh.
+  if (settings?.ipWhitelist.includes(getClientIp(request))) return null;
+
+  const res = new NextResponse(
+    JSON.stringify({
+      error: "Site đang quá tải, thử lại sau ít phút.",
+      hint: "Đăng nhập rồi truy cập lại nếu bạn là thành viên.",
+    }),
+    {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Retry-After": "60",
+      },
+    },
+  );
+  res.headers.set("Cache-Control", "no-store");
+  res.headers.set("x-arex-flood-guard", "1");
+  return res;
 }
 
 /**
@@ -201,6 +329,12 @@ export async function middleware(request: NextRequest) {
   if (shouldSkipFailover(pathname)) return NextResponse.next();
 
   const settings = await loadSettings();
+
+  const blocked = applyIpBlock(request, settings);
+  if (blocked) return blocked;
+
+  const flooded = applyFloodGuard(request, settings);
+  if (flooded) return flooded;
 
   const forbidden = await applyAdminGuard(request, settings);
   if (forbidden) return forbidden;

@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { enforceAdminApiAuth, enforceRateLimit, getClientKey } from "@/lib/server/api-guard";
 import { getSettings, getSettingsByKeys, updateSetting } from "@/lib/data/content-service";
-import { unblockInMemory, getInMemoryBlockedIps, getFailureCount } from "@/lib/server/ip-blocker";
+import { unblockInMemory, getInMemoryBlockedIps } from "@/lib/server/ip-blocker";
+import {
+  SETTINGS_KEY_BLOCKED_IPS,
+  SETTINGS_KEY_IP_WHITELIST,
+  activeBlocks,
+  parseBlockedIps,
+  parseIpWhitelist,
+  removeBlock,
+  upsertBlock,
+  type BlockedIp,
+} from "@/lib/constants/ip-block";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 import { VISITOR_IPS_KEY, type VisitorEntry } from "@/lib/server/visitor-logger";
 
-const BLOCKED_IPS_KEY = "security.blocked_ips";
-const WHITELIST_KEY = "security.admin_ip_whitelist";
+const BLOCKED_IPS_KEY = SETTINGS_KEY_BLOCKED_IPS;
+const WHITELIST_KEY = SETTINGS_KEY_IP_WHITELIST;
 
 async function getVisitorLog(): Promise<VisitorEntry[]> {
   // Key này bị loại khỏi getSettings() vì quá nặng — phải lấy riêng.
@@ -19,25 +29,16 @@ async function getVisitorLog(): Promise<VisitorEntry[]> {
   } catch { return []; }
 }
 
-type BlockedEntry = { ip: string; blockedAt: number; reason: string };
+type BlockedEntry = BlockedIp;
 
 async function getWhitelist(): Promise<string[]> {
   const settings = await getSettings();
-  const raw = settings.find((s) => s.key === WHITELIST_KEY)?.value ?? "[]";
-  try { return JSON.parse(raw) as string[]; } catch { return []; }
+  return parseIpWhitelist(settings.find((s) => s.key === WHITELIST_KEY)?.value ?? null);
 }
 
 async function getBlockedList(): Promise<BlockedEntry[]> {
   const settings = await getSettings();
-  const raw = settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? "[]";
-  try {
-    const list: BlockedEntry[] = JSON.parse(raw);
-    const now = Date.now();
-    const BLOCK_DURATION_MS = 60 * 60 * 1000;
-    return list.filter((e) => now - e.blockedAt < BLOCK_DURATION_MS * 24); // keep 24h of history
-  } catch {
-    return [];
-  }
+  return parseBlockedIps(settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? null);
 }
 
 export async function GET(request: NextRequest) {
@@ -48,16 +49,15 @@ export async function GET(request: NextRequest) {
 
   const [dbList, memList] = await Promise.all([getBlockedList(), Promise.resolve(getInMemoryBlockedIps())]);
 
-  // Merge DB + in-memory, dedupe by IP
+  // Gộp DB + bộ nhớ máy này, mỗi IP một dòng. Bản trong RAM đứng trước vì nó
+  // mới nhất (vừa chặn xong, settings có thể chưa kịp đọc lại).
   const seen = new Set<string>();
   const merged: BlockedEntry[] = [];
-  for (const e of [...memList, ...dbList]) {
+  for (const e of [...memList.map((m) => ({ ...m }) as BlockedEntry), ...dbList]) {
     if (!seen.has(e.ip)) { seen.add(e.ip); merged.push(e); }
   }
 
-  const now = Date.now();
-  const BLOCK_DURATION_MS = 60 * 60 * 1000;
-  const active = merged.filter((e) => now - e.blockedAt < BLOCK_DURATION_MS);
+  const active = activeBlocks(merged);
   const history = merged.slice(0, 100);
 
   const [whitelist, visitors] = await Promise.all([getWhitelist(), getVisitorLog()]);
@@ -82,12 +82,7 @@ export async function DELETE(request: NextRequest) {
   unblockInMemory(ip);
 
   // Remove from DB
-  const settings = await getSettings();
-  const raw = settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? "[]";
-  let list: BlockedEntry[] = [];
-  try { list = JSON.parse(raw); } catch { list = []; }
-  list = list.filter((e) => e.ip !== ip);
-  await updateSetting(BLOCKED_IPS_KEY, JSON.stringify(list));
+  await updateSetting(BLOCKED_IPS_KEY, JSON.stringify(removeBlock(await getBlockedList(), ip)));
 
   await logAdminActivity({
     action: "IP_UNBLOCKED",
@@ -129,7 +124,12 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({ ok: true, whitelist: updated });
 }
 
-const blockSchema = z.object({ ip: z.string().min(1), reason: z.string().optional() });
+const blockSchema = z.object({
+  ip: z.string().min(1),
+  reason: z.string().optional(),
+  /** Số giờ chặn; bỏ trống = vĩnh viễn cho tới khi mở tay. */
+  hours: z.number().int().positive().max(24 * 365).optional(),
+});
 
 export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "admin-security", limit: 10, windowMs: 60_000 });
@@ -141,21 +141,27 @@ export async function POST(request: NextRequest) {
   const parsed = blockSchema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
 
-  const { ip, reason = "Chặn thủ công bởi admin" } = parsed.data;
-  const entry: BlockedEntry = { ip, blockedAt: Date.now(), reason };
+  const { ip, reason = "Chặn thủ công bởi admin", hours } = parsed.data;
+  const now = Date.now();
+  // Chặn tay mặc định là VĨNH VIỄN. Bản cũ tự hết hạn sau 1 giờ nên bấm chặn
+  // xong kẻ phá quay lại ngay hôm đó — mà thật ra bản cũ còn chẳng chặn nổi.
+  const entry: BlockedEntry = {
+    ip: ip.trim().toLowerCase(),
+    blockedAt: now,
+    reason,
+    expiresAt: hours ? now + hours * 60 * 60 * 1000 : null,
+    by: "admin",
+  };
 
-  const settings = await getSettings();
-  const raw = settings.find((s) => s.key === BLOCKED_IPS_KEY)?.value ?? "[]";
-  let list: BlockedEntry[] = [];
-  try { list = JSON.parse(raw); } catch { list = []; }
-  list = list.filter((e) => e.ip !== ip);
-  list.push(entry);
-  await updateSetting(BLOCKED_IPS_KEY, JSON.stringify(list));
+  await updateSetting(
+    BLOCKED_IPS_KEY,
+    JSON.stringify(upsertBlock(await getBlockedList(), entry, now)),
+  );
 
   await logAdminActivity({
     action: "IP_BLOCKED",
     targetType: "SECURITY",
-    summary: `Chặn thủ công IP: ${ip} — ${reason}`,
+    summary: `Chặn thủ công IP: ${ip} — ${reason}${hours ? ` (${hours} giờ)` : " (vĩnh viễn)"}`,
   });
 
   return NextResponse.json({ ok: true });
