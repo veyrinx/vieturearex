@@ -1,12 +1,13 @@
 /**
  * Đếm hành vi xấu theo IP rồi ra lệnh chặn.
  *
- * Hai nguồn:
- *  1. Đăng nhập sai liên tiếp (`recordFailure`) — có từ trước.
- *  2. Cố tình spam: bị chặn tốc độ (429) hết lần này tới lần khác
- *     (`recordRateLimitViolation`). Bị 429 một hai nhịp là chuyện thường của
- *     người dùng thật bấm nhanh; bị 429 liên tục trong nhiều phút thì không
- *     còn là nhầm nữa.
+ * Nguồn duy nhất: đăng nhập sai liên tiếp (`recordFailure`) — đó là dò mật
+ * khẩu, chỉ một tài khoản cụ thể bị nhắm nên đếm theo IP mới có nghĩa.
+ *
+ * KHÔNG tự chặn vì ăn 429 nhiều lần nữa: bị chặn tốc độ không chứng minh được
+ * ý đồ xấu (một IP nhà mạng gánh cả khu, người dùng bấm nhanh), còn kẻ đánh
+ * thật thì xoay IP liên tục — chặn theo IP chỉ khoá nhầm người thật. Flood/
+ * DDoS phải cản ở biên (Cloudflare / Vercel Firewall).
  *
  * Bộ đếm nằm trong RAM nên chỉ đúng trong phạm vi một máy — cố ý: nó chỉ để
  * PHÁT HIỆN. Lệnh chặn thì ghi xuống `security.blocked_ips` để mọi máy cùng
@@ -97,52 +98,6 @@ export function shouldRefreshCache(): boolean {
   return Date.now() - cacheRefreshedAt > CACHE_TTL;
 }
 
-// ── Cố tình spam ────────────────────────────────────────────────────────────
-
-/** Cửa sổ đếm số lần ăn 429. */
-const SPAM_WINDOW_MS = 10 * 60 * 1000;
-/**
- * Ngưỡng chặn. Đặt rộng tay: nhiều người Việt dùng chung một IP nhà mạng, chặn
- * hụt còn hơn chặn nhầm cả một khu.
- */
-const SPAM_VIOLATIONS = 8;
-/** Chặn kẻ spam lâu hơn hạn mặc định — nó sẽ quay lại. */
-const SPAM_BLOCK_DURATION_MS = 6 * 60 * 60 * 1000;
-
-type SpamBucket = { count: number; firstAt: number; routes: Set<string> };
-const spam = new Map<string, SpamBucket>();
-
-/**
- * Ghi một lần bị chặn tốc độ. Trả về mô tả lệnh chặn khi IP đã vượt ngưỡng,
- * `null` khi chưa tới mức.
- */
-export function recordRateLimitViolation(
-  ip: string,
-  route: string,
-): { reason: string; count: number } | null {
-  if (!ip || ip === "unknown") return null;
-
-  const now = Date.now();
-  const bucket = spam.get(ip);
-
-  if (!bucket || now - bucket.firstAt > SPAM_WINDOW_MS) {
-    spam.set(ip, { count: 1, firstAt: now, routes: new Set([route]) });
-    return null;
-  }
-
-  bucket.count += 1;
-  bucket.routes.add(route);
-
-  if (bucket.count < SPAM_VIOLATIONS) return null;
-
-  spam.delete(ip);
-  const routes = [...bucket.routes].slice(0, 4).join(", ");
-  return {
-    count: bucket.count,
-    reason: `Spam: ${bucket.count} lần vượt giới hạn trong ${Math.round(SPAM_WINDOW_MS / 60_000)} phút (${routes})`,
-  };
-}
-
 /**
  * Ghi lệnh chặn xuống settings để middleware trên MỌI máy cùng thi hành.
  *
@@ -192,5 +147,3 @@ export async function persistBlock(input: {
     return false;
   }
 }
-
-export { SPAM_BLOCK_DURATION_MS };

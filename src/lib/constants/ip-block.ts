@@ -49,6 +49,9 @@ export function parseBlockedIps(raw: string | null | undefined): BlockedIp[] {
     return list
       .filter((e): e is Record<string, unknown> => !!e && typeof e === "object")
       .filter((e) => isIpish(e.ip))
+      // Bỏ hẳn các lệnh chặn tự động do ăn 429 (chốt cũ, đã gỡ): chúng khoá
+      // nhầm người thật. Bản ghi cũ còn nằm trong settings thì coi như không có.
+      .filter((e) => e.by !== "auto:rate-limit")
       .map((e) => ({
         ip: String(e.ip).trim().toLowerCase(),
         blockedAt: Number(e.blockedAt) || 0,

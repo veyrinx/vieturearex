@@ -6,11 +6,6 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getClientIp } from "@/lib/server/get-client-ip";
 import { getSettings } from "@/lib/data/content-service";
 import {
-  persistBlock,
-  recordRateLimitViolation,
-  SPAM_BLOCK_DURATION_MS,
-} from "@/lib/server/ip-blocker";
-import {
   getResolvedRoles, getRoleLevel, hasCapabilityWithRoles, parseRoleCapabilities,
   BUILTIN_ROLE_LEVELS, type CapabilityKey,
 } from "@/lib/permissions";
@@ -36,19 +31,11 @@ export function enforceRateLimit(
   });
 
   if (!result.success) {
-    // Ăn 429 một hai nhịp là người dùng thật bấm nhanh. Ăn liên tục suốt nhiều
-    // phút thì là cố tình — ghi vào danh sách chặn để middleware chặn thẳng ở
-    // cửa, thay vì cứ trả 429 mãi mà vẫn phải nhận từng request một.
-    const spam = recordRateLimitViolation(getClientKey(request), options.name);
-    if (spam) {
-      void persistBlock({
-        ip: getClientKey(request),
-        reason: spam.reason,
-        by: "auto:rate-limit",
-        durationMs: SPAM_BLOCK_DURATION_MS,
-      });
-    }
-
+    // Chỉ trả 429, KHÔNG tự chặn IP. Ăn 429 nhiều lần không chứng minh được ai
+    // đó phá hoại: một IP nhà mạng gánh cả khu, một tab mở nhiều tiện ích, hay
+    // đơn giản là người dùng bấm nhanh. Còn kẻ đánh thật thì đổi IP liên tục —
+    // chặn theo IP không cản được nó mà chỉ khoá nhầm người thật.
+    // Chống flood/DDoS thật phải làm ở biên (Cloudflare / Vercel Firewall).
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       {
