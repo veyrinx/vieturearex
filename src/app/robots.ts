@@ -10,10 +10,10 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "Googlebot",
         allow: [
-          "/", "/news/", "/tin-tuc/", "/events", "/su-kien",
-          "/esports", "/calendar", "/lich", "/gallery",
+          "/", "/news/", "/events",
+          "/esports", "/calendar", "/gallery",
           "/wiki", "/wiki/",
-          "/contact", "/lien-he",
+          "/contact",
           "/about", "/submit-article",
           "/privacy-policy", "/terms-of-use", "/cookie-policy",
           "/tournaments/",
@@ -56,7 +56,7 @@ export default function robots(): MetadataRoute.Robots {
       // ── All others: public pages only, no crawl of admin/api/source ──────
       {
         userAgent: "*",
-        allow: ["/", "/news/", "/tin-tuc/", "/events", "/esports", "/calendar", "/wiki", "/wiki/", "/contact", "/about", "/submit-article", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
+        allow: ["/", "/news/", "/events", "/esports", "/calendar", "/wiki", "/wiki/", "/contact", "/about", "/submit-article", "/privacy-policy", "/terms-of-use", "/cookie-policy", "/tournaments/"],
         disallow: [
           "/admin", "/admin/",
           "/api/", "/api/admin/", "/api/auth/",

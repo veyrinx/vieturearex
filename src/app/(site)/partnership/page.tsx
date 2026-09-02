@@ -386,7 +386,7 @@ export default async function HopTacPage() {
               <FileSignature className="size-4" /> Mở hợp đồng điện tử
             </Link>
             <Link
-              href="/lien-he"
+              href="/contact"
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
             >
               <Mail className="size-4" /> Trao đổi trước

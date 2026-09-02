@@ -74,7 +74,7 @@ function Section({
           {count}
         </span>
         <Link
-          href="/lich"
+          href="/calendar"
           className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary"
         >
           Xem lịch đầy đủ <ArrowRight className="size-3" />

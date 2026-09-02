@@ -126,6 +126,17 @@ const nextConfig = {
       move("/tuyen-thanh-vien", "/recruitment"),
       move("/yeu-thich", "/favorites"),
       move("/embed/bxh-nick-vn", "/embed/top-players-vn"),
+      // Slug VI cũ từng là page riêng chỉ để redirect() — 307 tạm, lại tốn một
+      // lượt render RSC. Đưa về đây thành 301 như các slug còn lại.
+      move("/tin-tuc/:slug", "/news/:slug"),
+      move("/tin-tuc", "/news"),
+      move("/su-kien/:id", "/events/:id"),
+      move("/su-kien", "/events"),
+      move("/lich", "/calendar"),
+      move("/lien-he", "/contact"),
+      move("/chinh-sach-bao-mat", "/privacy-policy"),
+      move("/dieu-khoan-su-dung", "/terms-of-use"),
+      move("/bxh-nick", "/top-players-vn"),
       // Telegram Mini App
       move("/tg/giai-dau", "/tg/tournaments"),
       move("/tg/su-kien", "/tg/events"),

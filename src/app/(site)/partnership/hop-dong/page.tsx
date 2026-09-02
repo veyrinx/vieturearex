@@ -96,7 +96,7 @@ export default async function KyHopDongPage() {
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           Cần trao đổi trước khi ký?{" "}
-          <Link href="/lien-he" className="text-primary underline dark:text-amber-400">
+          <Link href="/contact" className="text-primary underline dark:text-amber-400">
             Liên hệ đội ngũ Arex
           </Link>
           .

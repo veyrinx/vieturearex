@@ -108,14 +108,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.90,
-      alternates: { languages: { vi: `${BASE}/tin-tuc` } },
     },
     {
       url: `${BASE}/events`,
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.90,
-      alternates: { languages: { vi: `${BASE}/su-kien` } },
     },
     {
       url: `${BASE}/esports`,
@@ -128,7 +126,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.80,
-      alternates: { languages: { vi: `${BASE}/lich` } },
     },
     {
       url: `${BASE}/gallery`,
@@ -147,39 +144,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.50,
-      alternates: { languages: { vi: `${BASE}/lien-he` } },
-    },
-  ];
-
-  // ── Trang phụ tiếng Việt ─────────────────────────────────────────────────
-  const viRoutes: MetadataRoute.Sitemap = [
-    {
-      url: `${BASE}/tin-tuc`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.88,
-      alternates: { languages: { en: `${BASE}/news` } },
-    },
-    {
-      url: `${BASE}/su-kien`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.88,
-      alternates: { languages: { en: `${BASE}/events` } },
-    },
-    {
-      url: `${BASE}/lich`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.78,
-      alternates: { languages: { en: `${BASE}/calendar` } },
-    },
-    {
-      url: `${BASE}/lien-he`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.48,
-      alternates: { languages: { en: `${BASE}/contact` } },
     },
   ];
 
@@ -369,14 +333,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "yearly",
       priority: 0.25,
-      alternates: { languages: { vi: `${BASE}/chinh-sach-bao-mat` } },
     },
     {
       url: `${BASE}/terms-of-use`,
       lastModified: now,
       changeFrequency: "yearly",
       priority: 0.25,
-      alternates: { languages: { vi: `${BASE}/dieu-khoan-su-dung` } },
     },
     {
       url: `${BASE}/cookie-policy`,
@@ -395,20 +357,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(pubDate),
       changeFrequency: newsChangeFreq(days),
       priority: newsPriority(days),
-      alternates: { languages: { vi: `${BASE}/tin-tuc/${item.slug}` } },
-    };
-  });
-
-  // ── Bài viết VI ──────────────────────────────────────────────────────────
-  const viNewsRoutes: MetadataRoute.Sitemap = news.map((item) => {
-    const pubDate = item.created_at;
-    const days = ageInDays(pubDate);
-    return {
-      url: `${BASE}/tin-tuc/${item.slug}`,
-      lastModified: new Date(pubDate),
-      changeFrequency: newsChangeFreq(days),
-      priority: Math.max(0.55, newsPriority(days) - 0.02),
-      alternates: { languages: { en: `${BASE}/news/${item.slug}` } },
     };
   });
 
@@ -426,12 +374,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: eventsLastMod,
       changeFrequency: "daily",
       priority: 0.92,
-    },
-    {
-      url: `${BASE}/su-kien`,
-      lastModified: eventsLastMod,
-      changeFrequency: "daily",
-      priority: 0.90,
     },
   ];
 
@@ -466,7 +408,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.75,
-      alternates: { languages: { vi: `${BASE}/bang-xep-hang` } },
     },
     {
       url: `${BASE}/weapons`,
@@ -534,11 +475,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Tự sinh trước, khai tay sau — khai tay ghi đè.
     ...autoRoutes(now),
     ...coreRoutes,
-    ...viRoutes,
     ...legalRoutes,
     ...newsRoutes,
-    ...viNewsRoutes,
-    // Ghi đè /events và /su-kien với lastModified chính xác hơn từ DB
+    // Ghi đè /events với lastModified chính xác hơn từ DB
     ...eventRoutes,
     ...tournamentRoutes,
     ...wikiRoutes,

@@ -3,15 +3,15 @@
 //  - Quản lý dự án: gợi ý path + tự tính "route đã tồn tại" (routeExists).
 //  - Bất cứ nơi nào cần biết toàn bộ trang public.
 // Thêm trang mới → thêm 1 dòng ở đây để dự án tương ứng tự nhảy trạng thái.
+//
+// KHÔNG khai slug VI cũ (/tin-tuc, /su-kien, /lich…): chúng chỉ còn là luật
+// redirect trong next.config, khai ở đây là sitemap tự sinh ra URL chuyển hướng.
 
 export const SITE_ROUTES: string[] = [
   // ── Trang chính & nội dung ──────────────────────────────────────────────
   "/",
-  "/tin-tuc",
   "/news",
-  "/su-kien",
   "/events",
-  "/lich",
   "/calendar",
   "/content-roadmap",
   "/trending",
@@ -35,6 +35,7 @@ export const SITE_ROUTES: string[] = [
   "/community/cosmetics",
   "/community/trending",
   "/feed",
+  "/verified-content",
   "/character-poll",
   "/notifications",
   "/favorites",
@@ -48,7 +49,6 @@ export const SITE_ROUTES: string[] = [
   "/player-compare",
   "/guild-lookup",
   "/account-value",
-  "/bxh-nick",
   "/top-players-vn",
   "/quiz-leaderboard",
   "/quiz",
@@ -107,10 +107,7 @@ export const SITE_ROUTES: string[] = [
   // ── Trang tĩnh / pháp lý ────────────────────────────────────────────────
   "/about",
   "/contact",
-  "/lien-he",
   "/privacy-policy",
-  "/chinh-sach-bao-mat",
   "/terms-of-use",
-  "/dieu-khoan-su-dung",
   "/cookie-policy",
 ];
