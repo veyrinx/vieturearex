@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { parseItemsJson } from "@/lib/constants/ff-items-import";
 import {
   Search, Copy, Check, X, Image as ImageIcon, ExternalLink,
   Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
@@ -120,6 +121,75 @@ export default function FFItemsPage() {
   const [catalogHotOnly, setCatalogHotOnly] = useState(false);
   const [editCatalogItem, setEditCatalogItem] = useState<CatalogItem | null>(null);
   const [showAllCatalog, setShowAllCatalog] = useState(false);
+
+  // ── Nạp kho vật phẩm từ file JSON ──
+  const jsonInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState<{ done: number; total: number } | null>(null);
+
+  /**
+   * Đọc file JSON kho vật phẩm rồi đẩy vào catalog theo lô.
+   *
+   * Chia lô ở trình duyệt chứ không ném cả file 34 nghìn dòng sang máy chủ:
+   * một lượt gọi thế thì hoặc quá hạn, hoặc thành công mà không ai biết nó
+   * chạy tới đâu. Lô 2000 khớp với trần của /api/admin/ff-items/import.
+   */
+  const importItemsFile = async (file: File) => {
+    if (importing) return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      toast.error("File không phải JSON hợp lệ.");
+      return;
+    }
+
+    const { items, skipped } = parseItemsJson(parsed);
+    if (items.length === 0) {
+      toast.error("Không đọc được ID vật phẩm nào trong file.");
+      return;
+    }
+
+    const overwrite = confirm(
+      `Đọc được ${items.length.toLocaleString()} vật phẩm` +
+        (skipped ? ` (bỏ ${skipped.toLocaleString()} dòng không có ID)` : "") +
+        ". OK = ghi đè tên/nhóm đã có trong catalog. " +
+        "Cancel = chỉ thêm mục mới, giữ nguyên phần đã sửa tay.",
+    );
+
+    const CHUNK = 2000;
+    setImporting({ done: 0, total: items.length });
+    let imported = 0;
+    const importedIds: string[] = [];
+
+    try {
+      for (let i = 0; i < items.length; i += CHUNK) {
+        const chunk = items.slice(i, i + CHUNK);
+        const res = await fetch("/api/admin/ff-items/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: chunk, overwrite }),
+        });
+        const d = (await res.json().catch(() => ({}))) as { imported?: number; ids?: string[]; error?: string };
+        if (!res.ok) {
+          toast.error(d.error ?? "Nạp thất bại giữa chừng.");
+          break;
+        }
+        imported += d.imported ?? chunk.length;
+        importedIds.push(...(d.ids ?? chunk.map((c) => c.id)));
+        setImporting({ done: Math.min(i + CHUNK, items.length), total: items.length });
+      }
+    } finally {
+      setImporting(null);
+    }
+
+    void loadCatalog();
+    toast.success(`Đã nạp ${imported.toLocaleString()} vật phẩm vào catalog.`);
+
+    const missing = importedIds.filter((id) => !syncedIds.has(id));
+    if (missing.length > 0 && confirm(`Đồng bộ ảnh cho ${missing.length.toLocaleString()} vật phẩm chưa có icon?`)) {
+      void startSync(missing);
+    }
+  };
 
   // Load saved data
   useEffect(() => {
@@ -840,12 +910,35 @@ export default function FFItemsPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setAddCatalogModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="size-3.5" /> Thêm item
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => jsonInputRef.current?.click()}
+              disabled={!!importing}
+              title="Nạp kho vật phẩm từ file JSON (ItemsData_en.json hoặc danh sách ID)"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600/40 px-3 py-2 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-600/10 disabled:opacity-60 dark:text-blue-400"
+            >
+              {importing
+                ? <><Loader2 className="size-3.5 animate-spin" /> {importing.done.toLocaleString()}/{importing.total.toLocaleString()}</>
+                : <><Upload className="size-3.5" /> Tải JSON</>}
+            </button>
+            <input
+              ref={jsonInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void importItemsFile(file);
+                e.target.value = "";
+              }}
+            />
+            <button
+              onClick={() => setAddCatalogModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="size-3.5" /> Thêm item
+            </button>
+          </div>
         </div>
 
         {catalogLoading && (

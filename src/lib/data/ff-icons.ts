@@ -4,6 +4,22 @@
 // Nguồn gốc ảnh trên GitHub (dùng bởi route proxy)
 export const ICON_UPSTREAM = "https://raw.githubusercontent.com/ShahGCreator/icon/main/PNG/";
 
+/** Bucket Supabase Storage chứa bản đã đồng bộ (/admin/ff-items → "Đồng bộ"). */
+export const ICON_BUCKET = "ff-items";
+
+/**
+ * Bản đã đồng bộ của một icon, hoặc null nếu chưa cấu hình Supabase.
+ *
+ * Bucket là public nên dựng URL thẳng, khỏi cần gọi API Supabase để hỏi đường
+ * dẫn — mỗi lượt xem ảnh mà phải hỏi trước một vòng thì đồng bộ về cho nhanh
+ * hoá ra lại chậm hơn.
+ */
+export function storageIconUrl(id: string): string | null {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return null;
+  return `${base.replace(/\/+$/, "")}/storage/v1/object/public/${ICON_BUCKET}/${id}.png`;
+}
+
 // Link ảnh phục vụ NGƯỜI DÙNG đi qua domain của site (proxy + cache edge)
 export const ICON_CDN = "/api/ff-icon/";
 

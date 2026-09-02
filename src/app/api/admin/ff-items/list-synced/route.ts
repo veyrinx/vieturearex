@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
   // List all objects (paginate up to 5000)
   const ids: string[] = [];
   const PAGE = 1000;
-  for (let offset = 0; offset < 5; offset++) {
+  // Cũ dừng ở trang 5 = 5.000 ảnh, nên bảng admin báo "chưa đồng bộ" cho hàng
+  // vạn ảnh thật ra đã có — bấm đồng bộ lại từ đầu, tải lại y nguyên.
+  const MAX_PAGES = 60;
+  for (let offset = 0; offset < MAX_PAGES; offset++) {
     const { data, error } = await db.storage.from(BUCKET).list("", {
       limit: PAGE,
       offset: offset * PAGE,

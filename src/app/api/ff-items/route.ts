@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
 
   const ids: string[] = [];
   const PAGE = 1000;
-  for (let offset = 0; offset < 10; offset++) {
+  // Bucket đang có hơn hai vạn ảnh, mà vòng lặp cũ dừng ở trang thứ 10 = 10.000
+  // — đúng nửa kho biến mất khỏi danh sách. Chạy tới khi hết, chặn trên đủ rộng
+  // để không thành vòng lặp vô tận nếu Storage trả lạ.
+  const MAX_PAGES = 60;
+  for (let offset = 0; offset < MAX_PAGES; offset++) {
     const { data, error } = await db.storage.from(BUCKET).list("", {
       limit: PAGE,
       offset: offset * PAGE,

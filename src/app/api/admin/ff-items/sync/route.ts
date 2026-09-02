@@ -1,25 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
-import { ICON_UPSTREAM } from "@/lib/data/ff-icons";
+import { ICON_BUCKET, ICON_UPSTREAM, storageIconUrl } from "@/lib/data/ff-icons";
+import { isValidItemId } from "@/lib/constants/ff-items-import";
 
-const BUCKET = "ff-items";
-const BATCH_MAX = 20;
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
-// POST { ids: string[] } — downloads from jsDelivr CDN, uploads to Supabase Storage
-// Returns per-id success/fail and the public URLs.
+/**
+ * Tải icon từ GitHub về Supabase Storage.
+ *
+ * Ba chỗ sửa so với bản cũ:
+ *
+ *  1. Lô 20 ID mỗi lượt gọi. Kho có hơn ba vạn ảnh → hơn 1.700 lượt gọi HTTP
+ *     từ trình duyệt, chưa kể trần tốc độ 30 lượt/phút chặn ngay ở lô thứ 31.
+ *     Nâng lên 200.
+ *  2. Mỗi ID hỏi Storage một lượt `list()` chỉ để xem ảnh có sẵn chưa. `list()`
+ *     là truy vấn có xác thực vào API Storage; đổi sang HEAD lên URL công khai
+ *     — cùng một câu hỏi nhưng đi qua CDN, và nằm chung hàng đợi giới hạn đồng
+ *     thời với phần tải ảnh.
+ *  3. `Promise.all` bắn cả lô đi cùng lúc: 200 lượt tải song song thì
+ *     raw.githubusercontent cắt kết nối, mà lỗi đó lại bị đếm thành "ảnh
+ *     không tồn tại". Giới hạn số việc chạy đồng thời.
+ */
+
+const BATCH_MAX = 200;
+/** Số ảnh tải cùng lúc. Cao hơn nữa là GitHub bắt đầu ngắt giữa chừng. */
+const CONCURRENCY = 8;
+
+type SyncResult = { id: string; ok: boolean; url?: string; error?: string; skipped?: boolean };
+
+/** Chạy `worker` trên cả danh sách nhưng không quá `limit` việc cùng lúc. */
+async function mapLimit<T, R>(list: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+  const out = new Array<R>(list.length);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, list.length) }, async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= list.length) return;
+      out[i] = await worker(list[i]);
+    }
+  });
+  await Promise.all(runners);
+  return out;
+}
+
+// POST { ids: string[], overwrite?: boolean } — tải ảnh từ GitHub, đẩy lên Storage.
 export async function POST(req: NextRequest) {
-  const limited = enforceRateLimit(req, { name: "ff-items-sync", limit: 30, windowMs: 60_000 });
+  const limited = enforceRateLimit(req, { name: "ff-items-sync", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
   if (denied) return denied;
 
-  const body = await req.json().catch(() => null) as { ids?: string[]; overwrite?: boolean } | null;
-  const ids = (body?.ids ?? [])
-    .map((x) => String(x).trim())
-    .filter((x) => /^[\w.-]{1,80}$/.test(x))
-    .slice(0, BATCH_MAX);
+  const body = (await req.json().catch(() => null)) as { ids?: string[]; overwrite?: boolean } | null;
+  const ids = Array.from(
+    new Set((body?.ids ?? []).map((x) => String(x).trim()).filter(isValidItemId)),
+  ).slice(0, BATCH_MAX);
   const overwrite = !!body?.overwrite;
 
   if (ids.length === 0) {
@@ -29,69 +66,58 @@ export async function POST(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "Supabase unavailable" }, { status: 503 });
 
-  // Ensure bucket exists (create if not)
   const { data: buckets } = await db.storage.listBuckets();
-  if (!buckets?.some((b) => b.name === BUCKET)) {
-    await db.storage.createBucket(BUCKET, { public: true });
+  if (!buckets?.some((b) => b.name === ICON_BUCKET)) {
+    await db.storage.createBucket(ICON_BUCKET, { public: true });
   }
 
-  const results: Array<{ id: string; ok: boolean; url?: string; error?: string; skipped?: boolean }> = [];
-
-  await Promise.all(ids.map(async (id) => {
+  /** Ảnh đã nằm trong bucket chưa — hỏi qua URL công khai, khỏi tốn một truy vấn API. */
+  const alreadyStored = async (id: string): Promise<boolean> => {
+    const url = storageIconUrl(id);
+    if (!url) return false;
     try {
-      const objectPath = `${id}.png`;
+      const res = await fetch(url, { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(8_000) });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
 
-      // Check if exists (skip unless overwrite)
-      if (!overwrite) {
-        const { data: existing } = await db.storage.from(BUCKET).list("", { search: objectPath });
-        if (existing?.some((f) => f.name === objectPath)) {
-          const { data: pub } = db.storage.from(BUCKET).getPublicUrl(objectPath);
-          results.push({ id, ok: true, url: pub.publicUrl, skipped: true });
-          return;
-        }
+  const results = await mapLimit<string, SyncResult>(ids, CONCURRENCY, async (id) => {
+    const objectPath = `${id}.png`;
+    try {
+      if (!overwrite && (await alreadyStored(id))) {
+        const { data: pub } = db.storage.from(ICON_BUCKET).getPublicUrl(objectPath);
+        return { id, ok: true, url: pub.publicUrl, skipped: true };
       }
 
-      // Download from raw GitHub
       const cdnRes = await fetch(`${ICON_UPSTREAM}${encodeURIComponent(id)}.png`, {
         cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
       });
-      if (!cdnRes.ok) {
-        results.push({ id, ok: false, error: `CDN ${cdnRes.status}` });
-        return;
-      }
+      if (!cdnRes.ok) return { id, ok: false, error: `CDN ${cdnRes.status}` };
 
-      const buffer = await cdnRes.arrayBuffer();
-      const uint8 = new Uint8Array(buffer);
-
-      // Upload to Supabase Storage
-      const { error: uploadErr } = await db.storage.from(BUCKET).upload(objectPath, uint8, {
+      const uint8 = new Uint8Array(await cdnRes.arrayBuffer());
+      const { error: uploadErr } = await db.storage.from(ICON_BUCKET).upload(objectPath, uint8, {
         contentType: "image/png",
         upsert: true,
       });
+      if (uploadErr) return { id, ok: false, error: uploadErr.message };
 
-      if (uploadErr) {
-        results.push({ id, ok: false, error: uploadErr.message });
-        return;
-      }
-
-      const { data: pub } = db.storage.from(BUCKET).getPublicUrl(objectPath);
-      results.push({ id, ok: true, url: pub.publicUrl });
+      const { data: pub } = db.storage.from(ICON_BUCKET).getPublicUrl(objectPath);
+      return { id, ok: true, url: pub.publicUrl };
     } catch (err) {
-      results.push({ id, ok: false, error: String(err).slice(0, 120) });
+      return { id, ok: false, error: String(err).slice(0, 120) };
     }
-  }));
-
-  const successCount = results.filter((r) => r.ok).length;
-  const skippedCount = results.filter((r) => r.skipped).length;
-  const failedCount = results.filter((r) => !r.ok).length;
+  });
 
   return NextResponse.json({
     results,
     summary: {
       total: ids.length,
-      success: successCount,
-      skipped: skippedCount,
-      failed: failedCount,
+      success: results.filter((r) => r.ok).length,
+      skipped: results.filter((r) => r.skipped).length,
+      failed: results.filter((r) => !r.ok).length,
     },
   });
 }
