@@ -14,6 +14,20 @@ const schema = z.object({
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+/**
+ * Mỗi lượt SMTP nhận tối đa chừng này địa chỉ BCC. Nhồi cả nghìn địa chỉ vào
+ * một lượt là gần như chắc chắn bị nhà cung cấp chặn hoặc cắt giữa chừng.
+ */
+const BCC_CHUNK = 50;
+/** Trần một lần bấm gửi. Cao hơn nữa thì nên là chiến dịch, không phải một nút. */
+const MAX_RECIPIENTS = 500;
+
+const chunk = <T,>(list: T[], size: number): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+};
+
 // POST — Soạn & gửi email thủ công tới 1 hoặc nhiều người, ngoài các email tự động.
 export async function POST(request: NextRequest) {
   const limited = enforceRateLimit(request, { name: "mail-send", limit: 10, windowMs: 60_000 });
@@ -42,8 +56,11 @@ export async function POST(request: NextRequest) {
   if (recipients.length === 0) {
     return NextResponse.json({ error: "Không có email người nhận hợp lệ." }, { status: 400 });
   }
-  if (recipients.length > 50) {
-    return NextResponse.json({ error: "Tối đa 50 người nhận mỗi lần gửi." }, { status: 400 });
+  if (recipients.length > MAX_RECIPIENTS) {
+    return NextResponse.json(
+      { error: `Tối đa ${MAX_RECIPIENTS} người nhận mỗi lần gửi.` },
+      { status: 400 },
+    );
   }
 
   const branding = await getEmailBranding();
@@ -58,14 +75,31 @@ export async function POST(request: NextRequest) {
     footnote: "Email này được gửi thủ công từ ban quản trị.",
   });
 
-  // Gửi 1 lần qua BCC (1 kết nối SMTP) — tránh mở 50 kết nối tuần tự gây
-  // timeout/bị chặn. Người nhận ẩn nhau. "to" đặt là chính người gửi.
-  const result =
-    recipients.length === 1
-      ? await sendMail({ to: recipients[0], subject: parsed.data.subject, html })
-      : await sendMail({ to: config.fromEmail, bcc: recipients, subject: parsed.data.subject, html });
+  // Gửi theo lô BCC — mỗi lô một lượt SMTP, người nhận ẩn nhau, "to" đặt là
+  // chính người gửi. Mở một kết nối cho từng người là cách chắc chắn nhất để
+  // ăn timeout khi danh sách dài; nhét tất cả vào một lô thì bị nhà cung cấp
+  // chặn. Lô nào hỏng thì các lô còn lại vẫn đi.
+  let sent = 0;
+  const errors: string[] = [];
 
-  const sent = result.sent ? recipients.length : 0;
+  if (recipients.length === 1) {
+    const r = await sendMail({ to: recipients[0], subject: parsed.data.subject, html });
+    if (r.sent) sent = 1;
+    else if (r.error) errors.push(r.error);
+  } else {
+    for (const batch of chunk(recipients, BCC_CHUNK)) {
+      const r = await sendMail({
+        to: config.fromEmail,
+        bcc: batch,
+        subject: parsed.data.subject,
+        html,
+      });
+      if (r.sent) sent += batch.length;
+      else if (r.error) errors.push(r.error);
+    }
+  }
+
+  const result = { sent: sent > 0, error: errors[0] };
 
   await logAdminActivity({
     action: "MAIL_MANUAL_SENT",
@@ -78,6 +112,7 @@ export async function POST(request: NextRequest) {
     ok: result.sent,
     sent,
     total: recipients.length,
+    ...(errors.length ? { errors } : {}),
     ...(result.error ? { error: result.error } : {}),
   });
 }

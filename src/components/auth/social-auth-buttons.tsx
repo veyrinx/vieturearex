@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { isNativeApp, openExternal } from "@/lib/native/bridge";
-
-type Provider = "google" | "facebook";
+import {
+  SOCIAL_PROVIDER_LABEL,
+  isSocialProvider,
+  type SocialProvider,
+} from "@/lib/constants/social-login";
 
 function GoogleIcon() {
   return (
@@ -30,19 +33,48 @@ function FacebookIcon() {
   );
 }
 
-const LABELS: Record<Provider, string> = {
-  google: "Google",
-  facebook: "Facebook",
+function DiscordIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-[18px]" aria-hidden="true">
+      <path
+        fill="#5865F2"
+        d="M20.32 4.37A19.8 19.8 0 0 0 15.43 2.9a.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.3 18.3 0 0 0-5.48 0 12.6 12.6 0 0 0-.62-1.25.08.08 0 0 0-.08-.04c-1.71.3-3.35.8-4.89 1.47a.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06c0 .02.02.04.04.06a19.9 19.9 0 0 0 6 3.03.08.08 0 0 0 .08-.03c.46-.63.87-1.3 1.22-2a.08.08 0 0 0-.04-.11c-.65-.25-1.27-.55-1.87-.9a.08.08 0 0 1 0-.13l.37-.29a.07.07 0 0 1 .08 0 14.2 14.2 0 0 0 12.06 0 .07.07 0 0 1 .08 0l.37.3a.08.08 0 0 1 0 .12c-.6.35-1.22.65-1.87.9a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.22 2a.08.08 0 0 0 .08.03 19.8 19.8 0 0 0 6.01-3.03.08.08 0 0 0 .04-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03ZM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.34-.96 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.34-.95 2.42-2.16 2.42Z"
+      />
+    </svg>
+  );
+}
+
+const ICONS: Record<SocialProvider, () => React.JSX.Element> = {
+  google: GoogleIcon,
+  facebook: FacebookIcon,
+  discord: DiscordIcon,
 };
 
 /**
- * Nút đăng nhập/đăng ký bằng Google & Facebook cho trang công khai.
+ * Nút đăng nhập/đăng ký bằng mạng xã hội cho trang công khai.
  * Callback riêng (/auth/oauth-callback) — không dùng chung với luồng quản trị.
+ *
+ * Danh sách nút do /admin/social-login quyết định, KHÔNG viết cứng nữa: trước
+ * đây Google + Facebook luôn nằm đó trong khi bên Supabase chưa bật provider
+ * nào, ai bấm cũng chỉ nhận được một dòng báo lỗi.
  */
 export function SocialAuthButtons({ className }: { className?: string }) {
-  const [pending, setPending] = useState<Provider | null>(null);
+  const [providers, setProviders] = useState<SocialProvider[]>([]);
+  const [pending, setPending] = useState<SocialProvider | null>(null);
 
-  const signIn = async (provider: Provider) => {
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/auth/providers")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { providers?: string[] } | null) => {
+        if (!alive || !d?.providers) return;
+        setProviders(d.providers.filter(isSocialProvider));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const signIn = async (provider: SocialProvider) => {
     const supabase = createClient();
     if (!supabase) {
       toast.error("Hệ thống xác thực chưa sẵn sàng. Vui lòng thử lại sau.");
@@ -66,7 +98,7 @@ export function SocialAuthButtons({ className }: { className?: string }) {
 
     if (error) {
       setPending(null);
-      toast.error(`Không thể đăng nhập bằng ${LABELS[provider]}. Vui lòng thử lại.`);
+      toast.error(`Không thể đăng nhập bằng ${SOCIAL_PROVIDER_LABEL[provider]}. Vui lòng thử lại.`);
       return;
     }
 
@@ -84,6 +116,9 @@ export function SocialAuthButtons({ className }: { className?: string }) {
     // Web: trình duyệt chuyển sang trang provider, giữ nguyên trạng thái loading.
   };
 
+  // Chưa bật provider nào thì không vẽ cả cái vạch "Hoặc tiếp tục với".
+  if (providers.length === 0) return null;
+
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center gap-3">
@@ -94,19 +129,22 @@ export function SocialAuthButtons({ className }: { className?: string }) {
         <span className="h-px flex-1 bg-border/60" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {(["google", "facebook"] as Provider[]).map((provider) => (
-          <button
-            key={provider}
-            type="button"
-            onClick={() => signIn(provider)}
-            disabled={pending !== null}
-            className="flex h-12 items-center justify-center gap-2.5 rounded-xl border border-border/60 bg-background/60 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-secondary/60 disabled:pointer-events-none disabled:opacity-60"
-          >
-            {provider === "google" ? <GoogleIcon /> : <FacebookIcon />}
-            {pending === provider ? "Đang chuyển..." : LABELS[provider]}
-          </button>
-        ))}
+      <div className={cn("grid gap-3", providers.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+        {providers.map((provider) => {
+          const Icon = ICONS[provider];
+          return (
+            <button
+              key={provider}
+              type="button"
+              onClick={() => signIn(provider)}
+              disabled={pending !== null}
+              className="flex h-12 items-center justify-center gap-2.5 rounded-xl border border-border/60 bg-background/60 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-secondary/60 disabled:pointer-events-none disabled:opacity-60"
+            >
+              <Icon />
+              {pending === provider ? "Đang chuyển..." : SOCIAL_PROVIDER_LABEL[provider]}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

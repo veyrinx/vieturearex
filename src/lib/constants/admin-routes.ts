@@ -87,6 +87,8 @@ export const ADMIN_ROUTE_RULES: AdminRouteRule[] = [
 
   // ── Hệ thống ──
   { path: "/admin/settings",      capability: "settings.edit" },
+  { path: "/admin/mail",          minLevel: LV.admin },
+  { path: "/admin/social-login",  minLevel: LV.admin },
   { path: "/admin/sql",           capability: "sql.run" },
   { path: "/admin/ops",           minLevel: LV.admin },
   { path: "/admin/app",           minLevel: LV.admin },

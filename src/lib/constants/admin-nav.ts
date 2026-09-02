@@ -4,7 +4,7 @@ import {
   MessagesSquare, MessageSquare, Vote, Star, Headset, Megaphone, Trophy,
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser, Activity,
-  FileText, FileSignature, Users2, SlidersHorizontal, Eye, Download,
+  FileText, FileSignature, Users2, SlidersHorizontal, Eye, Download, Mail, LogIn,
   ShoppingBag, Share2, Handshake, Store, KeyRound, Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -101,6 +101,8 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: SlidersHorizontal,
     items: [
       { title: "Cài đặt",   href: "/admin/settings",  icon: Settings },
+      { title: "Gửi email", href: "/admin/mail",      icon: Mail },
+      { title: "Đăng nhập MXH", href: "/admin/social-login", icon: LogIn },
       { title: "Vận hành",  href: "/admin/ops",       icon: Activity },
       { title: "Tải app",   href: "/admin/app",       icon: Download },
       { title: "Khóa chức năng", href: "/admin/feature-locks", icon: Lock },

@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
 import { MailTestButton } from "@/components/admin/mail-test-button";
-import { ManualMailSender } from "@/components/admin/manual-mail-sender";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { defaultSiteSettingValues, defaultIscSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS, SITE_SPECIFIC_SETTING_KEYS } from "@/lib/utils/site-settings";
@@ -3178,12 +3178,21 @@ ${zaloNotify.text}` : zaloNotify.text}
           </div>
         </Card>
 
+        {/* Việc gửi thư đã tách sang trang riêng: ở đây chỉ còn CẤU HÌNH email.
+            Trước đây ô soạn thư nằm lọt giữa gần 4000 dòng ô cấu hình, mà lại
+            chỉ cho gõ tay từng địa chỉ. */}
         <Card>
           <div className="py-4">
-            <SectionHeader icon={SendHorizonal} title="Gửi email thủ công" desc="Soạn & gửi email tuỳ ý tới người nhận bất kỳ, ngoài các loại tự động" />
+            <SectionHeader icon={SendHorizonal} title="Gửi email cho nhiều người" desc="Chọn người nhận từ danh sách tài khoản & người đăng ký nhận tin, soạn một lần gửi hàng loạt" />
           </div>
-          <div className="px-1 pb-2">
-            <ManualMailSender />
+          <div className="px-1 pb-4">
+            <Link
+              href="/admin/mail"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-sm font-semibold transition hover:border-primary/40 hover:bg-secondary"
+            >
+              <SendHorizonal className="size-4" />
+              Mở trang Gửi email
+            </Link>
           </div>
         </Card>
 
