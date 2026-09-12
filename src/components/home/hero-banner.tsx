@@ -323,7 +323,7 @@ export function HeroBanner({
               // Chặn dưới 2.25rem chứ không phải 2.75rem: tiêu đề do admin đặt,
               // một từ dài (vd "COMMUNITY") ở 44px đã sát mép màn 360px, chỉ cần
               // dài hơn chút là tràn. `break-words` là lưới an toàn cuối cùng.
-              className="font-heading font-black uppercase leading-[0.88] tracking-tight text-balance break-words"
+              className="font-brand uppercase leading-[0.88] tracking-tight text-balance break-words"
               style={{ fontSize: "clamp(2.25rem, 8.5vw, 6rem)" }}
             >
               <span
@@ -334,8 +334,8 @@ export function HeroBanner({
               </span>
               {restWords && (
                 <span
-                  className="block text-primary-on-dark"
-                  style={{ textShadow: "0 0 32px hsl(var(--primary-on-dark)/0.45), 0 2px 22px rgba(0,0,0,0.65)" }}
+                  className="block bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-transparent"
+                  style={{ textShadow: "0 0 32px rgba(249,115,22,0.45), 0 2px 22px rgba(0,0,0,0.65)" }}
                 >
                   {restWords}
                 </span>
