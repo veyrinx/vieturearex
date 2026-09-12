@@ -125,7 +125,7 @@ export async function SiteFooter() {
                 className="hidden size-10 rounded-xl object-contain drop-shadow dark:block transition group-hover:scale-105"
               />
               <div className="flex flex-col leading-tight">
-                <span className="font-heading text-lg font-black uppercase tracking-[0.1em] text-foreground">
+                <span className="font-brand text-lg uppercase tracking-[0.04em] text-foreground">
                   {siteName}
                 </span>
                 <span className="text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

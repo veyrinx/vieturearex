@@ -546,7 +546,7 @@ export default function TermsOfUsePage() {
             <Icons.Mail /> Liên Hệ Chúng Tôi
           </Link>
         </div>
-        <p className="mt-3 text-[10px] text-muted-foreground/40">© 2026 Arex · Điều Khoản Sử Dụng v2.0 · Hiệu lực 02/04/2026 · Font: GFF Latin™ Garena Free Fire</p>
+        <p className="mt-3 text-[10px] text-muted-foreground/40">© 2026 Arex · Điều Khoản Sử Dụng v2.0 · Hiệu lực 02/04/2026</p>
       </div>
       </Reveal>
       </PageContentOverride>

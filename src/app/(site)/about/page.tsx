@@ -230,7 +230,7 @@ export default async function AboutPage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent dark:from-amber-400/6" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
         <p className="relative text-[10px] font-black uppercase tracking-[0.28em] text-primary dark:text-amber-400">Về Chúng Tôi</p>
-        <h1 className="relative font-heading text-4xl font-black uppercase tracking-[0.04em] text-foreground md:text-5xl">
+        <h1 className="relative font-brand text-4xl uppercase tracking-[0.02em] text-foreground md:text-5xl">
           {orgName}
         </h1>
         <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">

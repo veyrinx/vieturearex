@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { headers } from "next/headers";
+import { Archivo, Manrope, Russo_One } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/constants/site";
@@ -16,9 +17,32 @@ import { buildSettingsMap } from "@/lib/utils/site-settings";
 import { getSiteConfig, getCurrentUrl, isSitePinned } from "@/lib/server/get-site-config";
 import { AdsenseLoader } from "@/components/common/adsense-loader";
 
-// GFF Fonts are loaded from fonts.css
-// Heading: --font-heading (GFF Latin ExtraBold)
-// Body: --font-body (GFF Latin Regular)
+// Heading (+ số liệu/CTA/badge dùng chung class .font-heading) — Archivo có
+// weight 900 (Black) thật, đậm hơn hẳn Manrope (chỉ tới 800). Body vẫn dùng
+// Manrope cho chữ thường, dễ đọc hơn ở size nhỏ.
+const fontHeading = Archivo({
+  subsets: ["latin", "vietnamese"],
+  weight: ["800", "900"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+// Font riêng cho wordmark "AREX NETWORK" ở logo — display font đậm, góc cạnh,
+// khác hẳn font-heading dùng cho tiêu đề nội dung, để tên brand nổi bật hơn.
+// Russo One chỉ có 1 weight (400) nhưng bản thân nét chữ đã rất đậm/chunky.
+const fontBrand = Russo_One({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-brand",
+  display: "swap",
+});
+
+const fontBody = Manrope({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 // Tỉ lệ lấy mẫu Speed Insights: 0.1 = 10% lượt xem mới gửi số đo.
 // Đang ở mức 100% thì tháng vừa rồi chạm 41k data point trong khi gói cho 10k.
@@ -155,7 +179,7 @@ export default async function RootLayout({
     buildSettingsMap(await getSettings())["ads.google_adsense_id"]?.trim() || "ca-pub-6400047965945515";
 
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning className={cn(fontHeading.variable, fontBody.variable, fontBrand.variable)}>
       <head>
         {/* App native (vỏ Capacitor): đánh dấu <html> TRƯỚC khi vẽ để CSS
             safe-area và các rule ẩn quảng cáo áp dụng ngay, không nháy. */}
@@ -169,10 +193,6 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://www.youtube.com" />
         <link rel="preconnect" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://googlevideo.com" />
-        {/* Preload font chính để giảm blocking */}
-        <link rel="preload" href="/fonts/GFF-Latin-Regular.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
-        {/* Font tiếng Việt (có dấu) — fallback cho GFF Latin thiếu glyph */}
-        <link rel="preload" href="/fonts/GFF-VN-ExtraBold.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
         {/* Google Material Symbols (Rounded) — icon set phần public */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

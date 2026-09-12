@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "./fonts.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -9,6 +8,7 @@
 @theme inline {
   --font-heading: var(--font-heading);
   --font-body: var(--font-body);
+  --font-brand: var(--font-brand);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -95,18 +95,6 @@ input, textarea, [contenteditable], .tiptap {
   user-select: text;
 }
 
-/* GFF Latin font có built-in spacing rộng - reset tracking */
-.font-heading,
-.font-heading[class*="tracking-"],
-[class*="tracking-"].font-heading {
-  letter-spacing: 0.01em !important;
-}
-
-/* Body text cũng dùng GFF Latin */
-body, .font-body {
-  letter-spacing: 0.005em;
-}
-
 /* Editor Tiptap list styles */
 .tiptap ul { list-style: disc; padding-left: 1.25rem; margin: 0.3em 0; }
 .tiptap ol { list-style: decimal; padding-left: 1.25rem; margin: 0.3em 0; }
@@ -163,8 +151,6 @@ body, .font-body {
     --input: 214 32% 91%;
     --ring: 221 100% 50%;
     --radius: 1rem;
-    --font-heading: "GFF Latin", "GFF VN", system-ui, -apple-system, sans-serif;
-    --font-body: "GFF Latin", "GFF VN", system-ui, -apple-system, sans-serif;
     --sidebar: 0 0% 98%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 221 100% 50%;

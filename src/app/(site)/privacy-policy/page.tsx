@@ -261,7 +261,7 @@ export default function PrivacyPolicyPage() {
             ["Ngày hiệu lực","02/04/2026"],
             ["Luật áp dụng","NĐ 13/2023 · Luật ATTTM 2015"],
             ["Phạm vi","Mọi người dùng truy cập"],
-            ["Font","GFF Latin — Garena Free Fire™"],
+            ["Font","Archivo & Manrope (Google Fonts)"],
           ].map(([l,v]) => (
             <div key={l} className="policy-interactive-card rounded-2xl border border-border/60 bg-background/60 p-5 shadow-sm backdrop-blur-sm transition-[transform,border-color,background-color,box-shadow,filter] duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md hover:brightness-[1.01] dark:hover:border-amber-400/20 md:p-6">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground/50 md:text-sm">{l}</p>
@@ -304,7 +304,7 @@ export default function PrivacyPolicyPage() {
               <strong className="text-foreground">Arex</strong> là dự án cộng đồng phi lợi nhuận chuyên cung cấp tin tức, lịch sự kiện và nội dung liên quan đến game <strong className="text-foreground">Free Fire</strong> tại Việt Nam. Chúng tôi <strong className="text-foreground">không phải là Garena</strong> và không có liên kết chính thức với bất kỳ tổ chức phát hành game nào.
             </p>
             <p>
-              Website sử dụng <strong className="text-foreground">font chữ GFF Latin</strong> — phông chữ của thương hiệu Garena Free Fire, được sử dụng nhằm mục đích trang trí nhận diện thương hiệu cộng đồng. Mọi hình ảnh sự kiện, nhân vật và tài sản game được lấy từ nguồn Garena Free Fire Official và được ghi rõ nguồn gốc theo quy định của Luật Sở hữu trí tuệ.
+              Website sử dụng font chữ <strong className="text-foreground">Archivo</strong> và <strong className="text-foreground">Manrope</strong> từ Google Fonts. Mọi hình ảnh sự kiện, nhân vật và tài sản game được lấy từ nguồn Garena Free Fire Official và được ghi rõ nguồn gốc theo quy định của Luật Sở hữu trí tuệ.
             </p>
             <Alert kind="info" title="Cơ sở pháp lý áp dụng">
               Chính sách này tuân thủ: <em>Luật BVDL cá nhân 2025</em> (91/2025/QH15), <em>Nghị định 13/2023/NĐ-CP</em> và <em>Luật An toàn thông tin mạng 2015</em> (86/2015/QH13).
@@ -400,7 +400,6 @@ export default function PrivacyPolicyPage() {
               <Item><strong className="text-foreground">Mục đích phi thương mại:</strong> Hình ảnh chỉ được sử dụng để cung cấp thông tin, bình luận và tổng hợp tin tức — tuân thủ <em>Điều 25, Luật SHTT</em> về trích dẫn hợp lý.</Item>
               <Item><strong className="text-foreground">Không xác nhận quyền sở hữu:</strong> Arex tuyên bố rõ ràng rằng tất cả thương hiệu, logo, nhân vật và tài sản thuộc quyền sở hữu của <strong className="text-foreground">Garena / Sea Limited</strong>.</Item>
               <Item><strong className="text-foreground">Quyền yêu cầu gỡ bỏ:</strong> Chủ sở hữu bản quyền có quyền yêu cầu gỡ bỏ nội dung bất kỳ lúc nào qua email <strong className="text-foreground">contact@arexnetwork.site</strong>. Chúng tôi sẽ xử lý trong vòng 24 giờ.</Item>
-              <Item><strong className="text-foreground">Font GFF Latin:</strong> Font chữ được sử dụng trên website mang phong cách thương hiệu Free Fire. Arex sử dụng font này cho mục đích nhận diện cộng đồng.</Item>
             </div>
             <Alert kind="info">
               Nếu bạn là đại diện của Garena và có yêu cầu về bản quyền, vui lòng liên hệ trực tiếp:{" "}
@@ -553,7 +552,7 @@ export default function PrivacyPolicyPage() {
             <Icons.Bell /> Liên Hệ Chúng Tôi
           </Link>
         </div>
-        <p className="mt-3 text-[10px] text-muted-foreground/40">© 2026 Arex · Chính Sách Bảo Mật v2.0 · Hiệu lực 02/04/2026 · Font: GFF Latin™ Garena Free Fire</p>
+        <p className="mt-3 text-[10px] text-muted-foreground/40">© 2026 Arex · Chính Sách Bảo Mật v2.0 · Hiệu lực 02/04/2026</p>
       </div>
       </Reveal>
       </PageContentOverride>

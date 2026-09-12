@@ -33,20 +33,14 @@ const ABOUT_ITEMS = [
 ];
 
 const COMMUNITY_ITEMS = [
-  { title: "Cửa Hàng Prime", href: "/prime-store",        icon: Crown,         desc: "Gói thành viên & ưu đãi độc quyền" },
-  { title: "Công Cụ FF",     href: "/tools",               icon: Wrench,        desc: "Độ nhạy · Tier list · Combo · Icon" },
   { title: "Diễn Đàn",       href: "/community",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
-  { title: "Feed",            href: "/feed",                  icon: Rss,           desc: "Hoạt động từ người bạn theo dõi" },
+  { title: "Công Cụ FF",     href: "/tools",               icon: Wrench,        desc: "Độ nhạy · Tier list · Combo · Icon" },
+  { title: "Quiz FF",        href: "/quiz",                  icon: Brain,         desc: "Đố vui kiến thức Free Fire" },
   { title: "Wiki CĐ",        href: "/wiki",                  icon: BookOpenText,  desc: "Kiến thức do cộng đồng đóng góp" },
   { title: "Thư Viện Icon",  href: "/items",                 icon: ImageIcon,     desc: "Icon Free Fire (vũ khí, nhân vật, skin...)" },
-  { title: "Xu Hướng",       href: "/community/trending",    icon: TrendingUp,    desc: "Hot posts & top contributors" },
-  { title: "Bình Chọn",      href: "/character-poll",             icon: Trophy,        desc: "Nhân vật mạnh nhất" },
-  { title: "Quiz FF",        href: "/quiz",                  icon: Brain,         desc: "Đố vui kiến thức Free Fire" },
-  { title: "BXH Nick VN",    href: "/top-players-vn",           icon: Crown,         desc: "Top nick FF khủng nhất VN (tự động)" },
-  { title: "BXH Quiz",       href: "/quiz-leaderboard",              icon: Brain,         desc: "Ai hiểu game nhất cộng đồng" },
+  { title: "BXH Nick VN",    href: "/top-players-vn",           icon: Crown,         desc: "Top nick FF khủng nhất VN" },
+  { title: "Cửa Hàng Prime", href: "/prime-store",        icon: Crown,         desc: "Gói thành viên & ưu đãi" },
   { title: "TikTok",         href: "/tiktok",                icon: Music2,        desc: "Video Free Fire cộng đồng" },
-  { title: "Tuyển TV",       href: "/recruitment",      icon: Users,         desc: "Tìm clan & guild" },
-  { title: "Trang Cá Nhân",  href: "/community/cosmetics",   icon: Palette,       desc: "Khung & Danh Hiệu" },
 ];
 
 // ── Mobile sheet nav — gom thành nhóm gọn ───────────────────────────────────
@@ -64,10 +58,10 @@ const MOBILE_NAV_SECTIONS: {
   {
     label: "Khám Phá",
     items: [
-      { title: "Lịch",     href: "/calendar", icon: CalendarDays },
       { title: "Sự Kiện",  href: "/events",   icon: Flame },
       { title: "Trực Tiếp", href: "/esports", icon: MonitorPlay },
-      { title: "Sắp Ra Mắt", href: "/coming-soon", icon: Rocket },
+      { title: "Giải Đấu", href: "/tournaments", icon: Trophy },
+      { title: "Chợ Arex", href: "/shop", icon: House },
     ],
   },
   {
@@ -287,8 +281,11 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
               className="hidden size-8 rounded-xl object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.38)] dark:block"
             />
           </motion.div>
-          <div className="hidden flex-col leading-none sm:flex">
-            <span className="font-heading text-[0.72rem] font-black uppercase tracking-[0.14em] text-foreground">
+          <div className="hidden flex-col justify-center gap-0.5 rounded-xl border border-white/25 bg-white/10 px-2.5 py-1 leading-none shadow-[0_2px_16px_rgba(0,0,0,0.08)] backdrop-blur-md sm:flex dark:border-white/10 dark:bg-white/5">
+            <span
+              className="font-brand bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-[0.8rem] uppercase tracking-[0.04em] text-transparent"
+              style={{ textShadow: "0 0 16px rgba(249,115,22,0.4)" }}
+            >
               {brandName}
             </span>
             <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
@@ -403,7 +400,10 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                   className="hidden size-9 shrink-0 rounded-xl object-contain dark:block"
                 />
                 <div className="min-w-0 leading-none">
-                  <SheetTitle className="font-heading text-sm font-black uppercase tracking-[0.12em] text-foreground">
+                  <SheetTitle
+                    className="font-brand bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-sm uppercase tracking-[0.03em] text-transparent"
+                    style={{ textShadow: "0 0 16px rgba(249,115,22,0.4)" }}
+                  >
                     {brandName}
                   </SheetTitle>
                   <SheetDescription className="mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
