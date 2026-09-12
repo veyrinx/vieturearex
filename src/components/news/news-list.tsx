@@ -17,7 +17,6 @@ import {
   parseVietnamDateInputEnd,
   parseVietnamDateInputStart,
 } from "@/lib/utils/vietnam-time";
-import { VerifiedBadge } from "@/components/verified-content/VerifiedBadge";
 
 type NewsListProps = {
   news: NewsItem[];
@@ -271,12 +270,6 @@ export function NewsList({ news: initialNews }: NewsListProps) {
 
                 {/* Body */}
                 <div className={cn("flex flex-1 flex-col gap-2 p-4", isFeatured && "md:justify-center md:p-6")}>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <VerifiedBadge
-                      info={(item as any).verification_info}
-                      status={(item as any).verification_status || "VERIFIED"}
-                    />
-                  </div>
                   <h3 className={cn(
                     "font-heading font-bold uppercase leading-snug tracking-[0.03em] text-foreground line-clamp-2 transition-colors duration-300 group-hover:text-primary dark:group-hover:text-amber-400",
                     isFeatured ? "text-base md:text-2xl" : "text-[0.9rem]",
