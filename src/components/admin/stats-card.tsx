@@ -10,6 +10,8 @@ type StatsCardProps = {
   color?: "blue" | "orange" | "purple" | "green" | "red";
   sub?: string;
   trend?: number | null;
+  /** Chi tiết theo nhóm (vd: role/trạng thái) — chip nhỏ dưới số chính. */
+  breakdown?: { label: string; value: number }[];
 };
 
 function TrendBadge({ pct }: { pct: number }) {
@@ -36,7 +38,7 @@ const COLOR_MAP = {
   red:    { icon: "bg-red-500/10 text-red-500 border-red-500/20",        glow: "hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)]",   bar: "from-red-500/20 to-transparent",    num: "text-red-600 dark:text-red-400" },
 };
 
-export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub, trend }: StatsCardProps) {
+export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub, trend, breakdown }: StatsCardProps) {
   const c = COLOR_MAP[color];
 
   const inner = (
@@ -65,6 +67,18 @@ export function StatsCard({ title, value, icon: Icon, href, color = "blue", sub,
             <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
               <TrendingUp className="size-3" />
               <span>{sub}</span>
+            </div>
+          )}
+          {breakdown && breakdown.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {breakdown.map((b) => (
+                <span
+                  key={b.label}
+                  className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground"
+                >
+                  {b.value.toLocaleString("vi-VN")} {b.label}
+                </span>
+              ))}
             </div>
           )}
         </div>

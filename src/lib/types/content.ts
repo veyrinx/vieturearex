@@ -162,6 +162,10 @@ export type DashboardStats = {
   events: number;
   news: number;
   views: number;
+  /** Số quản trị viên (mọi vai trừ "user") — tách riêng cho thẻ Người dùng. */
+  staffCount: number;
+  eventsByStatus: Record<EventStatus, number>;
+  newsByStatus: Record<PublishStatus, number>;
 };
 
 export type PublicUserProfile = {

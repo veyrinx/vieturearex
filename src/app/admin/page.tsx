@@ -149,6 +149,10 @@ export default async function AdminDashboardPage({
           color="blue"
           sub="Tổng tài khoản đã đăng ký"
           trend={trends.users}
+          breakdown={[
+            { label: "quản trị", value: stats.staffCount },
+            { label: "thành viên", value: stats.users - stats.staffCount },
+          ]}
         />
         <StatsCard
           title="Sự kiện"
@@ -158,6 +162,11 @@ export default async function AdminDashboardPage({
           color="orange"
           sub="Bao gồm đang & sắp diễn ra"
           trend={trends.events}
+          breakdown={[
+            { label: "đang diễn ra", value: stats.eventsByStatus.active },
+            { label: "sắp diễn ra", value: stats.eventsByStatus.upcoming },
+            { label: "đã kết thúc", value: stats.eventsByStatus.expired },
+          ]}
         />
         <StatsCard
           title="Bài viết"
@@ -167,6 +176,10 @@ export default async function AdminDashboardPage({
           color="purple"
           sub="Tin tức đã xuất bản"
           trend={trends.news}
+          breakdown={[
+            { label: "đã đăng", value: stats.newsByStatus.published },
+            { label: "bản nháp", value: stats.newsByStatus.draft },
+          ]}
         />
         <StatsCard
           title="Lượt xem"

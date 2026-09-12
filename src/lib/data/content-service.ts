@@ -23,6 +23,7 @@ import type {
   InvitedEmailItem,
   NewsItem,
   PublicUserProfile,
+  PublishStatus,
   SiteSetting,
   UserItem,
   UserRole,
@@ -1431,10 +1432,21 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Use whichever is the largest — protects against accidental data loss
   let views = Math.max(lifetime, archivedPlusDaily, fallbackViews);
 
+  const staffCount = users.filter((u) => u.role !== "user").length;
+
+  const eventsByStatus: Record<EventStatus, number> = { active: 0, upcoming: 0, expired: 0 };
+  for (const e of events) eventsByStatus[e.status]++;
+
+  const newsByStatus: Record<PublishStatus, number> = { draft: 0, published: 0 };
+  for (const n of news) newsByStatus[n.status]++;
+
   return {
     users: users.length,
     events: events.length,
     news: news.length,
     views: Number.isFinite(views) ? views : fallbackViews,
+    staffCount,
+    eventsByStatus,
+    newsByStatus,
   };
 }
