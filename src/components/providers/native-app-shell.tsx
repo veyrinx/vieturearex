@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
@@ -55,6 +55,36 @@ export function NativeAppShell() {
   const pathRef = useRef(pathname);
   pathRef.current = pathname;
 
+  // Handle deep link from cold start
+  const handleInitialDeepLink = useCallback(async () => {
+    if (!isNativeApp()) return;
+
+    // Check for initial URL from Capacitor
+    const appUrl = await callPlugin<{ url?: string }>("App", "getLaunchUrl");
+    if (appUrl?.url) {
+      const target = new URL(appUrl.url);
+      if (target.protocol === "arex:") {
+        const path = `${target.hostname ? `/${target.hostname}` : ""}${target.pathname}`.replace(
+          /\/+$/,
+          "",
+        );
+        if (path === "/auth/callback") {
+          if (target.searchParams.get("error")) {
+            router.push("/login?error=oauth_failed");
+            return;
+          }
+          window.location.assign(`/auth/oauth-callback${target.search}`);
+          return;
+        }
+        router.push(path ? `${path}${target.search}` : "/");
+        return;
+      }
+      if (isArexHost(target.hostname)) {
+        router.push(`${target.pathname}${target.search}${target.hash}` || "/");
+      }
+    }
+  }, [router]);
+
   // ── Đánh dấu môi trường native + ẩn splash ────────────────────────────────
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -66,11 +96,14 @@ export function NativeAppShell() {
     // Site đã render → tắt splash.
     void callPlugin("SplashScreen", "hide", { fadeOutDuration: 220 });
 
+    // Handle cold start deep link
+    handleInitialDeepLink();
+
     return () => {
       delete root.dataset.native;
       delete root.dataset.nativePlatform;
     };
-  }, []);
+  }, [handleInitialDeepLink]);
 
   // ── Thanh trạng thái đổi màu chữ theo theme sáng/tối ──────────────────────
   useEffect(() => {

@@ -6,6 +6,7 @@ import { Bell, BellDot, CheckCheck, Trophy, Swords, Calendar, X, MessageCircleCh
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { usePolling } from "@/hooks/use-polling";
+import { haptics } from "@/hooks/use-haptics";
 
 type Notification = {
   id: string;
@@ -108,7 +109,7 @@ export function NotificationBell({ className }: { className?: string }) {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => void openPanel()}
+        onClick={() => { haptics.light(); void openPanel(); }}
         aria-label="Thông báo"
         className={cn(
           "relative inline-flex size-9 items-center justify-center rounded-xl transition-colors",

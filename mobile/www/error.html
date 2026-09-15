@@ -14,8 +14,20 @@
         --fg: #fafafa;
         --muted: #a1a1aa;
         --accent: #f43f5e;
+        --accent-hover: #e11d48;
         --card: #141414;
         --border: #262626;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #fafafa;
+          --fg: #0a0a0a;
+          --muted: #52525b;
+          --accent: #0052ff;
+          --accent-hover: #0041cc;
+          --card: #ffffff;
+          --border: #e4e4e7;
+        }
       }
       * { box-sizing: border-box; }
       html, body {
@@ -25,6 +37,7 @@
         color: var(--fg);
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         -webkit-tap-highlight-color: transparent;
+        -webkit-font-smoothing: antialiased;
       }
       body {
         display: flex;
@@ -41,6 +54,12 @@
         border: 1px solid var(--border);
         border-radius: 20px;
         padding: 32px 24px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease-out;
+      }
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
       }
       .icon {
         width: 64px;
@@ -51,6 +70,9 @@
         border-radius: 50%;
         background: rgba(244, 63, 94, 0.12);
         color: var(--accent);
+      }
+      @media (prefers-color-scheme: light) {
+        .icon { background: rgba(0, 82, 255, 0.12); color: var(--accent); }
       }
       h1 {
         margin: 0 0 8px;
@@ -74,15 +96,29 @@
         color: #fff;
         background: var(--accent);
         cursor: pointer;
-        transition: opacity 0.15s;
+        transition: background 0.15s, transform 0.1s;
       }
-      button:active { opacity: 0.75; }
+      button:hover { background: var(--accent-hover); }
+      button:active { transform: scale(0.98); }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
       .status {
         margin-top: 16px;
         font-size: 12px;
         color: var(--muted);
         min-height: 16px;
       }
+      .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid var(--muted);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
@@ -103,7 +139,7 @@
         Arex Network cần Internet để tải nội dung mới nhất. Hãy kiểm tra Wi-Fi
         hoặc dữ liệu di động rồi thử lại.
       </p>
-      <button type="button" id="retry">Thử lại</button>
+      <button type="button" id="retry" disabled>Đang kiểm tra kết nối...</button>
       <div class="status" id="status"></div>
     </main>
 
@@ -111,18 +147,69 @@
       var SITE = "https://arexnetwork.site";
       var btn = document.getElementById("retry");
       var status = document.getElementById("status");
+      var retryCount = 0;
 
-      function retry() {
-        status.textContent = "Đang kết nối lại…";
-        if (navigator.onLine === false) {
-          status.textContent = "Vẫn chưa có mạng. Thử lại sau giây lát.";
-          return;
-        }
-        window.location.replace(SITE);
+      function checkConnection() {
+        return new Promise(function(resolve) {
+          var img = new Image();
+          var timeout = setTimeout(function() {
+            img.src = '';
+            resolve(false);
+          }, 5000);
+          img.onload = function() {
+            clearTimeout(timeout);
+            resolve(true);
+          };
+          img.onerror = function() {
+            clearTimeout(timeout);
+            resolve(false);
+          };
+          img.src = SITE + '/favicon.ico?t=' + Date.now();
+        });
       }
 
-      btn.addEventListener("click", retry);
-      window.addEventListener("online", retry);
+      async function retry() {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Đang kết nối lại...';
+        status.textContent = '';
+
+        var online = await checkConnection();
+        if (online) {
+          window.location.replace(SITE);
+          return;
+        }
+
+        retryCount++;
+        if (retryCount >= 3) {
+          status.textContent = 'Vẫn không thể kết nối. Vui lòng kiểm tra cài đặt mạng.';
+          btn.disabled = false;
+          btn.textContent = 'Thử lại';
+        } else {
+          status.textContent = 'Thử lại sau 3 giây... (lần ' + retryCount + '/3)';
+          setTimeout(function() {
+            btn.disabled = false;
+            btn.textContent = 'Thử lại';
+            retry();
+          }, 3000);
+        }
+      }
+
+      // Initial check
+      checkConnection().then(function(online) {
+        if (online) {
+          window.location.replace(SITE);
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Thử lại';
+        }
+      });
+
+      btn.addEventListener('click', retry);
+      window.addEventListener('online', function() {
+        if (navigator.onLine) {
+          window.location.replace(SITE);
+        }
+      });
     </script>
   </body>
 </html>

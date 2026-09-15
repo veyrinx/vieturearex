@@ -6,25 +6,35 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
     />
-    <title>Mất kết nối — Arex Network</title>
+    <title>Arex Network</title>
     <style>
       :root {
         color-scheme: dark;
         --bg: #0a0a0a;
         --fg: #fafafa;
         --muted: #a1a1aa;
-        --accent: #f43f5e;
+        --primary: #f7931a;
         --card: #141414;
         --border: #262626;
       }
-      * { box-sizing: border-box; }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #fafafa;
+          --fg: #0a0a0a;
+          --muted: #52525b;
+          --primary: #ea580c;
+          --card: #ffffff;
+          --border: #e4e4e7;
+        }
+      }
+      * { box-sizing: border-box; margin: 0; }
       html, body {
-        margin: 0;
         height: 100%;
         background: var(--bg);
         color: var(--fg);
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         -webkit-tap-highlight-color: transparent;
+        -webkit-font-smoothing: antialiased;
       }
       body {
         display: flex;
@@ -34,49 +44,53 @@
           calc(24px + env(safe-area-inset-bottom));
         text-align: center;
       }
-      .card {
+      .container {
         width: 100%;
-        max-width: 360px;
-        background: var(--card);
-        border: 1px solid var(--border);
+        max-width: 280px;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 24px;
         border-radius: 20px;
-        padding: 32px 24px;
+        background: linear-gradient(135deg, #f7931a, #ea580c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 30px rgba(247, 147, 26, 0.4);
+        animation: pulse 2s ease-in-out infinite;
       }
-      .icon {
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 20px;
-        display: grid;
-        place-items: center;
-        border-radius: 50%;
-        background: rgba(244, 63, 94, 0.12);
-        color: var(--accent);
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(247, 147, 26, 0.4); }
+        50% { transform: scale(1.05); box-shadow: 0 15px 40px rgba(247, 147, 26, 0.6); }
       }
+      .logo svg { width: 48px; height: 48px; color: white; }
       h1 {
         margin: 0 0 8px;
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 800;
-        letter-spacing: -0.01em;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, #f7931a, #ffd600);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
       }
       p {
-        margin: 0 0 24px;
+        margin: 0 0 32px;
         font-size: 14px;
         line-height: 1.6;
         color: var(--muted);
       }
-      button {
-        width: 100%;
-        border: 0;
-        border-radius: 12px;
-        padding: 14px 20px;
-        font-size: 15px;
-        font-weight: 700;
-        color: #fff;
-        background: var(--accent);
-        cursor: pointer;
-        transition: opacity 0.15s;
+      .loader {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto;
+        border: 3px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
       }
-      button:active { opacity: 0.75; }
+      @keyframes spin { to { transform: rotate(360deg); } }
       .status {
         margin-top: 16px;
         font-size: 12px;
@@ -86,43 +100,32 @@
     </style>
   </head>
   <body>
-    <main class="card">
-      <div class="icon" aria-hidden="true">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m2 2 20 20" />
-          <path d="M8.5 16.5a5 5 0 0 1 7 0" />
-          <path d="M2 8.82a15 15 0 0 1 4.17-2.65" />
-          <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76" />
-          <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68" />
-          <path d="M5 13a10 10 0 0 1 5.24-2.76" />
-          <line x1="12" y1="20" x2="12.01" y2="20" />
+    <div class="container">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" />
+          <path d="M12 22V12" />
+          <path d="M22 8.5L12 15.5L2 8.5" />
         </svg>
       </div>
-      <h1>Không có kết nối mạng</h1>
-      <p>
-        Arex Network cần Internet để tải nội dung mới nhất. Hãy kiểm tra Wi-Fi
-        hoặc dữ liệu di động rồi thử lại.
-      </p>
-      <button type="button" id="retry">Thử lại</button>
+      <h1>Arex Network</h1>
+      <p>Đang tải cộng đồng Free Fire Việt Nam...</p>
+      <div class="loader" aria-label="Đang tải" role="status"></div>
       <div class="status" id="status"></div>
-    </main>
-
+    </div>
     <script>
       var SITE = "https://arexnetwork.site";
-      var btn = document.getElementById("retry");
-      var status = document.getElementById("status");
+      var statusEl = document.getElementById('status');
 
-      function retry() {
-        status.textContent = "Đang kết nối lại…";
-        if (navigator.onLine === false) {
-          status.textContent = "Vẫn chưa có mạng. Thử lại sau giây lát.";
-          return;
-        }
+      // Redirect to main site after brief delay for splash screen
+      setTimeout(function() {
         window.location.replace(SITE);
-      }
+      }, 500);
 
-      btn.addEventListener("click", retry);
-      window.addEventListener("online", retry);
+      // Fallback if redirect fails
+      setTimeout(function() {
+        statusEl.textContent = 'Không thể tải ứng dụng. Vui lòng kiểm tra kết nối.';
+      }, 10000);
     </script>
   </body>
 </html>

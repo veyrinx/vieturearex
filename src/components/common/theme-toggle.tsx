@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/hooks/use-haptics";
 
 type ThemeToggleProps = {
   className?: string;
@@ -37,7 +38,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={() => { haptics.light(); setTheme(isDark ? "light" : "dark"); }}
       className={cn(
         "theme-control-surface rounded-xl transition hover:brightness-105",
         className,

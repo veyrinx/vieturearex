@@ -5,6 +5,7 @@ import { Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { haptics } from "@/hooks/use-haptics";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
@@ -44,6 +45,7 @@ export function PushNotificationButton({ className }: { className?: string }) {
   if (!mounted || !isLoggedIn) return null;
 
   const toggle = async () => {
+    haptics.light();
     if (!supported) return;
     setLoading(true);
     try {

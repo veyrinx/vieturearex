@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { navItems, siteConfig } from "@/lib/constants/site";
 import { Info, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { isNativeApp } from "@/lib/native/bridge";
 
 const ABOUT_ITEMS = [
   { title: "Đội Ngũ",       href: "/team",    icon: Users, desc: "Thành viên vận hành Arex" },
@@ -226,10 +227,18 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
   const brandName = /network/i.test(siteName) ? siteName : `${siteName} Network`;
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const isHomePage = pathname === "/";
+
+  useEffect(() => {
+    setIsNative(isNativeApp());
+  }, []);
 
   const ctrlClass =
     "theme-control-surface border-slate-200/90 bg-white/84 text-slate-900 hover:bg-white dark:border-white/15 dark:bg-[#0F1115]/72 dark:text-white dark:hover:bg-[#151820]";
+
+  // Ẩn hamburger menu trên app native (có bottom tab bar)
+  const showHamburger = !isNative;
 
   return (
     <header
@@ -367,105 +376,107 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
             <ThemeToggle className={isHomePage ? ctrlClass : undefined} />
           </span>
 
-          {/* Mobile hamburger */}
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger
-              className={cn(
-                "inline-flex size-9 items-center justify-center rounded-xl xl:hidden",
-                isHomePage ? ctrlClass : "theme-control-surface",
-              )}
-            >
-              <Menu className="size-5" />
-            </SheetTrigger>
+          {/* Mobile hamburger - chỉ hiển thị trên web, app native dùng bottom tab bar */}
+          {showHamburger && (
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger
+                className={cn(
+                  "inline-flex size-9 items-center justify-center rounded-xl xl:hidden",
+                  isHomePage ? ctrlClass : "theme-control-surface",
+                )}
+              >
+                <Menu className="size-5" />
+              </SheetTrigger>
 
-            <SheetContent
-              side="right"
-              className="flex w-72 max-w-[85vw] flex-col gap-0 overflow-hidden rounded-l-[28px] border-l border-border/60 bg-card p-0 text-foreground shadow-[0_20px_70px_rgba(0,0,0,0.28)]"
-            >
-              {/* Brand header */}
-              <div className="relative flex items-center gap-3 border-b border-border/60 bg-gradient-to-br from-primary/8 to-transparent px-4 py-4 dark:from-amber-400/8">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
-                <Image
-                  src={iconLight}
-                  alt={siteName}
-                  width={38}
-                  height={38}
-                  className="block size-9 shrink-0 rounded-xl object-contain dark:hidden"
-                />
-                <Image
-                  src={iconDark}
-                  alt={siteName}
-                  width={38}
-                  height={38}
-                  className="hidden size-9 shrink-0 rounded-xl object-contain dark:block"
-                />
-                <div className="min-w-0 leading-none">
-                  <SheetTitle
-                    className="font-brand bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-sm uppercase tracking-[0.03em] text-transparent"
-                    style={{ textShadow: "0 0 16px rgba(249,115,22,0.4)" }}
-                  >
-                    {brandName}
-                  </SheetTitle>
-                  <SheetDescription className="mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    Community Hub
-                  </SheetDescription>
-                </div>
-              </div>
-
-              {/* Nav groups */}
-              <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
-                {MOBILE_NAV_SECTIONS.map((section, si) => (
-                  <div key={section.label}>
-                    <p className="px-1.5 pb-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
-                      {section.label}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {section.items.map(({ href, icon: Icon, title }, i) => {
-                        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-                        return (
-                          <motion.div
-                            key={href}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: si * 0.05 + i * 0.025, duration: 0.2, ease: "easeOut" }}
-                          >
-                            <Link
-                              href={href}
-                              onClick={() => setSheetOpen(false)}
-                              className={cn(
-                                "flex items-center gap-2 rounded-2xl border px-2.5 py-2.5 text-xs font-semibold transition-all active:scale-[0.97]",
-                                active
-                                  ? "border-primary/25 bg-primary/10 text-primary shadow-sm dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300"
-                                  : "border-transparent bg-muted/40 text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
-                              )}
-                            >
-                              <span className={cn(
-                                "flex size-7 shrink-0 items-center justify-center rounded-xl",
-                                active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-background/70",
-                              )}>
-                                <Icon className="size-3.5" />
-                              </span>
-                              <span className="truncate">{title}</span>
-                            </Link>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
+              <SheetContent
+                side="right"
+                className="flex w-72 max-w-[85vw] flex-col gap-0 overflow-hidden rounded-l-[28px] border-l border-border/60 bg-card p-0 text-foreground shadow-[0_20px_70px_rgba(0,0,0,0.28)]"
+              >
+                {/* Brand header */}
+                <div className="relative flex items-center gap-3 border-b border-border/60 bg-gradient-to-br from-primary/8 to-transparent px-4 py-4 dark:from-amber-400/8">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent dark:via-amber-400/40" />
+                  <Image
+                    src={iconLight}
+                    alt={siteName}
+                    width={38}
+                    height={38}
+                    className="block size-9 shrink-0 rounded-xl object-contain dark:hidden"
+                  />
+                  <Image
+                    src={iconDark}
+                    alt={siteName}
+                    width={38}
+                    height={38}
+                    className="hidden size-9 shrink-0 rounded-xl object-contain dark:block"
+                  />
+                  <div className="min-w-0 leading-none">
+                    <SheetTitle
+                      className="font-brand bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-sm uppercase tracking-[0.03em] text-transparent"
+                      style={{ textShadow: "0 0 16px rgba(249,115,22,0.4)" }}
+                    >
+                      {brandName}
+                    </SheetTitle>
+                    <SheetDescription className="mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                      Community Hub
+                    </SheetDescription>
                   </div>
-                ))}
-              </nav>
-
-              {/* Quick controls */}
-              <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
-                <div className="flex items-center gap-1">
-                  <NotificationBell />
-                  <PushNotificationButton />
-                  <ThemeToggle />
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+
+                {/* Nav groups */}
+                <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
+                  {MOBILE_NAV_SECTIONS.map((section, si) => (
+                    <div key={section.label}>
+                      <p className="px-1.5 pb-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">
+                        {section.label}
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {section.items.map(({ href, icon: Icon, title }, i) => {
+                          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+                          return (
+                            <motion.div
+                              key={href}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: si * 0.05 + i * 0.025, duration: 0.2, ease: "easeOut" }}
+                            >
+                              <Link
+                                href={href}
+                                onClick={() => setSheetOpen(false)}
+                                className={cn(
+                                  "flex items-center gap-2 rounded-2xl border px-2.5 py-2.5 text-xs font-semibold transition-all active:scale-[0.97]",
+                                  active
+                                    ? "border-primary/25 bg-primary/10 text-primary shadow-sm dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300"
+                                    : "border-transparent bg-muted/40 text-muted-foreground hover:border-primary/15 hover:bg-primary/8 hover:text-primary dark:text-white/70 dark:hover:text-white",
+                                )}
+                              >
+                                <span className={cn(
+                                  "flex size-7 shrink-0 items-center justify-center rounded-xl",
+                                  active ? "bg-primary/15 dark:bg-amber-400/15" : "bg-background/70",
+                                )}>
+                                  <Icon className="size-3.5" />
+                                </span>
+                                <span className="truncate">{title}</span>
+                              </Link>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </nav>
+
+                {/* Quick controls */}
+                <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tuỳ chỉnh</span>
+                  <div className="flex items-center gap-1">
+                    <NotificationBell />
+                    <PushNotificationButton />
+                    <ThemeToggle />
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
     </header>

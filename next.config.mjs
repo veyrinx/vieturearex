@@ -15,19 +15,15 @@ const nextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
   compress: true,
+  swcMinify: true,
   compiler: {
     removeConsole: isDevelopment ? false : { exclude: ["error"] },
   },
-  webpack(config, { isServer }) {
-    if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        react: path.resolve(__dirname, "node_modules/react"),
-        "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      };
-    }
-    return config;
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons", "framer-motion"],
+    webVitalsAttribution: ["CLS", "LCP", "INP", "FCP", "TTFB"],
   },
+  // Optimize images for mobile
   images: {
     remotePatterns: [
       {
@@ -77,6 +73,18 @@ const nextConfig = {
     ],
     minimumCacheTTL: 31536000,
     formats: ['image/avif', 'image/webp'],
+    deviceSizes: [320, 420, 768, 1024, 1280, 1536],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        react: path.resolve(__dirname, "node_modules/react"),
+        "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      };
+    }
+    return config;
   },
   // Slug tiếng Việt cũ → slug tiếng Anh. Next khớp theo thứ tự nên luật con
   // (loai, so-sanh, vai-tro…) phải đứng trước luật cha :path*.

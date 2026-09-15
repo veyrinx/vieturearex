@@ -842,6 +842,59 @@ html[data-native="true"] .site-footer {
   padding-bottom: calc(var(--app-inset-bottom) + 12px);
 }
 
+/* Bottom tab bar safe area */
+html[data-native="true"] .bottom-tab-bar {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+}
+
+/* Main content padding for bottom tab bar */
+html[data-native="true"] main {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Sheet content safe area */
+html[data-native="true"] [data-radix-sheet-content] {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+/* Dialog safe area */
+html[data-native="true"] [data-radix-dialog-content] {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+/* Keyboard handling for forms */
+html[data-native="true"] .keyboard-avoid {
+  padding-bottom: env(keyboard-inset-height, 0px);
+}
+
+/* Prevent zoom on input focus (iOS) */
+html[data-native="true"] input,
+html[data-native="true"] select,
+html[data-native="true"] textarea {
+  font-size: 16px !important;
+}
+
+/* Smooth scroll for native feel */
+html[data-native="true"] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Native-like tap highlight */
+html[data-native="true"] a,
+html[data-native="true"] button,
+html[data-native="true"] [role="button"] {
+  -webkit-tap-highlight-color: rgba(0, 82, 255, 0.15);
+  tap-highlight-color: rgba(0, 82, 255, 0.15);
+}
+
+html[data-native="true"].dark a,
+html[data-native="true"].dark button,
+html[data-native="true"].dark [role="button"] {
+  -webkit-tap-highlight-color: rgba(247, 147, 26, 0.15);
+  tap-highlight-color: rgba(247, 147, 26, 0.15);
+}
+
 /* Những thứ chỉ dành cho trình duyệt — ẩn trong app. */
 html[data-native="true"] .adsbygoogle,
 html[data-native="true"] ins.adsbygoogle,

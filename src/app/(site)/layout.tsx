@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { BottomTabBarProvider } from "@/components/layout/bottom-tab-bar";
 import { PageTransition } from "@/components/common/page-transition";
 import { AutoReload } from "@/components/common/auto-reload";
 import { AnnouncementBanner } from "@/components/common/announcement-banner";
@@ -61,13 +62,15 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
         logoDark={settingsMap["branding.logo_dark_url"]}
         siteName={settingsMap["branding.site_name"] || activeSite.shortName}
       />
-      <PageTransition>
-        <main className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-6">
-          <AnnouncementBanner />
-          <AdminLockBanner />
-          {children}
-        </main>
-      </PageTransition>
+      <BottomTabBarProvider>
+        <PageTransition>
+          <main className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-6">
+            <AnnouncementBanner />
+            <AdminLockBanner />
+            {children}
+          </main>
+        </PageTransition>
+      </BottomTabBarProvider>
       <SiteFooter />
       <ScrollToTop />
       <DailyCheckinTrigger />

@@ -53,6 +53,10 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
     backgroundColor: "#0a0a0a",
+    // Allow file access for offline error page
+    allowMixedContent: false,
+    // Handle back button properly
+    handleBackButton: true,
   },
 
   ios: {
@@ -61,6 +65,8 @@ const config: CapacitorConfig = {
     limitsNavigationsToAppBoundDomains: false,
     backgroundColor: "#ffffff",
     scrollEnabled: true,
+    // Enable pull-to-refresh on iOS
+    pullToRefresh: false, // We handle this in web
   },
 
   plugins: {
@@ -87,6 +93,10 @@ const config: CapacitorConfig = {
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
+    },
+    // Deep links config
+    App: {
+      launchUrl: SITE_URL,
     },
   },
 };
