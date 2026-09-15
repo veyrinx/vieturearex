@@ -1,0 +1,72 @@
+{
+  "expo": {
+    "name": "Arex Hub",
+    "slug": "arex-hub",
+    "version": "1.1.3",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "site.arexnetwork.hub",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
+      },
+      "associatedDomains": [
+        "applinks:arexnetwork.site",
+        "applinks:hub.arexnetwork.site"
+      ]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A",
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundImage": "./assets/icon-background.png",
+        "monochromeImage": "./assets/icon-monochrome.png"
+      },
+      "package": "site.arexnetwork.hub",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0F172A",
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#0F172A",
+            "image": "./assets/splash-dark.png"
+          }
+        }
+      ]
+    ],
+    "scheme": "arex-hub",
+    "extra": {
+      "apiUrl": "https://www.arexnetwork.site/api",
+      "supabaseUrl": "https://your-project.supabase.co",
+      "supabaseAnonKey": "your-anon-key"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-hub-project-id"
+    }
+  }
+}

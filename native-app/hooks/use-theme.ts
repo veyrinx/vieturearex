@@ -3,29 +3,31 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createTheme, Theme } from '@/constants/theme';
 
-type Theme = 'light' | 'dark' | 'system';
+type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
-  theme: Theme;
+  themeMode: ThemeMode;
   resolvedTheme: 'light' | 'dark';
-  setTheme: (theme: Theme) => Promise<void>;
+  theme: Theme;
+  setThemeMode: (mode: ThemeMode) => Promise<void>;
   toggleTheme: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
-const STORAGE_KEY = 'arex-theme';
+const STORAGE_KEY = 'arex-theme-mode';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemColorScheme = useColorScheme();
-  const [theme, setThemeState] = useState<Theme>('system');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const loadTheme = async () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored) setThemeState(stored as Theme);
+        if (stored) setThemeModeState(stored as ThemeMode);
       } catch {
         // ignore
       } finally {
@@ -35,37 +37,45 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     loadTheme();
   }, []);
 
-  const resolvedTheme = theme === 'system' 
+  const resolvedTheme = themeMode === 'system' 
     ? (systemColorScheme ?? 'light') 
-    : theme;
+    : themeMode;
+
+  const theme = createTheme(resolvedTheme);
 
   useEffect(() => {
     if (mounted) {
-      AsyncStorage.setItem(STORAGE_KEY, theme).catch(() => {});
+      AsyncStorage.setItem(STORAGE_KEY, themeMode).catch(() => {});
     }
-  }, [theme, mounted]);
+  }, [themeMode, mounted]);
 
-  const setTheme = async (newTheme: Theme) => {
-    setThemeState(newTheme);
+  const setThemeMode = async (mode: ThemeMode) => {
+    setThemeModeState(mode);
   };
 
   const toggleTheme = async () => {
-    const themes: Theme[] = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(theme);
-    const nextTheme = themes[(currentIndex + 1) % themes.length];
-    await setTheme(nextTheme);
+    const modes: ThemeMode[] = ['light', 'dark', 'system'];
+    const currentIndex = modes.indexOf(themeMode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    await setThemeMode(nextMode);
   };
 
   if (!mounted) {
     return (
-      <ThemeContext.Provider value={{ theme: 'system', resolvedTheme: 'light', setTheme: async () => {}, toggleTheme: async () => {} }}>
+      <ThemeContext.Provider value={{ 
+        themeMode: 'system', 
+        resolvedTheme: 'light', 
+        theme: createTheme('light'),
+        setThemeMode: async () => {}, 
+        toggleTheme: async () => {} 
+      }}>
         {children}
       </ThemeContext.Provider>
     );
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ themeMode, resolvedTheme, theme, setThemeMode, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,9 +1,22 @@
 'use client';
 
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  RefreshControl, 
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+} from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/use-theme';
-import { Platform } from 'react-native';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { GlassCard, ContentCard, CompactCard } from '@/components/ui/GlassCard';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'https://www.arexnetwork.site/api';
 
@@ -26,8 +39,8 @@ async function fetchNews(page = 1): Promise<{ data: NewsItem[]; total: number }>
 }
 
 export default function NewsScreen() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const { theme } = useTheme();
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,82 +69,152 @@ export default function NewsScreen() {
     setLoadingMore(false);
   };
 
-  const colors = {
-    background: isDark ? '#0a0a0a' : '#fafafa',
-    card: isDark ? '#141414' : '#ffffff',
-    border: isDark ? '#262626' : '#e4e4e7',
-    text: isDark ? '#fafafa' : '#0a0a0a',
-    textMuted: isDark ? '#a1a1aa' : '#71717a',
-    primary: '#F7931A',
-  };
-
+  const { colors, typography, spacing } = theme;
   const news = page === 1 ? data?.data : allNews;
+
+  const categories = ['Tất cả', 'Sự kiện', 'Cập nhật', 'Esports', 'Cộng đồng', 'Hướng dẫn'];
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
 
   if (isLoading && page === 1) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingCenter}>
-          <Text style={[styles.loadingText, { color: colors.textMuted }]}>Đang tải tin tức...</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <View style={styles.skeletonCard} />
+          <View style={styles.skeletonCard} />
+          <View style={styles.skeletonCard} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             colors={[colors.primary]}
-            progressBackgroundColor={colors.card}
+            progressBackgroundColor={colors.surface}
+            progressViewOffset={60}
           />
         }
         onEndReached={loadMore}
-        onEndReachedThreshold={0.3}
+        onEndReachedThreshold={0.2}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
-        {error && (
-          <View style={styles.error}>
-            <Text style={[styles.errorText, { color: colors.textMuted }]}>Không thể tải tin tức</Text>
-            <TouchableOpacity onPress={onRefresh} style={[styles.retryBtn, { backgroundColor: colors.primary }]}>
-              <Text style={styles.retryBtnText}>Thử lại</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Category Filter */}
+        <AnimatedView enterAnimation="fade" delay={100} style={styles.categorySection}>
+          <Text style={[typography.titleLarge, { color: colors.onSurface, marginBottom: spacing.sm }]}>Danh mục</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+            {categories.map((cat, index) => (
+              <AnimatedView key={cat} enterAnimation="slideRight" delay={150 + index * 30} style={styles.categoryItem}>
+                <TouchableOpacity
+                  style={[
+                    styles.categoryChip,
+                    selectedCategory === cat ? styles.categoryChipActive : {},
+                    { backgroundColor: selectedCategory === cat ? colors.primary : colors.surfaceVariant }
+                  ]}
+                  onPress={() => setSelectedCategory(cat)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    typography.labelMedium,
+                    { color: selectedCategory === cat ? colors.onPrimary : colors.onSurfaceVariant }
+                  ]}>{cat}</Text>
+                </TouchableOpacity>
+              </AnimatedView>
+            ))}
+          </ScrollView>
+        </AnimatedView>
 
-        {news?.map((item) => (
-          <TouchableOpacity key={item.id} style={[styles.newsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {item.thumbnail_url && (
-              <Image source={{ uri: item.thumbnail_url }} style={styles.newsImage} resizeMode="cover" />
-            )}
-            <View style={styles.newsContent}>
-              <Text style={[styles.newsCategory, { color: colors.primary }]}>{item.category}</Text>
-              <Text style={[styles.newsTitle, { color: colors.text }]}>{item.title}</Text>
-              {item.excerpt && (
-                <Text style={[styles.newsExcerpt, { color: colors.textMuted }]}>{item.excerpt}</Text>
-              )}
-              <View style={styles.newsMeta}>
-                <Text style={[styles.newsTime, { color: colors.textMuted }]}>{formatDate(item.published_at)}</Text>
-                <Text style={[styles.newsViews, { color: colors.textMuted }]}>{formatNumber(item.view_count)} lượt xem</Text>
+        {/* News List */}
+        <AnimatedView enterAnimation="slideUp" delay={200} style={styles.newsSection}>
+          {error && page === 1 ? (
+            <ContentCard style={styles.errorCard}>
+              <View style={styles.errorContent}>
+                <Ionicons name="alert-circle-outline" size={48} color={colors.onSurfaceVariant} />
+                <Text style={[typography.titleMedium, { color: colors.onSurface, marginTop: spacing.sm }]}>Không thể tải tin tức</Text>
+                <Text style={[typography.bodyMedium, { color: colors.onSurfaceVariant, marginTop: spacing.xs, textAlign: 'center' }]}>Kiểm tra kết nối Internet và thử lại</Text>
+                <TouchableOpacity 
+                  style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                  onPress={onRefresh}
+                  marginTop={spacing.md}
+                >
+                  <Text style={[typography.labelMedium, { color: colors.onPrimary }]}>Thử lại</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </ContentCard>
+          ) : (
+            <View style={styles.newsList}>
+              {news?.map((newsItem, index) => (
+                <AnimatedView 
+                  key={newsItem.id} 
+                  enterAnimation="slideUp" 
+                  delay={300 + index * 30}
+                  style={styles.newsCardContainer}
+                >
+                  <TouchableOpacity
+                    style={styles.newsCard}
+                    onPress={() => router.push(`/news/${newsItem.slug}`)}
+                    activeOpacity={0.85}
+                  >
+                    {newsItem.thumbnail_url && (
+                      <Image source={{ uri: newsItem.thumbnail_url }} style={styles.newsImage} resizeMode="cover" />
+                    )}
+                    <View style={styles.newsContent}>
+                      <View style={styles.newsMeta}>
+                        <View style={[styles.categoryChip, { backgroundColor: colors.primaryContainer }]}>
+                          <Text style={[typography.labelSmall, { color: colors.primary, fontWeight: '600' }]}>{newsItem.category}</Text>
+                        </View>
+                        <Text style={[styles.newsTime, { color: colors.onSurfaceVariant }]}>{formatRelativeTime(newsItem.published_at)}</Text>
+                      </View>
+                      <Text style={[typography.titleMedium, { color: colors.onSurface, marginTop: spacing.sm, marginBottom: spacing.xs }]}>{newsItem.title}</Text>
+                      {newsItem.excerpt && (
+                        <Text style={[typography.bodyMedium, { color: colors.onSurfaceVariant, marginTop: spacing.xs }]}>{newsItem.excerpt}</Text>
+                      )}
+                      <View style={styles.newsFooter}>
+                        <View style={styles.newsStat}>
+                          <Ionicons name="eye-outline" size={16} color={colors.onSurfaceVariant} />
+                          <Text style={[typography.labelSmall, { color: colors.onSurfaceVariant, marginLeft: 4 }]}>{formatNumber(newsItem.view_count)}</Text>
+                        </View>
+                        <View style={styles.newsStat}>
+                          <Ionicons name="chatbubble-outline" size={16} color={colors.onSurfaceVariant} />
+                          <Text style={[typography.labelSmall, { color: colors.onSurfaceVariant, marginLeft: 4 }]}>0</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={colors.outline} />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </AnimatedView>
+              ))}
 
-        {loadingMore && (
-          <View style={styles.loadingMore}>
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Đang tải thêm...</Text>
-          </View>
-        )}
+              {loadingMore && (
+                <View style={styles.loadingMore}>
+                  <Text style={[typography.bodyMedium, { color: colors.onSurfaceVariant }]}>Đang tải thêm...</Text>
+                </View>
+              )}
+
+              {!news?.length && !error && !isLoading && (
+                <ContentCard style={styles.emptyCard}>
+                  <View style={styles.emptyContent}>
+                    <Ionicons name="newspaper-outline" size={48} color={colors.onSurfaceVariant} />
+                    <Text style={[typography.titleMedium, { color: colors.onSurface, marginTop: spacing.sm }]}>Chưa có tin tức</Text>
+                    <Text style={[typography.bodyMedium, { color: colors.onSurfaceVariant, textAlign: 'center' }]}>Hãy quay lại sau nhé!</Text>
+                  </View>
+                </ContentCard>
+              )}
+            </View>
+          )}
+        </AnimatedView>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
-function formatDate(dateStr: string): string {
+function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
@@ -140,10 +223,10 @@ function formatDate(dateStr: string): string {
   const days = Math.floor(diff / 86400000);
 
   if (minutes < 1) return 'Vừa xong';
-  if (minutes < 60) return `${minutes}p`;
+  if (minutes < 60) return `${minutes}ph`;
   if (hours < 24) return `${hours}h`;
-  if (days < 7) return `${days}d`;
-  return date.toLocaleDateString('vi-VN');
+  if (days < 7) return `${days}ngày`;
+  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
 }
 
 function formatNumber(num: number): string {
@@ -154,32 +237,44 @@ function formatNumber(num: number): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { fontSize: 16 },
-  scrollContent: { paddingBottom: 100, paddingHorizontal: 16 },
-  error: { alignItems: 'center', padding: 32 },
-  errorText: { fontSize: 14, marginBottom: 12 },
-  retryBtn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  retryBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  newsCard: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  skeletonCard: { 
+    marginHorizontal: 16, 
+    marginBottom: 12, 
+    height: 120, 
+    borderRadius: 12, 
+    backgroundColor: '#E0E0E0' 
   },
-  newsImage: { width: 100, height: 100, borderTopLeftRadius: 12, borderBottomLeftRadius: 12 },
+  scrollContent: { paddingBottom: 100 },
+  categorySection: { paddingHorizontal: 16, paddingBottom: 8 },
+  categoryScroll: { paddingRight: 16, gap: 8 },
+  categoryItem: { marginRight: 8 },
+  categoryChip: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 20, 
+    borderWidth: 1 
+  },
+  categoryChipActive: { 
+    borderWidth: 0 
+  },
+  newsSection: { paddingHorizontal: 16, marginTop: 8 },
+  newsList: { gap: 12 },
+  newsCardContainer: {},
+  newsCard: { flexDirection: 'row', borderRadius: 12, overflow: 'hidden' },
+  newsImage: { width: 100, height: 100 },
   newsContent: { flex: 1, padding: 12, justifyContent: 'space-between' },
-  newsCategory: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  newsTitle: { fontSize: 14, fontWeight: '700', lineHeight: 20, marginBottom: 6 },
-  newsExcerpt: { fontSize: 12, lineHeight: 18, marginBottom: 8 },
-  newsMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  newsMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  categoryChip: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   newsTime: { fontSize: 11, fontWeight: '500' },
-  newsViews: { fontSize: 11, fontWeight: '500' },
-  loadingMore: { padding: 16, alignItems: 'center' },
+  newsFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, paddingTop: 8, marginTop: 8 },
+  newsStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  loadingMore: { padding: 24, alignItems: 'center' },
+  errorCard: { marginHorizontal: 16, padding: 24, marginTop: 8 },
+  errorContent: { alignItems: 'center', gap: 12 },
+  retryButton: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  emptyCard: { marginHorizontal: 16, padding: 32, marginTop: 8 },
+  emptyContent: { alignItems: 'center', gap: 12 },
 });
+
+import { useState } from 'react';
