@@ -8,7 +8,7 @@ import { isArexHost } from "@/lib/constants/site";
 import { NativeAppLayout } from "./native-app-layout";
 
 type NativeAppShellProps = {
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 function subscribe<T>(

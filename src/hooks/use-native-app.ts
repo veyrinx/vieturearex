@@ -52,7 +52,7 @@ export function useFeatureFlag(feature: string) {
     "background-sync",
   ];
 
-  const disabledOnAndroid = [
+  const disabledOnAndroid: string[] = [
     // Add Android-specific disabled features
   ];
 

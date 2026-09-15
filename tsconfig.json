@@ -42,6 +42,8 @@
     "zalo-miniapp",
     "mobile",
     "mobile-hub",
-    "supabase"
+    "supabase",
+    "arex-hub",
+    "native-app"
   ]
 }

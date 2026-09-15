@@ -1,0 +1,43 @@
+# ============================================================
+# Netlify — deploy site thứ 2 (vd: iscnetwork.site) song song với Vercel.
+# Site kia (arexnetwork.site) vẫn ở Vercel — xem vercel.json.
+#
+# QUAN TRỌNG: KHÔNG cấu hình lại 13 cron job (vercel.json → crons) bằng
+# Netlify Scheduled Functions ở đây. Các cron đó thao tác trên CÙNG MỘT
+# Supabase DB dùng chung cho cả 2 tên miền (không lọc theo site_id) — nếu
+# chạy thêm một bản trên Netlify, mọi job (báo cáo, dọn dữ liệu hết hạn,
+# nhắc lịch, server-watch mỗi 5 phút...) sẽ chạy đúp, gửi thông báo Discord/
+# email 2 lần và có thể xử lý đơn hàng/sự kiện 2 lần. Giữ nguyên: chỉ Vercel
+# chạy cron, Netlify chỉ phục vụ request.
+# ============================================================
+
+[build]
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Biến môi trường: copy toàn bộ danh sách trong .env.example vào Netlify
+# Dashboard → Site settings → Environment variables. Với site này đặt:
+#   NEXT_PUBLIC_SITE_ID=isc
+#   NEXT_PUBLIC_SITE_URL=https://iscnetwork.site (hoặc domain thật của site)
+#   ADMIN_EMAIL_DOMAIN / NEXT_PUBLIC_ADMIN_EMAIL_DOMAIN theo domain của site này
+# Không cần obfuscate SUPABASE_SERVICE_ROLE_KEY hay bất kỳ biến nào — Netlify
+# Environment variables không lộ ra bundle client, khác hẳn tình huống
+# hosting tĩnh (TenTen) đã xử lý ở mobile-hub/zalo-miniapp.
+
+[[headers]]
+  for = "/dmca-validation.html"
+  [headers.values]
+    Content-Type = "text/plain"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

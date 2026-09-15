@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { callPlugin, isNativeApp } from "@/lib/native/bridge";
 import { NativeBottomTabBar } from "./native-bottom-tab-bar";
-import { NativeHeader } from "./native-header";
 import { NativeDrawer } from "./native-drawer";
 
 interface NativeAppLayoutProps {
