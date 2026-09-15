@@ -1,0 +1,99 @@
+{
+  "expo": {
+    "name": "Arex Network",
+    "slug": "arex-network",
+    "version": "1.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "site.arexnetwork.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        },
+        "NSCameraUsageDescription": "Ứng dụng cần quyền truy cập camera để quét mã QR",
+        "NSPhotoLibraryUsageDescription": "Ứng dụng cần quyền truy cập thư viện ảnh để tải lên avatar/bài viết",
+        "NSUserNotificationsUsageDescription": "Ứng dụng gửi thông báo sự kiện, tin tức mới"
+      },
+      "associatedDomains": [
+        "applinks:arexnetwork.site",
+        "applinks:www.arexnetwork.site"
+      ]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0a",
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundImage": "./assets/icon-background.png",
+        "monochromeImage": "./assets/icon-monochrome.png"
+      },
+      "package": "site.arexnetwork.app",
+      "predictiveBackGestureEnabled": true,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "arex",
+              "host": "*"
+            },
+            {
+              "scheme": "https",
+              "host": "arexnetwork.site",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.arexnetwork.site",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-notifications",
+      "expo-haptics",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0a0a0a",
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#0a0a0a",
+            "image": "./assets/splash-dark.png"
+          }
+        }
+      ]
+    ],
+    "scheme": "arex",
+    "extra": {
+      "apiUrl": "https://www.arexnetwork.site/api",
+      "supabaseUrl": "https://your-project.supabase.co",
+      "supabaseAnonKey": "your-anon-key"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    }
+  }
+}
