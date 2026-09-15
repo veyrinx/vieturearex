@@ -35,9 +35,11 @@ export async function GET(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ items: [] });
 
+  // Sort theo created_at, không phải updated_at: sửa nhãn/nhóm một item cũ
+  // không được kéo nó nhảy lên đầu danh sách như thể vừa mới thêm.
   const { data } = await untypedFrom(db, "ff_items_catalog")
     .select("id, label, category, ob, is_hot, is_public, created_at, updated_at")
-    .order("updated_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(2000) as { data: Array<{ id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean; is_public: boolean; created_at: string; updated_at: string }> | null };
 
   return NextResponse.json({ items: data ?? [], count: (data ?? []).length });

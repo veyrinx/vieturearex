@@ -21,10 +21,14 @@ export async function GET(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ items: [] });
 
+  // Sort phụ theo created_at desc: không có cột này thì Postgres trả thứ tự
+  // vật lý trên đĩa — item vừa được upsert (kể cả chỉ sửa nhãn) có thể trồi
+  // lên trước item thật sự mới, khiến danh sách trông như đảo lộn ngẫu nhiên.
   const { data } = await untypedFrom(db, "ff_items_catalog")
     .select("id, label, category, ob, is_hot")
     .eq("is_public", true)
     .order("category", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(5000) as { data: CatalogRow[] | null };
 
   const items = data ?? [];

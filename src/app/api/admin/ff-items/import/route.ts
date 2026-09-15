@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
 import { parseItemsJson } from "@/lib/constants/ff-items-import";
+import { consumeRecoveryToken } from "@/lib/server/ff-items-recovery";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,13 @@ export const dynamic = "force-dynamic";
  *
  * Mặc định KHÔNG ghi đè: tên và nhóm mà người trực đã sửa tay trong catalog
  * quý hơn tên máy móc trong file. Muốn ghi đè thì gửi `overwrite: true`.
+ *
+ * Xác thực có hai đường:
+ *  1. Phiên admin bình thường (mặc định).
+ *  2. Header `x-recovery-token` — mã dùng-một-lần tạo từ
+ *     /api/admin/ff-items/recovery-token, cho site MỚI dựng lên chưa có
+ *     session/tài khoản admin nào hoạt động (khôi phục sau sự cố). Có mã hợp
+ *     lệ thì bỏ qua hẳn bước session, không rơi ngược lại kiểm tra thường.
  */
 
 /** Trần một lượt gọi. 2000 dòng ≈ 300KB JSON, Supabase upsert thoải mái. */
@@ -27,14 +35,29 @@ export async function POST(req: NextRequest) {
   const limited = enforceRateLimit(req, { name: "ff-items-import", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
-  const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
-  if (denied) return denied;
+  const recoveryToken = req.headers.get("x-recovery-token");
+  let userId: string | null = null;
 
-  const supabase = createServerSupabaseClient();
-  const { data: { user } = { user: null } } = supabase
-    ? await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
-    : { data: { user: null } };
-  if (!user) return NextResponse.json({ error: "Unauth" }, { status: 401 });
+  if (recoveryToken) {
+    const result = await consumeRecoveryToken(recoveryToken);
+    if (!result.ok) {
+      const message = result.reason === "used"
+        ? "Mã khôi phục đã được dùng."
+        : "Mã khôi phục không hợp lệ hoặc hết hạn.";
+      return NextResponse.json({ error: message }, { status: 401 });
+    }
+    // Xác thực xong qua mã — không có user thật đứng sau, để null.
+  } else {
+    const denied = await enforceAdminApiAuth({ minimumRole: "admin" });
+    if (denied) return denied;
+
+    const supabase = createServerSupabaseClient();
+    const { data: { user } = { user: null } } = supabase
+      ? await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+      : { data: { user: null } };
+    if (!user) return NextResponse.json({ error: "Unauth" }, { status: 401 });
+    userId = user.id;
+  }
 
   const body = (await req.json().catch(() => null)) as
     | { data?: unknown; overwrite?: boolean; dryRun?: boolean }
@@ -77,7 +100,7 @@ export async function POST(req: NextRequest) {
     label: item.label,
     category: item.category,
     is_public: true,
-    created_by: user.id,
+    created_by: userId,
   }));
 
   const { error } = await untypedFrom(db, "ff_items_catalog").upsert(rows as never, {
