@@ -8,6 +8,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { siteConfig } from "@/lib/constants/site";
 import { SITE_ROUTES } from "@/lib/constants/site-routes";
+import { DOC_SECTIONS } from "@/lib/data/craftland-docs";
 
 const BASE = siteConfig.url;
 
@@ -22,6 +23,27 @@ async function getPublishedWiki(): Promise<{ slug: string; updated_at: string }[
       .limit(1000) as { data: { slug: string; updated_at: string }[] | null };
     return data ?? [];
   } catch {
+    return [];
+  }
+}
+
+/** Bản đồ, creator và bài Academy Craftland đang công khai. */
+async function getCraftlandSitemap(): Promise<{ path: string; updated_at: string; priority: number }[]> {
+  const db = createAdminSupabaseClient();
+  if (!db) return [];
+  try {
+    const [maps, creators, articles] = await Promise.all([
+      untypedFrom(db, "craftland_maps").select("slug, updated_at").eq("status", "published").limit(5000) as unknown as Promise<{ data: { slug: string; updated_at: string }[] | null }>,
+      untypedFrom(db, "craftland_creators").select("username, updated_at").eq("status", "active").limit(5000) as unknown as Promise<{ data: { username: string; updated_at: string }[] | null }>,
+      untypedFrom(db, "craftland_academy_articles").select("slug, updated_at").eq("status", "published").limit(1000) as unknown as Promise<{ data: { slug: string; updated_at: string }[] | null }>,
+    ]);
+    return [
+      ...(maps.data ?? []).map((m) => ({ path: `/community/craftland/maps/${m.slug}`, updated_at: m.updated_at, priority: 0.65 })),
+      ...(creators.data ?? []).map((c) => ({ path: `/community/craftland/creators/${c.username}`, updated_at: c.updated_at, priority: 0.5 })),
+      ...(articles.data ?? []).map((a) => ({ path: `/community/craftland/academy/${a.slug}`, updated_at: a.updated_at, priority: 0.6 })),
+    ];
+  } catch {
+    // Chưa chạy migration Craftland → bỏ qua, không làm hỏng sitemap.
     return [];
   }
 }
@@ -84,13 +106,14 @@ function dedupe(entries: MetadataRoute.Sitemap): MetadataRoute.Sitemap {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [news, events, tournaments, wiki, weapons, loadouts] = await Promise.all([
+  const [news, events, tournaments, wiki, weapons, loadouts, craftland] = await Promise.all([
     getNews("published", { includeContent: false }).catch(() => []),
     getEvents().catch(() => []),
     getTmsTournaments().catch(() => []),
     getPublishedWiki(),
     getAllWeapons().catch(() => []),
     getAllLoadouts().catch(() => []),
+    getCraftlandSitemap(),
   ]);
 
   const now = new Date();
@@ -385,6 +408,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: t.status === "ongoing" ? 0.85 : t.status === "registering" ? 0.78 : 0.60,
   }));
 
+  // ── Craftland ────────────────────────────────────────────────────────────
+  const craftlandRoutes: MetadataRoute.Sitemap = [
+    { url: `${BASE}/community/craftland`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
+    { url: `${BASE}/community/craftland/maps`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
+    { url: `${BASE}/community/craftland/academy`, lastModified: now, changeFrequency: "weekly", priority: 0.65 },
+    { url: `${BASE}/community/craftland/academy/api`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    ...DOC_SECTIONS.filter((s) => s.key !== "type").flatMap((s) =>
+      s.groups.map((g) => ({
+        url: `${BASE}/community/craftland/academy/api/${s.key}/${g.key}`,
+        lastModified: now,
+        changeFrequency: "monthly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+        priority: 0.45,
+      })),
+    ),
+    ...craftland.map((c) => ({
+      url: `${BASE}${c.path}`,
+      lastModified: new Date(c.updated_at),
+      changeFrequency: "weekly" as MetadataRoute.Sitemap[0]["changeFrequency"],
+      priority: c.priority,
+    })),
+  ];
+
   // ── Wiki ─────────────────────────────────────────────────────────────────
   const wikiRoutes: MetadataRoute.Sitemap = [
     {
@@ -482,5 +527,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...tournamentRoutes,
     ...wikiRoutes,
     ...ffRoutes,
+    ...craftlandRoutes,
   ]);
 }

@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { getClientIp } from "@/lib/server/get-client-ip";
 import { SHOP_PRIVATE_BUCKET, toPrivateRef } from "@/lib/server/shop-files";
 
-const ALLOWED_BUCKETS = ["logos", "forum", "events", "shop", "shop-private"] as const;
+const ALLOWED_BUCKETS = ["logos", "forum", "events", "shop", "shop-private", "craftland"] as const;
 
 /**
  * Bucket kín: không có link công khai. Trả về đường dẫn nội bộ qua

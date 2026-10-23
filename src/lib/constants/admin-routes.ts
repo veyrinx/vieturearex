@@ -73,6 +73,11 @@ export const ADMIN_ROUTE_RULES: AdminRouteRule[] = [
   { path: "/admin/tournaments", capability: "tms.manage" },
   { path: "/admin/scam-reports", minLevel: LV.manager },
 
+  // ── Craftland ──
+  { path: "/admin/craftland",          capability: "craftland.moderate" },
+  { path: "/admin/craftland/creators", capability: "craftland.verify.review" },
+  { path: "/admin/craftland/academy",  capability: "craftland.content" },
+
   // ── Người dùng ──
   { path: "/admin/users",        capability: "users.view" },
   { path: "/admin/team",         capability: "team.approve_it" },

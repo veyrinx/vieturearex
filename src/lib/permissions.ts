@@ -177,6 +177,13 @@ export const CAPABILITIES = [
   // Verified Content
   { key: "verified_content.verify", group: "Xác minh",  label: "Duyệt / từ chối xác minh nội dung" },
   { key: "verified_content.audit",  group: "Xác minh",  label: "Xem Nhật ký Lưu vết Audit Trail" },
+  // Craftland
+  { key: "craftland.moderate",        group: "Craftland", label: "Duyệt / ẩn bản đồ, xử lý báo cáo" },
+  { key: "craftland.creators.manage", group: "Craftland", label: "Quản lý creator (quyền đăng, khoá)" },
+  { key: "craftland.verify.review",   group: "Craftland", label: "Kiểm tra hồ sơ xác minh creator" },
+  { key: "craftland.verify.decide",   group: "Craftland", label: "Cấp / từ chối / thu hồi huy hiệu xác minh" },
+  { key: "craftland.content",         group: "Craftland", label: "Thể loại, đề xuất, Craftland Academy" },
+  { key: "craftland.analytics",       group: "Craftland", label: "Xem analytics Craftland toàn hệ thống" },
   // System
   { key: "settings.edit",      group: "Hệ thống",   label: "Sửa cấu hình site" },
   { key: "permissions.edit",   group: "Hệ thống",   label: "Sửa ma trận phân quyền" },
@@ -203,6 +210,8 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "shop.order.view_all", "shop.escrow.manage", "shop.dispute.resolve",
     "wishlist.view", "wishlist.manage", "wishlist.credentials",
     "analytics.view",
+    "craftland.moderate", "craftland.creators.manage", "craftland.verify.review",
+    "craftland.content", "craftland.analytics",
     "settings.edit", "logs.view",
   ],
   it: [
@@ -230,9 +239,11 @@ export const DEFAULT_ROLE_CAPABILITIES: Record<RoleKey, CapabilityKey[]> = {
     "shop.order.view_all", "shop.escrow.manage", "shop.dispute.resolve",
     "wishlist.view", "wishlist.manage",
     "analytics.view",
+    "craftland.moderate", "craftland.verify.review", "craftland.analytics",
   ],
   support: [
     "comments.moderate",
+    "craftland.moderate",
     "ratings.manage",
     "users.view",
     "shop.order.view_all",

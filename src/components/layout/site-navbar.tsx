@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Menu, Search, House, CalendarDays, Flame, MonitorPlay,
   BookOpenText, Users, MessageSquare, Trophy,
-  TrendingUp, Palette, Rss, Image as ImageIcon, Wrench, Crown, Brain, Rocket, Music2,
+  TrendingUp, Palette, Rss, Image as ImageIcon, Wrench, Crown, Brain, Rocket, Music2, Map as MapIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -35,6 +35,7 @@ const ABOUT_ITEMS = [
 
 const COMMUNITY_ITEMS = [
   { title: "Diễn Đàn",       href: "/community",             icon: MessageSquare, desc: "Thảo luận & chia sẻ" },
+  { title: "Craftland",      href: "/community/craftland",   icon: MapIcon,       desc: "Thư viện bản đồ · Creator · Academy" },
   { title: "Công Cụ FF",     href: "/tools",               icon: Wrench,        desc: "Độ nhạy · Tier list · Combo · Icon" },
   { title: "Quiz FF",        href: "/quiz",                  icon: Brain,         desc: "Đố vui kiến thức Free Fire" },
   { title: "Wiki CĐ",        href: "/wiki",                  icon: BookOpenText,  desc: "Kiến thức do cộng đồng đóng góp" },
@@ -89,6 +90,13 @@ type SiteNavbarProps = {
 };
 
 // ── Generic nav dropdown (desktop) ──────────────────────────────────────────
+/** Mục nav khớp đường dẫn — trừ khi một mục khác sâu hơn đã khớp (/community vs /community/craftland). */
+const NESTED_NAV_HREFS = ["/community/craftland"];
+function navMatches(pathname: string, href: string) {
+  if (!pathname.startsWith(href)) return false;
+  return !NESTED_NAV_HREFS.some((n) => n !== href && n.startsWith(href) && pathname.startsWith(n));
+}
+
 type NavDropdownItem = { title: string; href: string; icon: LucideIcon; desc: string };
 
 function NavDropdown({
@@ -183,7 +191,7 @@ function NavDropdown({
               </div>
               <div className="max-h-[70vh] overflow-y-auto p-1.5 space-y-0.5">
                 {items.map(({ title, href, icon: Icon, desc }) => {
-                  const active = pathname.startsWith(href);
+                  const active = navMatches(pathname, href);
                   return (
                     <Link
                       key={href}
@@ -431,7 +439,7 @@ export function SiteNavbar({ logoLight, logoDark, siteName = DEFAULT_SITE_NAME }
                       </p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {section.items.map(({ href, icon: Icon, title }, i) => {
-                          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+                          const active = href === "/" ? pathname === "/" : navMatches(pathname, href);
                           return (
                             <motion.div
                               key={href}

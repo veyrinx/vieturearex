@@ -5,7 +5,7 @@ import {
   Users, Medal, Award, Palette, HandHeart, ShieldCheck,
   Settings, Lock, FileCode, CircleUser, Activity,
   FileText, FileSignature, Users2, SlidersHorizontal, Eye, Download, Mail, LogIn,
-  ShoppingBag, Share2, Handshake, Store, KeyRound, Sparkles,
+  ShoppingBag, Share2, Handshake, Store, KeyRound, Sparkles, Map as MapIcon, BadgeCheck, GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -65,6 +65,15 @@ export const adminNavGroups: AdminNavGroup[] = [
       { title: "Cửa hàng Prime", href: "/admin/prime", icon: ShoppingBag },
       { title: "Chợ Arex",       href: "/admin/shop",  icon: Store },
       { title: "DS mong muốn",   href: "/admin/wishlist", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Craftland",
+    icon: MapIcon,
+    items: [
+      { title: "Bản đồ & báo cáo", href: "/admin/craftland",          icon: MapIcon },
+      { title: "Creator & xác minh", href: "/admin/craftland/creators", icon: BadgeCheck },
+      { title: "Craftland Academy", href: "/admin/craftland/academy",  icon: GraduationCap },
     ],
   },
   {
