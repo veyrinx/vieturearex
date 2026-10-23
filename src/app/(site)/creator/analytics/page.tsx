@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
-import { BreakdownBars, DailyAreaChart, StatTile } from "@/components/craftland/charts";
+import { DailyAreaChart } from "@/components/craftland/charts";
+import { BreakdownBars, StatTile } from "@/components/craftland/stats";
 import { RangePicker } from "@/components/craftland/studio-forms";
 import { requireStudioUser } from "@/lib/server/craftland";
 import { getCreatorAnalytics, parseRange } from "@/lib/server/craftland-stats";
