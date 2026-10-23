@@ -724,14 +724,15 @@ ${JSON.stringify(d, null, 2)}`);
     setNewPw(""); setConfirmPw("");
   };
 
-  const migrateEncrypt = async () => {
+  const migrateDecrypt = async () => {
     setMigrating(true);
     try {
-      const r = await fetch("/api/admin/settings/migrate-encrypt", { method: "POST" });
-      const body = (await r.json().catch(() => null)) as { migrated?: number; total?: number; message?: string; error?: string } | null;
+      const r = await fetch("/api/admin/settings/migrate-decrypt", { method: "POST" });
+      const body = (await r.json().catch(() => null)) as { migrated?: number; total?: number; message?: string; error?: string; errors?: string[] } | null;
       if (!r.ok) { toast.error(body?.error ?? "Lỗi không xác định."); return; }
-      if (body?.migrated === 0) { toast.success(body.message ?? "Không có dữ liệu cần mã hoá."); return; }
-      toast.success(`Đã mã hoá ${body?.migrated}/${body?.total} setting thành công.`);
+      if (body?.migrated === 0) { toast.success(body.message ?? "Không còn giá trị mã hoá nào."); return; }
+      if (body?.errors?.length) { toast.error(`Đã giải mã ${body.migrated}/${body.total}; còn ${body.errors.length} giá trị không mở được — nhập lại trong Cài đặt.`); return; }
+      toast.success(`Đã chuyển ${body?.migrated}/${body?.total} setting về dạng rõ.`);
     } catch {
       toast.error("Lỗi mạng.");
     } finally {
@@ -2078,7 +2079,7 @@ ${zaloNotify.text}` : zaloNotify.text}
             </p>
           </div>
 
-          <Field label="Bot Token" hint="Tab Bot → Reset Token. Nhạy cảm — lưu mã hoá, không hiện lại" icon={Plug}>
+          <Field label="Bot Token" hint="Tab Bot → Reset Token. Nhạy cảm — không hiện lại" icon={Plug}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.discord_bot_token")}
@@ -2175,7 +2176,7 @@ ${zaloNotify.text}` : zaloNotify.text}
             />
           </Field>
 
-          <Field label="Private Key" hint="Trường private_key. Nhạy cảm — lưu mã hoá, không hiện lại" icon={BellRing}>
+          <Field label="Private Key" hint="Trường private_key. Nhạy cảm — không hiện lại" icon={BellRing}>
             <div className="space-y-2">
               <Input
                 value={v("integrations.firebase_private_key")}
@@ -2987,15 +2988,15 @@ ${zaloNotify.text}` : zaloNotify.text}
 
         <Card>
           <div className="py-4">
-            <SectionHeader icon={ShieldCheck} title="Mã Hoá Dữ Liệu" desc="AES-256-GCM toàn bộ setting nhạy cảm — chạy lại bất cứ lúc nào để xoay khoá" />
+            <SectionHeader icon={ShieldCheck} title="Dữ Liệu Mã Hoá Cũ" desc="Setting nhạy cảm giờ lưu dạng rõ, không cần APP_SECRET" />
           </div>
           <div className="py-4 space-y-3">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Mã hoá lại toàn bộ SMTP, webhook, số tài khoản ngân hàng... trong DB. Mỗi lần chạy sinh IV mới — dump DB không bao giờ lộ giá trị thật.
+              Chuyển các giá trị <code>enc:</code> cũ (SMTP, webhook, token...) về dạng rõ. Chạy trên môi trường có đúng APP_SECRET cũ; giá trị không mở được thì nhập lại.
             </p>
-            <Button type="button" size="sm" disabled={migrating} onClick={migrateEncrypt} className="gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
+            <Button type="button" size="sm" disabled={migrating} onClick={migrateDecrypt} className="gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white">
               <ShieldCheck className="size-3.5" />
-              {migrating ? "Đang mã hoá..." : "Mã hoá tất cả dữ liệu"}
+              {migrating ? "Đang giải mã..." : "Giải mã về dạng rõ"}
             </Button>
           </div>
         </Card>

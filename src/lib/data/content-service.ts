@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { decryptSetting, encryptSetting, isSensitiveKey } from "@/lib/server/setting-crypto";
+import { decryptSetting, isSensitiveKey } from "@/lib/server/setting-crypto";
 import { createClient } from "@supabase/supabase-js";
 import { compareDesc } from "date-fns";
 import { getDemoStore } from "@/lib/server/demo-store";
@@ -1299,13 +1299,12 @@ export async function updateSetting(key: string, value: string) {
   }
 
   const supabase = getSupabaseAdminOrThrow();
-  const storedValue = isSensitiveKey(key) && value ? await encryptSetting(value) : value;
   // upsert().select() lấy luôn row vừa ghi trong MỘT lượt đi — trước đây upsert
   // xong còn select lại, tức mỗi lần ghi settings tốn 2 vòng mạng.
   const { data: fetched, error } = await supabase
     .from("settings")
     .upsert(
-      ({ key, value: storedValue, updated_at: new Date().toISOString() } as never),
+      ({ key, value, updated_at: new Date().toISOString() } as never),
       { onConflict: "key" },
     )
     .select()

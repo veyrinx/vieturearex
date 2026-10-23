@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
-import { decryptSetting, encryptSetting, isSensitiveKey } from "@/lib/server/setting-crypto";
+import { decryptSetting, isEncrypted, isSensitiveKey } from "@/lib/server/setting-crypto";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { logAdminActivity } from "@/lib/server/admin-activity";
 
@@ -22,19 +22,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Không thể đọc settings." }, { status: 500 });
   }
 
-  const sensitive = data.filter((row) => isSensitiveKey(row.key) && row.value);
+  const sensitive = data.filter((row) => isSensitiveKey(row.key) && row.value && isEncrypted(row.value));
 
   if (sensitive.length === 0) {
-    return NextResponse.json({ migrated: 0, message: "Không có dữ liệu nhạy cảm nào." });
+    return NextResponse.json({ migrated: 0, message: "Không còn giá trị mã hoá nào." });
   }
 
   const results = await Promise.allSettled(
     sensitive.map(async (row) => {
-      const plain = await decryptSetting(row.value); // no-op if already plaintext
-      const encrypted = await encryptSetting(plain);
+      const plain = await decryptSetting(row.value);
+      // Khoá lệch thì decryptSetting trả lại nguyên "enc:…" — để nguyên, đừng ghi đè.
+      if (isEncrypted(plain)) throw new Error(`${row.key}: không giải mã được`);
       const { error: writeErr } = await supabase
         .from("settings")
-        .update({ value: encrypted, updated_at: new Date().toISOString() } as never)
+        .update({ value: plain, updated_at: new Date().toISOString() } as never)
         .eq("key", row.key);
       if (writeErr) throw new Error(`${row.key}: ${(writeErr as { message: string }).message}`);
       return row.key;
@@ -51,8 +52,8 @@ export async function POST(request: NextRequest) {
   await logAdminActivity({
     action: "SETTING_UPDATED",
     targetType: "SETTING",
-    targetId: "encrypt-all",
-    summary: `Mã hoá tất cả: ${succeeded.length}/${sensitive.length} keys thành công`,
+    targetId: "decrypt-all",
+    summary: `Giải mã về dạng rõ: ${succeeded.length}/${sensitive.length} keys thành công`,
   });
 
   return NextResponse.json({ migrated: succeeded.length, total: sensitive.length, keys: succeeded, errors: failed });

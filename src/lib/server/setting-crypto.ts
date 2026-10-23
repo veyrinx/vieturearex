@@ -1,10 +1,10 @@
 /**
- * Transparent AES-256-GCM encryption for sensitive setting values.
- * Encrypted values are stored with the prefix "enc:" in the database.
- * Decryption happens automatically in getSettings(); callers see plain text.
+ * Setting nhạy cảm KHÔNG còn mã hoá khi ghi — lưu dạng rõ, không phụ thuộc
+ * APP_SECRET. SENSITIVE_KEYS vẫn dùng để che giá trị khỏi API admin.
  *
- * Keys in SENSITIVE_KEYS are auto-encrypted on write and decrypted on read.
- * Add new keys here — no other code changes needed.
+ * Giá trị cũ dạng "enc:<iv>.<ciphertext>" vẫn được giải mã khi đọc nếu khoá
+ * khớp; chạy POST /api/admin/settings/migrate-decrypt một lần (trên môi trường
+ * có đúng APP_SECRET) để chuyển hết về dạng rõ.
  */
 
 const ENC_PREFIX = "enc:";
@@ -59,14 +59,7 @@ function getSecret(): Uint8Array {
 async function importAesKey(): Promise<CryptoKey> {
   const raw = getSecret();
   const buf = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer;
-  return crypto.subtle.importKey("raw", buf, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
-}
-
-function b64url(buf: ArrayBuffer): string {
-  const b = new Uint8Array(buf);
-  let s = "";
-  for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  return crypto.subtle.importKey("raw", buf, { name: "AES-GCM" }, false, ["decrypt"]);
 }
 
 function fromb64url(s: string): ArrayBuffer {
@@ -77,17 +70,9 @@ function fromb64url(s: string): ArrayBuffer {
   ).buffer as ArrayBuffer;
 }
 
-/** Encrypt a plain value → "enc:<iv>.<ciphertext>" */
-export async function encryptSetting(plain: string): Promise<string> {
-  if (!plain) return plain;
-  const iv = new Uint8Array(new ArrayBuffer(12));
-  crypto.getRandomValues(iv);
-  const key = await importAesKey();
-  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plain));
-  return `${ENC_PREFIX}${b64url(iv.buffer as ArrayBuffer)}.${b64url(ct)}`;
-}
+let warnedDecrypt = false;
 
-/** Decrypt an "enc:..." value → plain string. Returns value unchanged if not encrypted. */
+/** Decrypt a legacy "enc:..." value → plain string. Returns value unchanged if not encrypted. */
 export async function decryptSetting(stored: string): Promise<string> {
   if (!stored.startsWith(ENC_PREFIX)) return stored;
   try {
@@ -103,8 +88,11 @@ export async function decryptSetting(stored: string): Promise<string> {
     // Giải mã hỏng gần như luôn là APP_SECRET khác lúc lưu (thiếu biến môi
     // trường, hoặc vừa đổi). Trả lại nguyên chuỗi "enc:…" thì bên gọi cứ thế
     // đem đi làm token — Telegram/Discord im lặng trả lỗi, không ai biết vì sao.
-    // Kêu ra log để còn lần được.
-    console.warn("[settings] Không giải mã được một giá trị nhạy cảm — kiểm tra APP_SECRET.");
+    // Kêu ra log một lần để còn lần được — nhập lại giá trị trong admin là xong.
+    if (!warnedDecrypt) {
+      warnedDecrypt = true;
+      console.warn("[settings] Có giá trị \"enc:\" cũ không giải mã được — nhập lại trong Cài đặt.");
+    }
     return stored;
   }
 }
