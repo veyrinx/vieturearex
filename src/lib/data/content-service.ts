@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { decryptSetting, isSensitiveKey } from "@/lib/server/setting-crypto";
+import { decryptSetting, isEncrypted, isSensitiveKey } from "@/lib/server/setting-crypto";
 import { createClient } from "@supabase/supabase-js";
 import { compareDesc } from "date-fns";
 import { getDemoStore } from "@/lib/server/demo-store";
@@ -976,6 +976,40 @@ export const BULKY_SETTING_KEYS = [
   "analytics.daily_views",
 ] as const;
 
+/**
+ * Giải mã setting nhạy cảm còn dạng "enc:" cũ; mở được thì ghi lại dạng rõ
+ * luôn. Vercel và Netlify từng mã hoá bằng khoá riêng của mỗi bên, nên mỗi bên
+ * chỉ mở được phần của mình — để mỗi bên tự dọn, sau một lượt là hết "enc:" và
+ * bot ở site nào cũng đọc được token.
+ */
+async function openSensitiveRows(rows: SiteSetting[]): Promise<SiteSetting[]> {
+  const healed: Array<{ key: string; from: string; value: string }> = [];
+  const out = await Promise.all(
+    rows.map(async (row) => {
+      if (!isSensitiveKey(row.key) || !isEncrypted(row.value ?? "")) return row;
+      const value = await decryptSetting(row.value);
+      if (!isEncrypted(value)) healed.push({ key: row.key, from: row.value, value });
+      return { ...row, value };
+    }),
+  );
+  const admin = healed.length > 0 ? createAdminSupabaseClient() : null;
+  if (admin) {
+    await Promise.all(
+      healed.map(({ key, from, value }) =>
+        admin
+          .from("settings")
+          .update({ value, updated_at: new Date().toISOString() } as never)
+          .eq("key", key)
+          .eq("value", from) // ai vừa lưu giá trị mới thì đừng ghi đè
+          .then(({ error }) => {
+            if (error) console.warn(`[settings] Không chuyển được ${key} về dạng rõ: ${error.message}`);
+          }),
+      ),
+    );
+  }
+  return out;
+}
+
 // Cache sống xuyên request trong cùng một máy Fluid. React cache() chỉ gộp được
 // các lời gọi trong CÙNG một request; settings thì gần như không đổi nên đọc lại
 // từ Supabase mỗi request là lãng phí lớn nhất của Active CPU.
@@ -1013,16 +1047,9 @@ export const getSettings = cache(async function getSettings(): Promise<SiteSetti
       if (error) {
         throw new Error(error.message);
       }
-      const rows = (data ?? []) as SiteSetting[];
-      const decrypted = await Promise.all(
-        rows.map(async (row) =>
-          isSensitiveKey(row.key)
-            ? { ...row, value: await decryptSetting(row.value) }
-            : row,
-        ),
-      );
+      const rows = await openSensitiveRows((data ?? []) as SiteSetting[]);
       ok = true;
-      return decrypted;
+      return rows;
     },
   );
 
@@ -1043,14 +1070,7 @@ export async function getSettingsByKeys(keys: string[]): Promise<SiteSetting[]> 
         .select("*")
         .in("key", keys);
       if (error) throw new Error(error.message);
-      const rows = (data ?? []) as SiteSetting[];
-      return Promise.all(
-        rows.map(async (row) =>
-          isSensitiveKey(row.key)
-            ? { ...row, value: await decryptSetting(row.value) }
-            : row,
-        ),
-      );
+      return openSensitiveRows((data ?? []) as SiteSetting[]);
     },
   );
 }

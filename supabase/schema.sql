@@ -392,11 +392,38 @@ using (public.is_admin()) with check (public.is_admin());
 create or replace function public.is_sensitive_setting_key(k text)
 returns boolean language sql immutable security definer set search_path = public as $$
   select k = any(array[
-    'mail.smtp_pass','mail.smtp_user','mail.smtp_host','mail.from_email',
-    'site.discord_webhook','zalo.webhook_url','zalo.group_id',
-    'ads.google_adsense_id','ads.slot_header','ads.slot_sidebar','ads.slot_article',
-    'integrations.lark_webhook_url','integrations.lark_alerts_webhook_url',
-    'tms.payment_info'
+    'mail.smtp_pass',
+    'mail.smtp_user',
+    'mail.smtp_host',
+    'mail.from_email',
+    'site.discord_webhook',
+    'zalo.webhook_url',
+    'zalo.group_id',
+    'zalo.oa_access_token',
+    'zalo.recipient_user_id',
+    'ads.google_adsense_id',
+    'ads.slot_header',
+    'ads.slot_sidebar',
+    'ads.slot_article',
+    'integrations.lark_webhook_url',
+    'integrations.lark_alerts_webhook_url',
+    'integrations.telegram_bot_token',
+    'integrations.zalo_bot_token',
+    'integrations.zalo_bot_webhook_secret',
+    'integrations.telegram_chat_id',
+    'integrations.telegram_user_bot_token',
+    'integrations.telegram_user_chat_id',
+    'integrations.discord_bot_token',
+    'integrations.firebase_private_key',
+    'integrations.ai_api_key',
+    'integrations.discord_internal_webhook',
+    'integrations.discord_public_webhook',
+    'integrations.lark_app_id',
+    'integrations.lark_app_secret',
+    'integrations.lark_sheet_token',
+    'tms.payment_info',
+    'push.vapid_private_key',
+    'streams.youtube_api_key'
   ]);
 $$;
 revoke execute on function public.is_sensitive_setting_key(text) from anon, authenticated;

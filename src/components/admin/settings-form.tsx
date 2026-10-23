@@ -9,7 +9,7 @@ import {
   User, Facebook, Youtube, Mail, Save, ImageIcon, Clock, Sparkles,
   Globe, BarChart3, MonitorPlay, LayoutGrid, Newspaper, Wrench,
   AlertTriangle, CheckCircle2, MessageSquare, BellRing, Users, Calendar, Trophy, Zap, CreditCard, SendHorizonal, Loader2,
-  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2, Phone, Info,
+  Bell, Tv, Paintbrush, UserCog, FileText, Hash, Columns3, Send, Trash2, Phone, Info, KeyRound,
 } from "lucide-react";
 import { ImageUploadButton } from "@/components/common/image-upload-button";
 import type { SiteSetting } from "@/lib/types/content";
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { MailTestButton } from "@/components/admin/mail-test-button";
+import { EnvConfigPanel } from "@/components/admin/env-config-panel";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { defaultSiteSettingValues, defaultIscSettingValues, getConfiguredSensitiveKeys, getSettingsFormInitialState, SENSITIVE_FORM_KEYS, SITE_SPECIFIC_SETTING_KEYS } from "@/lib/utils/site-settings";
@@ -2998,6 +2999,18 @@ ${zaloNotify.text}` : zaloNotify.text}
               <ShieldCheck className="size-3.5" />
               {migrating ? "Đang giải mã..." : "Giải mã về dạng rõ"}
             </Button>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="py-4">
+            <SectionHeader icon={KeyRound} title="Biến Môi Trường" desc="Lưu trong DB — trên Vercel chỉ cần cấu hình Supabase. Chỉ Super Admin xem/sửa được" />
+          </div>
+          <div className="py-4 space-y-3">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Nạp vào máy chủ lúc khởi động; đổi xong thì redeploy để mọi máy chủ nhận giá trị mới. Biến còn đặt trên Vercel được ưu tiên — xoá khỏi Vercel để DB tiếp quản. Riêng <code>CRON_SECRET</code> phải giữ trên Vercel.
+            </p>
+            <EnvConfigPanel />
           </div>
         </Card>
       </div>

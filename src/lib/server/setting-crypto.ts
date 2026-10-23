@@ -2,13 +2,14 @@
  * Setting nhạy cảm KHÔNG còn mã hoá khi ghi — lưu dạng rõ, không phụ thuộc
  * APP_SECRET. SENSITIVE_KEYS vẫn dùng để che giá trị khỏi API admin.
  *
- * Giá trị cũ dạng "enc:<iv>.<ciphertext>" vẫn được giải mã khi đọc nếu khoá
- * khớp; chạy POST /api/admin/settings/migrate-decrypt một lần (trên môi trường
- * có đúng APP_SECRET) để chuyển hết về dạng rõ.
+ * Giá trị cũ dạng "enc:<iv>.<ciphertext>" được giải mã khi đọc nếu một trong
+ * các khoá đang có khớp, rồi getSettings() ghi lại dạng rõ (openSensitiveRows).
  */
 
 const ENC_PREFIX = "enc:";
 
+// Phải khớp với public.is_sensitive_setting_key (supabase/schema.sql) — RLS dựa
+// vào đó để chặn user thường đọc các key này.
 export const SENSITIVE_KEYS = new Set([
   "mail.smtp_pass",
   "mail.smtp_user",
@@ -46,20 +47,21 @@ export const SENSITIVE_KEYS = new Set([
   "streams.youtube_api_key",
 ]);
 
-function getSecret(): Uint8Array {
-  const s = process.env.APP_SECRET ?? process.env.NEXT_REDIRECT_SECRET ?? "arex-dev-fallback-change-in-production";
-  // Derive 32-byte key from secret
-  const src = (s + ":setting-enc").slice(0, 256);
-  const enc = new TextEncoder().encode(src);
-  const key = new Uint8Array(32);
-  for (let i = 0; i < enc.length; i++) key[i % 32] ^= enc[i];
-  return key;
+const FALLBACK_SECRET = "arex-dev-fallback-change-in-production";
+
+// Mỗi bản triển khai (Vercel arexnetwork, Netlify iscnetwork) từng mã hoá bằng
+// khoá của chính nó, kể cả khoá mặc định khi thiếu biến — chung một DB nên giá
+// trị bên này lưu thì bên kia không mở được. Thử hết các khoá mình đang có.
+function candidateSecrets(): string[] {
+  const list = [process.env.APP_SECRET, process.env.NEXT_REDIRECT_SECRET, FALLBACK_SECRET];
+  return [...new Set(list.filter((s): s is string => Boolean(s)))];
 }
 
-async function importAesKey(): Promise<CryptoKey> {
-  const raw = getSecret();
-  const buf = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer;
-  return crypto.subtle.importKey("raw", buf, { name: "AES-GCM" }, false, ["decrypt"]);
+async function importAesKey(secret: string): Promise<CryptoKey> {
+  const src = new TextEncoder().encode((secret + ":setting-enc").slice(0, 256));
+  const raw = new Uint8Array(32);
+  for (let i = 0; i < src.length; i++) raw[i % 32] ^= src[i];
+  return crypto.subtle.importKey("raw", raw.buffer as ArrayBuffer, { name: "AES-GCM" }, false, ["decrypt"]);
 }
 
 function fromb64url(s: string): ArrayBuffer {
@@ -75,26 +77,32 @@ let warnedDecrypt = false;
 /** Decrypt a legacy "enc:..." value → plain string. Returns value unchanged if not encrypted. */
 export async function decryptSetting(stored: string): Promise<string> {
   if (!stored.startsWith(ENC_PREFIX)) return stored;
+  const inner = stored.slice(ENC_PREFIX.length);
+  const dot = inner.indexOf(".");
+  if (dot === -1) return stored;
+  let iv: ArrayBuffer, ct: ArrayBuffer;
   try {
-    const inner = stored.slice(ENC_PREFIX.length);
-    const dot = inner.indexOf(".");
-    if (dot === -1) return stored;
-    const iv = fromb64url(inner.slice(0, dot));
-    const ct = fromb64url(inner.slice(dot + 1));
-    const key = await importAesKey();
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-    return new TextDecoder().decode(plain);
+    iv = fromb64url(inner.slice(0, dot));
+    ct = fromb64url(inner.slice(dot + 1));
   } catch {
-    // Giải mã hỏng gần như luôn là APP_SECRET khác lúc lưu (thiếu biến môi
-    // trường, hoặc vừa đổi). Trả lại nguyên chuỗi "enc:…" thì bên gọi cứ thế
-    // đem đi làm token — Telegram/Discord im lặng trả lỗi, không ai biết vì sao.
-    // Kêu ra log một lần để còn lần được — nhập lại giá trị trong admin là xong.
-    if (!warnedDecrypt) {
-      warnedDecrypt = true;
-      console.warn("[settings] Có giá trị \"enc:\" cũ không giải mã được — nhập lại trong Cài đặt.");
-    }
     return stored;
   }
+  for (const secret of candidateSecrets()) {
+    try {
+      const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, await importAesKey(secret), ct);
+      return new TextDecoder().decode(plain);
+    } catch {
+      // khoá này không khớp — thử khoá tiếp
+    }
+  }
+  // Không khoá nào mở được: giá trị do bản triển khai khác mã hoá. Trả lại
+  // nguyên "enc:…" (bên gọi coi như chưa cấu hình); bản kia đọc tới sẽ tự
+  // chuyển nó về dạng rõ. Kêu ra log một lần để còn lần được.
+  if (!warnedDecrypt) {
+    warnedDecrypt = true;
+    console.warn("[settings] Có giá trị \"enc:\" cũ không giải mã được bằng khoá ở đây — mở trang trên site còn lại, hoặc nhập lại trong Cài đặt.");
+  }
+  return stored;
 }
 
 export function isSensitiveKey(key: string): boolean {
