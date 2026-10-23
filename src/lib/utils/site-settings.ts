@@ -48,6 +48,7 @@ export const SENSITIVE_FORM_KEYS = new Set([
   "integrations.lark_alerts_webhook_url",
   "integrations.telegram_bot_token",
   "integrations.zalo_bot_token",
+  "integrations.zalo_bot_webhook_secret",
   "integrations.telegram_chat_id",
   "integrations.telegram_user_bot_token",
   "integrations.telegram_user_chat_id",

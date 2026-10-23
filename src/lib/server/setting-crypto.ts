@@ -33,6 +33,14 @@ export const SENSITIVE_KEYS = new Set([
   "integrations.telegram_user_chat_id",
   "integrations.discord_bot_token",
   "integrations.firebase_private_key",
+  // Trước đây chỉ có trong SENSITIVE_FORM_KEYS → lưu dạng rõ và GET /api/admin/settings
+  // trả nguyên giá trị về trình duyệt. Hai danh sách phải luôn khớp nhau.
+  "integrations.ai_api_key",
+  "integrations.discord_internal_webhook",
+  "integrations.discord_public_webhook",
+  "integrations.lark_app_id",
+  "integrations.lark_app_secret",
+  "integrations.lark_sheet_token",
   "tms.payment_info",
   "push.vapid_private_key",
   "streams.youtube_api_key",
