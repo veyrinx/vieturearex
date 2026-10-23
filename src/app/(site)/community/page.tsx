@@ -25,14 +25,18 @@ export const revalidate = 30;
 async function getForumStats() {
   const db = createAdminSupabaseClient();
   if (!db) return { totalPosts: 0, totalReplies: 0, activeToday: 0 };
-  const [postsRes, repliesRes] = await Promise.all([
+  // Đầu ngày theo giờ Việt Nam (UTC+7)
+  const startOfTodayVN = new Date(Math.floor((Date.now() + 7 * 3600_000) / 86400_000) * 86400_000 - 7 * 3600_000).toISOString();
+  const [postsRes, repliesRes, todayRes] = await Promise.all([
     untypedFrom(db, "forum_posts").select("*", { count: "exact", head: true }).eq("status", "active") as unknown as Promise<{ count: number | null }>,
     untypedFrom(db, "forum_replies").select("*", { count: "exact", head: true }).eq("status", "active") as unknown as Promise<{ count: number | null }>,
+    untypedFrom(db, "forum_posts").select("*", { count: "exact", head: true }).eq("status", "active").gte("created_at", startOfTodayVN) as unknown as Promise<{ count: number | null }>,
   ]);
   return {
     totalPosts:   postsRes.count   ?? 0,
     totalReplies: repliesRes.count ?? 0,
-    activeToday:  Math.max(12, Math.floor((postsRes.count ?? 0) * 0.15)),
+    // Số bài đăng mới trong ngày — đếm thật, trước đây là số ước đoán (posts × 15%, tối thiểu 12).
+    activeToday:  todayRes.count   ?? 0,
   };
 }
 
@@ -98,7 +102,7 @@ export default async function CommunityPage() {
           {[
             { icon: MessageSquare, label: "Bài viết", value: stats.totalPosts },
             { icon: Users,         label: "Trả lời",  value: stats.totalReplies },
-            { icon: TrendingUp,    label: "Hôm nay",  value: stats.activeToday },
+            { icon: TrendingUp,    label: "Bài mới hôm nay", value: stats.activeToday },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-1.5 backdrop-blur-sm">
               <Icon className="size-3.5 text-primary dark:text-amber-400" />
