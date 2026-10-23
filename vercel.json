@@ -54,6 +54,10 @@
       "path": "/api/cron/shop-stale-orders",
       "schedule": "0 23 * * *"
     },
+     {
+      "path": "/api/cron/server-watch",
+      "schedule": "0 4 * * * *"
+    }
   ],
   "functions": {
     "src/app/api/admin/sql/route.ts": { "maxDuration": 30 },
