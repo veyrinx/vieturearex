@@ -17,6 +17,16 @@ export const CHANGE_META: Record<ChangeType, { label: string; cls: string }> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.1",
+    date: "2026-10-24",
+    changes: [
+      { type: "fix", text: "Hiển thị lượt xem bài viết tin tức tại trang chi tiết" },
+      { type: "improvement", text: "Cải thiện ảnh chia sẻ (OG image) cho bài viết tin tức" },
+      { type: "fix", text: "Sửa lỗi đồng bộ cấu hình đăng nhập mạng xã hội với Supabase" },
+      { type: "improvement", text: "Tăng cường bảo mật xác thực token phía server" },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-08-23",
     changes: [
