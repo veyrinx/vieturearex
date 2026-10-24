@@ -63,6 +63,8 @@ export type NewsItem = {
   created_at: string;
   created_by_name: string | null;
   scheduled_at?: string | null;
+  view_count?: number;
+  updated_at?: string | null;
 };
 
 export type NewsCommentItem = {
