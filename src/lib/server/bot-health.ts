@@ -44,7 +44,7 @@ export async function checkServerHealth(force = false): Promise<ServerHealth> {
       reason = "Không khởi tạo được database client";
     } else {
       const t0 = Date.now();
-      const { error } = await untypedFrom(db, "site_settings")
+      const { error } = await untypedFrom(db, "settings")
         .select("key")
         .limit(1)
         .maybeSingle();
@@ -216,7 +216,7 @@ async function sendTelegramAdminAlert(html: string): Promise<boolean> {
 
 /**
  * Cron 5 phút/lần: kiểm tra sức khoẻ, nhắn Telegram admin + Zalo khi sập/hồi phục.
- * Nhớ trạng thái vào site_settings nên nhiều máy cùng chạy cũng không báo trùng.
+ * Nhớ trạng thái vào settings nên nhiều máy cùng chạy cũng không báo trùng.
  */
 export async function checkAndAlertServerStatus(): Promise<WatchResult> {
   const health = await checkServerHealth(true);
