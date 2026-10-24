@@ -17,12 +17,17 @@ export const CHANGE_META: Record<ChangeType, { label: string; cls: string }> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "1.4.1",
+    version: "1.5.1",
     date: "2026-10-24",
     changes: [
+      { type: "feature", text: "Craftland: nền tảng chia sẻ bản đồ cộng đồng — đăng bản đồ, kiểm duyệt phiên bản, Creator Studio theo dõi lượt xem và yêu thích" },
+      { type: "feature", text: "Ứng dụng di động Arex (iOS/Android) với giao diện native, tách khỏi webview" },
+      { type: "improvement", text: "Giao diện mới: font Archivo + Manrope, wordmark Russo One" },
       { type: "fix", text: "Hiển thị lượt xem bài viết tin tức tại trang chi tiết" },
       { type: "improvement", text: "Cải thiện ảnh chia sẻ (OG image) cho bài viết tin tức" },
       { type: "fix", text: "Sửa lỗi đồng bộ cấu hình đăng nhập mạng xã hội với Supabase" },
+      { type: "fix", text: "Bot Telegram/Zalo/Discord gửi lại được sau khi bỏ mã hoá setting nhạy cảm" },
+      { type: "fix", text: "Giám sát sức khoẻ server dùng đúng bảng settings, hết báo lỗi giả" },
       { type: "improvement", text: "Tăng cường bảo mật xác thực token phía server" },
     ],
   },
