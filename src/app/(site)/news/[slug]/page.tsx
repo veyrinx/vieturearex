@@ -8,6 +8,7 @@ import { RichTextRenderer, injectHeadingIds } from "@/components/news/rich-text-
 import { NewsToc } from "@/components/news/news-toc";
 import { NewsComments } from "@/components/news/news-comments";
 import { AwardViewPoints } from "@/components/news/award-view-points";
+import { Eye } from "lucide-react";
 import { BookmarkButton } from "@/components/news/bookmark-button";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { ShareButtons } from "@/components/news/share-buttons";
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: NewsDetailPageProps): Promise
   const article = await getNewsBySlug(slug);
   if (!article) return { title: "Không tìm thấy bài viết" };
   const url = `${siteConfig.url}/news/${article.slug}`;
+  const ogImageUrl = `${url}/opengraph-image`;
   return {
     title: article.title,
     description: article.excerpt,
@@ -41,13 +43,13 @@ export async function generateMetadata({ params }: NewsDetailPageProps): Promise
       publishedTime: article.created_at,
       modifiedTime: article.created_at,
       siteName: siteConfig.name,
-      images: [{ url: article.cover, width: 1200, height: 630, alt: article.title }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: article.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: article.title,
       description: article.excerpt,
-      images: [article.cover],
+      images: [ogImageUrl],
     },
     robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   };
@@ -105,7 +107,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
             },
             headline: article.title,
             description: article.excerpt,
-            image: [{ "@type": "ImageObject", url: article.cover, width: 1200, height: 630 }],
+            image: [{ "@type": "ImageObject", url: `${articleUrl}/opengraph-image`, width: 1200, height: 630 }],
             datePublished: article.created_at,
             dateModified: article.created_at,
             author: article.created_by_name
@@ -137,10 +139,15 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
           {article.title}
         </h1>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             <span>{formatVietnamDate(article.created_at)}</span>
             <span className="text-muted-foreground/40">·</span>
             <span>{Math.max(1, Math.ceil(article.content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200))} phút đọc</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="flex items-center gap-1.5 normal-case tracking-normal text-muted-foreground/80">
+              <Eye className="h-3.5 w-3.5" />
+              {(article.view_count ?? 0).toLocaleString("vi-VN")} lượt xem
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <ShareButtons url={articleUrl} title={article.title} />

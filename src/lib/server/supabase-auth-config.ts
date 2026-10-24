@@ -33,8 +33,12 @@ export function projectRef(): string | null {
   return m?.[1] ?? null;
 }
 
-export const hasManagementToken = (): boolean =>
-  !!process.env.SUPABASE_ACCESS_TOKEN && !!projectRef();
+export const hasManagementToken = (): boolean => {
+  const token = process.env.SUPABASE_ACCESS_TOKEN?.trim();
+  if (!token || !projectRef()) return false;
+  if (token.startsWith("sbp_")) return true;
+  return false;
+};
 
 /** Provider nào ĐANG bật trên Supabase. Lỗi thì trả tất cả false. */
 export async function fetchProviderStatus(): Promise<ProviderLiveStatus> {

@@ -28,6 +28,7 @@ const PUBLIC_PATHS = [
   "/cookie-policy",
   "/dieu-khoan-su-dung",
   "/chinh-sach-bao-mat",
+  "/og-image.png",  // Dynamic OG image for crawlers/share previews
 ];
 
 // Only sitemap + robots require Googlebot UA
@@ -295,9 +296,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Exclude static assets and source maps.
-    // Lưu ý: mọi path kết thúc bằng .png đều bỏ qua middleware — kể cả route động
-    // /og-image.png. Đúng ý muốn: crawler share link (Facebook/Zalo/Telegram) không
-    // có session và vẫn phải lấy được ảnh khi site đang bảo trì.
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff2?|ttf|eot)$).*)",
+    // /og-image.png là route động multi-site, cần middleware để gắn x-site-hostname
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|jpg|jpeg|gif|webp|ico|css|js|map|woff2?|ttf|eot)$).*)",
   ],
 };

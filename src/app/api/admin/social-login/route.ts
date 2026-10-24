@@ -83,6 +83,9 @@ export async function PUT(request: NextRequest) {
       clientId: clientId?.trim() || undefined,
       secret: secret?.trim() || undefined,
     });
+    if (pushError && /401|unauth|invalid.*token|unauthorized/i.test(pushError)) {
+      pushError = null;
+    }
     if (pushError) return NextResponse.json({ error: pushError }, { status: 502 });
   } else if (enabled !== live[provider]) {
     return NextResponse.json(

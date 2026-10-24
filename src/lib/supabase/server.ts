@@ -14,8 +14,26 @@ async function getBearerToken(): Promise<string | null> {
     if (!auth) return null;
     const m = /^Bearer\s+(.+)$/i.exec(auth.trim());
     const token = m?.[1]?.trim() ?? null;
-    // Ignore the anon/publishable key if it is (incorrectly) sent as a bearer.
-    if (!token || token === supabaseAnonKey) return null;
+    if (!token) return null;
+
+    // Ignore public/secret/management tokens
+    if (token === supabaseAnonKey) return null;
+    if (token.startsWith("sbp_")) return null;
+    if (token.startsWith("sb_secret_")) return null;
+    if (token.startsWith("sb_publishable_")) return null;
+    if (token.length > 200) return null;
+
+    // Ignore service_role JWTs
+    try {
+      const parts = token.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+        if (payload?.role === "service_role") return null;
+      }
+    } catch {
+      // ignore parse errors
+    }
+
     return token;
   } catch {
     // headers() throws outside a request scope (e.g. build) — treat as no token.
