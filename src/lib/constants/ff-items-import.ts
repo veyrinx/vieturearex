@@ -56,6 +56,9 @@ const TYPE_TO_CATEGORY: Record<string, FfItemCategory> = {
   PET: "pet",
   SPARKPET: "pet",
   CLOTHES: "outfit",
+  // Trình duyệt gửi lại bản đã chuẩn hoá (category "outfit"…) — phải nhận lại đúng nhóm.
+  OUTFIT: "outfit",
+  OTHER: "other",
   BUNDLE: "outfit",
   OPTIONAL_BUNDLE: "outfit",
   COLLAB: "outfit",

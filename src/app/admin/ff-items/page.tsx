@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { Fragment, useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { obNumber, parseItemsJson } from "@/lib/constants/ff-items-import";
+import { obNumber, parseItemsJson, type ImportedItem } from "@/lib/constants/ff-items-import";
 import {
   Search, Copy, Check, X, Image as ImageIcon, ExternalLink,
   Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
@@ -120,7 +120,9 @@ export default function FFItemsPage() {
   const [catalogObFilter, setCatalogObFilter] = useState<string>("all");
   const [catalogHotOnly, setCatalogHotOnly] = useState(false);
   const [editCatalogItem, setEditCatalogItem] = useState<CatalogItem | null>(null);
-  const [showAllCatalog, setShowAllCatalog] = useState(false);
+  // Số item catalog đang hiện — kho đầy đủ ~3 vạn món, render hết một lượt là đơ trang.
+  const CATALOG_STEP = 240;
+  const [catalogLimit, setCatalogLimit] = useState(48);
 
   // ── Nạp kho vật phẩm từ file JSON ──
   const jsonInputRef = useRef<HTMLInputElement>(null);
@@ -156,6 +158,44 @@ export default function FFItemsPage() {
         "Cancel = chỉ thêm mục mới, giữ nguyên phần đã sửa tay.",
     );
 
+    await runImport(items, overwrite);
+  };
+
+  /**
+   * Cập nhật thẳng từ GitHub Free-Fire-Items-Library (live + advance) —
+   * khỏi tải file về rồi chọn lại. Không ghi đè phần sửa tay; item cũ thiếu OB
+   * được điền OB; món mới (OB55, OB56…) được thêm và tự tải icon.
+   */
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const importFromGithub = async () => {
+    if (importing || remoteLoading) return;
+    setRemoteLoading(true);
+    let items: ImportedItem[] = [];
+    try {
+      const res = await fetch("/api/admin/ff-items/remote?source=live,advance");
+      const d = (await res.json().catch(() => ({}))) as { items?: ImportedItem[]; errors?: string[]; error?: string };
+      if (!res.ok || !d.items) {
+        toast.error(d.error ?? "Không tải được dữ liệu từ GitHub.");
+        return;
+      }
+      if (d.errors?.length) toast.warning(d.errors.join("; "));
+      items = d.items;
+    } finally {
+      setRemoteLoading(false);
+    }
+
+    const known = new Set(catalog.map((c) => c.id));
+    const fresh = items.filter((it) => !known.has(it.id));
+    const newestOb = items.reduce((m, it) => Math.max(m, obNumber(it.ob)), 0);
+    toast.info(
+      `GitHub: ${items.length.toLocaleString()} món, mới nhất OB${newestOb}` +
+        (fresh.length ? ` — khoảng ${fresh.length.toLocaleString()} món chưa có trong catalog.` : "."),
+    );
+    await runImport(items, false);
+  };
+
+  /** Đẩy danh sách đã đọc vào catalog theo lô, rồi tự tải icon còn thiếu. */
+  const runImport = async (items: ImportedItem[], overwrite: boolean) => {
     const CHUNK = 2000;
     setImporting({ done: 0, total: items.length });
     let imported = 0;
@@ -368,8 +408,15 @@ export default function FFItemsPage() {
         (i.label?.toLowerCase().includes(q) ?? false),
       );
     }
-    return list;
+    // Hiển thị theo OB: Hot trước, rồi OB mới nhất → cũ dần, không có OB cuối.
+    // Sắp xếp ổn định — trong cùng OB vẫn giữ thứ tự mới thêm trước.
+    return list
+      .map((it, i) => ({ it, i, r: it.is_hot ? 10_000 : obNumber(it.ob) }))
+      .sort((a, b) => b.r - a.r || a.i - b.i)
+      .map((x) => x.it);
   }, [catalog, catalogHotOnly, catalogFilter, catalogObFilter, catalogSearch]);
+
+  useEffect(() => { setCatalogLimit(48); }, [catalogHotOnly, catalogFilter, catalogObFilter, catalogSearch]);
 
   const catalogCategoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -926,7 +973,17 @@ export default function FFItemsPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => void importFromGithub()}
+              disabled={!!importing || remoteLoading}
+              title="Lấy kho mới nhất từ GitHub Free-Fire-Items-Library (live + advance): thêm đồ mới ra (OB55, OB56…), điền OB còn thiếu, tự tải icon"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/40 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-600/10 disabled:opacity-60 dark:text-emerald-400"
+            >
+              {remoteLoading
+                ? <><Loader2 className="size-3.5 animate-spin" /> Đang tải…</>
+                : <><Download className="size-3.5" /> Cập nhật từ GitHub</>}
+            </button>
             <button
               onClick={() => jsonInputRef.current?.click()}
               disabled={!!importing}
@@ -1061,8 +1118,10 @@ export default function FFItemsPage() {
 
             {/* Items grid */}
             {(() => {
-              const limit = showAllCatalog ? filteredCatalog.length : 24;
-              const visible = filteredCatalog.slice(0, limit);
+              const visible = filteredCatalog.slice(0, catalogLimit);
+              const groupKey = (it: CatalogItem) => (it.is_hot ? "hot" : it.ob ?? "none");
+              const latestOb = catalogObGroups[0]?.ob ?? null;
+              const obCount = new Map(catalogObGroups.map((g) => [g.ob, g.count]));
 
               if (filteredCatalog.length === 0) {
                 return (
@@ -1076,10 +1135,26 @@ export default function FFItemsPage() {
               return (
                 <>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                    {visible.map((item) => {
+                    {visible.map((item, idx) => {
                       const cat = item.category ? CAT_MAP.get(item.category as CategoryKey) : null;
+                      const g = groupKey(item);
+                      const header = idx === 0 || groupKey(visible[idx - 1]) !== g;
                       return (
-                        <div key={item.id} className="group relative rounded-xl border border-border bg-card p-2 space-y-1">
+                        <Fragment key={item.id}>
+                        {header && (
+                          <div className="col-span-full flex items-center gap-2 pt-2 first:pt-0">
+                            <span className={`font-heading text-[11px] font-black uppercase tracking-widest ${
+                              g === "hot" ? "text-orange-500" : g === latestOb ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                            }`}>
+                              {g === "hot" ? "🔥 Hot" : g === "none" ? "Chưa có OB" : g === latestOb ? `🆕 ${g} · Mới nhất` : g}
+                            </span>
+                            {g !== "hot" && g !== "none" && (
+                              <span className="text-[10px] tabular-nums text-muted-foreground">{(obCount.get(g) ?? 0).toLocaleString()} món</span>
+                            )}
+                            <span className="h-px flex-1 bg-border" />
+                          </div>
+                        )}
+                        <div className="group relative rounded-xl border border-border bg-card p-2 space-y-1">
                           <div className="relative aspect-square overflow-hidden rounded-lg bg-background flex items-center justify-center">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -1120,21 +1195,30 @@ export default function FFItemsPage() {
                           {item.label && <p className="truncate text-[10px] font-bold text-foreground">{item.label}</p>}
                           <p className="truncate font-mono text-[9px] text-muted-foreground">{item.id}</p>
                         </div>
+                        </Fragment>
                       );
                     })}
                   </div>
 
                   {/* Show more/less */}
-                  {filteredCatalog.length > 24 && (
-                    <div className="flex justify-center pt-1">
-                      <button
-                        onClick={() => setShowAllCatalog((v) => !v)}
-                        className="rounded-xl border border-border px-4 py-1.5 text-[11px] font-semibold hover:bg-muted transition-colors"
-                      >
-                        {showAllCatalog
-                          ? `Ẩn bớt (đang hiện ${filteredCatalog.length.toLocaleString()})`
-                          : `Xem tất cả (còn ${(filteredCatalog.length - 24).toLocaleString()} items)`}
-                      </button>
+                  {filteredCatalog.length > 48 && (
+                    <div className="flex justify-center gap-2 pt-1">
+                      {catalogLimit < filteredCatalog.length && (
+                        <button
+                          onClick={() => setCatalogLimit((n) => n + CATALOG_STEP)}
+                          className="rounded-xl border border-border px-4 py-1.5 text-[11px] font-semibold hover:bg-muted transition-colors"
+                        >
+                          Xem thêm (còn {(filteredCatalog.length - catalogLimit).toLocaleString()} items)
+                        </button>
+                      )}
+                      {catalogLimit > 48 && (
+                        <button
+                          onClick={() => setCatalogLimit(48)}
+                          className="rounded-xl border border-border px-4 py-1.5 text-[11px] font-semibold hover:bg-muted transition-colors"
+                        >
+                          Ẩn bớt
+                        </button>
+                      )}
                     </div>
                   )}
                 </>

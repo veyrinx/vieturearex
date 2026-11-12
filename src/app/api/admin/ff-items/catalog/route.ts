@@ -37,12 +37,23 @@ export async function GET(req: NextRequest) {
 
   // Sort theo created_at, không phải updated_at: sửa nhãn/nhóm một item cũ
   // không được kéo nó nhảy lên đầu danh sách như thể vừa mới thêm.
-  const { data } = await untypedFrom(db, "ff_items_catalog")
-    .select("id, label, category, ob, is_hot, is_public, created_at, updated_at")
-    .order("created_at", { ascending: false })
-    .limit(2000) as { data: Array<{ id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean; is_public: boolean; created_at: string; updated_at: string }> | null };
+  // Phân trang 1000/lượt: kho đầy đủ ~3,5 vạn món — cắt ở 2000 thì admin không
+  // thấy các nhóm OB mới (OB55, OB56…) và bộ lọc OB đếm sai.
+  type Row = { id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean; is_public: boolean; created_at: string; updated_at: string };
+  const PAGE = 1000;
+  const items: Row[] = [];
+  for (let from = 0; from < 60_000; from += PAGE) {
+    const { data, error } = await untypedFrom(db, "ff_items_catalog")
+      .select("id, label, category, ob, is_hot, is_public, created_at, updated_at")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1) as { data: Row[] | null; error: unknown };
+    if (error || !data) break;
+    items.push(...data);
+    if (data.length < PAGE) break;
+  }
 
-  return NextResponse.json({ items: data ?? [], count: (data ?? []).length });
+  return NextResponse.json({ items, count: items.length });
 }
 
 // POST — bulk upsert catalog entries
