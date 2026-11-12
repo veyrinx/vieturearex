@@ -31,7 +31,7 @@ export const CATEGORY_META: Record<string, { label: string; color: string; bg: s
 // Nhãn/loại (nếu có) từ catalog nội bộ — không bắt buộc
 type CatalogMeta = { label: string | null; category: string | null; ob: string | null; is_hot: boolean };
 
-async function catalogMeta(id: string): Promise<CatalogMeta> {
+async function catalogMeta(id: string): Promise<CatalogMeta & { found?: boolean }> {
   const empty: CatalogMeta = { label: null, category: null, ob: null, is_hot: false };
   try {
     const db = createAdminSupabaseClient();
@@ -40,7 +40,7 @@ async function catalogMeta(id: string): Promise<CatalogMeta> {
       .select("label, category, ob, is_hot, is_public")
       .eq("id", id)
       .maybeSingle()) as { data: (CatalogMeta & { is_public: boolean }) | null };
-    if (data && data.is_public) return { label: data.label, category: data.category, ob: data.ob, is_hot: data.is_hot };
+    if (data && data.is_public) return { label: data.label, category: data.category, ob: data.ob, is_hot: data.is_hot, found: true };
   } catch { /**/ }
   return empty;
 }
@@ -48,11 +48,12 @@ async function catalogMeta(id: string): Promise<CatalogMeta> {
 /** Chi tiết 1 icon. Trả null nếu id không hợp lệ hoặc không có trong kho. */
 export async function getItemDetail(id: string): Promise<FFItem | null> {
   if (!isValidIconId(id)) return null;
-  const ids = await getAllIconIds();
+  const [ids, meta] = await Promise.all([getAllIconIds(), catalogMeta(id)]);
   // Nếu lấy được list mà id không có -> không tồn tại. List rỗng (GitHub lỗi) thì bỏ qua kiểm tra.
-  if (ids.length > 0 && !ids.includes(id)) return null;
+  // Đồ mới ra nạp từ file JSON có thể chưa có trong kho ShahGCreator — có trong catalog là đủ.
+  if (ids.length > 0 && !ids.includes(id) && !meta.found) return null;
 
-  const { label, category, ob, is_hot } = await catalogMeta(id);
+  const { label, category, ob, is_hot } = meta;
   return { id, label, category, ob, is_hot, imageUrl: iconUrl(id) };
 }
 

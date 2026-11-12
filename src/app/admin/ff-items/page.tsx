@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { parseItemsJson } from "@/lib/constants/ff-items-import";
+import { obNumber, parseItemsJson } from "@/lib/constants/ff-items-import";
 import {
   Search, Copy, Check, X, Image as ImageIcon, ExternalLink,
   Star, Trash2, Plus, Loader2, Filter, ArrowDownAZ, ArrowUpAZ, Clock,
@@ -151,7 +151,7 @@ export default function FFItemsPage() {
 
     const overwrite = confirm(
       `Đọc được ${items.length.toLocaleString()} vật phẩm` +
-        (skipped ? ` (bỏ ${skipped.toLocaleString()} dòng không có ID)` : "") +
+        (skipped ? ` (bỏ ${skipped.toLocaleString()} dòng không có ID/icon)` : "") +
         ". OK = ghi đè tên/nhóm đã có trong catalog. " +
         "Cancel = chỉ thêm mục mới, giữ nguyên phần đã sửa tay.",
     );
@@ -160,6 +160,7 @@ export default function FFItemsPage() {
     setImporting({ done: 0, total: items.length });
     let imported = 0;
     const importedIds: string[] = [];
+    const newIds = new Set<string>();
 
     try {
       for (let i = 0; i < items.length; i += CHUNK) {
@@ -169,13 +170,14 @@ export default function FFItemsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ data: chunk, overwrite }),
         });
-        const d = (await res.json().catch(() => ({}))) as { imported?: number; ids?: string[]; error?: string };
+        const d = (await res.json().catch(() => ({}))) as { imported?: number; ids?: string[]; newIds?: string[] | null; error?: string };
         if (!res.ok) {
           toast.error(d.error ?? "Nạp thất bại giữa chừng.");
           break;
         }
         imported += d.imported ?? chunk.length;
         importedIds.push(...(d.ids ?? chunk.map((c) => c.id)));
+        for (const nid of d.newIds ?? []) newIds.add(nid);
         setImporting({ done: Math.min(i + CHUNK, items.length), total: items.length });
       }
     } finally {
@@ -183,10 +185,23 @@ export default function FFItemsPage() {
     }
 
     void loadCatalog();
-    toast.success(`Đã nạp ${imported.toLocaleString()} vật phẩm vào catalog.`);
+    toast.success(
+      `Đã nạp ${imported.toLocaleString()} vật phẩm vào catalog` +
+        (newIds.size ? ` — ${newIds.size.toLocaleString()} món mới.` : "."),
+    );
 
-    const missing = importedIds.filter((id) => !syncedIds.has(id));
-    if (missing.length > 0 && confirm(`Đồng bộ ảnh cho ${missing.length.toLocaleString()} vật phẩm chưa có icon?`)) {
+    // Tự động tải icon còn thiếu về Storage, không hỏi lại. Món mới thêm và OB
+    // mới nhất đi trước — đồ mới ra có ảnh trên site sớm nhất; phần cũ chạy
+    // sau (route sync tự bỏ qua ảnh đã có nên chạy lại không tốn).
+    const obOf = new Map(items.map((it) => [it.id, obNumber(it.ob)]));
+    const missing = importedIds
+      .filter((id) => newIds.has(id) || !syncedIds.has(id))
+      .sort((a, b) =>
+        Number(newIds.has(b)) - Number(newIds.has(a)) ||
+        (obOf.get(b) ?? 0) - (obOf.get(a) ?? 0),
+      );
+    if (missing.length > 0) {
+      toast.info(`Đang tự động tải ${missing.length.toLocaleString()} icon mới về kho…`);
       void startSync(missing);
     }
   };
@@ -404,7 +419,8 @@ export default function FFItemsPage() {
   };
 
   // ── Sync items to Supabase Storage in batches ──
-  const SYNC_BATCH = 20;
+  // Route sync nhận tối đa 200/lượt; 50 giữ mỗi lượt gọi dưới trần 60s kể cả khi GitHub chậm.
+  const SYNC_BATCH = 50;
   const startSync = async (ids: string[], overwrite = false) => {
     if (syncRunning) return;
     syncAbort.current = false;
@@ -914,7 +930,7 @@ export default function FFItemsPage() {
             <button
               onClick={() => jsonInputRef.current?.click()}
               disabled={!!importing}
-              title="Nạp kho vật phẩm từ file JSON (ItemsData_en.json hoặc danh sách ID)"
+              title="Nạp kho vật phẩm từ file JSON (FF_ItemsData.json của Free-Fire-Items-Library, hoặc danh sách ID) — tự lấy OB từ Tag và tự tải icon mới về kho"
               className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600/40 px-3 py-2 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-600/10 disabled:opacity-60 dark:text-blue-400"
             >
               {importing

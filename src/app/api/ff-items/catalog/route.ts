@@ -24,14 +24,23 @@ export async function GET(req: NextRequest) {
   // Sort phụ theo created_at desc: không có cột này thì Postgres trả thứ tự
   // vật lý trên đĩa — item vừa được upsert (kể cả chỉ sửa nhãn) có thể trồi
   // lên trước item thật sự mới, khiến danh sách trông như đảo lộn ngẫu nhiên.
-  const { data } = await untypedFrom(db, "ff_items_catalog")
-    .select("id, label, category, ob, is_hot")
-    .eq("is_public", true)
-    .order("category", { ascending: true })
-    .order("created_at", { ascending: false })
-    .limit(5000) as { data: CatalogRow[] | null };
-
-  const items = data ?? [];
+  // Phân trang 1000/lượt (trần max-rows của PostgREST): file JSON kho đầy đủ
+  // nạp ~3 vạn dòng, cắt ở 5000 thì OB của phần lớn item không tới được /items
+  // và đồ mới ra không được ghim.
+  const PAGE = 1000;
+  const MAX_ROWS = 60_000;
+  const items: CatalogRow[] = [];
+  for (let from = 0; from < MAX_ROWS; from += PAGE) {
+    const { data, error } = await untypedFrom(db, "ff_items_catalog")
+      .select("id, label, category, ob, is_hot")
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1) as { data: CatalogRow[] | null; error: unknown };
+    if (error || !data) break;
+    items.push(...data);
+    if (data.length < PAGE) break;
+  }
   cache = { items, ts: now };
 
   return NextResponse.json({ items, count: items.length, cached: false });

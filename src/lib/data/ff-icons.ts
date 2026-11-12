@@ -4,6 +4,17 @@
 // Nguồn gốc ảnh trên GitHub (dùng bởi route proxy)
 export const ICON_UPSTREAM = "https://raw.githubusercontent.com/ShahGCreator/icon/main/PNG/";
 
+/**
+ * Kho KingofGames02/Free-Fire-Items-Library — tự tải icon mới mỗi lần game cập
+ * nhật (GitHub Action "Auto-fetched new icons"), file `ff-icons/<Id>.png`.
+ * Đồ mới ra có ở đây trước ShahGCreator nên được thử TRƯỚC.
+ */
+export const ICON_UPSTREAM_KOG =
+  "https://raw.githubusercontent.com/KingofGames02/Free-Fire-Items-Library/main/ff-icons/";
+
+/** Thứ tự thử nguồn khi đồng bộ / proxy ảnh chưa có trong Storage. */
+export const ICON_UPSTREAMS = [ICON_UPSTREAM_KOG, ICON_UPSTREAM] as const;
+
 /** Bucket Supabase Storage chứa bản đã đồng bộ (/admin/ff-items → "Đồng bộ"). */
 export const ICON_BUCKET = "ff-items";
 

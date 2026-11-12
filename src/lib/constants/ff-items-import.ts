@@ -22,6 +22,22 @@ export type ImportedItem = {
   id: string;
   label: string | null;
   category: FfItemCategory | null;
+  /** Phiên bản ra mắt, chuẩn hoá về dạng "OB55" (lấy từ `Tag` của kho gốc). */
+  ob: string | null;
+};
+
+/** "ob55", "OB 55", 55 → "OB55". Giá trị khác (tag sự kiện…) → null. */
+export const normalizeOb = (raw: unknown): string | null => {
+  if (typeof raw === "number" && Number.isInteger(raw) && raw > 0 && raw < 1000) return `OB${raw}`;
+  if (typeof raw !== "string") return null;
+  const m = raw.trim().match(/^OB\s*(\d{1,3})$/i) ?? raw.trim().match(/^(\d{1,3})$/);
+  return m ? `OB${parseInt(m[1], 10)}` : null;
+};
+
+/** Số của OB để sắp xếp — "OB55" → 55, không có → 0. */
+export const obNumber = (ob: string | null | undefined): number => {
+  const m = ob?.match(/\d+/);
+  return m ? parseInt(m[0], 10) : 0;
 };
 
 /**
@@ -68,15 +84,28 @@ const pick = (o: Record<string, unknown>, keys: string[]): unknown => {
 const ID_KEYS = ["Id", "id", "ID", "itemId", "ItemID", "item_id", "iconId"];
 const NAME_KEYS = ["Name", "name", "label", "Label", "title", "Title", "displayName"];
 const TYPE_KEYS = ["Type", "type", "category", "Category", "itemType"];
+const OB_KEYS = ["Tag", "tag", "ob", "OB", "Ob", "version", "Version"];
+
+/**
+ * Kho gốc ghi `Name` là khoá dịch ("TXT_CHARACTER_EVA_NAME"), không phải tên
+ * đọc được. Lưu nó làm nhãn thì trang /items hiện chữ máy — để null cho tên
+ * chuẩn (ff-item-meta.json) hiện thay.
+ */
+const isLocKey = (s: string): boolean =>
+  s.includes("_") && (/^[A-Za-z0-9_.-]+$/.test(s) || /^[A-Z0-9_ .-]+$/.test(s));
 
 function fromRecord(raw: unknown, fallbackId?: string): ImportedItem | null {
   if (typeof raw === "string" || typeof raw === "number") {
     const id = String(raw).trim();
-    return isValidItemId(id) ? { id, label: null, category: null } : null;
+    return isValidItemId(id) ? { id, label: null, category: null, ob: null } : null;
   }
   if (!raw || typeof raw !== "object") return null;
 
   const o = raw as Record<string, unknown>;
+  // Dòng kho gốc ẩn hoặc không có ảnh (Icon rỗng) — không có icon nào để tải.
+  if (o.HideInIndex === true) return null;
+  if ("Icon" in o && (typeof o.Icon !== "string" || !o.Icon.trim())) return null;
+
   const rawId = pick(o, ID_KEYS) ?? fallbackId;
   if (rawId === undefined) return null;
 
@@ -84,14 +113,21 @@ function fromRecord(raw: unknown, fallbackId?: string): ImportedItem | null {
   if (!isValidItemId(id)) return null;
 
   const name = pick(o, NAME_KEYS);
-  const label = typeof name === "string" && name.trim() ? name.trim().slice(0, 80) : null;
+  const label = typeof name === "string" && name.trim() && !isLocKey(name.trim())
+    ? name.trim().slice(0, 80)
+    : null;
 
-  return { id, label, category: mapItemCategory(pick(o, TYPE_KEYS)) };
+  return {
+    id,
+    label,
+    category: mapItemCategory(pick(o, TYPE_KEYS)),
+    ob: normalizeOb(pick(o, OB_KEYS)),
+  };
 }
 
 export type ParseResult = {
   items: ImportedItem[];
-  /** Số dòng bị bỏ vì không rút được ID hợp lệ. */
+  /** Số dòng bị bỏ vì không rút được ID hợp lệ, hoặc dòng ẩn / không có icon. */
   skipped: number;
 };
 
@@ -117,6 +153,7 @@ export function parseItemsJson(raw: unknown): ParseResult {
       id: item.id,
       label: item.label ?? prev?.label ?? null,
       category: item.category ?? prev?.category ?? null,
+      ob: item.ob ?? prev?.ob ?? null,
     });
   }
 

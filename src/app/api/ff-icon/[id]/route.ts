@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ICON_UPSTREAM, storageIconUrl } from "@/lib/data/ff-icons";
+import { ICON_UPSTREAMS, storageIconUrl } from "@/lib/data/ff-icons";
 
 /**
  * Proxy ảnh icon qua domain của site (cache vĩnh viễn ở CDN edge).
@@ -58,8 +58,12 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     }
   }
 
-  // 2. Chưa đồng bộ → lấy tạm từ GitHub.
-  const buf = await fetchPng(`${ICON_UPSTREAM}${id}.png`, 86_400);
+  // 2. Chưa đồng bộ → lấy tạm từ GitHub (KingofGames02 trước — có đồ mới ra sớm hơn).
+  let buf: ArrayBuffer | null = null;
+  for (const upstream of ICON_UPSTREAMS) {
+    buf = await fetchPng(`${upstream}${id}.png`, 86_400);
+    if (buf) break;
+  }
   if (!buf) {
     return new Response("Not found", {
       status: 404,

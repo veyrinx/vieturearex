@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { Fragment, useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { ffItemTypeLabel, ffItemTypeStyle, ffRarityMeta, FF_RARITY_ORDER } from "@/lib/constants/ff-item-types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { obNumber } from "@/lib/constants/ff-items-import";
 
 const FALLBACK_CDN = "https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG";
 const PAGE_SIZE = 60;
@@ -47,13 +48,20 @@ export default function ItemsPublicPage() {
     ]).then(([storage, cat, metaRaw]) => {
       const d = storage as { ids?: string[]; baseUrl?: string | null; bucketMissing?: boolean; error?: string } | null;
       if (d?.bucketMissing) setBucketMissing(true);
-      setIds(d?.ids ?? []);
       setBaseUrl(d?.baseUrl ?? null);
       if (d?.error) setError(d.error);
 
       const c = cat as { items?: CatalogEntry[] } | null;
+      const baseIds = d?.ids ?? [];
       if (c?.items) {
         setCatalog(new Map(c.items.map((it) => [it.id, it])));
+        // Đồ mới ra admin nạp từ file JSON có thể chưa có trong kho ShahGCreator
+        // → gộp thêm ID từ catalog, nếu không chúng không bao giờ hiện ở đây.
+        const known = new Set(baseIds);
+        const extra = c.items.map((it) => it.id).filter((x) => !known.has(x));
+        setIds(extra.length ? [...baseIds, ...extra] : baseIds);
+      } else {
+        setIds(baseIds);
       }
 
       const m = metaRaw as MetaFile | null;
@@ -85,6 +93,8 @@ export default function ItemsPublicPage() {
     const rar = sp.get("rarity");
     if (loai) setActiveCategory(loai);
     if (rar) setActiveRarity(rar);
+    const ob = sp.get("ob");
+    if (ob) setActiveOb(ob.trim().toUpperCase());
   }, []);
 
   // Đếm theo thể loại (49 loại) — tính trên toàn bộ icon
@@ -153,10 +163,23 @@ export default function ItemsPublicPage() {
       if (!it.ob) continue;
       map.set(it.ob, (map.get(it.ob) ?? 0) + 1);
     }
-    const numOf = (s: string) => { const m = s.match(/\d+/); return m ? parseInt(m[0], 10) : 0; };
     return [...map.entries()]
-      .sort(([a], [b]) => numOf(b) - numOf(a) || a.localeCompare(b))
+      .sort(([a], [b]) => obNumber(b) - obNumber(a) || a.localeCompare(b))
       .map(([ob, count]) => ({ ob, count }));
+  }, [catalog]);
+
+  /** OB mới nhất đang có — đồ thuộc OB này coi là "Mới ra" và được ghim. */
+  const latestOb = obGroups[0]?.ob ?? null;
+
+  /**
+   * Thứ hạng ghim: Hot (admin gắn cờ) > OB mới nhất > OB cũ dần > không có OB.
+   * Sắp xếp ổn định nên trong cùng một hạng vẫn giữ thứ tự gốc của kho.
+   */
+  const pinRank = useCallback((id: string): number => {
+    const it = catalog.get(id);
+    if (!it) return 0;
+    if (it.is_hot) return 10_000;
+    return obNumber(it.ob);
   }, [catalog]);
 
   const hotCount = useMemo(() => {
@@ -180,8 +203,22 @@ export default function ItemsPublicPage() {
         (nameOf(x)?.toLowerCase().includes(debouncedSearch) ?? false),
       );
     }
+    // Ghim đồ mới ra lên đầu, rồi lần lượt theo OB giảm dần.
+    if (catalog.size > 0) {
+      list = list
+        .map((id, i) => ({ id, i, r: pinRank(id) }))
+        .sort((a, b) => b.r - a.r || a.i - b.i)
+        .map((x) => x.id);
+    }
     return list;
-  }, [ids, hotOnly, activeCategory, activeRarity, activeOb, debouncedSearch, catalog, categoryOf, rarityOf, nameOf]);
+  }, [ids, hotOnly, activeCategory, activeRarity, activeOb, debouncedSearch, catalog, categoryOf, rarityOf, nameOf, pinRank]);
+
+  /** Nhóm hiển thị của 1 item trong lưới — đổi nhóm thì chèn tiêu đề OB. */
+  const groupOf = useCallback((id: string): string => {
+    const it = catalog.get(id);
+    if (it?.is_hot) return "hot";
+    return it?.ob ?? "none";
+  }, [catalog]);
 
   // Search autocomplete suggestions
   const suggestions = useMemo(() => {
@@ -315,18 +352,6 @@ export default function ItemsPublicPage() {
               </Select>
             )}
 
-            {obGroups.length > 0 && (
-              <Select value={activeOb} onValueChange={(v) => setActiveOb(v ?? "all")}>
-                <SelectTrigger className="h-9 w-full text-xs sm:w-36"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Mọi OB</SelectItem>
-                  {obGroups.map(({ ob, count }) => (
-                    <SelectItem key={ob} value={ob}>{ob} ({count.toLocaleString()})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
             {hotCount > 0 && (
               <button
                 onClick={() => setHotOnly((v) => !v)}
@@ -340,6 +365,43 @@ export default function ItemsPublicPage() {
                 <span className="rounded-full bg-current/20 px-1.5 py-0.5 text-[9px] tabular-nums opacity-70">{hotCount.toLocaleString()}</span>
               </button>
             )}
+          </div>
+        )}
+
+        {/* Icon theo OB — chip cuộn ngang, OB mới nhất đứng đầu */}
+        {obGroups.length > 0 && (
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:thin]">
+            <button
+              onClick={() => setActiveOb("all")}
+              className={`inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-xs font-bold transition-colors ${
+                activeOb === "all"
+                  ? "border-primary bg-primary text-primary-foreground dark:border-amber-400 dark:bg-amber-400 dark:text-black"
+                  : "border-border bg-background text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Mọi OB
+            </button>
+            {obGroups.map(({ ob, count }) => {
+              const active = activeOb === ob;
+              const isLatest = ob === latestOb;
+              return (
+                <button
+                  key={ob}
+                  onClick={() => setActiveOb(active ? "all" : ob)}
+                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-mono text-xs font-bold transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground dark:border-amber-400 dark:bg-amber-400 dark:text-black"
+                      : isLatest
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
+                        : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isLatest && <span className="font-sans">🆕</span>}
+                  {ob}
+                  <span className="text-[10px] font-normal tabular-nums opacity-70">{count.toLocaleString()}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -443,17 +505,31 @@ export default function ItemsPublicPage() {
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
                 {slice.map((id, idx) => {
                   const cmeta = catalog.get(id);
+                  const group = groupOf(id);
+                  const showHeader =
+                    activeOb === "all" && !hotOnly && (obGroups.length > 0 || hotCount > 0) &&
+                    (idx === 0 || groupOf(slice[idx - 1]) !== group);
                   return (
-                    <ItemCard
-                      key={id}
-                      id={id}
-                      label={cmeta?.label ?? nameOf(id)}
-                      rarity={rarityOf(id)}
-                      url={buildUrl(id)}
-                      onCopy={() => copyUrl(id)}
-                      onOpen={() => setLightboxIdx(idx)}
-                      copied={copiedId === id}
-                    />
+                    <Fragment key={id}>
+                      {showHeader && (
+                        <ObGroupHeader
+                          group={group}
+                          isLatest={group === latestOb}
+                          count={group === "hot" ? hotCount : obGroups.find((g) => g.ob === group)?.count}
+                        />
+                      )}
+                      <ItemCard
+                        id={id}
+                        label={cmeta?.label ?? nameOf(id)}
+                        rarity={rarityOf(id)}
+                        ob={cmeta?.ob ?? null}
+                        isNew={!!cmeta && (cmeta.is_hot || (!!latestOb && cmeta.ob === latestOb))}
+                        url={buildUrl(id)}
+                        onCopy={() => copyUrl(id)}
+                        onOpen={() => setLightboxIdx(idx)}
+                        copied={copiedId === id}
+                      />
+                    </Fragment>
                   );
                 })}
               </div>
@@ -501,10 +577,33 @@ export default function ItemsPublicPage() {
   );
 }
 
-function ItemCard({ id, label, rarity, url, onCopy, onOpen, copied }: {
+/** Tiêu đề nhóm trong lưới: 🔥 Hot · 🆕 Mới ra · OBxx · Khác. */
+function ObGroupHeader({ group, isLatest, count }: { group: string; isLatest: boolean; count?: number }) {
+  const title =
+    group === "hot" ? "🔥 Hot" :
+    group === "none" ? "Chưa rõ OB" :
+    isLatest ? `🆕 Mới ra · ${group}` : group;
+  const tone =
+    group === "hot" ? "text-orange-600 dark:text-orange-400" :
+    isLatest ? "text-emerald-700 dark:text-emerald-400" :
+    "text-muted-foreground";
+  return (
+    <div className="col-span-full flex items-center gap-2 pt-2 first:pt-0">
+      <span className={`font-heading text-xs font-black uppercase tracking-widest ${tone}`}>{title}</span>
+      {count != null && group !== "none" && (
+        <span className="text-[10px] tabular-nums text-muted-foreground">{count.toLocaleString()} món</span>
+      )}
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
+function ItemCard({ id, label, rarity, ob, isNew, url, onCopy, onOpen, copied }: {
   id: string;
   label?: string | null;
   rarity?: string | null;
+  ob?: string | null;
+  isNew?: boolean;
   url: string;
   onCopy: () => void;
   onOpen: () => void;
@@ -514,13 +613,22 @@ function ItemCard({ id, label, rarity, url, onCopy, onOpen, copied }: {
   const rMeta = rarity && rarity !== "NONE" ? ffRarityMeta(rarity) : null;
 
   return (
-    <div className="group relative rounded-xl border border-border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors">
+    <div className={`group relative rounded-xl border bg-muted/30 p-2 space-y-1.5 hover:border-primary/40 transition-colors ${isNew ? "border-emerald-500/50" : "border-border"}`}>
       <div className={`relative aspect-square w-full overflow-hidden rounded-lg flex items-center justify-center ${rMeta ? rMeta.bg : "bg-background"}`}>
         {rMeta && (
           <span
             title={rMeta.label}
             className={`absolute left-1 top-1 z-10 size-2.5 rounded-full ${rMeta.dot} ring-2 ring-background`}
           />
+        )}
+        {ob && (
+          <span
+            className={`pointer-events-none absolute bottom-1 left-1 z-10 rounded px-1 py-px font-mono text-[9px] font-bold leading-tight ${
+              isNew ? "bg-emerald-500 text-white" : "bg-background/85 text-muted-foreground"
+            }`}
+          >
+            {isNew ? `MỚI · ${ob}` : ob}
+          </span>
         )}
         <Link
           href={`/items/${id}`}

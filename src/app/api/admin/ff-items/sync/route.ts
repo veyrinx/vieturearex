@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceAdminApiAuth, enforceRateLimit } from "@/lib/server/api-guard";
-import { ICON_BUCKET, ICON_UPSTREAM, storageIconUrl } from "@/lib/data/ff-icons";
+import { ICON_BUCKET, ICON_UPSTREAMS, storageIconUrl } from "@/lib/data/ff-icons";
 import { isValidItemId } from "@/lib/constants/ff-items-import";
 
 export const dynamic = "force-dynamic";
@@ -91,13 +91,23 @@ export async function POST(req: NextRequest) {
         return { id, ok: true, url: pub.publicUrl, skipped: true };
       }
 
-      const cdnRes = await fetch(`${ICON_UPSTREAM}${encodeURIComponent(id)}.png`, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!cdnRes.ok) return { id, ok: false, error: `CDN ${cdnRes.status}` };
+      // KingofGames02 trước (đồ mới ra), rồi ShahGCreator.
+      let png: ArrayBuffer | null = null;
+      let lastStatus = 0;
+      for (const upstream of ICON_UPSTREAMS) {
+        const cdnRes = await fetch(`${upstream}${encodeURIComponent(id)}.png`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(15_000),
+        }).catch(() => null);
+        if (cdnRes?.ok) {
+          png = await cdnRes.arrayBuffer();
+          break;
+        }
+        lastStatus = cdnRes?.status ?? 0;
+      }
+      if (!png) return { id, ok: false, error: `CDN ${lastStatus || "lỗi mạng"}` };
 
-      const uint8 = new Uint8Array(await cdnRes.arrayBuffer());
+      const uint8 = new Uint8Array(png);
       const { error: uploadErr } = await db.storage.from(ICON_BUCKET).upload(objectPath, uint8, {
         contentType: "image/png",
         upsert: true,

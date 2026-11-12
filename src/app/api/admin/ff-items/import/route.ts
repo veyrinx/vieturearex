@@ -95,24 +95,55 @@ export async function POST(req: NextRequest) {
   const db = createAdminSupabaseClient();
   if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
-  const rows = items.map((item) => ({
-    id: item.id,
-    label: item.label,
-    category: item.category,
-    is_public: true,
-    created_by: userId,
-  }));
+  const toRow = (item: (typeof items)[number]) => {
+    const row: Record<string, unknown> = {
+      id: item.id,
+      label: item.label,
+      category: item.category,
+      is_public: true,
+      created_by: userId,
+    };
+    // Chỉ gửi `ob` khi file có — upsert mảng điền null cho cột thiếu, ghi đè
+    // mà không tách ra thì OB admin đã nhập tay bị xoá sạch.
+    if (item.ob) row.ob = item.ob;
+    return row;
+  };
+  const withOb = items.filter((i) => i.ob).map(toRow);
+  const withoutOb = items.filter((i) => !i.ob).map(toRow);
 
-  const { error } = await untypedFrom(db, "ff_items_catalog").upsert(rows as never, {
-    onConflict: "id",
-    ignoreDuplicates: !body.overwrite,
-  });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // `select("id")` sau upsert bỏ-qua-trùng chỉ trả về dòng THẬT SỰ được thêm
+  // (ON CONFLICT DO NOTHING RETURNING) → biết chính xác item nào mới ra.
+  const newIds: string[] = [];
+  for (const rows of [withOb, withoutOb]) {
+    if (rows.length === 0) continue;
+    const { data, error } = (await untypedFrom(db, "ff_items_catalog")
+      .upsert(rows as never, { onConflict: "id", ignoreDuplicates: !body.overwrite })
+      .select("id")) as { data: Array<{ id: string }> | null; error: { message: string } | null };
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!body.overwrite) newIds.push(...(data ?? []).map((r) => r.id));
+  }
+
+  // Không ghi đè: item đã có nhưng còn thiếu OB thì vẫn điền OB từ file —
+  // không đụng tới OB đã có, nhãn hay nhóm đã sửa tay.
+  if (!body.overwrite && withOb.length > 0) {
+    const byOb = new Map<string, string[]>();
+    for (const item of items) {
+      if (item.ob) byOb.set(item.ob, [...(byOb.get(item.ob) ?? []), item.id]);
+    }
+    for (const [ob, ids] of byOb) {
+      await untypedFrom(db, "ff_items_catalog")
+        .update({ ob } as never)
+        .in("id", ids)
+        .is("ob", null);
+    }
+  }
 
   return NextResponse.json({
     ok: true,
-    imported: rows.length,
+    imported: items.length,
     skipped,
     ids: items.map((i) => i.id),
+    // Ghi đè thì không phân biệt được mới/cũ → để client tự đối chiếu.
+    newIds: body.overwrite ? null : newIds,
   });
 }
