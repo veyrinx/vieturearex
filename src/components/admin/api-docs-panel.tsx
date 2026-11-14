@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronRight, ExternalLink, Key, Zap, MessageSquare,
   RefreshCw, Plug, Unplug, AlertCircle, CheckCircle2, Loader2,
   FileSpreadsheet, Star, MessageCircle, Vote, Trophy, Upload, Users, Shield,
-  Play, FlaskConical,
+  Play, FlaskConical, Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SITE_URL } from "@/lib/constants/site";
@@ -473,6 +473,55 @@ const SECTIONS: Section[] = [
         desc: "Proxy ảnh từ URL ngoài để tránh CORS, dùng trong ImageKit resize.",
         params: [{ name: "url", type: "string", desc: "URL ảnh gốc cần proxy", required: true }],
         response: "Binary image stream",
+      },
+    ],
+  },
+
+  // ── FREE FIRE ITEMS (tích hợp web thứ 3) ─────────────────────────────────────
+  {
+    id: "ff-items",
+    title: "FF Items",
+    icon: Package,
+    color: "text-orange-500",
+    desc: "Kho vật phẩm & icon Free Fire (theo OB) cho web/app bên thứ 3. Công khai, không cần key, CORS mở (*).",
+    endpoints: [
+      {
+        method: "GET",
+        path: "/api/ff-items/catalog",
+        desc: "Danh mục vật phẩm công khai kèm nhãn, nhóm, OB và cờ Hot. Dùng để lọc theo OB / ghim đồ mới.",
+        rateLimit: "60 req/phút/IP",
+        response: JSON.stringify({
+          items: [
+            { id: "710056001", label: "Tên vật phẩm", category: "outfit", ob: "OB56", is_hot: true },
+            { id: "203000001", label: null, category: "skin", ob: "OB55", is_hot: false },
+          ],
+          count: 35000,
+          cached: true,
+        }, null, 2),
+        note: "Trả toàn bộ kho (~3,5 vạn dòng, vài MB) trong 1 lần, cache 10 phút phía máy chủ. label = null → dùng ID hoặc tên riêng của bạn. ob = null → chưa rõ phiên bản. Nên cache phía bạn ≥ 10 phút, đừng gọi mỗi lượt xem trang.",
+      },
+      {
+        method: "GET",
+        path: "/api/ff-icon/{id}",
+        desc: "Ảnh PNG icon của 1 vật phẩm — gắn thẳng vào <img src>. Lấy bản đã đồng bộ trên Storage, thiếu thì lấy tạm từ GitHub.",
+        params: [{ name: "id", type: "string", desc: "ID vật phẩm, vd 710056001 (có thể thêm đuôi .png)", required: true }],
+        response: "image/png (Cache-Control: max-age=31536000, immutable) — 404 nếu không có ảnh (cache 5 phút)",
+        note: "Header x-arex-icon-source cho biết nguồn: storage | upstream.",
+      },
+      {
+        method: "GET",
+        path: "/api/ff-items",
+        desc: "Danh sách ID đã có ảnh trên Storage + baseUrl CDN để tự ghép link ảnh ({baseUrl}{id}.png).",
+        rateLimit: "60 req/phút/IP",
+        response: JSON.stringify({ ids: ["101000001", "710056001"], baseUrl: "https://<project>.supabase.co/storage/v1/object/public/ff-items/", count: 34186, cached: true }, null, 2),
+        note: "Dùng khi cần tải ảnh hàng loạt thẳng từ CDN Supabase thay vì qua /api/ff-icon.",
+      },
+      {
+        method: "GET",
+        path: "/api/ff-icons",
+        desc: "Danh sách toàn bộ ID icon trong kho GitHub nguồn (kể cả ảnh chưa đồng bộ về Storage).",
+        rateLimit: "60 req/phút/IP",
+        response: JSON.stringify({ ids: ["101000001"], baseUrl: "https://raw.githubusercontent.com/...", count: 35000 }, null, 2),
       },
     ],
   },
@@ -1947,6 +1996,178 @@ function LarkSheetTestCard() {
 }
 
 // ── Main panel ──────────────────────────────────────────────────────────────────
+// ── FfItemsGuideCard — hướng dẫn kết nối kho vật phẩm cho web thứ 3 ─────────────
+const FF_GUIDE_TABS = [
+  {
+    id: "html",
+    label: "HTML",
+    code: `<!-- Gắn icon thẳng, không cần JS. Ảnh cache 1 năm ở CDN. -->
+<img src="${BASE_URL}/api/ff-icon/710056001"
+     alt="710056001" width="96" height="96" loading="lazy"
+     onerror="this.style.display='none'">`,
+  },
+  {
+    id: "js",
+    label: "JavaScript",
+    code: `const AREX = "${BASE_URL}";
+
+// 1. Lấy kho (cache localStorage 10 phút — đừng gọi mỗi lượt xem trang)
+async function getCatalog() {
+  try {
+    const c = JSON.parse(localStorage.getItem("arex-ff") || "null");
+    if (c && Date.now() - c.ts < 10 * 60 * 1000) return c.items;
+  } catch {}
+  const res = await fetch(AREX + "/api/ff-items/catalog");
+  if (!res.ok) throw new Error("Arex API " + res.status);
+  const { items } = await res.json();
+  try { localStorage.setItem("arex-ff", JSON.stringify({ ts: Date.now(), items })); } catch {}
+  return items;
+}
+
+const obNum = (ob) => parseInt((ob || "").replace(/\\D/g, ""), 10) || 0;
+
+// 2. Đồ mới nhất: Hot trước, rồi OB giảm dần
+const items = await getCatalog();
+const latestOb = Math.max(...items.map((i) => obNum(i.ob)));
+const newest = items
+  .filter((i) => i.is_hot || obNum(i.ob) === latestOb)
+  .sort((a, b) => (b.is_hot - a.is_hot) || obNum(b.ob) - obNum(a.ob));
+
+// 3. Gom nhóm theo OB
+const byOb = Object.groupBy(items, (i) => i.ob ?? "Chưa rõ OB");
+
+// 4. Render icon
+document.querySelector("#ff").innerHTML = newest.slice(0, 48).map((i) =>
+  \`<img src="\${AREX}/api/ff-icon/\${i.id}" title="\${i.label ?? i.id} · \${i.ob ?? ""}" width="72" loading="lazy">\`
+).join("");`,
+  },
+  {
+    id: "node",
+    label: "Node / Next.js (server)",
+    code: `// Gọi từ máy chủ của bạn rồi cache lại — nhẹ cho cả hai bên.
+// Next.js: revalidate 10 phút.
+export async function getArexItems(ob?: string) {
+  const res = await fetch("${BASE_URL}/api/ff-items/catalog", {
+    next: { revalidate: 600 },
+  });
+  if (!res.ok) return [];
+  const { items } = (await res.json()) as {
+    items: { id: string; label: string | null; category: string | null; ob: string | null; is_hot: boolean }[];
+  };
+  return ob ? items.filter((i) => i.ob === ob) : items;
+}
+
+export const arexIcon = (id: string) => \`${BASE_URL}/api/ff-icon/\${id}\`;`,
+  },
+  {
+    id: "php",
+    label: "PHP",
+    code: `<?php
+$cache = __DIR__ . '/arex-ff.json';
+if (!file_exists($cache) || time() - filemtime($cache) > 600) {
+    $json = @file_get_contents('${BASE_URL}/api/ff-items/catalog');
+    if ($json !== false) file_put_contents($cache, $json);
+}
+$items = json_decode(file_get_contents($cache), true)['items'] ?? [];
+$ob56  = array_filter($items, fn($i) => $i['ob'] === 'OB56');
+foreach ($ob56 as $i) {
+    echo '<img src="${BASE_URL}/api/ff-icon/' . urlencode($i['id']) . '" width="72" loading="lazy">';
+}`,
+  },
+  {
+    id: "curl",
+    label: "cURL",
+    code: `# Kho vật phẩm (JSON)
+curl -s ${BASE_URL}/api/ff-items/catalog | jq '.items[] | select(.ob=="OB56") | .id'
+
+# Tải 1 icon
+curl -o 710056001.png ${BASE_URL}/api/ff-icon/710056001`,
+  },
+] as const;
+
+function FfItemsGuideCard() {
+  const [tab, setTab] = useState<(typeof FF_GUIDE_TABS)[number]["id"]>("html");
+  const current = FF_GUIDE_TABS.find((t) => t.id === tab) ?? FF_GUIDE_TABS[0];
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-orange-500/20 bg-orange-500/[0.04] p-4">
+      <div className="flex items-start gap-2">
+        <Plug className="mt-0.5 size-4 shrink-0 text-orange-500" />
+        <div>
+          <h3 className="text-sm font-bold text-foreground">Hướng dẫn kết nối API vật phẩm cho web thứ 3</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Web/app khác có thể hiển thị icon & danh mục Free Fire (đồ mới theo OB) lấy từ Arex — không cần đăng ký, không cần API key.
+          </p>
+        </div>
+      </div>
+
+      <ol className="space-y-2 text-xs text-muted-foreground">
+        <li>
+          <span className="font-semibold text-foreground">1. Lấy danh mục:</span>{" "}
+          <code className="rounded bg-muted px-1 font-mono">GET {BASE_URL}/api/ff-items/catalog</code> → mảng{" "}
+          <code className="rounded bg-muted px-1 font-mono">{"{ id, label, category, ob, is_hot }"}</code>.
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">2. Hiển thị ảnh:</span>{" "}
+          <code className="rounded bg-muted px-1 font-mono">{BASE_URL}/api/ff-icon/{"{id}"}</code> — dùng trực tiếp trong{" "}
+          <code className="rounded bg-muted px-1 font-mono">&lt;img&gt;</code>, ảnh cache 1 năm.
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">3. Đồ mới ra:</span> OB có số lớn nhất là bản mới nhất
+          (vd <code className="rounded bg-muted px-1 font-mono">OB56</code>); <code className="rounded bg-muted px-1 font-mono">is_hot = true</code> là đồ admin ghim — đặt lên đầu.
+        </li>
+        <li>
+          <span className="font-semibold text-foreground">4. Cache phía bạn ≥ 10 phút.</span> Kho cập nhật khi admin nạp OB mới;
+          gọi liên tục sẽ dính giới hạn <b>60 req/phút/IP</b> (HTTP 429).
+        </li>
+      </ol>
+
+      <div>
+        <div className="mb-2 flex flex-wrap gap-1">
+          {FF_GUIDE_TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition",
+                t.id === tab
+                  ? "border-orange-500/40 bg-orange-500/15 text-orange-600 dark:text-orange-300"
+                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <CodeBlock code={current.code} label={current.label} />
+      </div>
+
+      <div className="grid gap-2 text-[11px] text-muted-foreground sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-background/60 p-3">
+          <p className="mb-1 font-semibold text-foreground">Trường dữ liệu</p>
+          <ul className="space-y-0.5">
+            <li><code className="font-mono">id</code> — ID vật phẩm, cũng là tên file icon</li>
+            <li><code className="font-mono">label</code> — tên hiển thị, có thể null</li>
+            <li><code className="font-mono">category</code> — weapon · character · pet · outfit · skin · accessory · emote · vehicle · other</li>
+            <li><code className="font-mono">ob</code> — phiên bản ra mắt &quot;OB55&quot;… hoặc null</li>
+            <li><code className="font-mono">is_hot</code> — đồ được ghim</li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-border bg-background/60 p-3">
+          <p className="mb-1 font-semibold text-foreground">Lưu ý</p>
+          <ul className="space-y-0.5">
+            <li>CORS mở (<code className="font-mono">*</code>) — gọi được từ trình duyệt.</li>
+            <li>Icon 404 → ẩn ảnh bằng <code className="font-mono">onerror</code>.</li>
+            <li>Chỉ GET; các API ghi (bình luận, đánh giá, admin) cần đăng nhập Arex.</li>
+            <li>Ghi nguồn &quot;Arex Network&quot; kèm link về {BASE_URL}/items nếu có thể.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ApiDocsPanel() {
   const [activeSection, setActiveSection] = useState<string>("webhook");
 
@@ -2024,6 +2245,7 @@ export function ApiDocsPanel() {
             {current.id === "webhook" && <TelegramTestCard />}
             {current.id === "webhook" && <DiscordTestCard />}
             {current.id === "cskh" && <LarkSheetTestCard />}
+            {current.id === "ff-items" && <FfItemsGuideCard />}
             {current.endpoints.map((ep) => (
               <EndpointCard key={`${ep.method}-${ep.path}`} ep={ep} />
             ))}
